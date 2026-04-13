@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EndUserStatisticsDashboard</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f3eee5;
+        color: #2b2118;
+      }
+
+      .page-wrapper {
+        min-height: 100vh;
+        padding: 20px 24px 32px;
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .page-title {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .page-title h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a120b;
+      }
+
+      .page-title span {
+        font-size: 13px;
+        color: #7b6751;
+      }
+
+      .filters {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .filters select {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #d0c2aa;
+        background: #faf6ee;
+        font-size: 13px;
+      }
+
+      .filters label {
+        font-size: 12px;
+        color: #6b5740;
+        margin-right: 4px;
+      }
+
+      .filters-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+
+      @media (max-width: 1200px) {
+        .kpi-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 768px) {
+        .kpi-grid {
+          grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+      }
+
+      .kpi-card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 14px 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        border: 1px solid #e2d4bf;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .kpi-label {
+        font-size: 12px;
+        color: #7b6751;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f130c;
+      }
+
+      .kpi-sub {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      .kpi-trend {
+        font-size: 11px;
+        font-weight: 600;
+        color: #0f7a4a;
+      }
+
+      .kpi-trend.down {
+        color: #b03232;
+      }
+
+      .section-group {
+        margin-bottom: 22px;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .section-header h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #2b2118;
+      }
+
+      .section-header span {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      .charts-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      @media (max-width: 900px) {
+        .charts-grid-2 {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .chart-card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 12px 14px 4px;
+        border: 1px solid #e2d4bf;
+        min-height: 220px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .chart-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #483729;
+        margin-bottom: 8px;
+      }
+
+      .chart-wrapper {
+        position: relative;
+        flex: 1;
+        min-height: 180px;
+      }
+
+      .table-section {
+        background: #ffffff;
+        border-radius: 10px;
+        border: 1px solid #e2d4bf;
+        padding: 12px 14px 16px;
+        margin-top: 10px;
+      }
+
+      .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .table-header h3 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2b2118;
+      }
+
+      .btn-export {
+        padding: 6px 12px;
+        background: #c79e4c;
+        color: #fff;
+        border-radius: 6px;
+        border: none;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .btn-export:hover {
+        background: #b5893c;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f6eee1;
+      }
+
+      th,
+      td {
+        padding: 8px 6px;
+        text-align: left;
+        border-bottom: 1px solid #eee0cf;
+      }
+
+      th {
+        font-weight: 600;
+        color: #5b4632;
+      }
+
+      tbody tr:nth-child(even) {
+        background: #fdf8f0;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .status-active {
+        background: #e3f5ec;
+        color: #0f7a4a;
+      }
+
+      .status-inactive {
+        background: #f8e4e4;
+        color: #b03232;
+      }
+
+      .insights-list {
+        margin-top: 8px;
+        font-size: 12px;
+        color: #5b4632;
+      }
+
+      .insights-list ul {
+        margin-left: 16px;
+        margin-top: 4px;
+      }
+
+      .insights-list li {
+        margin-bottom: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <!-- React & Chart.js dependencies -->
+    <script
+      src="https://unpkg.com/react@18/umd/react.development.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+      crossorigin
+    ></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
+
+      function KPICard({ label, value, subtitle, trend, trendDirection }) {
+        return (
+          <div className="kpi-card">
+            <div className="kpi-label">{label}</div>
+            <div className="kpi-value">{value}</div>
+            {subtitle && <div className="kpi-sub">{subtitle}</div>}
+            {trend && (
+              <div
+                className={
+                  "kpi-trend" + (trendDirection === "down" ? " down" : "")
+                }
+              >
+                {trend}
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      function BaseChart({ type, title, data, options }) {
+        const canvasRef = useRef(null);
+
+        useEffect(() => {
+          if (!canvasRef.current) return;
+          const ctx = canvasRef.current.getContext("2d");
+          const chart = new Chart(ctx, {
+            type,
+            data,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: true,
+                  labels: { boxWidth: 12, font: { size: 11 } },
+                },
+                tooltip: {
+                  mode: "index",
+                  intersect: false,
+                },
+              },
+              scales:
+                type === "pie"
+                  ? {}
+                  : {
+                      x: {
+                        ticks: { font: { size: 10 } },
+                      },
+                      y: {
+                        beginAtZero: true,
+                        ticks: { font: { size: 10 } },
+                      },
+                    },
+              ...options,
+            },
+          });
+
+          return () => chart.destroy();
+        }, [type, JSON.stringify(data), JSON.stringify(options)]);
+
+        return (
+          <div className="chart-card">
+            <div className="chart-title">{title}</div>
+            <div className="chart-wrapper">
+              <canvas ref={canvasRef}></canvas>
+            </div>
+          </div>
+        );
+      }
+
+      function EndUserStatisticsDashboard() {
+        const [timeRange, setTimeRange] = useState("30d");
+        const [demographicFilter, setDemographicFilter] = useState("all");
+
+        const userGrowthLabels = [
+          "Mon",
+          "Tue",
+          "Wed",
+          "Thu",
+          "Fri",
+          "Sat",
+          "Sun",
+        ];
+
+        const dauMauData = {
+          labels: userGrowthLabels,
+          datasets: [
+            {
+              label: "DAU",
+              data: [420, 460, 510, 530, 580, 610, 640],
+              borderColor: "#c79e4c",
+              backgroundColor: "rgba(199, 158, 76, 0.15)",
+              tension: 0.3,
+              fill: true,
+            },
+            {
+              label: "MAU",
+              data: [3100, 3200, 3300, 3400, 3500, 3600, 3700],
+              borderColor: "#3c6e71",
+              backgroundColor: "rgba(60, 110, 113, 0.12)",
+              tension: 0.3,
+              fill: true,
+            },
+          ],
+        };
+
+        const registeredPerDayData = {
+          labels: userGrowthLabels,
+          datasets: [
+            {
+              label: "New Registrations",
+              data: [60, 72, 80, 74, 96, 88, 92],
+              backgroundColor: "#cfb27a",
+              borderRadius: 6,
+            },
+          ],
+        };
+
+        const activePerDayData = {
+          labels: userGrowthLabels,
+          datasets: [
+            {
+              label: "Active Users",
+              data: [380, 410, 450, 470, 510, 540, 560],
+              backgroundColor: "#8fb3a2",
+              borderRadius: 6,
+            },
+          ],
+        };
+
+        const genderData = {
+          labels: ["Male", "Female", "Other / Undisclosed"],
+          datasets: [
+            {
+              data: [54, 42, 4],
+              backgroundColor: ["#c79e4c", "#8fb3a2", "#b196c9"],
+            },
+          ],
+        };
+
+        const ageData = {
+          labels: ["18-24", "25-34", "35-44", "45+"],
+          datasets: [
+            {
+              data: [18, 38, 27, 17],
+              backgroundColor: ["#f2c57c", "#dd9a68", "#8fb3a2", "#b196c9"],
+            },
+          ],
+        };
+
+        const propertyPreferenceData = {
+          labels: ["Apartment", "House", "Hotel"],
+          datasets: [
+            {
+              label: "Saved Properties",
+              data: [58, 27, 15],
+              backgroundColor: ["#c79e4c", "#8fb3a2", "#b196c9"],
+              borderRadius: 6,
+            },
+          ],
+        };
+
+        const locationDistributionData = {
+          labels: ["Tokyo", "Osaka", "Nagoya", "Fukuoka", "Other"],
+          datasets: [
+            {
+              label: "Users",
+              data: [32, 18, 14, 10, 26],
+              backgroundColor: "#8fb3a2",
+              borderRadius: 6,
+            },
+          ],
+        };
+
+        const behaviorInsights = {
+          savedTypes: [
+            "1LDK / 2LDK apartments near city rail lines",
+            "Pet-friendly houses with small gardens",
+            "Serviced apartments close to business districts",
+          ],
+          searchedCategories: [
+            "Mid-range rentals (¥80k - ¥150k)",
+            "Short-term corporate stays",
+            "Family-sized houses with parking",
+          ],
+        };
+
+        const usersTable = [
+          {
+            name: "Yamada Taro",
+            location: "Tokyo",
+            saved: 34,
+            gender: "Male",
+            age: "25-34",
+            status: "Active",
+          },
+          {
+            name: "Suzuki Hana",
+            location: "Osaka",
+            saved: 21,
+            gender: "Female",
+            age: "25-34",
+            status: "Active",
+          },
+          {
+            name: "Nguyen Minh",
+            location: "Nagoya",
+            saved: 18,
+            gender: "Male",
+            age: "35-44",
+            status: "Active",
+          },
+          {
+            name: "Tanaka Aiko",
+            location: "Fukuoka",
+            saved: 12,
+            gender: "Female",
+            age: "18-24",
+            status: "Inactive",
+          },
+          {
+            name: "Chen Li",
+            location: "Tokyo",
+            saved: 27,
+            gender: "Female",
+            age: "35-44",
+            status: "Active",
+          },
+        ];
+
+        const handleExportExcel = () => {
+          const header = [
+            "Name",
+            "Location",
+            "Saved Properties",
+            "Gender",
+            "Age Group",
+            "Status",
+          ];
+          const rows = usersTable.map((u) => [
+            u.name,
+            u.location,
+            u.saved,
+            u.gender,
+            u.age,
+            u.status,
+          ]);
+
+          const csvContent = [header, ...rows]
+            .map((r) =>
+              r
+                .map((v) => {
+                  const s = String(v).replace(/"/g, '""');
+                  return `"${s}"`;
+                })
+                .join(","),
+            )
+            .join("\n");
+
+          const blob = new Blob([csvContent], {
+            type: "text/csv;charset=utf-8;",
+          });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "end_user_statistics.csv";
+          link.click();
+          URL.revokeObjectURL(url);
+        };
+
+        return (
+          <div className="page-wrapper">
+            <div className="page-header">
+              <div className="page-title">
+                <h1>End User Statistics</h1>
+                <span>
+                  Behavioral overview of end users within the Yuushi platform
+                </span>
+              </div>
+              <div className="filters">
+                <div className="filters-group">
+                  <label>Time range</label>
+                  <select
+                    value={timeRange}
+                    onChange={(e) => setTimeRange(e.target.value)}
+                  >
+                    <option value="today">Today</option>
+                    <option value="7d">Last 7 days</option>
+                    <option value="30d">Last 30 days</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+                <div className="filters-group">
+                  <label>Demographic</label>
+                  <select
+                    value={demographicFilter}
+                    onChange={(e) => setDemographicFilter(e.target.value)}
+                  >
+                    <option value="all">All segments</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="18-34">Age 18-34</option>
+                    <option value=">35">Age 35+</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="kpi-grid">
+              <KPICard
+                label="Total End Users"
+                value="18,420"
+                subtitle="Across all geographies"
+                trend="+4.2% vs last 30 days"
+              />
+              <KPICard
+                label="Active Users (MAU)"
+                value="3,720"
+                subtitle="Monthly active"
+                trend="+3.1% vs last month"
+              />
+              <KPICard
+                label="Average Session Time"
+                value="07m 42s"
+                subtitle="Per engaged session"
+                trend="+0.8% vs last period"
+              />
+              <KPICard
+                label="Total Properties Saved"
+                value="52,930"
+                subtitle="Saved to favourites / watchlists"
+                trend="+6.5% vs last 30 days"
+              />
+            </div>
+
+            <div className="section-group">
+              <div className="section-header">
+                <h2>Usage & Activity</h2>
+                <span>Engagement and growth signals</span>
+              </div>
+              <div className="charts-grid-2">
+                <BaseChart
+                  type="line"
+                  title="End user DAU / MAU"
+                  data={dauMauData}
+                />
+                <BaseChart
+                  type="bar"
+                  title="New registered users per day"
+                  data={registeredPerDayData}
+                />
+              </div>
+              <div style={{ marginTop: 14 }} className="charts-grid-2">
+                <BaseChart
+                  type="bar"
+                  title="Active users per day"
+                  data={activePerDayData}
+                />
+                <BaseChart
+                  type="bar"
+                  title="User location distribution"
+                  data={locationDistributionData}
+                />
+              </div>
+            </div>
+
+            <div className="section-group">
+              <div className="section-header">
+                <h2>Demographics & Preferences</h2>
+                <span>Who your users are and what they want</span>
+              </div>
+              <div className="charts-grid-2">
+                <BaseChart
+                  type="pie"
+                  title="Gender distribution"
+                  data={genderData}
+                />
+                <BaseChart type="pie" title="Age categories" data={ageData} />
+              </div>
+              <div style={{ marginTop: 14 }} className="charts-grid-2">
+                <BaseChart
+                  type="bar"
+                  title="Property preference (saved properties)"
+                  data={propertyPreferenceData}
+                />
+                <div className="chart-card">
+                  <div className="chart-title">Behavior insights</div>
+                  <div className="insights-list">
+                    <strong>Most saved property types</strong>
+                    <ul>
+                      {behaviorInsights.savedTypes.map((item, idx) => (
+                        <li key={idx}>{item}</li>
+                      ))}
+                    </ul>
+                    <strong>Most searched property categories</strong>
+                    <ul>
+                      {behaviorInsights.searchedCategories.map((item, idx) => (
+                        <li key={idx}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="section-group">
+              <div className="section-header">
+                <h2>Sample user cohort</h2>
+                <span>For export, presentations and deeper analysis</span>
+              </div>
+              <div className="table-section">
+                <div className="table-header">
+                  <h3>End user snapshot</h3>
+                  <button className="btn-export" onClick={handleExportExcel}>
+                    Download Excel
+                  </button>
+                </div>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Location</th>
+                      <th>Saved properties</th>
+                      <th>Gender</th>
+                      <th>Age group</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {usersTable.map((u, idx) => (
+                      <tr key={idx}>
+                        <td>{u.name}</td>
+                        <td>{u.location}</td>
+                        <td>{u.saved}</td>
+                        <td>{u.gender}</td>
+                        <td>{u.age}</td>
+                        <td>
+                          <span
+                            className={
+                              "status-pill " +
+                              (u.status === "Active"
+                                ? "status-active"
+                                : "status-inactive")
+                            }
+                          >
+                            {u.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      const rootElement = document.getElementById("root");
+      const root = ReactDOM.createRoot(rootElement);
+      root.render(<EndUserStatisticsDashboard />);
+    </script>
+  </body>
+</html>

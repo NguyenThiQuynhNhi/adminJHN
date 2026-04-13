@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Property Detail Editing</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background: #f5f3ef;
+        color: #2a2118;
+      }
+
+      .page {
+        padding: 24px 32px 32px;
+      }
+
+      .page-header {
+        margin-bottom: 18px;
+      }
+
+      .page-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .page-subtitle {
+        font-size: 13px;
+        color: #7c6a55;
+        max-width: 720px;
+      }
+
+      .pill {
+        margin-top: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #efe3cf;
+        color: #7b623f;
+        display: inline-block;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 2.2fr) minmax(0, 2.1fr);
+        gap: 16px;
+      }
+
+      .card {
+        background: #fffaf2;
+        border-radius: 10px;
+        border: 1px solid #eadccd;
+        padding: 14px 16px 16px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      }
+
+      .card-header {
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: #7c6a55;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 6px;
+        margin-bottom: 8px;
+        align-items: center;
+      }
+
+      .filters input,
+      .filters select {
+        border-radius: 999px;
+        border: 1px solid #ddcdb9;
+        padding: 7px 12px;
+        font-size: 12px;
+        background: #fdf8f0;
+      }
+
+      .select-wrapper {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .select-wrapper select {
+        padding-right: 26px;
+      }
+
+      .select-wrapper::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 9px;
+        color: #7c6a55;
+        pointer-events: none;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f1e4d4;
+      }
+
+      th,
+      td {
+        padding: 8px 6px;
+        border-bottom: 1px solid #efe2d3;
+        text-align: left;
+      }
+
+      th {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        color: #7b623f;
+      }
+
+      .prop-title {
+        font-weight: 500;
+      }
+
+      .prop-meta {
+        font-size: 11px;
+        color: #7c6a55;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 11px;
+      }
+
+      .status-active {
+        background: #e3f5e5;
+        color: #216234;
+      }
+
+      .status-pending {
+        background: #fff2cc;
+        color: #7b5b12;
+      }
+
+      .status-suspended {
+        background: #f9e0dd;
+        color: #a13f3a;
+      }
+
+      .field-row {
+        margin-bottom: 8px;
+      }
+
+      .field-row label {
+        display: block;
+        font-size: 11px;
+        color: #7c6a55;
+        margin-bottom: 2px;
+      }
+
+      .field-row input,
+      .field-row select,
+      .field-row textarea {
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #ddcdb9;
+        padding: 6px 9px;
+        font-size: 12px;
+        background: #fdf8f0;
+      }
+
+      .field-row textarea {
+        resize: vertical;
+        min-height: 60px;
+      }
+
+      .inline-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: #6a5641;
+      }
+
+      .inline-checkbox input {
+        width: auto;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: none;
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .btn-primary {
+        background: #3a6b3c;
+        color: #fff;
+      }
+
+      .btn-secondary {
+        background: #f7efe4;
+        color: #6a5641;
+        border: 1px solid #ddcdb9;
+      }
+
+      .add-filter-btn {
+        background: #ad986e;
+        color: #fff;
+        border: none;
+        padding: 7px 16px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+      }
+
+      .add-filter-btn:hover {
+        background: #997f54;
+      }
+
+      .reset-icon {
+        width: 32px;
+        height: 32px;
+        border: 1px solid #ddcdb9;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #7c6a55;
+        background: #fffaf2;
+        cursor: pointer;
+        font-size: 13px;
+      }
+
+      .reset-icon:hover {
+        border-color: #ad986e;
+        color: #ad986e;
+      }
+
+      .sort-select {
+        min-width: 170px;
+        border-radius: 999px;
+        border: 1px solid #ddcdb9;
+        background: #f1e4d4;
+        padding: 7px 28px 7px 12px;
+        font-size: 12px;
+        color: #6a5641;
+      }
+
+      .view-options {
+        display: inline-flex;
+        gap: 6px;
+        margin-left: 4px;
+      }
+
+      .view-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        border: 1px solid #ddcdb9;
+        background: #fffaf2;
+        font-size: 11px;
+        color: #7c6a55;
+        cursor: pointer;
+      }
+
+      .view-btn.active {
+        background: #ad986e;
+        color: #fffaf2;
+        border-color: #ad986e;
+      }
+
+      .view-btn:not(.active):hover {
+        border-color: #ad986e;
+        color: #ad986e;
+      }
+
+      .btn-sm {
+        padding: 4px 10px;
+        font-size: 11px;
+      }
+
+      .empty-state {
+        text-align: center;
+        font-size: 12px;
+        color: #7c6a55;
+        padding: 14px 0;
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="page-header">
+        <div class="page-title">Property Detail Editing (Admin Support)</div>
+        <div class="page-subtitle">
+          Screen for the support team to help agents edit approved fields only
+          (title, location, station, price, visibility flag, etc.).
+        </div>
+        <div class="pill">Property Management · Support editing</div>
+      </div>
+
+      <div class="layout">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Property queue</div>
+            <div class="card-subtitle">
+              Properties with edit requests or cases where support needs to
+              review content.
+            </div>
+          </div>
+
+          <div class="filters">
+            <input
+              id="searchInput"
+              type="text"
+              placeholder="Search by property ID, title, agent"
+            />
+
+            <div class="select-wrapper">
+              <select id="statusFilter">
+                <option value="">Property Status</option>
+                <option value="Active">Active</option>
+                <option value="Pending">Pending</option>
+                <option value="Suspended">Suspended</option>
+              </select>
+            </div>
+
+            <div class="select-wrapper">
+              <select id="requestFilter">
+                <option value="">Request Type</option>
+                <option value="Text fix">Text fix</option>
+                <option value="Compliance">Compliance</option>
+                <option value="Price change">Price change</option>
+              </select>
+            </div>
+
+            <button class="add-filter-btn" type="button">
+              Add/Remove Filters
+            </button>
+
+            <button class="reset-icon" id="clearFilterBtn" type="button">
+              ⟳
+            </button>
+
+            <div class="select-wrapper" style="margin-left: auto">
+              <select class="sort-select" id="sortSelectSupport">
+                <option value="default">Newest (demo order)</option>
+                <option value="status_active">Status: Active first</option>
+                <option value="status_pending">Status: Pending first</option>
+              </select>
+            </div>
+
+            <div class="view-options">
+              <button class="view-btn active" type="button">G</button>
+              <button class="view-btn" type="button">M</button>
+              <button class="view-btn" type="button">L</button>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Agent</th>
+                <th>Request</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="queueBody"></tbody>
+          </table>
+          <div class="empty-state" id="queueEmpty" style="display: none">
+            No properties waiting for admin support.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Limited-scope editing</div>
+            <div class="card-subtitle">
+              Only edit allowed fields; every change must have an admin note and
+              notify the agent.
+            </div>
+          </div>
+          <div id="formContainer">
+            <div class="card-subtitle">
+              Select a property in the list on the left to open the edit form.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const queue = [
+        {
+          id: "P-1001",
+          title: "2LDK apartment near Shinjuku",
+          agent: "Sakura Realty",
+          status: "Active",
+          requestType: "Text fix",
+          requestNote: "Please fix Japanese spelling in headline.",
+          location: "Tokyo · Shinjuku",
+          station: "Shinjuku (5 min)",
+          price: 98000000,
+          visibility: "Public",
+          adminNote: "",
+        },
+        {
+          id: "P-1003",
+          title: "Land plot near Osaka station",
+          agent: "Osaka Prime Realty",
+          status: "Suspended",
+          requestType: "Compliance",
+          requestNote: "Update description to match new local regulation.",
+          location: "Osaka · Kita-ku",
+          station: "Osaka (8 min)",
+          price: 65000000,
+          visibility: "Hidden",
+          adminNote: "",
+        },
+        {
+          id: "P-1004",
+          title: "1K studio near Ueno",
+          agent: "Hikari Homes",
+          status: "Pending",
+          requestType: "Price change",
+          requestNote: "Agent requested to lower price from ¥85M to ¥82M.",
+          location: "Tokyo · Taito-ku",
+          station: "Ueno (7 min)",
+          price: 85000000,
+          visibility: "Public",
+          adminNote: "",
+        },
+      ];
+
+      let filters = { search: "", status: "", requestType: "" };
+      let sortMode = "default";
+      let selectedId = null;
+
+      function statusClass(status) {
+        switch (status) {
+          case "Active":
+            return "status-active";
+          case "Pending":
+            return "status-pending";
+          case "Suspended":
+            return "status-suspended";
+          default:
+            return "";
+        }
+      }
+
+      function applyFilters() {
+        const search = filters.search.toLowerCase();
+        const base = queue.filter((q) => {
+          if (
+            search &&
+            !(
+              q.id.toLowerCase().includes(search) ||
+              q.title.toLowerCase().includes(search) ||
+              q.agent.toLowerCase().includes(search)
+            )
+          ) {
+            return false;
+          }
+          if (filters.status && q.status !== filters.status) return false;
+          if (filters.requestType && q.requestType !== filters.requestType)
+            return false;
+          return true;
+        });
+
+        if (sortMode === "status_active" || sortMode === "status_pending") {
+          const orderMap =
+            sortMode === "status_active"
+              ? { Active: 0, Pending: 1, Suspended: 2 }
+              : { Pending: 0, Active: 1, Suspended: 2 };
+          return base.slice().sort((a, b) => {
+            const va = orderMap[a.status] ?? 99;
+            const vb = orderMap[b.status] ?? 99;
+            return va - vb;
+          });
+        }
+
+        return base;
+      }
+
+      function renderQueue() {
+        const tbody = document.getElementById("queueBody");
+        const empty = document.getElementById("queueEmpty");
+        tbody.innerHTML = "";
+        const data = applyFilters();
+        if (!data.length) {
+          empty.style.display = "block";
+          return;
+        }
+        empty.style.display = "none";
+        data.forEach((p) => {
+          const tr = document.createElement("tr");
+          tr.style.cursor = "pointer";
+          tr.innerHTML = `
+            <td>
+              <div class="prop-title">${p.title}</div>
+              <div class="prop-meta">${p.id} · ${p.location}</div>
+            </td>
+            <td>${p.agent}</td>
+            <td>${p.requestType}</td>
+            <td><span class="status-pill ${statusClass(p.status)}">${p.status}</span></td>
+          `;
+          tr.addEventListener("click", () => {
+            selectedId = p.id;
+            renderForm();
+          });
+          tbody.appendChild(tr);
+        });
+      }
+
+      function renderForm() {
+        const container = document.getElementById("formContainer");
+        const p = queue.find((x) => x.id === selectedId);
+        if (!p) {
+          container.innerHTML =
+            '<div class="card-subtitle">Select a property in the list on the left to open the edit form.</div>';
+          return;
+        }
+        container.innerHTML = `
+          <div class="field-row">
+            <label>Property ID</label>
+            <input type="text" value="${p.id}" disabled />
+          </div>
+          <div class="field-row">
+            <label>Agent</label>
+            <input type="text" value="${p.agent}" disabled />
+          </div>
+          <div class="field-row">
+            <label>Request from agent</label>
+            <textarea disabled>${p.requestNote}</textarea>
+          </div>
+          <div class="field-row">
+            <label>Title (editable)</label>
+            <input id="fieldTitle" type="text" value="${p.title}" />
+          </div>
+          <div class="field-row">
+            <label>Location (editable)</label>
+            <input id="fieldLocation" type="text" value="${p.location}" />
+          </div>
+          <div class="field-row">
+            <label>Nearest station (editable)</label>
+            <input id="fieldStation" type="text" value="${p.station}" />
+          </div>
+          <div class="field-row">
+            <label>Price (editable)</label>
+            <input id="fieldPrice" type="number" value="${p.price}" />
+          </div>
+          <div class="field-row">
+            <label>Visibility</label>
+            <select id="fieldVisibility">
+              <option value="Public" ${
+                p.visibility === "Public" ? "selected" : ""
+              }>Public</option>
+              <option value="Hidden" ${
+                p.visibility === "Hidden" ? "selected" : ""
+              }>Hidden</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label>Admin note (required for any change)</label>
+            <textarea id="fieldAdminNote" placeholder="Explain why you change these fields.">${
+              p.adminNote || ""
+            }</textarea>
+          </div>
+          <div class="field-row">
+            <label class="inline-checkbox">
+              <input type="checkbox" id="fieldNeedConfirm" />
+              Require agent confirmation before change goes live
+            </label>
+          </div>
+          <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" id="btnSave">Save change (demo)</button>
+            <button class="btn btn-secondary btn-sm" id="btnMarkDone">Mark request completed</button>
+          </div>
+          <div style="margin-top:10px; font-size:11px; color:#7c6a55;">
+            Changes here only update in-memory demo data. In production you
+            should log who/when/what, notify the agent and possibly require an
+            internal double-check for sensitive cases.
+          </div>
+        `;
+
+        document.getElementById("btnSave").onclick = () => saveChanges();
+        document.getElementById("btnMarkDone").onclick = () => markCompleted();
+      }
+
+      function saveChanges() {
+        const p = queue.find((x) => x.id === selectedId);
+        if (!p) return;
+        const note = document.getElementById("fieldAdminNote").value.trim();
+        if (!note) {
+          alert("Admin note is required to save changes.");
+          return;
+        }
+        p.title = document.getElementById("fieldTitle").value;
+        p.location = document.getElementById("fieldLocation").value;
+        p.station = document.getElementById("fieldStation").value;
+        p.price = Number(
+          document.getElementById("fieldPrice").value || p.price || 0,
+        );
+        p.visibility = document.getElementById("fieldVisibility").value;
+        p.adminNote = note;
+        const needConfirm = document.getElementById("fieldNeedConfirm").checked;
+        alert(
+          "Changes stored in demo data. " +
+            (needConfirm
+              ? "Agent confirmation required (simulated)."
+              : "Change considered live (simulated)."),
+        );
+        renderQueue();
+      }
+
+      function markCompleted() {
+        const p = queue.find((x) => x.id === selectedId);
+        if (!p) return;
+        if (
+          !confirm(
+            `Mark request for ${p.id} as completed? (demo only, no real impact)`,
+          )
+        ) {
+          return;
+        }
+        p.status = "Active";
+        renderQueue();
+        renderForm();
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderQueue();
+        renderForm();
+
+        document
+          .getElementById("searchInput")
+          .addEventListener("input", (e) => {
+            filters.search = e.target.value;
+            renderQueue();
+          });
+        document
+          .getElementById("statusFilter")
+          .addEventListener("change", (e) => {
+            filters.status = e.target.value;
+            renderQueue();
+          });
+        document
+          .getElementById("requestFilter")
+          .addEventListener("change", (e) => {
+            filters.requestType = e.target.value;
+            renderQueue();
+          });
+
+        const clearBtn = document.getElementById("clearFilterBtn");
+        if (clearBtn) {
+          clearBtn.addEventListener("click", () => {
+            filters = { search: "", status: "", requestType: "" };
+            document.getElementById("searchInput").value = "";
+            document.getElementById("statusFilter").value = "";
+            document.getElementById("requestFilter").value = "";
+            const sortSel = document.getElementById("sortSelectSupport");
+            if (sortSel) sortSel.value = "default";
+            sortMode = "default";
+            renderQueue();
+          });
+        }
+
+        const sortSel = document.getElementById("sortSelectSupport");
+        if (sortSel) {
+          sortSel.addEventListener("change", (e) => {
+            sortMode = e.target.value || "default";
+            renderQueue();
+          });
+        }
+
+        document.querySelectorAll(".view-btn").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            document
+              .querySelectorAll(".view-btn")
+              .forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

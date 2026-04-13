@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AgentLeagueTable</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f3eee5;
+        color: #2b2118;
+      }
+
+      .page-wrapper {
+        min-height: 100vh;
+        padding: 20px 24px 32px;
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .page-title {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .page-title h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a120b;
+      }
+
+      .page-title span {
+        font-size: 13px;
+        color: #7b6751;
+      }
+
+      .filters {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .filters-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .filters label {
+        font-size: 12px;
+        color: #6b5740;
+        margin-right: 4px;
+      }
+
+      .filters select {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #d0c2aa;
+        background: #faf6ee;
+        font-size: 13px;
+      }
+
+      .league-section {
+        background: #ffffff;
+        border-radius: 10px;
+        border: 1px solid #e2d4bf;
+        padding: 12px 14px 16px;
+      }
+
+      .league-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .league-header h3 {
+        font-size: 15px;
+        font-weight: 600;
+        color: #2b2118;
+      }
+
+      .btn-export {
+        padding: 6px 12px;
+        background: #c79e4c;
+        color: #fff;
+        border-radius: 6px;
+        border: none;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .btn-export:hover {
+        background: #b5893c;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f6eee1;
+      }
+
+      th,
+      td {
+        padding: 8px 6px;
+        text-align: left;
+        border-bottom: 1px solid #eee0cf;
+      }
+
+      th {
+        font-weight: 600;
+        color: #5b4632;
+        cursor: pointer;
+      }
+
+      tbody tr:nth-child(even) {
+        background: #fdf8f0;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .status-active {
+        background: #e3f5ec;
+        color: #0f7a4a;
+      }
+
+      .status-inactive {
+        background: #f8e4e4;
+        color: #b03232;
+      }
+
+      .star {
+        color: #c79e4c;
+        margin-right: 1px;
+      }
+
+      .top-rank-1 {
+        background: linear-gradient(90deg, #fff7e0, #fbe6c0);
+      }
+
+      .top-rank-2 {
+        background: #f5f2ea;
+      }
+
+      .top-rank-3 {
+        background: #f8f4ee;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script
+      src="https://unpkg.com/react@18/umd/react.development.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+      crossorigin
+    ></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <script type="text/babel">
+      const { useState, useMemo } = React;
+
+      function AgentLeagueTable() {
+        const [locationFilter, setLocationFilter] = useState("all");
+        const [subscriptionFilter, setSubscriptionFilter] = useState("all");
+        const [sortKey, setSortKey] = useState("rank");
+        const [sortDirection, setSortDirection] = useState("asc");
+
+        const agents = [
+          {
+            rank: 1,
+            name: "Tokyo Prime Homes",
+            location: "Tokyo",
+            subscription: "Enterprise",
+            propertiesListed: 320,
+            propertiesSold: 210,
+            adSpend: 820000,
+            totalSpend: 1240000,
+            rating: 4.9,
+            reviews: 218,
+            status: "Active",
+          },
+          {
+            rank: 2,
+            name: "Sakura Realty",
+            location: "Tokyo",
+            subscription: "Premium",
+            propertiesListed: 290,
+            propertiesSold: 185,
+            adSpend: 640000,
+            totalSpend: 940000,
+            rating: 4.7,
+            reviews: 176,
+            status: "Active",
+          },
+          {
+            rank: 3,
+            name: "Osaka Living",
+            location: "Osaka",
+            subscription: "Standard",
+            propertiesListed: 260,
+            propertiesSold: 160,
+            adSpend: 430000,
+            totalSpend: 710000,
+            rating: 4.5,
+            reviews: 142,
+            status: "Active",
+          },
+          {
+            rank: 4,
+            name: "Nagoya Estate",
+            location: "Nagoya",
+            subscription: "Standard",
+            propertiesListed: 230,
+            propertiesSold: 140,
+            adSpend: 310000,
+            totalSpend: 560000,
+            rating: 4.2,
+            reviews: 101,
+            status: "Inactive",
+          },
+          {
+            rank: 5,
+            name: "Fukuoka City Homes",
+            location: "Fukuoka",
+            subscription: "Basic",
+            propertiesListed: 190,
+            propertiesSold: 118,
+            adSpend: 210000,
+            totalSpend: 360000,
+            rating: 4.0,
+            reviews: 86,
+            status: "Active",
+          },
+          {
+            rank: 6,
+            name: "Kyoto View",
+            location: "Kyoto",
+            subscription: "Premium",
+            propertiesListed: 175,
+            propertiesSold: 112,
+            adSpend: 280000,
+            totalSpend: 520000,
+            rating: 4.4,
+            reviews: 93,
+            status: "Active",
+          },
+        ];
+
+        const filteredAgents = useMemo(() => {
+          return agents
+            .filter((a) => {
+              if (locationFilter !== "all" && a.location !== locationFilter)
+                return false;
+              if (
+                subscriptionFilter !== "all" &&
+                a.subscription.toLowerCase() !== subscriptionFilter
+              )
+                return false;
+              return true;
+            })
+            .sort((a, b) => {
+              const dir = sortDirection === "asc" ? 1 : -1;
+              if (sortKey === "rank") return (a.rank - b.rank) * dir;
+              if (sortKey === "listed")
+                return (a.propertiesListed - b.propertiesListed) * dir;
+              if (sortKey === "sold")
+                return (a.propertiesSold - b.propertiesSold) * dir;
+              if (sortKey === "spend")
+                return (a.totalSpend - b.totalSpend) * dir;
+              return 0;
+            });
+        }, [locationFilter, subscriptionFilter, sortKey, sortDirection]);
+
+        const handleSort = (key) => {
+          if (sortKey === key) {
+            setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+          } else {
+            setSortKey(key);
+            setSortDirection("desc");
+          }
+        };
+
+        const handleExportExcel = () => {
+          const header = [
+            "Rank",
+            "Agent Name",
+            "Location",
+            "Subscription",
+            "Properties Listed",
+            "Properties Sold",
+            "Total Ad Spend",
+            "Total Spend",
+            "Star Rating",
+            "Review Count",
+            "Status",
+          ];
+          const rows = filteredAgents.map((a) => [
+            a.rank,
+            a.name,
+            a.location,
+            a.subscription,
+            a.propertiesListed,
+            a.propertiesSold,
+            a.adSpend,
+            a.totalSpend,
+            a.rating,
+            a.reviews,
+            a.status,
+          ]);
+
+          const csvContent = [header, ...rows]
+            .map((r) =>
+              r
+                .map((v) => {
+                  const s = String(v).replace(/"/g, '""');
+                  return `"${s}"`;
+                })
+                .join(","),
+            )
+            .join("\n");
+
+          const blob = new Blob([csvContent], {
+            type: "text/csv;charset=utf-8;",
+          });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "agent_league_table.csv";
+          link.click();
+          URL.revokeObjectURL(url);
+        };
+
+        const renderStars = (rating) => {
+          const full = Math.floor(rating);
+          const half = rating - full >= 0.5;
+          const stars = [];
+          for (let i = 0; i < full; i++) {
+            stars.push(
+              <span key={"f" + i} className="star">
+                ★
+              </span>,
+            );
+          }
+          if (half)
+            stars.push(
+              <span key="h" className="star">
+                ☆
+              </span>,
+            );
+          return stars;
+        };
+
+        return (
+          <div className="page-wrapper">
+            <div className="page-header">
+              <div className="page-title">
+                <h1>Agent League Table</h1>
+                <span>
+                  Competitive, leaderboard-style view of agent performance on
+                  Yuushi
+                </span>
+              </div>
+              <div className="filters">
+                <div className="filters-group">
+                  <label>Location</label>
+                  <select
+                    value={locationFilter}
+                    onChange={(e) => setLocationFilter(e.target.value)}
+                  >
+                    <option value="all">All</option>
+                    <option value="Tokyo">Tokyo</option>
+                    <option value="Osaka">Osaka</option>
+                    <option value="Nagoya">Nagoya</option>
+                    <option value="Fukuoka">Fukuoka</option>
+                    <option value="Kyoto">Kyoto</option>
+                  </select>
+                </div>
+                <div className="filters-group">
+                  <label>Subscription</label>
+                  <select
+                    value={subscriptionFilter}
+                    onChange={(e) => setSubscriptionFilter(e.target.value)}
+                  >
+                    <option value="all">All</option>
+                    <option value="basic">Basic</option>
+                    <option value="standard">Standard</option>
+                    <option value="premium">Premium</option>
+                    <option value="enterprise">Enterprise</option>
+                  </select>
+                </div>
+                <button className="btn-export" onClick={handleExportExcel}>
+                  Download Excel
+                </button>
+              </div>
+            </div>
+
+            <div className="league-section">
+              <div className="league-header">
+                <h3>Agent performance rankings</h3>
+                <span style={{ fontSize: 12, color: "#8c775f" }}>
+                  Sort by listings, sales or spend to re-order the leaderboard
+                </span>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th onClick={() => handleSort("rank")}>Rank</th>
+                    <th>Agent Name</th>
+                    <th>Location</th>
+                    <th onClick={() => handleSort("listed")}>
+                      Properties Listed
+                    </th>
+                    <th onClick={() => handleSort("sold")}>Properties Sold</th>
+                    <th>Total Ad Spend</th>
+                    <th onClick={() => handleSort("spend")}>Total Spend</th>
+                    <th>Star Rating</th>
+                    <th>Review Count</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAgents.map((a, idx) => {
+                    const rankClass =
+                      a.rank === 1
+                        ? "top-rank-1"
+                        : a.rank === 2
+                          ? "top-rank-2"
+                          : a.rank === 3
+                            ? "top-rank-3"
+                            : "";
+                    return (
+                      <tr key={a.rank} className={rankClass}>
+                        <td>#{a.rank}</td>
+                        <td>{a.name}</td>
+                        <td>{a.location}</td>
+                        <td>{a.propertiesListed}</td>
+                        <td>{a.propertiesSold}</td>
+                        <td>{`¥ ${a.adSpend.toLocaleString()}`}</td>
+                        <td>{`¥ ${a.totalSpend.toLocaleString()}`}</td>
+                        <td>
+                          {renderStars(a.rating)}
+                          <span style={{ fontSize: 11 }}>({a.rating})</span>
+                        </td>
+                        <td>{a.reviews}</td>
+                        <td>
+                          <span
+                            className={
+                              "status-pill " +
+                              (a.status === "Active"
+                                ? "status-active"
+                                : "status-inactive")
+                            }
+                          >
+                            {a.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      }
+
+      const rootElement = document.getElementById("root");
+      const root = ReactDOM.createRoot(rootElement);
+      root.render(<AgentLeagueTable />);
+    </script>
+  </body>
+</html>

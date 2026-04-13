@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KPIDashboard</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f3eee5;
+        color: #2b2118;
+      }
+
+      .page-wrapper {
+        min-height: 100vh;
+        padding: 20px 24px 32px;
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .page-title {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .page-title h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a120b;
+      }
+
+      .page-title span {
+        font-size: 13px;
+        color: #7b6751;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .controls-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .controls label {
+        font-size: 12px;
+        color: #6b5740;
+        margin-right: 4px;
+      }
+
+      .controls select,
+      .controls button.toggle-btn {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #d0c2aa;
+        background: #faf6ee;
+        font-size: 13px;
+        cursor: pointer;
+      }
+
+      .toggle-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .toggle-pill {
+        display: inline-flex;
+        border-radius: 999px;
+        background: #e8ddc7;
+        padding: 2px;
+      }
+
+      .toggle-pill span {
+        padding: 3px 8px;
+        font-size: 11px;
+        border-radius: 999px;
+      }
+
+      .toggle-pill span.active {
+        background: #c79e4c;
+        color: #fff;
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+
+      @media (max-width: 1200px) {
+        .kpi-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 768px) {
+        .kpi-grid {
+          grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+      }
+
+      .kpi-card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 14px 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        border: 1px solid #e2d4bf;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .kpi-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .kpi-label {
+        font-size: 12px;
+        color: #7b6751;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f130c;
+      }
+
+      .kpi-sub {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      .kpi-split {
+        font-size: 11px;
+        color: #5b4632;
+      }
+
+      .kpi-trend {
+        font-size: 11px;
+        font-weight: 600;
+        color: #0f7a4a;
+      }
+
+      .kpi-trend.down {
+        color: #b03232;
+      }
+
+      .section-group {
+        margin-bottom: 22px;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .section-header h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #2b2118;
+      }
+
+      .section-header span {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      .charts-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      @media (max-width: 900px) {
+        .charts-grid-2 {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .chart-card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 12px 14px 4px;
+        border: 1px solid #e2d4bf;
+        min-height: 220px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .chart-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #483729;
+        margin-bottom: 8px;
+      }
+
+      .chart-wrapper {
+        position: relative;
+        flex: 1;
+        min-height: 180px;
+      }
+
+      .btn-export {
+        padding: 6px 12px;
+        background: #c79e4c;
+        color: #fff;
+        border-radius: 6px;
+        border: none;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .btn-export:hover {
+        background: #b5893c;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <!-- React & Chart.js dependencies -->
+    <script
+      src="https://unpkg.com/react@18/umd/react.development.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+      crossorigin
+    ></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
+
+      function KPICard({
+        label,
+        value,
+        subtitle,
+        trend,
+        trendDirection,
+        split,
+      }) {
+        return (
+          <div className="kpi-card">
+            <div className="kpi-header-row">
+              <div className="kpi-label">{label}</div>
+              {trend && (
+                <div
+                  className={
+                    "kpi-trend" + (trendDirection === "down" ? " down" : "")
+                  }
+                >
+                  {trend}
+                </div>
+              )}
+            </div>
+            <div className="kpi-value">{value}</div>
+            {subtitle && <div className="kpi-sub">{subtitle}</div>}
+            {split && <div className="kpi-split">{split}</div>}
+          </div>
+        );
+      }
+
+      function BaseChart({ type, title, data, options }) {
+        const canvasRef = useRef(null);
+
+        useEffect(() => {
+          if (!canvasRef.current) return;
+          const ctx = canvasRef.current.getContext("2d");
+          const chart = new Chart(ctx, {
+            type,
+            data,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: true,
+                  labels: { boxWidth: 12, font: { size: 11 } },
+                },
+                tooltip: {
+                  mode: "index",
+                  intersect: false,
+                },
+              },
+              scales:
+                type === "pie"
+                  ? {}
+                  : {
+                      x: {
+                        ticks: { font: { size: 10 } },
+                      },
+                      y: {
+                        beginAtZero: true,
+                        ticks: { font: { size: 10 } },
+                      },
+                    },
+              ...options,
+            },
+          });
+
+          return () => chart.destroy();
+        }, [type, JSON.stringify(data), JSON.stringify(options)]);
+
+        return (
+          <div className="chart-card">
+            <div className="chart-title">{title}</div>
+            <div className="chart-wrapper">
+              <canvas ref={canvasRef}></canvas>
+            </div>
+          </div>
+        );
+      }
+
+      function KPIDashboard() {
+        const [timeRange, setTimeRange] = useState("30d");
+        const [userType, setUserType] = useState("all");
+        const [activeMetric, setActiveMetric] = useState("DAU");
+
+        const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+        const totalUsersData = {
+          labels: days,
+          datasets: [
+            {
+              label: "Total users",
+              data: [12000, 12320, 12650, 12980, 13340, 13610, 13920],
+              borderColor: "#c79e4c",
+              backgroundColor: "rgba(199, 158, 76, 0.18)",
+              tension: 0.3,
+              fill: true,
+            },
+          ],
+        };
+
+        const dauWauMauTrendData = {
+          labels: days,
+          datasets: [
+            {
+              label: "DAU",
+              data: [820, 870, 910, 940, 990, 1040, 1100],
+              borderColor: "#c79e4c",
+              backgroundColor: "rgba(199, 158, 76, 0.1)",
+              tension: 0.3,
+              fill: true,
+            },
+            {
+              label: "WAU",
+              data: [2300, 2400, 2480, 2550, 2620, 2700, 2780],
+              borderColor: "#3c6e71",
+              backgroundColor: "rgba(60, 110, 113, 0.12)",
+              tension: 0.3,
+              fill: true,
+            },
+            {
+              label: "MAU",
+              data: [7800, 7900, 8020, 8150, 8280, 8420, 8560],
+              borderColor: "#8fb3a2",
+              backgroundColor: "rgba(143, 179, 162, 0.12)",
+              tension: 0.3,
+              fill: true,
+            },
+          ],
+        };
+
+        const newRegistrationsData = {
+          labels: days,
+          datasets: [
+            {
+              label: "New registrations",
+              data: [120, 140, 160, 155, 180, 175, 190],
+              backgroundColor: "#cfb27a",
+              borderRadius: 6,
+            },
+          ],
+        };
+
+        const listingsPerDayData = {
+          labels: days,
+          datasets: [
+            {
+              label: "Listings created",
+              data: [60, 64, 72, 70, 75, 78, 82],
+              backgroundColor: "#8fb3a2",
+              borderRadius: 6,
+            },
+          ],
+        };
+
+        const revenueTrendData = {
+          labels: days,
+          datasets: [
+            {
+              label: "Revenue (¥ x 1,000)",
+              data: [580, 610, 640, 670, 710, 740, 790],
+              borderColor: "#b76e79",
+              backgroundColor: "rgba(183, 110, 121, 0.18)",
+              tension: 0.3,
+              fill: true,
+            },
+          ],
+        };
+
+        const metricsForExport = {
+          header: [
+            "Day",
+            "Total Users",
+            "DAU",
+            "WAU",
+            "MAU",
+            "New Registrations",
+            "Listings Created",
+            "Revenue (x1000)",
+          ],
+          rows: days.map((d, i) => [
+            d,
+            totalUsersData.datasets[0].data[i],
+            dauWauMauTrendData.datasets[0].data[i],
+            dauWauMauTrendData.datasets[1].data[i],
+            dauWauMauTrendData.datasets[2].data[i],
+            newRegistrationsData.datasets[0].data[i],
+            listingsPerDayData.datasets[0].data[i],
+            revenueTrendData.datasets[0].data[i],
+          ]),
+        };
+
+        const handleExportExcel = () => {
+          const { header, rows } = metricsForExport;
+          const csvContent = [header, ...rows]
+            .map((r) =>
+              r
+                .map((v) => {
+                  const s = String(v).replace(/"/g, '""');
+                  return `"${s}"`;
+                })
+                .join(","),
+            )
+            .join("\n");
+
+          const blob = new Blob([csvContent], {
+            type: "text/csv;charset=utf-8;",
+          });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "yuushi_kpi_dashboard.csv";
+          link.click();
+          URL.revokeObjectURL(url);
+        };
+
+        const activeUsersValue =
+          activeMetric === "DAU"
+            ? "1,080"
+            : activeMetric === "WAU"
+              ? "2,720"
+              : "8,540";
+
+        return (
+          <div className="page-wrapper">
+            <div className="page-header">
+              <div className="page-title">
+                <h1>Platform KPI Overview</h1>
+                <span>
+                  Executive-level KPIs for Yuushi real estate data platform
+                </span>
+              </div>
+              <div className="controls">
+                <div className="controls-group">
+                  <label>Date range</label>
+                  <select
+                    value={timeRange}
+                    onChange={(e) => setTimeRange(e.target.value)}
+                  >
+                    <option value="today">Today</option>
+                    <option value="7d">Last 7 days</option>
+                    <option value="30d">Last 30 days</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+                <div className="controls-group">
+                  <label>User type</label>
+                  <select
+                    value={userType}
+                    onChange={(e) => setUserType(e.target.value)}
+                  >
+                    <option value="all">All users</option>
+                    <option value="end">End users</option>
+                    <option value="agent">Agents</option>
+                  </select>
+                </div>
+                <button className="btn-export" onClick={handleExportExcel}>
+                  Export KPIs (Excel)
+                </button>
+              </div>
+            </div>
+
+            <div className="kpi-grid">
+              <KPICard
+                label="Total Users"
+                value="18,920"
+                subtitle="All active accounts on Yuushi"
+                split="End users: 13,400 · Agents: 5,520"
+                trend="+4.0% vs last 30 days"
+              />
+              <div className="kpi-card">
+                <div className="kpi-header-row">
+                  <div className="kpi-label">Active Users</div>
+                  <div className="toggle-pill">
+                    {["DAU", "WAU", "MAU"].map((m) => (
+                      <span
+                        key={m}
+                        className={m === activeMetric ? "active" : ""}
+                        onClick={() => setActiveMetric(m)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        {m}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="kpi-value">{activeUsersValue}</div>
+                <div className="kpi-sub">Based on selected metric</div>
+                <div className="kpi-trend">+3.3% vs previous period</div>
+              </div>
+              <KPICard
+                label="Total Revenue"
+                value="¥ 7.9M"
+                subtitle="Subscription & ad revenue (last 30 days)"
+                trend="+6.1% vs previous 30 days"
+              />
+              <KPICard
+                label="Total Active Ads"
+                value="3,420"
+                subtitle="Live listings across all agents"
+                trend="+2.2% vs last week"
+              />
+              <KPICard
+                label="Total Inquiries"
+                value="12,380"
+                subtitle="Buyer / renter contact events"
+                trend="+5.8% vs last month"
+              />
+              <KPICard
+                label="Average Session Time"
+                value="06m 58s"
+                subtitle="Per engaged session across all users"
+                trend="+0.9% vs last 30 days"
+              />
+            </div>
+
+            <div className="section-group">
+              <div className="section-header">
+                <h2>Usage</h2>
+                <span>User growth & engagement</span>
+              </div>
+              <div className="charts-grid-2">
+                <BaseChart
+                  type="line"
+                  title="Total users growth over time"
+                  data={totalUsersData}
+                />
+                <BaseChart
+                  type="line"
+                  title="DAU / WAU / MAU trend"
+                  data={dauWauMauTrendData}
+                />
+              </div>
+              <div style={{ marginTop: 14 }} className="charts-grid-2">
+                <BaseChart
+                  type="bar"
+                  title="New registrations per day"
+                  data={newRegistrationsData}
+                />
+                <BaseChart
+                  type="bar"
+                  title="Property listings created per day"
+                  data={listingsPerDayData}
+                />
+              </div>
+            </div>
+
+            <div className="section-group">
+              <div className="section-header">
+                <h2>Revenue</h2>
+                <span>Monetisation performance</span>
+              </div>
+              <BaseChart
+                type="line"
+                title="Revenue trend over time"
+                data={revenueTrendData}
+              />
+            </div>
+          </div>
+        );
+      }
+
+      const rootElement = document.getElementById("root");
+      const root = ReactDOM.createRoot(rootElement);
+      root.render(<KPIDashboard />);
+    </script>
+  </body>
+</html>

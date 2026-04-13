@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Market Data Analysis</title>
+    <style>
+      :root {
+        --bg-body: #f5f3ef;
+        --bg-card: #fffaf2;
+        --border-subtle: #eadccd;
+        --accent: #c26b41;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+        --badge-green: #2f855a;
+        --badge-gray: #4a5568;
+        --badge-orange: #b7791f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px 24px 32px;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        letter-spacing: 0.02em;
+      }
+
+      .page-subtitle {
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 1.5fr 1.5fr;
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .card {
+        background-color: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        padding: 14px 16px 16px;
+        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .toolbar-right {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 11px;
+        font-size: 11px;
+        background-color: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+        color: var(--text-main);
+      }
+
+      .btn-ghost {
+        background: transparent;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 140px;
+      }
+
+      .field-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+
+      select,
+      input[type="text"] {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      select:focus,
+      input[type="text"]:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .kpi-card {
+        border-radius: 10px;
+        border: 1px dashed var(--border-subtle);
+        padding: 7px 8px;
+        background: #fffdf7;
+        font-size: 12px;
+      }
+
+      .kpi-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .kpi-value {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+
+      .kpi-subtext {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f7efe6;
+      }
+
+      th,
+      td {
+        padding: 7px 8px;
+        text-align: left;
+        border-bottom: 1px solid #efe0d4;
+      }
+
+      th {
+        font-weight: 500;
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      tbody tr {
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+
+      tbody tr:hover {
+        background-color: #f8f1ea;
+      }
+
+      tbody tr.selected-row {
+        background-color: #f1e3d5;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 500;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+
+      .badge-hot {
+        background: #fffaf0;
+        color: var(--badge-orange);
+        border-color: #fbd38d;
+      }
+
+      .badge-stable {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+
+      .badge-cool {
+        background: #edf2f7;
+        color: var(--badge-gray);
+        border-color: #cbd5e0;
+      }
+
+      .detail-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+        margin-bottom: 8px;
+      }
+
+      .detail-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .detail-value {
+        font-size: 12px;
+      }
+
+      .preview-box {
+        border-radius: 10px;
+        border: 1px dashed #deccba;
+        padding: 8px 9px;
+        background: #fffaf1;
+        font-size: 12px;
+        color: var(--text-main);
+        white-space: pre-line;
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Market Data Analysis</h1>
+      <p class="page-subtitle">
+        Phân tích dữ liệu thị trường tổng hợp: giá, volume giao dịch, nhu cầu
+        theo khu vực, thời gian đăng tin, hành vi buyer/seller. Không lộ thông
+        tin cá nhân cấp listing.
+      </p>
+    </div>
+
+    <div class="layout">
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Bộ lọc & KPI thị trường</div>
+            <div class="card-subtitle">
+              Chọn khu vực, loại bất động sản và kỳ phân tích.
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <button id="exportMarketCsv" class="btn btn-ghost" type="button">
+              Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="filters">
+          <div class="field-group">
+            <label class="field-label" for="periodFilter">Kỳ phân tích</label>
+            <select id="periodFilter">
+              <option value="3m">3 tháng</option>
+              <option value="6m">6 tháng</option>
+              <option value="12m">12 tháng</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="regionFilter">Khu vực</label>
+            <select id="regionFilter">
+              <option value="">Toàn quốc (JP)</option>
+              <option value="tokyo">Tokyo</option>
+              <option value="osaka">Osaka</option>
+              <option value="kyoto">Kyoto</option>
+              <option value="hokkaido">Hokkaido</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="typeFilter">Loại BĐS</label>
+            <select id="typeFilter">
+              <option value="">Tất cả</option>
+              <option value="apartment">Apartment</option>
+              <option value="house">House</option>
+              <option value="land">Land</option>
+            </select>
+          </div>
+          <div class="field-group" style="flex: 1 1 220px">
+            <label class="field-label" for="searchMarket">Tìm segment</label>
+            <input
+              id="searchMarket"
+              type="text"
+              placeholder="VD: Tokyo 23 wards family buyer..."
+            />
+          </div>
+        </div>
+
+        <div class="kpi-grid" id="kpiGrid"></div>
+
+        <div style="overflow: auto; max-height: 260px">
+          <table>
+            <thead>
+              <tr>
+                <th>Segment</th>
+                <th>Giá TB (JPY)</th>
+                <th>Volume GD</th>
+                <th>Days-on-market</th>
+                <th>Độ nóng cầu</th>
+              </tr>
+            </thead>
+            <tbody id="marketTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div id="marketEmpty">
+          <div class="card-title">Chi tiết segment thị trường</div>
+          <p class="card-subtitle">
+            Chọn một segment để xem breakdown: xu hướng giá, volume giao dịch và
+            hành vi buyer/seller ở mức aggregate. Không chứa dữ liệu từng
+            listing hay từng khách hàng.
+          </p>
+        </div>
+        <div id="marketDetail" style="display: none">
+          <div class="detail-section-title">Thông tin segment</div>
+          <div class="detail-grid">
+            <div>
+              <div class="detail-label">Segment</div>
+              <div class="detail-value" id="dSegment"></div>
+            </div>
+            <div>
+              <div class="detail-label">Khu vực</div>
+              <div class="detail-value" id="dRegion"></div>
+            </div>
+            <div>
+              <div class="detail-label">Loại BĐS</div>
+              <div class="detail-value" id="dType"></div>
+            </div>
+            <div>
+              <div class="detail-label">Kỳ phân tích</div>
+              <div class="detail-value" id="dPeriod"></div>
+            </div>
+          </div>
+
+          <div class="detail-section-title">Giá & volume</div>
+          <div class="detail-grid">
+            <div>
+              <div class="detail-label">Giá trung vị (demo)</div>
+              <div class="detail-value" id="dPrice"></div>
+            </div>
+            <div>
+              <div class="detail-label">Số giao dịch</div>
+              <div class="detail-value" id="dVolume"></div>
+            </div>
+            <div>
+              <div class="detail-label">Days‑on‑market TB</div>
+              <div class="detail-value" id="dDom"></div>
+            </div>
+            <div>
+              <div class="detail-label">Độ nóng cầu</div>
+              <div class="detail-value" id="dHeat"></div>
+            </div>
+          </div>
+
+          <div class="detail-section-title">Tóm tắt hành vi (demo)</div>
+          <div class="preview-box" id="marketSummary"></div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const segments = [
+        {
+          id: "SEG-TYO-FAM",
+          label: "Tokyo 23 wards - family buyers (3LDK apartment)",
+          region: "tokyo",
+          regionLabel: "Tokyo 23 wards",
+          type: "apartment",
+          period: "3m",
+          medianPrice: 78000000,
+          transactions: 180,
+          dom: 32,
+          heat: "hot",
+        },
+        {
+          id: "SEG-OSK-INV",
+          label: "Osaka city - investor 1R/1K",
+          region: "osaka",
+          regionLabel: "Osaka city",
+          type: "apartment",
+          period: "3m",
+          medianPrice: 16500000,
+          transactions: 240,
+          dom: 21,
+          heat: "hot",
+        },
+        {
+          id: "SEG-KYT-HOUSE",
+          label: "Kyoto - detached house for own use",
+          region: "kyoto",
+          regionLabel: "Kyoto city",
+          type: "house",
+          period: "3m",
+          medianPrice: 52000000,
+          transactions: 74,
+          dom: 48,
+          heat: "stable",
+        },
+        {
+          id: "SEG-HKD-RESORT",
+          label: "Hokkaido resort / secondary home",
+          region: "hokkaido",
+          regionLabel: "Hokkaido coastal",
+          type: "house",
+          period: "3m",
+          medianPrice: 39000000,
+          transactions: 35,
+          dom: 67,
+          heat: "cool",
+        },
+      ];
+
+      let selectedId = null;
+
+      const els = {
+        periodFilter: document.getElementById("periodFilter"),
+        regionFilter: document.getElementById("regionFilter"),
+        typeFilter: document.getElementById("typeFilter"),
+        searchMarket: document.getElementById("searchMarket"),
+        kpiGrid: document.getElementById("kpiGrid"),
+        marketTbody: document.getElementById("marketTbody"),
+        marketEmpty: document.getElementById("marketEmpty"),
+        marketDetail: document.getElementById("marketDetail"),
+        exportMarketCsv: document.getElementById("exportMarketCsv"),
+        dSegment: document.getElementById("dSegment"),
+        dRegion: document.getElementById("dRegion"),
+        dType: document.getElementById("dType"),
+        dPeriod: document.getElementById("dPeriod"),
+        dPrice: document.getElementById("dPrice"),
+        dVolume: document.getElementById("dVolume"),
+        dDom: document.getElementById("dDom"),
+        dHeat: document.getElementById("dHeat"),
+        marketSummary: document.getElementById("marketSummary"),
+      };
+
+      function applyFilters() {
+        const p = els.periodFilter.value;
+        const r = els.regionFilter.value;
+        const t = els.typeFilter.value;
+        const q = els.searchMarket.value.trim().toLowerCase();
+        return segments.filter((s) => {
+          if (p && s.period !== p) return false;
+          if (r && s.region !== r) return false;
+          if (t && s.type !== t) return false;
+          if (!q) return true;
+          return s.label.toLowerCase().includes(q);
+        });
+      }
+
+      function heatBadge(heat) {
+        const span = document.createElement("span");
+        span.classList.add("badge");
+        if (heat === "hot") {
+          span.classList.add("badge-hot");
+          span.textContent = "Hot demand";
+        } else if (heat === "stable") {
+          span.classList.add("badge-stable");
+          span.textContent = "Stable";
+        } else {
+          span.classList.add("badge-cool");
+          span.textContent = "Cool";
+        }
+        return span;
+      }
+
+      function periodLabel(p) {
+        if (p === "3m") return "3 tháng gần nhất";
+        if (p === "6m") return "6 tháng";
+        return "12 tháng";
+      }
+
+      function renderKpis(list) {
+        if (!list.length) {
+          els.kpiGrid.innerHTML = "";
+          return;
+        }
+        let totalTrans = 0;
+        let totalDom = 0;
+        let totalPrice = 0;
+        list.forEach((s) => {
+          totalTrans += s.transactions;
+          totalDom += s.dom;
+          totalPrice += s.medianPrice;
+        });
+        const avgDom = Math.round(totalDom / list.length);
+        const avgPrice = Math.round(totalPrice / list.length);
+
+        els.kpiGrid.innerHTML = "";
+        const mk = (label, value, sub) => {
+          const div = document.createElement("div");
+          div.className = "kpi-card";
+          div.innerHTML = `
+            <div class="kpi-label">${label}</div>
+            <div class="kpi-value">${value}</div>
+            <div class="kpi-subtext">${sub}</div>
+          `;
+          return div;
+        };
+        els.kpiGrid.appendChild(
+          mk(
+            "Giao dịch (demo)",
+            totalTrans.toLocaleString("ja-JP"),
+            "Tổng số giao dịch trong các segment filter.",
+          ),
+        );
+        els.kpiGrid.appendChild(
+          mk(
+            "Giá TB (demo)",
+            avgPrice.toLocaleString("ja-JP") + " JPY",
+            "Trung bình giá trung vị giữa các segment.",
+          ),
+        );
+        els.kpiGrid.appendChild(
+          mk(
+            "Days‑on‑market TB",
+            avgDom + " ngày",
+            "Thời gian đăng tin trung bình.",
+          ),
+        );
+        els.kpiGrid.appendChild(
+          mk(
+            "Số segment",
+            list.length.toString(),
+            "Số nhóm thị trường trong filter.",
+          ),
+        );
+      }
+
+      function renderTable() {
+        const list = applyFilters();
+        renderKpis(list);
+        els.marketTbody.innerHTML = "";
+        list.forEach((s) => {
+          const tr = document.createElement("tr");
+          if (s.id === selectedId) tr.classList.add("selected-row");
+
+          const tdSeg = document.createElement("td");
+          tdSeg.textContent = s.label;
+
+          const tdPrice = document.createElement("td");
+          tdPrice.textContent = s.medianPrice.toLocaleString("ja-JP");
+
+          const tdVol = document.createElement("td");
+          tdVol.textContent = s.transactions.toLocaleString("ja-JP");
+
+          const tdDom = document.createElement("td");
+          tdDom.textContent = s.dom + " ngày";
+
+          const tdHeat = document.createElement("td");
+          tdHeat.appendChild(heatBadge(s.heat));
+
+          tr.appendChild(tdSeg);
+          tr.appendChild(tdPrice);
+          tr.appendChild(tdVol);
+          tr.appendChild(tdDom);
+          tr.appendChild(tdHeat);
+
+          tr.addEventListener("click", () => selectSegment(s.id));
+          els.marketTbody.appendChild(tr);
+        });
+      }
+
+      function selectSegment(id) {
+        const s = segments.find((x) => x.id === id);
+        if (!s) return;
+        selectedId = id;
+        els.marketEmpty.style.display = "none";
+        els.marketDetail.style.display = "";
+
+        els.dSegment.textContent = s.label;
+        els.dRegion.textContent = s.regionLabel;
+        els.dType.textContent =
+          s.type === "apartment"
+            ? "Apartment"
+            : s.type === "house"
+              ? "House"
+              : "Land";
+        els.dPeriod.textContent = periodLabel(s.period);
+        els.dPrice.textContent =
+          s.medianPrice.toLocaleString("ja-JP") + " JPY (median demo)";
+        els.dVolume.textContent = s.transactions.toLocaleString("ja-JP");
+        els.dDom.textContent = s.dom + " ngày";
+        els.dHeat.textContent =
+          s.heat === "hot"
+            ? "Hot demand"
+            : s.heat === "stable"
+              ? "Stable"
+              : "Cool";
+
+        const lines = [];
+        lines.push(
+          `${s.label} trong ${periodLabel(s.period)} có median price khoảng ${s.medianPrice.toLocaleString("ja-JP")} JPY, với ${s.transactions.toLocaleString("ja-JP")} giao dịch và thời gian đăng tin TB ${s.dom} ngày (demo).`,
+        );
+        if (s.heat === "hot") {
+          lines.push(
+            "Nhu cầu được đánh giá là HOT: volume cao, days‑on‑market thấp so với mặt bằng chung.",
+          );
+        } else if (s.heat === "stable") {
+          lines.push(
+            "Nhu cầu STABLE: giá và volume ở mức ổn định, không có biến động cực đoan.",
+          );
+        } else {
+          lines.push(
+            "Nhu cầu COOL: volume thấp hơn, thời gian đăng tin dài hơn; phù hợp chiến lược dài hạn / niche.",
+          );
+        }
+        lines.push(
+          "Tất cả số liệu là aggregate, không map tới từng listing hay từng khách cụ thể.",
+        );
+        els.marketSummary.textContent = lines.join("\n");
+
+        renderTable();
+      }
+
+      function exportCsv() {
+        const list = applyFilters();
+        const header = [
+          "segmentId",
+          "segmentLabel",
+          "region",
+          "type",
+          "period",
+          "medianPrice",
+          "transactions",
+          "daysOnMarket",
+          "demandHeat",
+        ];
+        const rows = list.map((s) => [
+          s.id,
+          s.label,
+          s.region,
+          s.type,
+          s.period,
+          s.medianPrice,
+          s.transactions,
+          s.dom,
+          s.heat,
+        ]);
+
+        const escapeCsv = (value) => {
+          if (value == null) return "";
+          const str = String(value);
+          if (/[",\n]/.test(str)) {
+            return '"' + str.replace(/"/g, '""') + '"';
+          }
+          return str;
+        };
+
+        const csv = [header, ...rows]
+          .map((row) => row.map(escapeCsv).join(","))
+          .join("\n");
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "yuushi_market_data_demo.csv";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function init() {
+        els.periodFilter.addEventListener("change", renderTable);
+        els.regionFilter.addEventListener("change", renderTable);
+        els.typeFilter.addEventListener("change", renderTable);
+        els.searchMarket.addEventListener("input", renderTable);
+        els.exportMarketCsv.addEventListener("click", exportCsv);
+        renderTable();
+      }
+
+      init();
+    </script>
+  </body>
+</html>

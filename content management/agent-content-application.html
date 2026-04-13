@@ -1,0 +1,987 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Agent Content Application Management</title>
+    <style>
+      :root {
+        --bg-body: #f5f3ef;
+        --bg-card: #fffaf2;
+        --border-subtle: #eadccd;
+        --accent: #c26b41;
+        --accent-soft: #f3d7c6;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+        --badge-green: #2f855a;
+        --badge-red: #c53030;
+        --badge-gray: #4a5568;
+        --badge-orange: #b7791f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px 24px 32px;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        letter-spacing: 0.02em;
+      }
+
+      .page-subtitle {
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 7fr) minmax(0, 6fr);
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .card {
+        background-color: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        padding: 14px 16px 16px;
+        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .toolbar-right {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 11px;
+        font-size: 11px;
+        background-color: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+        color: var(--text-main);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #c26b41, #a55232);
+        border-color: #a55232;
+        color: #fffaf3;
+      }
+
+      .btn-ghost {
+        background: transparent;
+      }
+
+      .btn-danger {
+        border-color: var(--badge-red);
+        color: var(--badge-red);
+      }
+
+      .btn:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 120px;
+      }
+
+      .field-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+
+      input[type="text"],
+      select {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      input[type="text"]:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f7efe6;
+      }
+
+      th,
+      td {
+        padding: 7px 8px;
+        text-align: left;
+        border-bottom: 1px solid #efe0d4;
+      }
+
+      th {
+        font-weight: 500;
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      tbody tr {
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+
+      tbody tr:hover {
+        background-color: #f8f1ea;
+      }
+
+      tbody tr.selected-row {
+        background-color: #f1e3d5;
+      }
+
+      .submission-title {
+        font-weight: 600;
+      }
+
+      .submission-meta-line {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 500;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+
+      .badge-status-pending {
+        background: #fff6e0;
+        color: var(--badge-orange);
+        border-color: #fbd38d;
+      }
+
+      .badge-status-approved {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+
+      .badge-status-rejected {
+        background: #fff5f5;
+        color: var(--badge-red);
+        border-color: #fed7d7;
+      }
+
+      .badge-type {
+        background: #f0e3d7;
+        color: #744210;
+        border-color: #e2c6a8;
+      }
+
+      .badge-locale {
+        background: #fef3c7;
+        color: #92400e;
+        border-color: #fcd34d;
+      }
+
+      .badge-priority {
+        background: #edf2f7;
+        color: #2c5282;
+        border-color: #cbd5e0;
+      }
+
+      .detail-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .detail-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .detail-title-block h2 {
+        margin: 0 0 4px;
+        font-size: 16px;
+      }
+
+      .detail-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .detail-meta span + span::before {
+        content: "· ";
+        margin: 0 2px;
+      }
+
+      .detail-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+        margin-bottom: 4px;
+      }
+
+      .detail-field-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .detail-input,
+      .detail-select,
+      textarea {
+        width: 100%;
+        border-radius: 9px;
+        border: 1px solid var(--border-subtle);
+        padding: 5px 8px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      .detail-input:focus,
+      .detail-select:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      textarea {
+        min-height: 70px;
+        resize: vertical;
+        font-family: inherit;
+      }
+
+      .preview-box {
+        border-radius: 10px;
+        border: 1px dashed #deccba;
+        padding: 8px 9px;
+        background: #fffaf1;
+        font-size: 12px;
+        color: var(--text-main);
+        max-height: 120px;
+        overflow: auto;
+      }
+
+      .history-list {
+        max-height: 120px;
+        overflow: auto;
+        font-size: 12px;
+      }
+
+      .history-item {
+        padding: 4px 0;
+        border-bottom: 1px solid #efe0d4;
+      }
+
+      .history-item:last-child {
+        border-bottom: none;
+      }
+
+      .hint-text {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .footer-note {
+        margin-top: 4px;
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Agent Content Application Management</h1>
+      <p class="page-subtitle">
+        Duyệt các đề xuất nội dung từ agent/support: area guide, article,
+        listing description... Chỉ xem metadata/tóm tắt, không hiển thị full nội
+        dung hay trao đổi với khách.
+      </p>
+    </div>
+
+    <div class="layout">
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Hàng chờ phê duyệt nội dung</div>
+            <div class="card-subtitle">
+              Lọc theo loại, trạng thái, mức ưu tiên, locale và agent.
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <button id="exportCsvBtn" class="btn btn-ghost" type="button">
+              Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="filters">
+          <div class="field-group" style="flex: 1 1 200px">
+            <label class="field-label" for="searchInput">Tìm kiếm</label>
+            <input
+              id="searchInput"
+              type="text"
+              placeholder="Tiêu đề, agent, ID yêu cầu..."
+            />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="typeFilter">Loại nội dung</label>
+            <select id="typeFilter">
+              <option value="">Tất cả</option>
+              <option value="area_guide">Area Guide</option>
+              <option value="article">Article</option>
+              <option value="listing_desc">Listing Description</option>
+              <option value="faq">FAQ</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="statusFilter">Trạng thái</label>
+            <select id="statusFilter">
+              <option value="">Tất cả</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="priorityFilter">Ưu tiên</label>
+            <select id="priorityFilter">
+              <option value="">Tất cả</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="localeFilter">Locale</label>
+            <select id="localeFilter">
+              <option value="">Tất cả</option>
+              <option value="ja-JP">ja-JP</option>
+              <option value="en-US">en-US</option>
+              <option value="vi-VN">vi-VN</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="overflow: auto; max-height: 380px">
+          <table>
+            <thead>
+              <tr>
+                <th>Đề xuất</th>
+                <th>Loại</th>
+                <th>Agent</th>
+                <th>Trạng thái</th>
+                <th>Ưu tiên</th>
+                <th>Gửi lúc</th>
+              </tr>
+            </thead>
+            <tbody id="submissionsTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="detail-layout" id="emptyDetail">
+          <div class="card-title">Chi tiết đề xuất nội dung</div>
+          <p class="card-subtitle">
+            Chọn 1 dòng bên trái để xem tóm tắt nội dung được đề xuất và quyết
+            định approve / reject. Không hiển thị nội dung tin nhắn giữa agent
+            và khách.
+          </p>
+        </div>
+
+        <div class="detail-layout" id="detailPanel" style="display: none">
+          <div class="detail-header">
+            <div class="detail-title-block">
+              <h2 id="detailTitle"></h2>
+              <div class="detail-meta">
+                <span id="detailId"></span>
+                <span id="detailType"></span>
+                <span id="detailStatus"></span>
+              </div>
+            </div>
+            <div class="toolbar-right">
+              <button id="approveBtn" class="btn btn-primary" type="button">
+                Approve
+              </button>
+              <button id="rejectBtn" class="btn btn-danger" type="button">
+                Reject
+              </button>
+              <button id="exportJsonBtn" class="btn btn-ghost" type="button">
+                Export JSON
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="detail-section-title">Thông tin cơ bản</div>
+            <div class="detail-grid">
+              <div>
+                <div class="detail-field-label">Agent / Support</div>
+                <input
+                  id="inputAgent"
+                  class="detail-input"
+                  type="text"
+                  readonly
+                />
+              </div>
+              <div>
+                <div class="detail-field-label">Locale</div>
+                <input
+                  id="inputLocale"
+                  class="detail-input"
+                  type="text"
+                  readonly
+                />
+              </div>
+              <div>
+                <div class="detail-field-label">Ưu tiên</div>
+                <input
+                  id="inputPriority"
+                  class="detail-input"
+                  type="text"
+                  readonly
+                />
+              </div>
+              <div>
+                <div class="detail-field-label">Liên quan đến</div>
+                <input
+                  id="inputContext"
+                  class="detail-input"
+                  type="text"
+                  readonly
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="detail-section-title">Tóm tắt nội dung đề xuất</div>
+            <div class="preview-box" id="contentSummary"></div>
+            <p class="hint-text">
+              Tóm tắt ở mức khái niệm (ví dụ: "thêm đoạn giới thiệu khu vực",
+              "chỉnh wording về phí"...). Không hiển thị bất kỳ câu chữ cụ thể
+              nào từ email/chat với khách.
+            </p>
+          </div>
+
+          <div>
+            <div class="detail-section-title">Quyết định & ghi chú nội bộ</div>
+            <div class="detail-grid">
+              <div>
+                <div class="detail-field-label">Quyết định hiện tại</div>
+                <input
+                  id="inputDecision"
+                  class="detail-input"
+                  type="text"
+                  readonly
+                />
+              </div>
+              <div>
+                <div class="detail-field-label">Người xử lý cuối</div>
+                <input
+                  id="inputReviewer"
+                  class="detail-input"
+                  type="text"
+                  readonly
+                />
+              </div>
+            </div>
+            <div class="detail-field-label">Ghi chú quyết định (internal)</div>
+            <textarea
+              id="inputReviewNote"
+              placeholder="Tóm tắt lý do approve / reject, không copy nội dung trao đổi với khách."
+            ></textarea>
+            <p class="hint-text">
+              Ghi chú này chỉ dành cho nội bộ; không push ra cho agent/khách.
+            </p>
+          </div>
+
+          <div>
+            <div class="detail-section-title">Lịch sử xử lý (demo)</div>
+            <div class="history-list" id="historyList"></div>
+          </div>
+
+          <p class="footer-note">
+            Màn này chỉ quản lý queue đề xuất nội dung và quyết định high-level.
+            Nội dung chi tiết được update trong CMS riêng, không lưu tại đây.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const submissions = [
+        {
+          id: "AC-202603-001",
+          title: "Agent đề xuất Area Guide khu Kichijoji",
+          type: "area_guide",
+          agentName: "Agent A - Tokyo",
+          priority: "high",
+          status: "pending",
+          locale: "ja-JP",
+          relatedContext: "Area Guide list - Tokyo",
+          submittedAt: "2026-03-21 10:12",
+          summary:
+            "Agent đề xuất thêm 1 area guide cho khu Kichijoji, tập trung vào đối tượng gia đình trẻ, nội dung ở mức mô tả chung khu vực.",
+          history: [
+            {
+              at: "2026-03-21 10:12",
+              by: "Agent A",
+              action: "Submitted",
+            },
+          ],
+          decision: "Chờ xử lý",
+          reviewer: "-",
+        },
+        {
+          id: "AC-202603-002",
+          title: "Chỉnh wording phần phí môi giới",
+          type: "article",
+          agentName: "Support Team - Osaka",
+          priority: "medium",
+          status: "pending",
+          locale: "ja-JP",
+          relatedContext: "Article: Phí môi giới khi mua nhà",
+          submittedAt: "2026-03-22 09:05",
+          summary:
+            "Đề xuất rút gọn 1 đoạn giải thích về phí môi giới để dễ hiểu hơn, không thay đổi ý nghĩa pháp lý.",
+          history: [
+            {
+              at: "2026-03-22 09:05",
+              by: "Support Team - Osaka",
+              action: "Submitted",
+            },
+          ],
+          decision: "Chờ xử lý",
+          reviewer: "-",
+        },
+        {
+          id: "AC-202602-010",
+          title: "Thêm FAQ về thanh toán đặt cọc",
+          type: "faq",
+          agentName: "Support JP",
+          priority: "low",
+          status: "approved",
+          locale: "ja-JP",
+          relatedContext: "FAQ center - Thanh toán",
+          submittedAt: "2026-02-10 15:22",
+          summary:
+            "Đề xuất 1 câu FAQ mới giải thích chu kỳ và thời điểm thanh toán đặt cọc, nội dung khái quát.",
+          history: [
+            {
+              at: "2026-02-10 15:22",
+              by: "Support JP",
+              action: "Submitted",
+            },
+            {
+              at: "2026-02-11 11:03",
+              by: "Content Ops",
+              action: "Approved & implemented",
+            },
+          ],
+          decision: "Approved (demo)",
+          reviewer: "Content Ops",
+        },
+      ];
+
+      let selectedId = null;
+
+      const els = {
+        searchInput: document.getElementById("searchInput"),
+        typeFilter: document.getElementById("typeFilter"),
+        statusFilter: document.getElementById("statusFilter"),
+        priorityFilter: document.getElementById("priorityFilter"),
+        localeFilter: document.getElementById("localeFilter"),
+        tbody: document.getElementById("submissionsTbody"),
+        exportCsvBtn: document.getElementById("exportCsvBtn"),
+        emptyDetail: document.getElementById("emptyDetail"),
+        detailPanel: document.getElementById("detailPanel"),
+        detailTitle: document.getElementById("detailTitle"),
+        detailId: document.getElementById("detailId"),
+        detailType: document.getElementById("detailType"),
+        detailStatus: document.getElementById("detailStatus"),
+        inputAgent: document.getElementById("inputAgent"),
+        inputLocale: document.getElementById("inputLocale"),
+        inputPriority: document.getElementById("inputPriority"),
+        inputContext: document.getElementById("inputContext"),
+        contentSummary: document.getElementById("contentSummary"),
+        inputDecision: document.getElementById("inputDecision"),
+        inputReviewer: document.getElementById("inputReviewer"),
+        inputReviewNote: document.getElementById("inputReviewNote"),
+        historyList: document.getElementById("historyList"),
+        approveBtn: document.getElementById("approveBtn"),
+        rejectBtn: document.getElementById("rejectBtn"),
+        exportJsonBtn: document.getElementById("exportJsonBtn"),
+      };
+
+      function statusBadge(status) {
+        const span = document.createElement("span");
+        span.classList.add("badge");
+        if (status === "approved") {
+          span.classList.add("badge-status-approved");
+          span.textContent = "Approved";
+        } else if (status === "rejected") {
+          span.classList.add("badge-status-rejected");
+          span.textContent = "Rejected";
+        } else {
+          span.classList.add("badge-status-pending");
+          span.textContent = "Pending";
+        }
+        return span;
+      }
+
+      function typeBadge(type) {
+        const span = document.createElement("span");
+        span.classList.add("badge", "badge-type");
+        if (type === "area_guide") span.textContent = "Area Guide";
+        else if (type === "article") span.textContent = "Article";
+        else if (type === "listing_desc") span.textContent = "Listing Desc";
+        else span.textContent = "FAQ";
+        return span;
+      }
+
+      function priorityBadge(priority) {
+        const span = document.createElement("span");
+        span.classList.add("badge", "badge-priority");
+        span.textContent =
+          priority === "high"
+            ? "High"
+            : priority === "medium"
+              ? "Medium"
+              : "Low";
+        return span;
+      }
+
+      function localeBadge(locale) {
+        const span = document.createElement("span");
+        span.classList.add("badge", "badge-locale");
+        span.textContent = locale;
+        return span;
+      }
+
+      function applyFilters() {
+        const q = els.searchInput.value.trim().toLowerCase();
+        const typeVal = els.typeFilter.value;
+        const statusVal = els.statusFilter.value;
+        const priorityVal = els.priorityFilter.value;
+        const localeVal = els.localeFilter.value;
+
+        return submissions.filter((s) => {
+          if (typeVal && s.type !== typeVal) return false;
+          if (statusVal && s.status !== statusVal) return false;
+          if (priorityVal && s.priority !== priorityVal) return false;
+          if (localeVal && s.locale !== localeVal) return false;
+
+          if (!q) return true;
+          const text = (
+            s.title +
+            " " +
+            s.agentName +
+            " " +
+            s.id +
+            " " +
+            (s.relatedContext || "")
+          ).toLowerCase();
+          return text.includes(q);
+        });
+      }
+
+      function renderTable() {
+        const filtered = applyFilters();
+        els.tbody.innerHTML = "";
+        filtered.forEach((s) => {
+          const tr = document.createElement("tr");
+          if (s.id === selectedId) tr.classList.add("selected-row");
+
+          const tdTitle = document.createElement("td");
+          tdTitle.innerHTML = `<div class="submission-title">${s.title}</div>
+            <div class="submission-meta-line">${s.id} · ${s.relatedContext}</div>`;
+
+          const tdType = document.createElement("td");
+          tdType.appendChild(typeBadge(s.type));
+
+          const tdAgent = document.createElement("td");
+          tdAgent.textContent = s.agentName;
+
+          const tdStatus = document.createElement("td");
+          tdStatus.appendChild(statusBadge(s.status));
+
+          const tdPriority = document.createElement("td");
+          tdPriority.appendChild(priorityBadge(s.priority));
+
+          const tdSubmitted = document.createElement("td");
+          tdSubmitted.textContent = s.submittedAt;
+
+          tr.appendChild(tdTitle);
+          tr.appendChild(tdType);
+          tr.appendChild(tdAgent);
+          tr.appendChild(tdStatus);
+          tr.appendChild(tdPriority);
+          tr.appendChild(tdSubmitted);
+
+          tr.addEventListener("click", () => selectSubmission(s.id));
+          els.tbody.appendChild(tr);
+        });
+      }
+
+      function renderHistory(list, history) {
+        list.innerHTML = "";
+        (history || []).forEach((h) => {
+          const div = document.createElement("div");
+          div.className = "history-item";
+          div.textContent = `${h.at} · ${h.by}: ${h.action}`;
+          list.appendChild(div);
+        });
+        if (!history || history.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "history-item";
+          empty.textContent = "Chưa có history (demo).";
+          list.appendChild(empty);
+        }
+      }
+
+      function selectSubmission(id) {
+        const s = submissions.find((x) => x.id === id);
+        if (!s) return;
+        selectedId = id;
+
+        els.emptyDetail.style.display = "none";
+        els.detailPanel.style.display = "";
+
+        els.detailTitle.textContent = s.title;
+        els.detailId.textContent = s.id;
+        els.detailType.innerHTML = "";
+        els.detailType.appendChild(typeBadge(s.type));
+        els.detailStatus.innerHTML = "";
+        els.detailStatus.appendChild(statusBadge(s.status));
+        els.detailStatus.appendChild(document.createTextNode(" "));
+        els.detailStatus.appendChild(priorityBadge(s.priority));
+
+        els.inputAgent.value = s.agentName;
+        els.inputLocale.value = s.locale;
+        els.inputPriority.value =
+          s.priority === "high"
+            ? "High"
+            : s.priority === "medium"
+              ? "Medium"
+              : "Low";
+        els.inputContext.value = s.relatedContext || "";
+        els.contentSummary.textContent = s.summary || "";
+        els.inputDecision.value = s.decision || "";
+        els.inputReviewer.value = s.reviewer || "";
+        els.inputReviewNote.value = "";
+
+        renderHistory(els.historyList, s.history);
+        updateActionButtons(s);
+        renderTable();
+      }
+
+      function updateActionButtons(s) {
+        const pending = s.status === "pending";
+        els.approveBtn.disabled = !pending;
+        els.rejectBtn.disabled = !pending;
+      }
+
+      function addHistoryEntry(s, action) {
+        if (!Array.isArray(s.history)) s.history = [];
+        s.history.push({
+          at: new Date().toLocaleString("vi-VN", { hour12: false }),
+          by: "Admin demo",
+          action,
+        });
+      }
+
+      function performDecision(decision) {
+        if (!selectedId) return;
+        const s = submissions.find((x) => x.id === selectedId);
+        if (!s) return;
+        const note = els.inputReviewNote.value.trim();
+        s.status = decision === "approve" ? "approved" : "rejected";
+        s.decision =
+          decision === "approve" ? "Approved (demo)" : "Rejected (demo)";
+        s.reviewer = "Admin demo";
+        const actionText =
+          decision === "approve"
+            ? "Approved content suggestion"
+            : "Rejected content suggestion";
+        addHistoryEntry(s, note ? `${actionText} - Note: ${note}` : actionText);
+        selectSubmission(s.id);
+      }
+
+      function exportCsv() {
+        const filtered = applyFilters();
+        const header = [
+          "id",
+          "title",
+          "type",
+          "agentName",
+          "priority",
+          "status",
+          "locale",
+          "relatedContext",
+          "submittedAt",
+          "decision",
+          "reviewer",
+        ];
+        const rows = filtered.map((s) => [
+          s.id,
+          s.title,
+          s.type,
+          s.agentName,
+          s.priority,
+          s.status,
+          s.locale,
+          s.relatedContext || "",
+          s.submittedAt,
+          s.decision || "",
+          s.reviewer || "",
+        ]);
+
+        const escapeCsv = (value) => {
+          if (value == null) return "";
+          const str = String(value);
+          if (/[",\n]/.test(str)) {
+            return '"' + str.replace(/"/g, '""') + '"';
+          }
+          return str;
+        };
+
+        const csv = [header, ...rows]
+          .map((row) => row.map(escapeCsv).join(","))
+          .join("\n");
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "yuushi_agent_content_submissions.csv";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function exportJson() {
+        if (!selectedId) return;
+        const s = submissions.find((x) => x.id === selectedId);
+        if (!s) return;
+        const blob = new Blob([JSON.stringify(s, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `yuushi_agent_content_${s.id}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function init() {
+        els.searchInput.addEventListener("input", renderTable);
+        els.typeFilter.addEventListener("change", renderTable);
+        els.statusFilter.addEventListener("change", renderTable);
+        els.priorityFilter.addEventListener("change", renderTable);
+        els.localeFilter.addEventListener("change", renderTable);
+        els.exportCsvBtn.addEventListener("click", exportCsv);
+        els.approveBtn.addEventListener("click", () =>
+          performDecision("approve"),
+        );
+        els.rejectBtn.addEventListener("click", () =>
+          performDecision("reject"),
+        );
+        els.exportJsonBtn.addEventListener("click", exportJson);
+
+        renderTable();
+      }
+
+      init();
+    </script>
+  </body>
+</html>

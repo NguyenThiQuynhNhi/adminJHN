@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Lead History &amp; Audit View</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background: #f5f3ef;
+        color: #2a2118;
+      }
+
+      .page {
+        padding: 24px 32px 32px;
+      }
+
+      .page-header {
+        margin-bottom: 18px;
+      }
+
+      .page-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .page-subtitle {
+        font-size: 13px;
+        color: #7c6a55;
+        max-width: 720px;
+      }
+
+      .pill {
+        margin-top: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #efe3cf;
+        color: #7b623f;
+        display: inline-block;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 2.4fr) minmax(0, 2fr);
+        gap: 16px;
+      }
+
+      .card {
+        background: #fffaf2;
+        border-radius: 10px;
+        border: 1px solid #eadccd;
+        padding: 14px 16px 16px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      }
+
+      .card-header {
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: #7c6a55;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+        margin-bottom: 8px;
+      }
+
+      .filters input,
+      .filters select {
+        border-radius: 999px;
+        border: 1px solid #ddcdb9;
+        padding: 6px 10px;
+        font-size: 12px;
+        background: #fdf8f0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f1e4d4;
+      }
+
+      th,
+      td {
+        padding: 8px 6px;
+        border-bottom: 1px solid #efe2d3;
+        text-align: left;
+      }
+
+      th {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        color: #7b623f;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 11px;
+      }
+
+      .status-new {
+        background: #e4f0ff;
+        color: #245796;
+      }
+
+      .status-contacted {
+        background: #fff2cc;
+        color: #7b5b12;
+      }
+
+      .status-qualified {
+        background: #e3f5e5;
+        color: #216234;
+      }
+
+      .status-lost {
+        background: #f9e0dd;
+        color: #a13f3a;
+      }
+
+      .empty-state {
+        text-align: center;
+        font-size: 12px;
+        color: #7c6a55;
+        padding: 14px 0;
+      }
+
+      .detail-label {
+        font-size: 11px;
+        color: #7c6a55;
+        margin-bottom: 2px;
+      }
+
+      .detail-value {
+        font-size: 13px;
+        margin-bottom: 6px;
+      }
+
+      .timeline {
+        margin-top: 8px;
+        border-left: 2px solid #ddcdb9;
+        padding-left: 10px;
+      }
+
+      .timeline-item {
+        margin-bottom: 8px;
+        position: relative;
+      }
+
+      .timeline-item::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #d09b4c;
+        position: absolute;
+        left: -15px;
+        top: 4px;
+      }
+
+      .timeline-time {
+        font-size: 11px;
+        color: #7c6a55;
+      }
+
+      .timeline-text {
+        font-size: 12px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 11px;
+        background: #efe3cf;
+        color: #7b623f;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: none;
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .btn-secondary {
+        background: #f7efe4;
+        color: #6a5641;
+        border: 1px solid #ddcdb9;
+      }
+
+      .btn-sm {
+        padding: 4px 10px;
+        font-size: 11px;
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="page-header">
+        <div class="page-title">Lead History &amp; Audit View</div>
+        <div class="page-subtitle">
+          Read-only history của toàn bộ thay đổi status & ownership cho từng
+          lead, phục vụ audit & compliance. Không cho chỉnh sửa.
+        </div>
+        <div class="pill">Lead Management · Audit</div>
+      </div>
+
+      <div class="layout">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Event log</div>
+            <div class="card-subtitle">
+              Mỗi dòng là 1 event: đổi status, đổi owner, chuyển agent, v.v.
+            </div>
+          </div>
+
+          <div class="filters">
+            <input
+              id="leadSearch"
+              type="text"
+              placeholder="Search by lead ID, lead name"
+            />
+            <select id="statusFilter">
+              <option value="">Status: All</option>
+              <option value="New">New</option>
+              <option value="Contacted">Contacted</option>
+              <option value="Qualified">Qualified</option>
+              <option value="Lost">Lost</option>
+            </select>
+            <select id="actorFilter">
+              <option value="">Actor: All</option>
+              <option value="System">System</option>
+              <option value="Admin">Admin</option>
+              <option value="Agent">Agent</option>
+            </select>
+            <select id="ownerFilter">
+              <option value="">Owner change: Any</option>
+              <option value="Yes">Owner changed</option>
+              <option value="No">No owner change</option>
+            </select>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Lead</th>
+                <th>From → To</th>
+                <th>Owner change</th>
+                <th>Actor</th>
+              </tr>
+            </thead>
+            <tbody id="eventBody"></tbody>
+          </table>
+          <div class="empty-state" id="eventEmpty" style="display: none">
+            No history events match current filters.
+          </div>
+
+          <div style="margin-top: 8px">
+            <button class="btn btn-secondary btn-sm" id="exportBtn">
+              Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Lead timeline</div>
+            <div class="card-subtitle">
+              Timeline cho 1 lead cụ thể, chỉ đọc.
+            </div>
+          </div>
+          <div id="detailContainer">
+            <div class="card-subtitle">
+              Chọn 1 event ở bảng bên trái để xem full timeline của lead đó.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const events = [
+        {
+          id: 1,
+          time: "2026-04-10 09:10",
+          leadId: "L-1001",
+          leadName: "Nguyen Anh",
+          fromStatus: "New",
+          toStatus: "Contacted",
+          fromOwner: "Unassigned",
+          toOwner: "Sakura Realty",
+          actorType: "System",
+          actorName: "Auto-routing",
+          reason: "New lead from website form, routed to Sakura Realty.",
+        },
+        {
+          id: 2,
+          time: "2026-04-11 15:22",
+          leadId: "L-1001",
+          leadName: "Nguyen Anh",
+          fromStatus: "Contacted",
+          toStatus: "Qualified",
+          fromOwner: "Sakura Realty",
+          toOwner: "Sakura Realty",
+          actorType: "Agent",
+          actorName: "Tanaka (Sakura)",
+          reason: "Phone call, lead confirmed budget & timeline.",
+        },
+        {
+          id: 3,
+          time: "2026-04-09 11:01",
+          leadId: "L-1002",
+          leadName: "Suzuki Ken",
+          fromStatus: "New",
+          toStatus: "Contacted",
+          fromOwner: "Unassigned",
+          toOwner: "Hikari Homes",
+          actorType: "Admin",
+          actorName: "Admin Sato",
+          reason: "Manual assignment to Hikari Homes.",
+        },
+        {
+          id: 4,
+          time: "2026-04-12 10:05",
+          leadId: "L-1003",
+          leadName: "Tran Mai",
+          fromStatus: "Qualified",
+          toStatus: "Lost",
+          fromOwner: "Sakura Realty",
+          toOwner: "Sakura Realty",
+          actorType: "Agent",
+          actorName: "Sakura agent",
+          reason: "Lead selected another provider.",
+        },
+      ];
+
+      let filters = { search: "", status: "", actor: "", ownerChange: "" };
+      let selectedLeadId = null;
+
+      function statusClass(status) {
+        switch (status) {
+          case "New":
+            return "status-new";
+          case "Contacted":
+            return "status-contacted";
+          case "Qualified":
+            return "status-qualified";
+          case "Lost":
+            return "status-lost";
+          default:
+            return "";
+        }
+      }
+
+      function applyFilters() {
+        const search = filters.search.toLowerCase();
+        return events.filter((e) => {
+          if (
+            search &&
+            !(
+              e.leadId.toLowerCase().includes(search) ||
+              e.leadName.toLowerCase().includes(search)
+            )
+          ) {
+            return false;
+          }
+          if (
+            filters.status &&
+            !(e.fromStatus === filters.status || e.toStatus === filters.status)
+          ) {
+            return false;
+          }
+          if (filters.actor && e.actorType !== filters.actor) return false;
+          if (filters.ownerChange === "Yes" && e.fromOwner === e.toOwner)
+            return false;
+          if (filters.ownerChange === "No" && e.fromOwner !== e.toOwner)
+            return false;
+          return true;
+        });
+      }
+
+      function renderEvents() {
+        const body = document.getElementById("eventBody");
+        const empty = document.getElementById("eventEmpty");
+        body.innerHTML = "";
+        const data = applyFilters();
+        if (!data.length) {
+          empty.style.display = "block";
+          return;
+        }
+        empty.style.display = "none";
+        data
+          .slice()
+          .sort((a, b) => (a.time > b.time ? -1 : 1))
+          .forEach((e) => {
+            const tr = document.createElement("tr");
+            tr.style.cursor = "pointer";
+            tr.innerHTML = `
+              <td>${e.time}</td>
+              <td>
+                <div class="detail-value">${e.leadName}</div>
+                <div class="detail-label">${e.leadId}</div>
+              </td>
+              <td>
+                <span class="status-pill ${statusClass(e.fromStatus)}">${e.fromStatus}</span>
+                <span style="margin:0 4px;">→</span>
+                <span class="status-pill ${statusClass(e.toStatus)}">${e.toStatus}</span>
+              </td>
+              <td>
+                ${
+                  e.fromOwner === e.toOwner
+                    ? '<span class="badge">No change</span>'
+                    : `<span class="badge">${e.fromOwner} → ${e.toOwner}</span>`
+                }
+              </td>
+              <td>${e.actorType} · ${e.actorName}</td>
+            `;
+            tr.addEventListener("click", () => {
+              selectedLeadId = e.leadId;
+              renderTimeline();
+            });
+            body.appendChild(tr);
+          });
+      }
+
+      function renderTimeline() {
+        const div = document.getElementById("detailContainer");
+        const relevant = events
+          .filter((e) => e.leadId === selectedLeadId)
+          .slice()
+          .sort((a, b) => (a.time > b.time ? 1 : -1));
+        if (!relevant.length) {
+          div.innerHTML =
+            '<div class="card-subtitle">Chọn 1 event ở bảng bên trái để xem full timeline của lead đó.</div>';
+          return;
+        }
+        const leadName = relevant[0].leadName;
+        const first = relevant[0];
+        const last = relevant[relevant.length - 1];
+
+        let html = `
+          <div class="detail-label">Lead</div>
+          <div class="detail-value">${leadName} · ${selectedLeadId}</div>
+          <div class="detail-label">First status</div>
+          <div class="detail-value">
+            <span class="status-pill ${statusClass(first.fromStatus)}">${first.fromStatus}</span>
+          </div>
+          <div class="detail-label">Current status (based on last event)</div>
+          <div class="detail-value">
+            <span class="status-pill ${statusClass(last.toStatus)}">${last.toStatus}</span>
+          </div>
+          <div class="detail-label">Timeline</div>
+          <div class="timeline">
+        `;
+
+        relevant.forEach((e) => {
+          html += `
+            <div class="timeline-item">
+              <div class="timeline-time">${e.time} · ${e.actorType} · ${e.actorName}</div>
+              <div class="timeline-text">
+                Status: ${e.fromStatus} → ${e.toStatus}<br />
+                Owner: ${
+                  e.fromOwner === e.toOwner
+                    ? "no change"
+                    : `${e.fromOwner} → ${e.toOwner}`
+                }<br />
+                Reason: ${e.reason}
+              </div>
+            </div>
+          `;
+        });
+
+        html += `</div>
+          <div style="margin-top:10px; font-size:11px; color:#7c6a55;">
+            Màn này chỉ là read-only; mọi chỉnh sửa lead phải thực hiện ở các
+            màn quản lý lead tương ứng.
+          </div>`;
+
+        div.innerHTML = html;
+      }
+
+      function exportCsv() {
+        const data = applyFilters();
+        if (!data.length) {
+          alert("Không có event nào để export.");
+          return;
+        }
+        const header = [
+          "Time",
+          "LeadId",
+          "LeadName",
+          "FromStatus",
+          "ToStatus",
+          "FromOwner",
+          "ToOwner",
+          "ActorType",
+          "ActorName",
+          "Reason",
+        ];
+        const rows = data.map((e) => [
+          e.time,
+          e.leadId,
+          e.leadName,
+          e.fromStatus,
+          e.toStatus,
+          e.fromOwner,
+          e.toOwner,
+          e.actorType,
+          e.actorName,
+          e.reason,
+        ]);
+        const csv =
+          header.join(",") +
+          "\n" +
+          rows
+            .map((r) =>
+              r
+                .map((v) => `"${String(v || "").replace(/"/g, '""')}"`)
+                .join(","),
+            )
+            .join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "yuushi_lead_audit_log.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderEvents();
+        renderTimeline();
+
+        document.getElementById("leadSearch").addEventListener("input", (e) => {
+          filters.search = e.target.value;
+          renderEvents();
+        });
+        document
+          .getElementById("statusFilter")
+          .addEventListener("change", (e) => {
+            filters.status = e.target.value;
+            renderEvents();
+          });
+        document
+          .getElementById("actorFilter")
+          .addEventListener("change", (e) => {
+            filters.actor = e.target.value;
+            renderEvents();
+          });
+        document
+          .getElementById("ownerFilter")
+          .addEventListener("change", (e) => {
+            filters.ownerChange = e.target.value;
+            renderEvents();
+          });
+        document
+          .getElementById("exportBtn")
+          .addEventListener("click", exportCsv);
+      });
+    </script>
+  </body>
+</html>

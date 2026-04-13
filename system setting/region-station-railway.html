@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Region / Station / Railway Master Data</title>
+    <style>
+      :root {
+        --bg-body: #f5f3ef;
+        --bg-card: #fffaf2;
+        --border-subtle: #eadccd;
+        --accent: #c26b41;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px 24px 32px;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        letter-spacing: 0.02em;
+      }
+
+      .page-subtitle {
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 1.5fr 1.5fr;
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .card {
+        background-color: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        padding: 14px 16px 16px;
+        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .toolbar-right {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 11px;
+        font-size: 11px;
+        background-color: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+        color: var(--text-main);
+      }
+
+      .btn-ghost {
+        background: transparent;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 140px;
+      }
+
+      .field-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+
+      select,
+      input[type="text"] {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      select:focus,
+      input[type="text"]:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f7efe6;
+      }
+
+      th,
+      td {
+        padding: 7px 8px;
+        text-align: left;
+        border-bottom: 1px solid #efe0d4;
+      }
+
+      th {
+        font-weight: 500;
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      tbody tr {
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+
+      tbody tr:hover {
+        background-color: #f8f1ea;
+      }
+
+      tbody tr.selected-row {
+        background-color: #f1e3d5;
+      }
+
+      .detail-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+        margin-bottom: 8px;
+      }
+
+      .detail-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .detail-value {
+        font-size: 12px;
+      }
+
+      .preview-box {
+        border-radius: 10px;
+        border: 1px dashed #deccba;
+        padding: 8px 9px;
+        background: #fffaf1;
+        font-size: 12px;
+        color: var(--text-main);
+        white-space: pre-line;
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Region / Station / Railway Master Data</h1>
+      <p class="page-subtitle">
+        Manage master data for prefecture, city, railway line and station in
+        Japan. Focused on codes and display names only; no transaction or user
+        data.
+      </p>
+    </div>
+
+    <div class="layout">
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Station list</div>
+            <div class="card-subtitle">
+              Filter by prefecture, line or search station name (kana/romaji).
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <button id="exportLocationCsv" class="btn btn-ghost" type="button">
+              Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="filters">
+          <div class="field-group">
+            <label class="field-label" for="prefFilter">Prefecture</label>
+            <select id="prefFilter">
+              <option value="">All</option>
+              <option value="tokyo">Tokyo</option>
+              <option value="osaka">Osaka</option>
+              <option value="hokkaido">Hokkaido</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="lineFilter">Line</label>
+            <select id="lineFilter">
+              <option value="">All</option>
+              <option value="yamanote">JR Yamanote Line</option>
+              <option value="chuo">JR Chuo Line</option>
+              <option value="midosuji">Osaka Metro Midosuji</option>
+            </select>
+          </div>
+          <div class="field-group" style="flex: 1 1 220px">
+            <label class="field-label" for="searchStation"
+              >Search station</label
+            >
+            <input
+              id="searchStation"
+              type="text"
+              placeholder="e.g. Shinjuku, Osaka, Sapporo..."
+            />
+          </div>
+        </div>
+
+        <div style="overflow: auto; max-height: 280px">
+          <table>
+            <thead>
+              <tr>
+                <th>Station</th>
+                <th>Line</th>
+                <th>Prefecture</th>
+                <th>City (demo)</th>
+              </tr>
+            </thead>
+            <tbody id="stationTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div id="stationEmpty">
+          <div class="card-title">Master record details</div>
+          <p class="card-subtitle">
+            Select a station to see metadata: prefecture code, line, display
+            name. In reality, create/update/delete would be performed via batch
+            tools; this screen acts as preview & export.
+          </p>
+        </div>
+        <div id="stationDetail" style="display: none">
+          <div class="detail-section-title">Basic information</div>
+          <div class="detail-grid">
+            <div>
+              <div class="detail-label">Station code (demo)</div>
+              <div class="detail-value" id="dCode"></div>
+            </div>
+            <div>
+              <div class="detail-label">Station name</div>
+              <div class="detail-value" id="dName"></div>
+            </div>
+            <div>
+              <div class="detail-label">Line</div>
+              <div class="detail-value" id="dLine"></div>
+            </div>
+            <div>
+              <div class="detail-label">Prefecture</div>
+              <div class="detail-value" id="dPref"></div>
+            </div>
+          </div>
+
+          <div class="detail-section-title">City & notes</div>
+          <div class="detail-grid">
+            <div>
+              <div class="detail-label">City (demo)</div>
+              <div class="detail-value" id="dCity"></div>
+            </div>
+            <div>
+              <div class="detail-label">Display notes (demo)</div>
+              <div class="detail-value" id="dNote"></div>
+            </div>
+          </div>
+
+          <div class="detail-section-title">Master data summary</div>
+          <div class="preview-box" id="stationSummary"></div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const stations = [
+        {
+          code: "ST-TYO-SHINJUKU",
+          name: "Shinjuku",
+          line: "JR Yamanote Line",
+          lineKey: "yamanote",
+          prefecture: "Tokyo",
+          prefKey: "tokyo",
+          city: "Shinjuku-ku",
+          note: "Major terminal in Tokyo 23 wards.",
+        },
+        {
+          code: "ST-TYO-KICHIJOJI",
+          name: "Kichijoji",
+          line: "JR Chuo Line",
+          lineKey: "chuo",
+          prefecture: "Tokyo",
+          prefKey: "tokyo",
+          city: "Musashino-shi",
+          note: "Popular residential shopping area.",
+        },
+        {
+          code: "ST-OSK-UMEDA",
+          name: "Umeda",
+          line: "Osaka Metro Midosuji",
+          lineKey: "midosuji",
+          prefecture: "Osaka",
+          prefKey: "osaka",
+          city: "Osaka-shi Kita-ku",
+          note: "Central Osaka business/commercial hub.",
+        },
+        {
+          code: "ST-HKD-SAPPORO",
+          name: "Sapporo",
+          line: "JR Hakodate Main Line (demo)",
+          lineKey: "",
+          prefecture: "Hokkaido",
+          prefKey: "hokkaido",
+          city: "Sapporo-shi",
+          note: "Hokkaido regional center.",
+        },
+      ];
+
+      let selectedCode = null;
+
+      const els = {
+        prefFilter: document.getElementById("prefFilter"),
+        lineFilter: document.getElementById("lineFilter"),
+        searchStation: document.getElementById("searchStation"),
+        stationTbody: document.getElementById("stationTbody"),
+        stationEmpty: document.getElementById("stationEmpty"),
+        stationDetail: document.getElementById("stationDetail"),
+        exportLocationCsv: document.getElementById("exportLocationCsv"),
+        dCode: document.getElementById("dCode"),
+        dName: document.getElementById("dName"),
+        dLine: document.getElementById("dLine"),
+        dPref: document.getElementById("dPref"),
+        dCity: document.getElementById("dCity"),
+        dNote: document.getElementById("dNote"),
+        stationSummary: document.getElementById("stationSummary"),
+      };
+
+      function applyFilters() {
+        const p = els.prefFilter.value;
+        const l = els.lineFilter.value;
+        const q = els.searchStation.value.trim().toLowerCase();
+        return stations.filter((s) => {
+          if (p && s.prefKey !== p) return false;
+          if (l && s.lineKey !== l) return false;
+          if (!q) return true;
+          const text = (s.name + " " + s.city + " " + s.line).toLowerCase();
+          return text.includes(q);
+        });
+      }
+
+      function renderTable() {
+        const list = applyFilters();
+        els.stationTbody.innerHTML = "";
+        list.forEach((s) => {
+          const tr = document.createElement("tr");
+          if (s.code === selectedCode) tr.classList.add("selected-row");
+
+          const tdName = document.createElement("td");
+          tdName.textContent = s.name;
+
+          const tdLine = document.createElement("td");
+          tdLine.textContent = s.line;
+
+          const tdPref = document.createElement("td");
+          tdPref.textContent = s.prefecture;
+
+          const tdCity = document.createElement("td");
+          tdCity.textContent = s.city;
+
+          tr.appendChild(tdName);
+          tr.appendChild(tdLine);
+          tr.appendChild(tdPref);
+          tr.appendChild(tdCity);
+
+          tr.addEventListener("click", () => selectStation(s.code));
+          els.stationTbody.appendChild(tr);
+        });
+      }
+
+      function selectStation(code) {
+        const s = stations.find((x) => x.code === code);
+        if (!s) return;
+        selectedCode = code;
+        els.stationEmpty.style.display = "none";
+        els.stationDetail.style.display = "";
+
+        els.dCode.textContent = s.code;
+        els.dName.textContent = s.name;
+        els.dLine.textContent = s.line;
+        els.dPref.textContent = s.prefecture;
+        els.dCity.textContent = s.city;
+        els.dNote.textContent = s.note;
+
+        const lines = [];
+        lines.push(
+          `Station ${s.name} (${s.code}) on line "${s.line}", prefecture: ${s.prefecture}, city: ${s.city}.`,
+        );
+        lines.push(
+          "This master record is used for station/line search, location mapping and analytics. It does not contain any specific listing or user information.",
+        );
+        els.stationSummary.textContent = lines.join("\n");
+
+        renderTable();
+      }
+
+      function exportCsv() {
+        const list = applyFilters();
+        const header = ["code", "name", "line", "prefecture", "city", "note"];
+        const rows = list.map((s) => [
+          s.code,
+          s.name,
+          s.line,
+          s.prefecture,
+          s.city,
+          s.note,
+        ]);
+
+        const escapeCsv = (value) => {
+          if (value == null) return "";
+          const str = String(value);
+          if (/[",\n]/.test(str)) {
+            return '"' + str.replace(/"/g, '""') + '"';
+          }
+          return str;
+        };
+
+        const csv = [header, ...rows]
+          .map((row) => row.map(escapeCsv).join(","))
+          .join("\n");
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "yuushi_location_master_demo.csv";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function init() {
+        els.prefFilter.addEventListener("change", renderTable);
+        els.lineFilter.addEventListener("change", renderTable);
+        els.searchStation.addEventListener("input", renderTable);
+        els.exportLocationCsv.addEventListener("click", exportCsv);
+        renderTable();
+      }
+
+      init();
+    </script>
+  </body>
+</html>

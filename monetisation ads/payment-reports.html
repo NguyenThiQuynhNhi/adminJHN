@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Payment Reports</title>
+    <style>
+      :root {
+        --bg-body: #f5f3ef;
+        --bg-card: #fffaf2;
+        --border-subtle: #eadccd;
+        --accent: #c26b41;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+        --badge-green: #2f855a;
+        --badge-gray: #4a5568;
+        --badge-orange: #b7791f;
+        --badge-red: #c53030;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px 24px 32px;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        letter-spacing: 0.02em;
+      }
+
+      .page-subtitle {
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 1.3fr 1.7fr;
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .card {
+        background-color: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        padding: 14px 16px 16px;
+        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .toolbar-right {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 11px;
+        font-size: 11px;
+        background-color: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+        color: var(--text-main);
+      }
+
+      .btn-ghost {
+        background: transparent;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #c26b41, #a55232);
+        border-color: #a55232;
+        color: #fffaf3;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 120px;
+      }
+
+      .field-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+
+      input[type="text"],
+      select {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      input[type="text"]:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .kpi-card {
+        border-radius: 10px;
+        border: 1px dashed var(--border-subtle);
+        padding: 7px 8px;
+        background: #fffdf7;
+        font-size: 12px;
+      }
+
+      .kpi-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .kpi-value {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+
+      .kpi-subtext {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f7efe6;
+      }
+
+      th,
+      td {
+        padding: 7px 8px;
+        text-align: left;
+        border-bottom: 1px solid #efe0d4;
+      }
+
+      th {
+        font-weight: 500;
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      tbody tr {
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+
+      tbody tr:hover {
+        background-color: #f8f1ea;
+      }
+
+      tbody tr.selected-row {
+        background-color: #f1e3d5;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 500;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+
+      .badge-paid {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+
+      .badge-pending {
+        background: #fffaf0;
+        color: var(--badge-orange);
+        border-color: #fbd38d;
+      }
+
+      .badge-failed {
+        background: #fff5f5;
+        color: var(--badge-red);
+        border-color: #fed7d7;
+      }
+
+      .badge-refund {
+        background: #edf2f7;
+        color: var(--badge-gray);
+        border-color: #cbd5e0;
+      }
+
+      .detail-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+        margin-bottom: 8px;
+      }
+
+      .detail-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .detail-value {
+        font-size: 12px;
+      }
+
+      .preview-box {
+        border-radius: 10px;
+        border: 1px dashed #deccba;
+        padding: 8px 9px;
+        background: #fffaf1;
+        font-size: 12px;
+        color: var(--text-main);
+        white-space: pre-line;
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Payment Reports</h1>
+      <p class="page-subtitle">
+        Tổng hợp doanh thu và trạng thái thanh toán theo invoice. Không hiển thị
+        thông tin thẻ hoặc chi tiết PII.
+      </p>
+    </div>
+
+    <div class="layout">
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Bộ lọc & KPI doanh thu</div>
+            <div class="card-subtitle">
+              Lọc theo loại sản phẩm và trạng thái để xem tổng thu.
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <button id="exportPaymentCsv" class="btn btn-ghost" type="button">
+              Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="filters">
+          <div class="field-group">
+            <label class="field-label" for="productTypeFilter"
+              >Loại sản phẩm</label
+            >
+            <select id="productTypeFilter">
+              <option value="">Tất cả</option>
+              <option value="ads">Ads</option>
+              <option value="subscription">Subscription</option>
+              <option value="fees">Transaction fee</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="statusFilter">Trạng thái</label>
+            <select id="statusFilter">
+              <option value="">Tất cả</option>
+              <option value="paid">Paid</option>
+              <option value="pending">Pending</option>
+              <option value="failed">Failed</option>
+              <option value="refund">Refunded</option>
+            </select>
+          </div>
+          <div class="field-group" style="flex: 1 1 200px">
+            <label class="field-label" for="searchInvoice"
+              >Tìm invoice / agent</label
+            >
+            <input
+              id="searchInvoice"
+              type="text"
+              placeholder="Invoice ID, agent name (demo)..."
+            />
+          </div>
+        </div>
+
+        <div class="kpi-grid" id="paymentKpis"></div>
+
+        <div style="overflow: auto; max-height: 260px">
+          <table>
+            <thead>
+              <tr>
+                <th>Invoice</th>
+                <th>Agent (demo)</th>
+                <th>Loại sản phẩm</th>
+                <th>Amount (JPY)</th>
+                <th>Trạng thái</th>
+                <th>Ngày tạo</th>
+              </tr>
+            </thead>
+            <tbody id="paymentTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div id="paymentEmpty">
+          <div class="card-title">Chi tiết invoice</div>
+          <p class="card-subtitle">
+            Chọn một invoice để xem metadata: loại sản phẩm, số tiền, trạng
+            thái, phương thức thanh toán. Không hiển thị số thẻ hay thông tin cá
+            nhân cụ thể.
+          </p>
+        </div>
+        <div id="paymentDetail" style="display: none">
+          <div class="detail-section-title">Thông tin chung</div>
+          <div class="detail-grid">
+            <div>
+              <div class="detail-label">Invoice ID</div>
+              <div class="detail-value" id="dInvoiceId"></div>
+            </div>
+            <div>
+              <div class="detail-label">Agent (demo)</div>
+              <div class="detail-value" id="dAgent"></div>
+            </div>
+            <div>
+              <div class="detail-label">Loại sản phẩm</div>
+              <div class="detail-value" id="dProductType"></div>
+            </div>
+            <div>
+              <div class="detail-label">Loại billing</div>
+              <div class="detail-value" id="dBillingType"></div>
+            </div>
+          </div>
+
+          <div class="detail-section-title">Số tiền & trạng thái</div>
+          <div class="detail-grid">
+            <div>
+              <div class="detail-label">Số tiền (JPY)</div>
+              <div class="detail-value" id="dAmount"></div>
+            </div>
+            <div>
+              <div class="detail-label">Trạng thái thanh toán</div>
+              <div class="detail-value" id="dStatus"></div>
+            </div>
+            <div>
+              <div class="detail-label">Ngày tạo</div>
+              <div class="detail-value" id="dCreatedAt"></div>
+            </div>
+            <div>
+              <div class="detail-label">Ngày cập nhật</div>
+              <div class="detail-value" id="dUpdatedAt"></div>
+            </div>
+          </div>
+
+          <div class="detail-section-title">Phương thức & gateway</div>
+          <div class="detail-grid">
+            <div>
+              <div class="detail-label">Phương thức thanh toán (demo)</div>
+              <div class="detail-value" id="dPaymentMethod"></div>
+            </div>
+            <div>
+              <div class="detail-label">Processor / gateway</div>
+              <div class="detail-value" id="dGateway"></div>
+            </div>
+          </div>
+
+          <div class="detail-section-title">Nhận xét tổng quan (demo)</div>
+          <div class="preview-box" id="paymentSummary"></div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const payments = [
+        {
+          invoiceId: "INV-2026-0001",
+          agent: "Agent Tokyo Alpha",
+          productType: "subscription",
+          billingType: "recurring",
+          amount: 19800,
+          status: "paid",
+          paymentMethod: "Card (4 số cuối masked)",
+          gateway: "Stripe (demo)",
+          createdAt: "2026-03-01",
+          updatedAt: "2026-03-01",
+        },
+        {
+          invoiceId: "INV-2026-0002",
+          agent: "Agent Osaka Homes",
+          productType: "ads",
+          billingType: "campaign",
+          amount: 500000,
+          status: "pending",
+          paymentMethod: "Bank transfer (demo)",
+          gateway: "Bank integration",
+          createdAt: "2026-03-28",
+          updatedAt: "2026-03-29",
+        },
+        {
+          invoiceId: "INV-2026-0003",
+          agent: "Agent Kyoto Plus",
+          productType: "fees",
+          billingType: "per-transaction",
+          amount: 3200,
+          status: "paid",
+          paymentMethod: "Card (4 số cuối masked)",
+          gateway: "Stripe (demo)",
+          createdAt: "2026-03-25",
+          updatedAt: "2026-03-25",
+        },
+        {
+          invoiceId: "INV-2026-0004",
+          agent: "Agent Sapporo North",
+          productType: "subscription",
+          billingType: "recurring",
+          amount: 9800,
+          status: "failed",
+          paymentMethod: "Card (4 số cuối masked)",
+          gateway: "Stripe (demo)",
+          createdAt: "2026-03-20",
+          updatedAt: "2026-03-20",
+        },
+        {
+          invoiceId: "INV-2026-0005",
+          agent: "Agent Nagoya City",
+          productType: "ads",
+          billingType: "campaign",
+          amount: 120000,
+          status: "refund",
+          paymentMethod: "Bank transfer (demo)",
+          gateway: "Bank integration",
+          createdAt: "2026-03-10",
+          updatedAt: "2026-03-18",
+        },
+      ];
+
+      let selectedInvoice = null;
+
+      const els = {
+        productTypeFilter: document.getElementById("productTypeFilter"),
+        statusFilter: document.getElementById("statusFilter"),
+        searchInvoice: document.getElementById("searchInvoice"),
+        paymentTbody: document.getElementById("paymentTbody"),
+        paymentKpis: document.getElementById("paymentKpis"),
+        paymentEmpty: document.getElementById("paymentEmpty"),
+        paymentDetail: document.getElementById("paymentDetail"),
+        exportPaymentCsv: document.getElementById("exportPaymentCsv"),
+        dInvoiceId: document.getElementById("dInvoiceId"),
+        dAgent: document.getElementById("dAgent"),
+        dProductType: document.getElementById("dProductType"),
+        dBillingType: document.getElementById("dBillingType"),
+        dAmount: document.getElementById("dAmount"),
+        dStatus: document.getElementById("dStatus"),
+        dCreatedAt: document.getElementById("dCreatedAt"),
+        dUpdatedAt: document.getElementById("dUpdatedAt"),
+        dPaymentMethod: document.getElementById("dPaymentMethod"),
+        dGateway: document.getElementById("dGateway"),
+        paymentSummary: document.getElementById("paymentSummary"),
+      };
+
+      function applyFilters() {
+        const t = els.productTypeFilter.value;
+        const s = els.statusFilter.value;
+        const q = els.searchInvoice.value.trim().toLowerCase();
+        return payments.filter((p) => {
+          if (t && p.productType !== t) return false;
+          if (s && p.status !== s) return false;
+          if (!q) return true;
+          const text = (p.invoiceId + " " + p.agent).toLowerCase();
+          return text.includes(q);
+        });
+      }
+
+      function statusBadge(status) {
+        const span = document.createElement("span");
+        span.classList.add("badge");
+        if (status === "paid") {
+          span.classList.add("badge-paid");
+          span.textContent = "Paid";
+        } else if (status === "pending") {
+          span.classList.add("badge-pending");
+          span.textContent = "Pending";
+        } else if (status === "failed") {
+          span.classList.add("badge-failed");
+          span.textContent = "Failed";
+        } else {
+          span.classList.add("badge-refund");
+          span.textContent = "Refunded";
+        }
+        return span;
+      }
+
+      function renderKpis(list) {
+        let total = 0;
+        let paid = 0;
+        let pending = 0;
+        let failed = 0;
+        let refund = 0;
+        list.forEach((p) => {
+          total += p.amount;
+          if (p.status === "paid") paid += p.amount;
+          else if (p.status === "pending") pending += p.amount;
+          else if (p.status === "failed") failed += p.amount;
+          else if (p.status === "refund") refund += p.amount;
+        });
+
+        els.paymentKpis.innerHTML = "";
+        const k1 = document.createElement("div");
+        k1.className = "kpi-card";
+        k1.innerHTML = `
+          <div class="kpi-label">Tổng giá trị invoice (demo)</div>
+          <div class="kpi-value">${total.toLocaleString("ja-JP")} JPY</div>
+          <div class="kpi-subtext">Bao gồm ads, subscription, fees.</div>
+        `;
+
+        const k2 = document.createElement("div");
+        k2.className = "kpi-card";
+        k2.innerHTML = `
+          <div class="kpi-label">Đã thu (Paid)</div>
+          <div class="kpi-value">${paid.toLocaleString("ja-JP")} JPY</div>
+          <div class="kpi-subtext">Doanh thu đã xác nhận (demo).</div>
+        `;
+
+        const k3 = document.createElement("div");
+        k3.className = "kpi-card";
+        k3.innerHTML = `
+          <div class="kpi-label">Outstanding & điều chỉnh</div>
+          <div class="kpi-value">Pending ${pending.toLocaleString("ja-JP")} / Refund ${refund.toLocaleString("ja-JP")}</div>
+          <div class="kpi-subtext">Failed ${failed.toLocaleString("ja-JP")} JPY.</div>
+        `;
+
+        els.paymentKpis.appendChild(k1);
+        els.paymentKpis.appendChild(k2);
+        els.paymentKpis.appendChild(k3);
+      }
+
+      function renderTable() {
+        const list = applyFilters();
+        renderKpis(list);
+        els.paymentTbody.innerHTML = "";
+        list.forEach((p) => {
+          const tr = document.createElement("tr");
+          if (p.invoiceId === selectedInvoice) tr.classList.add("selected-row");
+
+          const tdInv = document.createElement("td");
+          tdInv.textContent = p.invoiceId;
+
+          const tdAgent = document.createElement("td");
+          tdAgent.textContent = p.agent;
+
+          const tdType = document.createElement("td");
+          tdType.textContent =
+            p.productType === "ads"
+              ? "Ads"
+              : p.productType === "subscription"
+                ? "Subscription"
+                : "Transaction fee";
+
+          const tdAmt = document.createElement("td");
+          tdAmt.textContent = p.amount.toLocaleString("ja-JP");
+
+          const tdStatus = document.createElement("td");
+          tdStatus.appendChild(statusBadge(p.status));
+
+          const tdCreated = document.createElement("td");
+          tdCreated.textContent = p.createdAt;
+
+          tr.appendChild(tdInv);
+          tr.appendChild(tdAgent);
+          tr.appendChild(tdType);
+          tr.appendChild(tdAmt);
+          tr.appendChild(tdStatus);
+          tr.appendChild(tdCreated);
+
+          tr.addEventListener("click", () => selectInvoice(p.invoiceId));
+          els.paymentTbody.appendChild(tr);
+        });
+      }
+
+      function selectInvoice(id) {
+        const p = payments.find((x) => x.invoiceId === id);
+        if (!p) return;
+        selectedInvoice = id;
+        els.paymentEmpty.style.display = "none";
+        els.paymentDetail.style.display = "";
+
+        els.dInvoiceId.textContent = p.invoiceId;
+        els.dAgent.textContent = p.agent;
+        els.dProductType.textContent =
+          p.productType === "ads"
+            ? "Ads"
+            : p.productType === "subscription"
+              ? "Subscription"
+              : "Transaction fee";
+        els.dBillingType.textContent =
+          p.billingType === "recurring" ? "Recurring" : "Per-transaction";
+        els.dAmount.textContent = p.amount.toLocaleString("ja-JP") + " JPY";
+        els.dStatus.textContent =
+          p.status === "paid"
+            ? "Paid"
+            : p.status === "pending"
+              ? "Pending"
+              : p.status === "failed"
+                ? "Failed"
+                : "Refunded";
+        els.dCreatedAt.textContent = p.createdAt;
+        els.dUpdatedAt.textContent = p.updatedAt;
+        els.dPaymentMethod.textContent = p.paymentMethod;
+        els.dGateway.textContent = p.gateway;
+
+        const lines = [];
+        lines.push(
+          `Invoice ${p.invoiceId} cho agent (demo) "${p.agent}", sản phẩm: ${els.dProductType.textContent}.`,
+        );
+        lines.push(
+          `Số tiền demo: ${p.amount.toLocaleString("ja-JP")} JPY, billing: ${els.dBillingType.textContent}.`,
+        );
+        lines.push(
+          `Trạng thái: ${els.dStatus.textContent}, tạo ngày ${p.createdAt}, cập nhật ${p.updatedAt}.`,
+        );
+        lines.push(
+          `Phương thức: ${p.paymentMethod}, gateway: ${p.gateway}. Không lưu số thẻ hay thông tin cá nhân trong report này.`,
+        );
+        els.paymentSummary.textContent = lines.join("\n");
+
+        renderTable();
+      }
+
+      function exportCsv() {
+        const list = applyFilters();
+        const header = [
+          "invoiceId",
+          "agent_demo_label",
+          "productType",
+          "billingType",
+          "amount",
+          "status",
+          "paymentMethod_redacted",
+          "gateway",
+          "createdAt",
+          "updatedAt",
+        ];
+        const rows = list.map((p) => [
+          p.invoiceId,
+          p.agent,
+          p.productType,
+          p.billingType,
+          p.amount,
+          p.status,
+          p.paymentMethod,
+          p.gateway,
+          p.createdAt,
+          p.updatedAt,
+        ]);
+
+        const escapeCsv = (value) => {
+          if (value == null) return "";
+          const str = String(value);
+          if (/[",\n]/.test(str)) {
+            return '"' + str.replace(/"/g, '""') + '"';
+          }
+          return str;
+        };
+
+        const csv = [header, ...rows]
+          .map((row) => row.map(escapeCsv).join(","))
+          .join("\n");
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "yuushi_payment_reports_demo.csv";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function init() {
+        els.productTypeFilter.addEventListener("change", renderTable);
+        els.statusFilter.addEventListener("change", renderTable);
+        els.searchInvoice.addEventListener("input", renderTable);
+        els.exportPaymentCsv.addEventListener("click", exportCsv);
+        renderTable();
+      }
+
+      init();
+    </script>
+  </body>
+</html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Payment Reports</title>
+  </head>
+  <body>
+    <h1>Payment Reports</h1>
+    <p>
+      View payment status and revenue reports for agents, customers, and support
+      accounts. Placeholder screen.
+    </p>
+  </body>
+</html>

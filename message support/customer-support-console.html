@@ -1,0 +1,1079 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Customer Support Console</title>
+    <style>
+      :root {
+        --bg-body: #f5f3ef;
+        --bg-card: #fffaf2;
+        --border-subtle: #eadccd;
+        --accent: #c26b41;
+        --accent-soft: #f3d7c6;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+        --badge-green: #2f855a;
+        --badge-gray: #4a5568;
+        --badge-orange: #b7791f;
+        --badge-red: #c53030;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px 24px 32px;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        letter-spacing: 0.02em;
+      }
+
+      .page-subtitle {
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .top-row {
+        display: grid;
+        grid-template-columns: 2.2fr 1.8fr;
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 7fr) minmax(0, 6fr);
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .card {
+        background-color: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        padding: 14px 16px 16px;
+        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .metric-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .metric {
+        flex: 1 1 120px;
+        padding: 8px 10px;
+        border-radius: 12px;
+        background: #f8f1ea;
+        border: 1px solid #e6d4c0;
+      }
+
+      .metric-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .metric-value {
+        font-size: 18px;
+        font-weight: 600;
+      }
+
+      .metric-trend {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .toolbar-right {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 11px;
+        font-size: 11px;
+        background-color: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+        color: var(--text-main);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #c26b41, #a55232);
+        border-color: #a55232;
+        color: #fffaf3;
+      }
+
+      .btn-ghost {
+        background: transparent;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 120px;
+      }
+
+      .field-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+
+      input[type="text"],
+      select {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      input[type="text"]:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f7efe6;
+      }
+
+      th,
+      td {
+        padding: 7px 8px;
+        text-align: left;
+        border-bottom: 1px solid #efe0d4;
+      }
+
+      th {
+        font-weight: 500;
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      tbody tr {
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+
+      tbody tr:hover {
+        background-color: #f8f1ea;
+      }
+
+      tbody tr.selected-row {
+        background-color: #f1e3d5;
+      }
+
+      .conv-topic {
+        font-weight: 600;
+      }
+
+      .conv-meta {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 500;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+
+      .badge-status-open {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+
+      .badge-status-idle {
+        background: #fffaf0;
+        color: var(--badge-orange);
+        border-color: #fbd38d;
+      }
+
+      .badge-status-ended {
+        background: #f7f7f8;
+        color: var(--badge-gray);
+        border-color: #d2d6dc;
+      }
+
+      .badge-channel {
+        background: #edf2f7;
+        color: #2c5282;
+        border-color: #cbd5e0;
+      }
+
+      .badge-queue {
+        background: #f0e3d7;
+        color: #744210;
+        border-color: #e2c6a8;
+      }
+
+      .badge-sla-good {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+
+      .badge-sla-risk {
+        background: #fffaf0;
+        color: var(--badge-orange);
+        border-color: #fbd38d;
+      }
+
+      .badge-sla-breach {
+        background: #fff5f5;
+        color: var(--badge-red);
+        border-color: #fed7d7;
+      }
+
+      .detail-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .detail-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .detail-title-block h2 {
+        margin: 0 0 4px;
+        font-size: 16px;
+      }
+
+      .detail-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .detail-meta span + span::before {
+        content: "· ";
+        margin: 0 2px;
+      }
+
+      .detail-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+        margin-bottom: 4px;
+      }
+
+      .detail-field-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .detail-input,
+      .detail-select,
+      textarea {
+        width: 100%;
+        border-radius: 9px;
+        border: 1px solid var(--border-subtle);
+        padding: 5px 8px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      .detail-input:focus,
+      .detail-select:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      textarea {
+        min-height: 70px;
+        resize: vertical;
+        font-family: inherit;
+      }
+
+      .preview-box {
+        border-radius: 10px;
+        border: 1px dashed #deccba;
+        padding: 8px 9px;
+        background: #fffaf1;
+        font-size: 12px;
+        color: var(--text-main);
+      }
+
+      .hint-text {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .queue-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-size: 12px;
+      }
+
+      .queue-list li {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
+        border-bottom: 1px dashed #eadccd;
+      }
+
+      @media (max-width: 960px) {
+        .top-row {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Customer Support Console</h1>
+      <p class="page-subtitle">
+        Console tổng quan cho team CS: workload, SLA và hàng đợi hội thoại. Chỉ
+        hiển thị metadata, không load log hội thoại chi tiết.
+      </p>
+    </div>
+
+    <section class="top-row">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">SLA & khối lượng trong ngày</div>
+            <div class="card-subtitle">Dữ liệu tổng hợp (demo)</div>
+          </div>
+        </div>
+        <div class="metric-row" id="metricRow"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Tình trạng hàng đợi theo queue</div>
+            <div class="card-subtitle">
+              Số lượng hội thoại đang mở & rủi ro SLA.
+            </div>
+          </div>
+        </div>
+        <ul class="queue-list" id="queueList"></ul>
+      </div>
+    </section>
+
+    <div class="layout">
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Danh sách hội thoại đang mở</div>
+            <div class="card-subtitle">
+              Mỗi dòng là 1 hội thoại tổng hợp; không hiển thị nội dung tin
+              nhắn.
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <button id="exportCsvBtn" class="btn btn-ghost" type="button">
+              Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="filters">
+          <div class="field-group" style="flex: 1 1 220px">
+            <label class="field-label" for="searchInput">Tìm kiếm</label>
+            <input
+              id="searchInput"
+              type="text"
+              placeholder="Mã hội thoại, topic, queue..."
+            />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="queueFilter">Queue</label>
+            <select id="queueFilter">
+              <option value="">Tất cả</option>
+              <option value="general">General</option>
+              <option value="billing">Billing</option>
+              <option value="tech">Tech</option>
+              <option value="agent">Agent portal</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="channelFilter">Channel</label>
+            <select id="channelFilter">
+              <option value="">Tất cả</option>
+              <option value="chat">Chat</option>
+              <option value="email">Email</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="statusFilter">Trạng thái</label>
+            <select id="statusFilter">
+              <option value="">Tất cả</option>
+              <option value="open">Đang xử lý</option>
+              <option value="idle">Chờ khách</option>
+              <option value="ended">Đã kết thúc</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="slaFilter">SLA</label>
+            <select id="slaFilter">
+              <option value="">Tất cả</option>
+              <option value="good">On track</option>
+              <option value="risk">At risk</option>
+              <option value="breach">Breached</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="overflow: auto; max-height: 360px">
+          <table>
+            <thead>
+              <tr>
+                <th>Hội thoại</th>
+                <th>Queue</th>
+                <th>Channel</th>
+                <th>Trạng thái</th>
+                <th>SLA</th>
+                <th>Last activity</th>
+              </tr>
+            </thead>
+            <tbody id="convTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="detail-layout" id="emptyDetail">
+          <div class="card-title">Chi tiết hội thoại</div>
+          <p class="card-subtitle">
+            Chọn một hội thoại bên trái để xem metadata, route queue, assigned
+            agent và sơ bộ nội dung / sentiment. Không hiển thị log chat cụ thể.
+          </p>
+        </div>
+
+        <div class="detail-layout" id="detailPanel" style="display: none">
+          <div class="detail-header">
+            <div class="detail-title-block">
+              <h2 id="detailTopic"></h2>
+              <div class="detail-meta">
+                <span id="detailId"></span>
+                <span id="detailRequester"></span>
+                <span id="detailChannel"></span>
+              </div>
+            </div>
+            <div class="toolbar-right">
+              <button id="btnTransfer" class="btn" type="button">
+                Chuyển queue
+              </button>
+              <button id="btnEnd" class="btn btn-primary" type="button">
+                Kết thúc hội thoại (demo)
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="detail-section-title">Thông tin chung</div>
+            <div class="detail-grid">
+              <div>
+                <div class="detail-field-label">Queue hiện tại</div>
+                <select id="inputQueue" class="detail-select">
+                  <option value="general">General</option>
+                  <option value="billing">Billing</option>
+                  <option value="tech">Tech</option>
+                  <option value="agent">Agent portal</option>
+                </select>
+              </div>
+              <div>
+                <div class="detail-field-label">Channel</div>
+                <div
+                  class="detail-input"
+                  id="fieldChannel"
+                  style="border: 0; padding-left: 0; background: transparent"
+                ></div>
+              </div>
+              <div>
+                <div class="detail-field-label">Requester type</div>
+                <div
+                  class="detail-input"
+                  id="fieldRequester"
+                  style="border: 0; padding-left: 0; background: transparent"
+                ></div>
+              </div>
+              <div>
+                <div class="detail-field-label">Assigned agent</div>
+                <input id="inputAssignee" class="detail-input" type="text" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="detail-section-title">Thời gian & SLA</div>
+            <div class="detail-grid">
+              <div>
+                <div class="detail-field-label">Bắt đầu</div>
+                <div
+                  class="detail-input"
+                  id="fieldStart"
+                  style="border: 0; padding-left: 0; background: transparent"
+                ></div>
+              </div>
+              <div>
+                <div class="detail-field-label">Last activity</div>
+                <div
+                  class="detail-input"
+                  id="fieldLastActivity"
+                  style="border: 0; padding-left: 0; background: transparent"
+                ></div>
+              </div>
+              <div>
+                <div class="detail-field-label">SLA target (phút)</div>
+                <div
+                  class="detail-input"
+                  id="fieldSlaTarget"
+                  style="border: 0; padding-left: 0; background: transparent"
+                ></div>
+              </div>
+              <div>
+                <div class="detail-field-label">SLA status</div>
+                <div
+                  class="detail-input"
+                  id="fieldSlaStatus"
+                  style="border: 0; padding-left: 0; background: transparent"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="detail-section-title">Tóm tắt & sentiment</div>
+            <div class="preview-box" id="fieldSummary"></div>
+            <p class="hint-text">
+              Tóm tắt này chỉ mang tính tổng quát (ví dụ: hỏi về invoice, lỗi kỹ
+              thuật); không chứa nội dung chat/email chi tiết.
+            </p>
+          </div>
+
+          <div>
+            <div class="detail-section-title">Ghi chú nội bộ (CS)</div>
+            <textarea
+              id="inputInternalNote"
+              placeholder="Ghi chú cho CS, không copy/paste message của khách."
+            ></textarea>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const overview = {
+        todayHandled: 128,
+        todayOpen: 34,
+        fcrRate: 0.78,
+        asaSeconds: 42,
+      };
+
+      const queues = [
+        { key: "general", name: "General", open: 12, slaRisk: 2, slaBreach: 0 },
+        { key: "billing", name: "Billing", open: 9, slaRisk: 3, slaBreach: 1 },
+        { key: "tech", name: "Tech", open: 7, slaRisk: 1, slaBreach: 0 },
+        {
+          key: "agent",
+          name: "Agent portal",
+          open: 6,
+          slaRisk: 0,
+          slaBreach: 0,
+        },
+      ];
+
+      const conversations = [
+        {
+          id: "CONV-1001",
+          topic: "Hỏi chi tiết line trên invoice",
+          requesterType: "agent",
+          requesterLabel: "Agent (Osaka)",
+          queue: "billing",
+          channel: "chat",
+          status: "open",
+          slaStatus: "risk",
+          lastActivity: "2026-03-30 10:05",
+          startTime: "2026-03-30 09:40",
+          slaTargetMinutes: 30,
+          assignee: "CS Tanaka",
+          summary:
+            "Hội thoại về cách tính phí listing promotion trong invoice tháng 3, khách khá nhạy cảm về chi phí.",
+        },
+        {
+          id: "CONV-1010",
+          topic: "User không nhận được email xác nhận",
+          requesterType: "end_user",
+          requesterLabel: "End user (web)",
+          queue: "general",
+          channel: "chat",
+          status: "idle",
+          slaStatus: "good",
+          lastActivity: "2026-03-30 10:25",
+          startTime: "2026-03-30 10:15",
+          slaTargetMinutes: 20,
+          assignee: "CS Nakamura",
+          summary:
+            "User hỏi về email xác nhận đăng ký tài khoản, CS đã hướng dẫn kiểm tra spam & gửi lại.",
+        },
+        {
+          id: "CONV-1022",
+          topic: "Lỗi khi upload CSV listing",
+          requesterType: "agent",
+          requesterLabel: "Agent (Nagoya)",
+          queue: "tech",
+          channel: "email",
+          status: "open",
+          slaStatus: "good",
+          lastActivity: "2026-03-30 09:55",
+          startTime: "2026-03-30 09:30",
+          slaTargetMinutes: 45,
+          assignee: "Tech CS",
+          summary:
+            "Hội thoại về lỗi kỹ thuật khi upload file CSV listing; đang phối hợp với team engineering.",
+        },
+        {
+          id: "CONV-1035",
+          topic: "Agent hỏi quy trình upgrade plan",
+          requesterType: "agent",
+          requesterLabel: "Agent (Tokyo)",
+          queue: "agent",
+          channel: "chat",
+          status: "ended",
+          slaStatus: "good",
+          lastActivity: "2026-03-30 08:50",
+          startTime: "2026-03-30 08:40",
+          slaTargetMinutes: 30,
+          assignee: "CS Yamada",
+          summary:
+            "Hội thoại hướng dẫn agent về bước upgrade plan và thời điểm bắt đầu tính phí.",
+        },
+      ];
+
+      let selectedId = null;
+
+      const els = {
+        metricRow: document.getElementById("metricRow"),
+        queueList: document.getElementById("queueList"),
+        searchInput: document.getElementById("searchInput"),
+        queueFilter: document.getElementById("queueFilter"),
+        channelFilter: document.getElementById("channelFilter"),
+        statusFilter: document.getElementById("statusFilter"),
+        slaFilter: document.getElementById("slaFilter"),
+        convTbody: document.getElementById("convTbody"),
+        exportCsvBtn: document.getElementById("exportCsvBtn"),
+        emptyDetail: document.getElementById("emptyDetail"),
+        detailPanel: document.getElementById("detailPanel"),
+        detailTopic: document.getElementById("detailTopic"),
+        detailId: document.getElementById("detailId"),
+        detailRequester: document.getElementById("detailRequester"),
+        detailChannel: document.getElementById("detailChannel"),
+        inputQueue: document.getElementById("inputQueue"),
+        fieldChannel: document.getElementById("fieldChannel"),
+        fieldRequester: document.getElementById("fieldRequester"),
+        inputAssignee: document.getElementById("inputAssignee"),
+        fieldStart: document.getElementById("fieldStart"),
+        fieldLastActivity: document.getElementById("fieldLastActivity"),
+        fieldSlaTarget: document.getElementById("fieldSlaTarget"),
+        fieldSlaStatus: document.getElementById("fieldSlaStatus"),
+        fieldSummary: document.getElementById("fieldSummary"),
+        inputInternalNote: document.getElementById("inputInternalNote"),
+        btnTransfer: document.getElementById("btnTransfer"),
+        btnEnd: document.getElementById("btnEnd"),
+      };
+
+      function renderOverview() {
+        els.metricRow.innerHTML = "";
+        const configs = [
+          {
+            label: "Hội thoại đã xử lý hôm nay",
+            value: overview.todayHandled,
+            trend: "+12% vs hôm qua (demo)",
+          },
+          {
+            label: "Hội thoại đang mở",
+            value: overview.todayOpen,
+            trend: "Bao gồm tất cả queue & channel.",
+          },
+          {
+            label: "Tỉ lệ FCR (First Contact Resolution)",
+            value: Math.round(overview.fcrRate * 100) + "%",
+            trend: "Chỉ tính theo case metadata, không đọc nội dung chat.",
+          },
+          {
+            label: "ASA trung bình (giây)",
+            value: overview.asaSeconds,
+            trend: "Thời gian chờ đến lần phản hồi đầu.",
+          },
+        ];
+
+        configs.forEach((m) => {
+          const div = document.createElement("div");
+          div.className = "metric";
+          div.innerHTML = `
+            <div class="metric-label">${m.label}</div>
+            <div class="metric-value">${m.value}</div>
+            <div class="metric-trend">${m.trend}</div>
+          `;
+          els.metricRow.appendChild(div);
+        });
+      }
+
+      function renderQueues() {
+        els.queueList.innerHTML = "";
+        queues.forEach((q) => {
+          const li = document.createElement("li");
+          const left = document.createElement("span");
+          left.textContent = q.name;
+          const right = document.createElement("span");
+          const total = document.createElement("span");
+          total.textContent = `${q.open} open`;
+          const sla = document.createElement("span");
+          let cls = "badge-sla-good";
+          let text = "On track";
+          if (q.slaBreach > 0) {
+            cls = "badge-sla-breach";
+            text = "Breached";
+          } else if (q.slaRisk > 0) {
+            cls = "badge-sla-risk";
+            text = "At risk";
+          }
+          sla.className = `badge ${cls}`;
+          sla.style.marginLeft = "8px";
+          sla.textContent = text;
+          right.appendChild(total);
+          right.appendChild(sla);
+          li.appendChild(left);
+          li.appendChild(right);
+          els.queueList.appendChild(li);
+        });
+      }
+
+      function statusBadge(status) {
+        const span = document.createElement("span");
+        span.classList.add("badge");
+        if (status === "open") {
+          span.classList.add("badge-status-open");
+          span.textContent = "Đang xử lý";
+        } else if (status === "idle") {
+          span.classList.add("badge-status-idle");
+          span.textContent = "Chờ khách";
+        } else {
+          span.classList.add("badge-status-ended");
+          span.textContent = "Đã kết thúc";
+        }
+        return span;
+      }
+
+      function channelBadge(channel) {
+        const span = document.createElement("span");
+        span.classList.add("badge", "badge-channel");
+        span.textContent = channel === "chat" ? "Chat" : "Email";
+        return span;
+      }
+
+      function queueBadge(queue) {
+        const span = document.createElement("span");
+        span.classList.add("badge", "badge-queue");
+        const found = queues.find((q) => q.key === queue);
+        span.textContent = found ? found.name : queue;
+        return span;
+      }
+
+      function slaBadge(status) {
+        const span = document.createElement("span");
+        span.classList.add("badge");
+        if (status === "risk") {
+          span.classList.add("badge-sla-risk");
+          span.textContent = "At risk";
+        } else if (status === "breach") {
+          span.classList.add("badge-sla-breach");
+          span.textContent = "Breached";
+        } else {
+          span.classList.add("badge-sla-good");
+          span.textContent = "On track";
+        }
+        return span;
+      }
+
+      function applyFilters() {
+        const q = els.searchInput.value.trim().toLowerCase();
+        const qQueue = els.queueFilter.value;
+        const qChannel = els.channelFilter.value;
+        const qStatus = els.statusFilter.value;
+        const qSla = els.slaFilter.value;
+
+        return conversations.filter((c) => {
+          if (qQueue && c.queue !== qQueue) return false;
+          if (qChannel && c.channel !== qChannel) return false;
+          if (qStatus && c.status !== qStatus) return false;
+          if (qSla && c.slaStatus !== qSla) return false;
+
+          if (!q) return true;
+          const text = (
+            c.id +
+            " " +
+            c.topic +
+            " " +
+            c.queue +
+            " " +
+            c.requesterLabel +
+            " " +
+            c.assignee
+          ).toLowerCase();
+          return text.includes(q);
+        });
+      }
+
+      function renderTable() {
+        const list = applyFilters();
+        els.convTbody.innerHTML = "";
+        list.forEach((c) => {
+          const tr = document.createElement("tr");
+          if (c.id === selectedId) tr.classList.add("selected-row");
+
+          const tdTopic = document.createElement("td");
+          tdTopic.innerHTML = `<div class="conv-topic">${c.topic}</div>
+            <div class="conv-meta">${c.id} · ${c.requesterLabel}</div>`;
+
+          const tdQueue = document.createElement("td");
+          tdQueue.appendChild(queueBadge(c.queue));
+
+          const tdChannel = document.createElement("td");
+          tdChannel.appendChild(channelBadge(c.channel));
+
+          const tdStatus = document.createElement("td");
+          tdStatus.appendChild(statusBadge(c.status));
+
+          const tdSla = document.createElement("td");
+          tdSla.appendChild(slaBadge(c.slaStatus));
+
+          const tdLast = document.createElement("td");
+          tdLast.textContent = c.lastActivity;
+
+          tr.appendChild(tdTopic);
+          tr.appendChild(tdQueue);
+          tr.appendChild(tdChannel);
+          tr.appendChild(tdStatus);
+          tr.appendChild(tdSla);
+          tr.appendChild(tdLast);
+
+          tr.addEventListener("click", () => selectConversation(c.id));
+          els.convTbody.appendChild(tr);
+        });
+      }
+
+      function selectConversation(id) {
+        const c = conversations.find((x) => x.id === id);
+        if (!c) return;
+        selectedId = id;
+
+        els.emptyDetail.style.display = "none";
+        els.detailPanel.style.display = "";
+
+        els.detailTopic.textContent = c.topic;
+        els.detailId.textContent = c.id;
+        els.detailRequester.textContent = c.requesterLabel;
+        els.detailChannel.innerHTML = "";
+        els.detailChannel.appendChild(channelBadge(c.channel));
+
+        els.inputQueue.value = c.queue;
+        els.fieldChannel.textContent = c.channel === "chat" ? "Chat" : "Email";
+        els.fieldRequester.textContent =
+          c.requesterType === "agent"
+            ? "Agent"
+            : c.requesterType === "end_user"
+              ? "End user"
+              : "Khác";
+        els.inputAssignee.value = c.assignee || "";
+
+        els.fieldStart.textContent = c.startTime;
+        els.fieldLastActivity.textContent = c.lastActivity;
+        els.fieldSlaTarget.textContent = c.slaTargetMinutes;
+        els.fieldSlaStatus.textContent =
+          c.slaStatus === "risk"
+            ? "At risk"
+            : c.slaStatus === "breach"
+              ? "Breached"
+              : "On track";
+        els.fieldSummary.textContent = c.summary;
+
+        renderTable();
+      }
+
+      function transferQueue() {
+        if (!selectedId) return;
+        const c = conversations.find((x) => x.id === selectedId);
+        if (!c) return;
+        c.queue = els.inputQueue.value;
+        c.assignee = els.inputAssignee.value.trim() || c.assignee;
+        alert("Đã cập nhật queue/assignee (demo).");
+        renderTable();
+        selectConversation(c.id);
+      }
+
+      function endConversation() {
+        if (!selectedId) return;
+        const c = conversations.find((x) => x.id === selectedId);
+        if (!c) return;
+        if (!confirm("Đánh dấu hội thoại đã kết thúc? (demo)")) return;
+        c.status = "ended";
+        c.lastActivity = new Date().toLocaleString("vi-VN", { hour12: false });
+        renderTable();
+        selectConversation(c.id);
+      }
+
+      function exportCsv() {
+        const list = applyFilters();
+        const header = [
+          "id",
+          "topic",
+          "requesterType",
+          "requesterLabel",
+          "queue",
+          "channel",
+          "status",
+          "slaStatus",
+          "startTime",
+          "lastActivity",
+          "slaTargetMinutes",
+          "assignee",
+          "summary_high_level",
+        ];
+        const rows = list.map((c) => [
+          c.id,
+          c.topic,
+          c.requesterType,
+          c.requesterLabel,
+          c.queue,
+          c.channel,
+          c.status,
+          c.slaStatus,
+          c.startTime,
+          c.lastActivity,
+          c.slaTargetMinutes,
+          c.assignee,
+          c.summary,
+        ]);
+
+        const escapeCsv = (value) => {
+          if (value == null) return "";
+          const str = String(value);
+          if (/[",\n]/.test(str)) {
+            return '"' + str.replace(/"/g, '""') + '"';
+          }
+          return str;
+        };
+
+        const csv = [header, ...rows]
+          .map((row) => row.map(escapeCsv).join(","))
+          .join("\n");
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "yuushi_support_console_conversations.csv";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function init() {
+        renderOverview();
+        renderQueues();
+        els.searchInput.addEventListener("input", renderTable);
+        els.queueFilter.addEventListener("change", renderTable);
+        els.channelFilter.addEventListener("change", renderTable);
+        els.statusFilter.addEventListener("change", renderTable);
+        els.slaFilter.addEventListener("change", renderTable);
+        els.exportCsvBtn.addEventListener("click", exportCsv);
+        els.btnTransfer.addEventListener("click", transferQueue);
+        els.btnEnd.addEventListener("click", endConversation);
+        renderTable();
+      }
+
+      init();
+    </script>
+  </body>
+</html>

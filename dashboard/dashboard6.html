@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SalesStatisticsDashboard</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f3eee5;
+        color: #2b2118;
+      }
+
+      .page-wrapper {
+        min-height: 100vh;
+        padding: 20px 24px 32px;
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .page-title {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .page-title h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a120b;
+      }
+
+      .page-title span {
+        font-size: 13px;
+        color: #7b6751;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .controls-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .controls label {
+        font-size: 12px;
+        color: #6b5740;
+        margin-right: 4px;
+      }
+
+      .controls select {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #d0c2aa;
+        background: #faf6ee;
+        font-size: 13px;
+      }
+
+      .btn-export {
+        padding: 6px 12px;
+        background: #c79e4c;
+        color: #fff;
+        border-radius: 6px;
+        border: none;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .btn-export:hover {
+        background: #b5893c;
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+
+      @media (max-width: 1400px) {
+        .kpi-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 900px) {
+        .kpi-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 640px) {
+        .kpi-grid {
+          grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+      }
+
+      .kpi-card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 14px 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        border: 1px solid #e2d4bf;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .kpi-label {
+        font-size: 12px;
+        color: #7b6751;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f130c;
+      }
+
+      .kpi-sub {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      .kpi-trend {
+        font-size: 11px;
+        font-weight: 600;
+        color: #0f7a4a;
+      }
+
+      .section-group {
+        margin-bottom: 22px;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .section-header h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #2b2118;
+      }
+
+      .section-header span {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      .charts-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      @media (max-width: 900px) {
+        .charts-grid-2 {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .chart-card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 12px 14px 4px;
+        border: 1px solid #e2d4bf;
+        min-height: 220px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .chart-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #483729;
+        margin-bottom: 8px;
+      }
+
+      .chart-wrapper {
+        position: relative;
+        flex: 1;
+        min-height: 180px;
+      }
+
+      .pnl-section {
+        background: #ffffff;
+        border-radius: 10px;
+        border: 1px solid #e2d4bf;
+        padding: 12px 14px 16px;
+      }
+
+      .pnl-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        margin-top: 8px;
+      }
+
+      .pnl-table th,
+      .pnl-table td {
+        padding: 8px 6px;
+        border-bottom: 1px solid #eee0cf;
+        text-align: right;
+      }
+
+      .pnl-table th:first-child,
+      .pnl-table td:first-child {
+        text-align: left;
+      }
+
+      .pnl-table thead {
+        background: #f6eee1;
+      }
+
+      .pnl-positive {
+        color: #0f7a4a;
+      }
+
+      .pnl-negative {
+        color: #b03232;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script
+      src="https://unpkg.com/react@18/umd/react.development.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+      crossorigin
+    ></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
+
+      function KPICard({ label, value, subtitle, trend }) {
+        return (
+          <div className="kpi-card">
+            <div className="kpi-label">{label}</div>
+            <div className="kpi-value">{value}</div>
+            {subtitle && <div className="kpi-sub">{subtitle}</div>}
+            {trend && <div className="kpi-trend">{trend}</div>}
+          </div>
+        );
+      }
+
+      function BaseChart({ type, title, data, options }) {
+        const canvasRef = useRef(null);
+
+        useEffect(() => {
+          if (!canvasRef.current) return;
+          const ctx = canvasRef.current.getContext("2d");
+          const chart = new Chart(ctx, {
+            type,
+            data,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: true,
+                  labels: { boxWidth: 12, font: { size: 11 } },
+                },
+                tooltip: { mode: "index", intersect: false },
+              },
+              scales:
+                type === "pie"
+                  ? {}
+                  : {
+                      x: { ticks: { font: { size: 10 } } },
+                      y: {
+                        beginAtZero: true,
+                        ticks: { font: { size: 10 } },
+                      },
+                    },
+              ...options,
+            },
+          });
+
+          return () => chart.destroy();
+        }, [type, JSON.stringify(data), JSON.stringify(options)]);
+
+        return (
+          <div className="chart-card">
+            <div className="chart-title">{title}</div>
+            <div className="chart-wrapper">
+              <canvas ref={canvasRef}></canvas>
+            </div>
+          </div>
+        );
+      }
+
+      function SalesStatisticsDashboard() {
+        const [dateRange, setDateRange] = useState("30d");
+
+        const kpi = {
+          totalRevenue: 7900000,
+          subRevenue: 4200000,
+          propertyAds: 2600000,
+          bannerAds: 1100000,
+          avgPerAgent: 145000,
+        };
+
+        const revenueByTypeData = {
+          labels: ["Subscriptions", "Property Ads", "Banner Ads"],
+          datasets: [
+            {
+              label: "Revenue (¥)",
+              data: [kpi.subRevenue, kpi.propertyAds, kpi.bannerAds],
+              backgroundColor: ["#8fb3a2", "#c79e4c", "#b196c9"],
+              borderRadius: 6,
+            },
+          ],
+        };
+
+        const revenueOverTimeData = {
+          labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
+          datasets: [
+            {
+              label: "Total revenue (¥ x 1,000)",
+              data: [520, 560, 610, 640, 690, 720, 790],
+              borderColor: "#b76e79",
+              backgroundColor: "rgba(183, 110, 121, 0.18)",
+              tension: 0.3,
+              fill: true,
+            },
+          ],
+        };
+
+        const agentSpendTrendData = {
+          labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
+          datasets: [
+            {
+              label: "Average spend per agent (¥)",
+              data: [118000, 122000, 130000, 136000, 141000, 144000, 145000],
+              borderColor: "#3c6e71",
+              backgroundColor: "rgba(60, 110, 113, 0.18)",
+              tension: 0.3,
+              fill: true,
+            },
+          ],
+        };
+
+        const pnlRows = [
+          { month: "Apr", revenue: 6400000, costs: 4100000 },
+          { month: "May", revenue: 6900000, costs: 4320000 },
+          { month: "Jun", revenue: 7200000, costs: 4460000 },
+          { month: "Jul", revenue: 7900000, costs: 4680000 },
+        ].map((r) => ({ ...r, net: r.revenue - r.costs }));
+
+        const prevPeriodTotal = 6900000;
+        const currentTotal = 7900000;
+        const delta = currentTotal - prevPeriodTotal;
+        const deltaPct = (delta / prevPeriodTotal) * 100;
+
+        const handleExportPnL = () => {
+          const header = ["Month", "Revenue", "Costs", "Net result"];
+          const rows = pnlRows.map((r) => [r.month, r.revenue, r.costs, r.net]);
+
+          const csvContent = [header, ...rows]
+            .map((r) =>
+              r
+                .map((v) => {
+                  const s = String(v).replace(/"/g, '""');
+                  return `"${s}"`;
+                })
+                .join(","),
+            )
+            .join("\n");
+
+          const blob = new Blob([csvContent], {
+            type: "text/csv;charset=utf-8;",
+          });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "sales_pnl_report.csv";
+          link.click();
+          URL.revokeObjectURL(url);
+        };
+
+        return (
+          <div className="page-wrapper">
+            <div className="page-header">
+              <div className="page-title">
+                <h1>Sales & Revenue Statistics</h1>
+                <span>
+                  Investor-ready view of Yuushi platform revenue and P&L trends
+                </span>
+              </div>
+              <div className="controls">
+                <div className="controls-group">
+                  <label>Date range</label>
+                  <select
+                    value={dateRange}
+                    onChange={(e) => setDateRange(e.target.value)}
+                  >
+                    <option value="7d">Last 7 days</option>
+                    <option value="30d">Last 30 days</option>
+                    <option value="90d">Last 90 days</option>
+                    <option value="ytd">Year to date</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+                <button className="btn-export" onClick={handleExportPnL}>
+                  Download P&L Report
+                </button>
+              </div>
+            </div>
+
+            <div className="kpi-grid">
+              <KPICard
+                label="Total Revenue"
+                value={`¥ ${kpi.totalRevenue.toLocaleString()}`}
+                subtitle="All revenue streams in selected period"
+                trend="+14.5% vs previous period"
+              />
+              <KPICard
+                label="Subscription Revenue"
+                value={`¥ ${kpi.subRevenue.toLocaleString()}`}
+                subtitle="Recurring platform subscriptions"
+                trend="+11.2% vs previous period"
+              />
+              <KPICard
+                label="Property Ad Revenue"
+                value={`¥ ${kpi.propertyAds.toLocaleString()}`}
+                subtitle="Listing & performance-based ads"
+                trend="+9.4% vs previous period"
+              />
+              <KPICard
+                label="Banner Ad Revenue"
+                value={`¥ ${kpi.bannerAds.toLocaleString()}`}
+                subtitle="Display inventory across Yuushi surfaces"
+                trend="+7.1% vs previous period"
+              />
+              <KPICard
+                label="Average Spend per Agent"
+                value={`¥ ${kpi.avgPerAgent.toLocaleString()}`}
+                subtitle="Blended subscriptions + ads"
+                trend="+6.8% vs previous period"
+              />
+            </div>
+
+            <div className="section-group">
+              <div className="section-header">
+                <h2>Revenue mix & trajectory</h2>
+                <span>Composition of revenue streams and overall trend</span>
+              </div>
+              <div className="charts-grid-2">
+                <BaseChart
+                  type="bar"
+                  title="Revenue by type"
+                  data={revenueByTypeData}
+                />
+                <BaseChart
+                  type="line"
+                  title="Total revenue over time"
+                  data={revenueOverTimeData}
+                />
+              </div>
+              <div style={{ marginTop: 14 }}>
+                <BaseChart
+                  type="line"
+                  title="Agent spending trend"
+                  data={agentSpendTrendData}
+                />
+              </div>
+            </div>
+
+            <div className="section-group">
+              <div className="section-header">
+                <h2>Monthly P&L summary</h2>
+                <span>High-level profit and loss evolution</span>
+              </div>
+              <div className="pnl-section">
+                <table className="pnl-table">
+                  <thead>
+                    <tr>
+                      <th>Month</th>
+                      <th>Revenue (¥)</th>
+                      <th>Costs (¥)</th>
+                      <th>Net result (¥)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pnlRows.map((r) => (
+                      <tr key={r.month}>
+                        <td>{r.month}</td>
+                        <td>{r.revenue.toLocaleString()}</td>
+                        <td>{r.costs.toLocaleString()}</td>
+                        <td
+                          className={
+                            r.net >= 0 ? "pnl-positive" : "pnl-negative"
+                          }
+                        >
+                          {r.net.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p style={{ marginTop: 8, fontSize: 12, color: "#5b4632" }}>
+                  Compared with the previous period, total revenue is
+                  <b>
+                    {" "}
+                    {delta >= 0 ? "+" : "-"}
+                    {delta.toLocaleString()} ¥ ({deltaPct.toFixed(1)}%)
+                  </b>
+                  , while costs have grown at a slower pace, supporting a
+                  healthier margin profile.
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      const rootElement = document.getElementById("root");
+      const root = ReactDOM.createRoot(rootElement);
+      root.render(<SalesStatisticsDashboard />);
+    </script>
+  </body>
+</html>

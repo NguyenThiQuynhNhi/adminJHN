@@ -1,0 +1,970 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Property Approval &amp; Moderation</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background: #f5f3ef;
+        color: #2a2118;
+      }
+
+      .page {
+        padding: 24px 32px 32px;
+      }
+
+      .page-header {
+        margin-bottom: 18px;
+      }
+
+      .page-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .page-subtitle {
+        font-size: 13px;
+        color: #7c6a55;
+        max-width: 720px;
+      }
+
+      .pill {
+        margin-top: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #efe3cf;
+        color: #7b623f;
+        display: inline-block;
+      }
+
+      .card {
+        background: #fffaf2;
+        border-radius: 10px;
+        border: 1px solid #eadccd;
+        padding: 14px 16px 16px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .filters input,
+      .filters select {
+        border-radius: 999px;
+        border: 1px solid #ddcdb9;
+        padding: 7px 12px;
+        font-size: 12px;
+        background: #fdf8f0;
+      }
+
+      .select-wrapper {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .select-wrapper select {
+        padding-right: 26px;
+      }
+
+      .select-wrapper::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 9px;
+        color: #7c6a55;
+        pointer-events: none;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 2.4fr) minmax(0, 2fr);
+        gap: 16px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f1e4d4;
+      }
+
+      th,
+      td {
+        padding: 8px 6px;
+        border-bottom: 1px solid #efe2d3;
+        text-align: left;
+      }
+
+      th {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        color: #7b623f;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 11px;
+      }
+
+      .status-pending {
+        background: #fff2cc;
+        color: #7b5b12;
+      }
+
+      .status-approved {
+        background: #e3f5e5;
+        color: #216234;
+      }
+
+      .status-suspended {
+        background: #f9e0dd;
+        color: #a13f3a;
+      }
+
+      .status-archived {
+        background: #e0dfe6;
+        color: #4e4a73;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 11px;
+        background: #efe3cf;
+        color: #7b623f;
+      }
+
+      .severity-high {
+        background: #f9e0dd;
+        color: #a13f3a;
+      }
+
+      .severity-medium {
+        background: #fff2cc;
+        color: #7b5b12;
+      }
+
+      .severity-low {
+        background: #e4f0ff;
+        color: #245796;
+      }
+
+      .prop-title {
+        font-weight: 500;
+      }
+
+      .prop-meta {
+        font-size: 11px;
+        color: #7c6a55;
+      }
+
+      .empty-state {
+        text-align: center;
+        font-size: 12px;
+        color: #7c6a55;
+        padding: 14px 0;
+      }
+
+      .detail-label {
+        font-size: 11px;
+        color: #7c6a55;
+        margin-bottom: 2px;
+      }
+
+      .detail-value {
+        font-size: 13px;
+        margin-bottom: 6px;
+      }
+
+      .textarea-like {
+        border-radius: 8px;
+        border: 1px solid #ddcdb9;
+        background: #fdf8f0;
+        padding: 8px 9px;
+        font-size: 12px;
+        min-height: 60px;
+        white-space: pre-line;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: none;
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .btn-primary {
+        background: #7e1f1f;
+        color: #fff;
+      }
+
+      .btn-secondary {
+        background: #f7efe4;
+        color: #6a5641;
+        border: 1px solid #ddcdb9;
+      }
+
+      .add-filter-btn {
+        background: #ad986e;
+        color: #fff;
+        border: none;
+        padding: 7px 16px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+      }
+
+      .add-filter-btn:hover {
+        background: #997f54;
+      }
+
+      .reset-icon {
+        width: 32px;
+        height: 32px;
+        border: 1px solid #ddcdb9;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #7c6a55;
+        background: #fffaf2;
+        cursor: pointer;
+        font-size: 13px;
+      }
+
+      .reset-icon:hover {
+        border-color: #ad986e;
+        color: #ad986e;
+      }
+
+      .sort-select {
+        min-width: 170px;
+        border-radius: 999px;
+        border: 1px solid #ddcdb9;
+        background: #f1e4d4;
+        padding: 7px 28px 7px 12px;
+        font-size: 12px;
+        color: #6a5641;
+      }
+
+      .view-options {
+        display: inline-flex;
+        gap: 6px;
+        margin-left: 4px;
+      }
+
+      .view-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        border: 1px solid #ddcdb9;
+        background: #fffaf2;
+        font-size: 11px;
+        color: #7c6a55;
+        cursor: pointer;
+      }
+
+      .view-btn.active {
+        background: #ad986e;
+        color: #fffaf2;
+        border-color: #ad986e;
+      }
+
+      .view-btn:not(.active):hover {
+        border-color: #ad986e;
+        color: #ad986e;
+      }
+
+      .btn-sm {
+        padding: 4px 10px;
+        font-size: 11px;
+      }
+
+      /* Property card layout for moderation detail (shared visual) */
+      .property-card {
+        width: 100%;
+        max-width: 380px;
+        margin: 4px auto 0;
+        background: #ffffff;
+        border: 1px solid #e6e1da;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.09);
+        transition: all 0.2s ease;
+        position: relative;
+        cursor: default;
+      }
+
+      .property-card:hover {
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+        transform: translateY(-4px);
+      }
+
+      .property-hero {
+        position: relative;
+        height: 200px;
+        overflow: hidden;
+      }
+
+      .property-hero img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.6s ease;
+      }
+
+      .property-card:hover .property-hero img {
+        transform: scale(1.05);
+      }
+
+      .property-hero-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0.06),
+          rgba(0, 0, 0, 0.55)
+        );
+      }
+
+      .property-agent {
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 2;
+      }
+
+      .property-agent-av {
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #f4a261, #e76f51);
+        border: 2px solid #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: #ffffff;
+        font-size: 12px;
+      }
+
+      .property-agent-name {
+        color: #ffffff;
+        font-size: 12px;
+        font-weight: 600;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+      }
+
+      .property-actions {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 2;
+      }
+
+      .property-btn-compare {
+        background: rgba(255, 255, 255, 0.95);
+        border: none;
+        padding: 5px 11px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #1f2933;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        opacity: 0;
+        transform: translateX(16px);
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 7px rgba(0, 0, 0, 0.15);
+        pointer-events: none;
+      }
+
+      .property-card:hover .property-btn-compare {
+        opacity: 1;
+        transform: translateX(0);
+        pointer-events: auto;
+      }
+
+      .property-btn-wish {
+        width: 32px;
+        height: 32px;
+        background: rgba(255, 255, 255, 0.95);
+        border: none;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 7px rgba(0, 0, 0, 0.18);
+        cursor: pointer;
+      }
+
+      .property-btn-wish svg {
+        width: 16px;
+        height: 16px;
+        stroke: #374151;
+        fill: none;
+      }
+
+      .property-btn-wish.liked svg {
+        fill: #ef4444;
+        stroke: #ef4444;
+      }
+
+      .property-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 26px;
+        height: 26px;
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        z-index: 2;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      }
+
+      .property-card:hover .property-arrow {
+        opacity: 1;
+      }
+
+      .property-arrow.property-prev {
+        left: 14px;
+      }
+
+      .property-arrow.property-next {
+        right: 14px;
+      }
+
+      .property-dots {
+        position: absolute;
+        bottom: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 5px;
+        z-index: 2;
+      }
+
+      .property-dot {
+        width: 6px;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.6);
+        border-radius: 999px;
+        transition: all 0.2s ease;
+      }
+
+      .property-dot.active {
+        background: #ffffff;
+        width: 16px;
+      }
+
+      .property-info-overlay {
+        position: absolute;
+        inset-inline: 0;
+        bottom: 0;
+        padding: 0 14px 14px;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 12px;
+      }
+
+      .property-title-overlay {
+        font-size: 14px;
+        font-weight: 700;
+        color: #ffffff;
+        line-height: 1.25;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+      }
+
+      .property-loc {
+        margin-top: 3px;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      .property-price-info {
+        text-align: right;
+      }
+
+      .property-price {
+        font-size: 15px;
+        font-weight: 700;
+        color: #ffffff;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+      }
+
+      .property-price-sub {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.86);
+      }
+
+      .property-yield {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.95);
+        margin-top: 1px;
+      }
+
+      .property-body {
+        padding: 12px 14px 14px;
+        background: #ffffff;
+      }
+
+      .property-specs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: #6b6560;
+      }
+
+      .property-spec {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .property-desc {
+        font-size: 12px;
+        color: #9c9490;
+        line-height: 1.5;
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="page-header">
+        <div class="page-title">Property Approval &amp; Moderation</div>
+        <div class="page-subtitle">
+          Queue of new listings and reported listings to approve, suspend,
+          archive or remove according to platform rules.
+        </div>
+        <div class="pill">Property Management · Moderation</div>
+      </div>
+
+      <div class="layout">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Moderation queue</div>
+            <div class="card-subtitle">
+              Includes both new listings awaiting review and reported listings.
+            </div>
+          </div>
+
+          <div class="filters">
+            <input
+              id="searchInput"
+              type="text"
+              placeholder="Search by property ID, title, agent"
+            />
+
+            <div class="select-wrapper">
+              <select id="statusFilter">
+                <option value="">Property Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Suspended">Suspended</option>
+                <option value="Archived">Archived</option>
+              </select>
+            </div>
+
+            <div class="select-wrapper">
+              <select id="reasonFilter">
+                <option value="">Moderation Reason</option>
+                <option value="New listing">New listing</option>
+                <option value="User report">User report</option>
+                <option value="System flag">System flag</option>
+              </select>
+            </div>
+
+            <button class="add-filter-btn" type="button">
+              Add/Remove Filters
+            </button>
+
+            <button class="reset-icon" id="clearFilterBtn" type="button">
+              ⟳
+            </button>
+
+            <div class="select-wrapper" style="margin-left: auto">
+              <select class="sort-select" id="sortSelectModeration">
+                <option value="default">Newest (demo order)</option>
+                <option value="severity_desc">Severity: High to Low</option>
+                <option value="severity_asc">Severity: Low to High</option>
+              </select>
+            </div>
+
+            <div class="view-options">
+              <button class="view-btn active" type="button">G</button>
+              <button class="view-btn" type="button">M</button>
+              <button class="view-btn" type="button">L</button>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Agent</th>
+                <th>Reason</th>
+                <th>Severity</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="queueBody"></tbody>
+          </table>
+          <div class="empty-state" id="queueEmpty" style="display: none">
+            No properties in moderation queue.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Case detail &amp; decision</div>
+            <div class="card-subtitle">
+              No message content is shown here; only metadata and moderation
+              actions.
+            </div>
+          </div>
+          <div id="detailContainer">
+            <div class="card-subtitle">
+              Select a listing in the table on the left to review and make a
+              decision.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const moderationQueue = [
+        {
+          id: "P-1101",
+          title: "Studio near Shibuya",
+          agent: "Sakura Realty",
+          status: "Pending",
+          reason: "New listing",
+          severity: "Low",
+          reportedBy: "-",
+          note: "New listing requires standard review.",
+        },
+        {
+          id: "P-1102",
+          title: "Luxury penthouse with ocean view",
+          agent: "Hikari Homes",
+          status: "Pending",
+          reason: "User report",
+          severity: "Medium",
+          reportedBy: "End user",
+          note: "Photo may not match actual unit.",
+        },
+        {
+          id: "P-1103",
+          title: "1K near Osaka station",
+          agent: "Osaka Prime Realty",
+          status: "Suspended",
+          reason: "System flag",
+          severity: "High",
+          reportedBy: "System",
+          note: "Detected duplicate listing with inconsistent price.",
+        },
+      ];
+
+      const decisionLog = [];
+      let filters = { search: "", status: "", reason: "" };
+      let sortMode = "default";
+      let selectedId = null;
+
+      function severityClass(sev) {
+        switch (sev) {
+          case "High":
+            return "severity-high";
+          case "Medium":
+            return "severity-medium";
+          case "Low":
+            return "severity-low";
+          default:
+            return "";
+        }
+      }
+
+      function statusClass(status) {
+        switch (status) {
+          case "Pending":
+            return "status-pending";
+          case "Approved":
+            return "status-approved";
+          case "Suspended":
+            return "status-suspended";
+          case "Archived":
+            return "status-archived";
+          default:
+            return "";
+        }
+      }
+
+      function applyFilters() {
+        const search = filters.search.toLowerCase();
+        const base = moderationQueue.filter((p) => {
+          if (
+            search &&
+            !(
+              p.id.toLowerCase().includes(search) ||
+              p.title.toLowerCase().includes(search) ||
+              p.agent.toLowerCase().includes(search)
+            )
+          ) {
+            return false;
+          }
+          if (filters.status && p.status !== filters.status) return false;
+          if (filters.reason && p.reason !== filters.reason) return false;
+          return true;
+        });
+
+        if (sortMode === "severity_desc" || sortMode === "severity_asc") {
+          const order = { High: 3, Medium: 2, Low: 1 };
+          const dir = sortMode === "severity_desc" ? -1 : 1;
+          return base.slice().sort((a, b) => {
+            const va = order[a.severity] || 0;
+            const vb = order[b.severity] || 0;
+            return va > vb ? -dir : va < vb ? dir : 0;
+          });
+        }
+
+        return base;
+      }
+
+      function renderQueue() {
+        const tbody = document.getElementById("queueBody");
+        const empty = document.getElementById("queueEmpty");
+        tbody.innerHTML = "";
+        const data = applyFilters();
+        if (!data.length) {
+          empty.style.display = "block";
+          return;
+        }
+        empty.style.display = "none";
+        data.forEach((p) => {
+          const tr = document.createElement("tr");
+          tr.style.cursor = "pointer";
+          tr.innerHTML = `
+            <td>
+              <div class="prop-title">${p.title}</div>
+              <div class="prop-meta">${p.id} · ${p.agent}</div>
+            </td>
+            <td>${p.agent}</td>
+            <td>${p.reason}</td>
+            <td><span class="badge ${severityClass(p.severity)}">${p.severity}</span></td>
+            <td><span class="status-pill ${statusClass(p.status)}">${p.status}</span></td>
+          `;
+          tr.addEventListener("click", () => {
+            selectedId = p.id;
+            renderDetail();
+          });
+          tbody.appendChild(tr);
+        });
+      }
+
+      function logDecision(record, decision, note) {
+        const now = new Date();
+        const ts = now.toISOString().slice(0, 16).replace("T", " ");
+        decisionLog.push({
+          time: ts,
+          propertyId: record.id,
+          decision,
+          note,
+        });
+      }
+
+      function renderDetail() {
+        const div = document.getElementById("detailContainer");
+        const p = moderationQueue.find((x) => x.id === selectedId);
+        if (!p) {
+          div.innerHTML =
+            '<div class="card-subtitle">Select a listing in the table on the left to review and make a decision.</div>';
+          return;
+        }
+        const logs = decisionLog.filter((d) => d.propertyId === p.id);
+        div.innerHTML = `
+          <div class="detail-label">Property</div>
+          <div class="detail-value">${p.title}</div>
+          <div class="detail-label">Property ID</div>
+          <div class="detail-value">${p.id}</div>
+          <div class="detail-label">Agent</div>
+          <div class="detail-value">${p.agent}</div>
+          <div class="detail-label">Moderation reason</div>
+          <div class="detail-value">${p.reason} · Reported by: ${p.reportedBy}</div>
+          <div class="detail-label">Severity</div>
+          <div class="detail-value"><span class="badge ${severityClass(p.severity)}">${p.severity}</span></div>
+          <div class="detail-label">System note</div>
+          <div class="textarea-like">${p.note}</div>
+
+          <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" id="btnApprove">Approve & publish</button>
+            <button class="btn btn-primary btn-sm" id="btnSuspend">Suspend listing</button>
+            <button class="btn btn-primary btn-sm" id="btnArchive">Archive listing</button>
+            <button class="btn btn-primary btn-sm" id="btnRemove">Remove listing</button>
+          </div>
+
+          <div style="margin-top:10px; font-size:11px; color:#7c6a55;">
+            These actions only update in-memory demo data. In production you
+            should log all details, notify the agent and related users, and
+            provide a proper appeal workflow.
+          </div>
+
+          <div style="margin-top:10px;">
+            <div class="detail-label">Decision history (demo)</div>
+            <div class="textarea-like" style="min-height:40px;">
+              ${
+                logs.length
+                  ? logs
+                      .map(
+                        (d) =>
+                          `${d.time}: ${d.decision} (${d.note || "no note"})`,
+                      )
+                      .join("\n")
+                  : "No decisions recorded yet."
+              }
+            </div>
+          </div>
+        `;
+
+        document.getElementById("btnApprove").onclick = () =>
+          performDecision(p, "Approve & publish", "Approved");
+        document.getElementById("btnSuspend").onclick = () =>
+          performDecision(p, "Suspend listing", "Suspended");
+        document.getElementById("btnArchive").onclick = () =>
+          performDecision(p, "Archive listing", "Archived");
+        document.getElementById("btnRemove").onclick = () =>
+          performDecision(p, "Remove listing", "Archived");
+      }
+
+      function performDecision(record, label, newStatus) {
+        const note = prompt(
+          `${label} for ${record.id}. Enter a short note for audit (demo).`,
+        );
+        if (note === null) return;
+        record.status = newStatus;
+        logDecision(record, label, note || "no note");
+        renderQueue();
+        renderDetail();
+        alert(`${label} recorded (demo only).`);
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderQueue();
+        renderDetail();
+
+        document
+          .getElementById("searchInput")
+          .addEventListener("input", (e) => {
+            filters.search = e.target.value;
+            renderQueue();
+          });
+        document
+          .getElementById("statusFilter")
+          .addEventListener("change", (e) => {
+            filters.status = e.target.value;
+            renderQueue();
+          });
+        document
+          .getElementById("reasonFilter")
+          .addEventListener("change", (e) => {
+            filters.reason = e.target.value;
+            renderQueue();
+          });
+
+        const clearBtn = document.getElementById("clearFilterBtn");
+        if (clearBtn) {
+          clearBtn.addEventListener("click", () => {
+            filters = { search: "", status: "", reason: "" };
+            document.getElementById("searchInput").value = "";
+            document.getElementById("statusFilter").value = "";
+            document.getElementById("reasonFilter").value = "";
+            const sortSel = document.getElementById("sortSelectModeration");
+            if (sortSel) sortSel.value = "default";
+            sortMode = "default";
+            renderQueue();
+          });
+        }
+
+        const sortSel = document.getElementById("sortSelectModeration");
+        if (sortSel) {
+          sortSel.addEventListener("change", (e) => {
+            sortMode = e.target.value || "default";
+            renderQueue();
+          });
+        }
+
+        document.querySelectorAll(".view-btn").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            document
+              .querySelectorAll(".view-btn")
+              .forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

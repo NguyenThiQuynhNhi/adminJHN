@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Activity Summary Dashboard</title>
+    <style>
+      :root {
+        --bg-body: #f5f3ef;
+        --bg-card: #fffaf2;
+        --border-subtle: #eadccd;
+        --accent: #c26b41;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+        --badge-green: #2f855a;
+        --badge-gray: #4a5568;
+        --badge-orange: #b7791f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px 24px 32px;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+          sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        letter-spacing: 0.02em;
+      }
+
+      .page-subtitle {
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 1.5fr 1.5fr;
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .card {
+        background-color: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        padding: 14px 16px 16px;
+        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .toolbar-right {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 11px;
+        font-size: 11px;
+        background-color: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+        color: var(--text-main);
+      }
+
+      .btn-ghost {
+        background: transparent;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 140px;
+      }
+
+      .field-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+
+      select,
+      input[type='text'] {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      select:focus,
+      input[type='text']:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .kpi-card {
+        border-radius: 10px;
+        border: 1px dashed var(--border-subtle);
+        padding: 7px 8px;
+        background: #fffdf7;
+        font-size: 12px;
+      }
+
+      .kpi-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .kpi-value {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+
+      .kpi-subtext {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f7efe6;
+      }
+
+      th,
+      td {
+        padding: 7px 8px;
+        text-align: left;
+        border-bottom: 1px solid #efe0d4;
+      }
+
+      th {
+        font-weight: 500;
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      tbody tr {
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+
+      tbody tr:hover {
+        background-color: #f8f1ea;
+      }
+
+      tbody tr.selected-row {
+        background-color: #f1e3d5;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 500;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+
+      .badge-good {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+
+      .badge-neutral {
+        background: #edf2f7;
+        color: var(--badge-gray);
+        border-color: #cbd5e0;
+      }
+
+      .badge-risk {
+        background: #fffaf0;
+        color: var(--badge-orange);
+        border-color: #fbd38d;
+      }
+
+      .detail-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+        margin-bottom: 8px;
+      }
+
+      .detail-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .detail-value {
+        font-size: 12px;
+      }
+
+      .preview-box {
+        border-radius: 10px;
+        border: 1px dashed #deccba;
+        padding: 8px 9px;
+        background: #fffaf1;
+        font-size: 12px;
+        color: var(--text-main);
+        white-space: pre-line;
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Activity Summary Dashboard</h1>
+      <p class="page-subtitle">
+        Tổng quan call, message, viewing, task theo agent/nhóm hoặc theo
+        khoảng thời gian. Không hiển thị nội dung chi tiết, chỉ số tổng hợp.
+      </p>
+    </div>
+
+    <div class="layout">
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Bộ lọc & KPI</div>
+            <div class="card-subtitle">
+              Lọc theo kỳ báo cáo và cách nhóm (per agent / team).</n+            </div>
+          </div>
+          <div class="toolbar-right">
+            <button id="exportCsv" class="btn btn-ghost" type="button">
+              Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="filters">
+          <div class="field-group">
+            <label class="field-label" for="periodFilter">Kỳ báo cáo</label>
+            <select id="periodFilter">
+              <option value="7d">7 ngày gần nhất</option>
+              <option value="30d">30 ngày</option>
+              <option value="90d">90 ngày</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="groupFilter">Nhóm theo</label>
+            <select id="groupFilter">
+              <option value="agent">Agent</option>
+              <option value="team">Team</option>
+            </select>
+          </div>
+          <div class="field-group" style="flex: 1 1 220px">
+            <label class="field-label" for="search">Tìm agent / team</label>
+            <input
+              id="search"
+              type="text"
+              placeholder="Agent/Team label (demo)..."
+            />
+          </div>
+        </div>
+
+        <div class="kpi-grid" id="kpiGrid"></div>
+
+        <div style="overflow: auto; max-height: 260px">
+          <table>
+            <thead>
+              <tr>
+                <th>Agent / Team</th>
+                <th>Calls</th>
+                <th>Messages</th>
+                <th>Viewings</th>
+                <th>Tasks</th>
+                <th>SLA risk</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div id="emptyDetail">
+          <div class="card-title">Chi tiết hoạt động theo agent/team</div>
+          <p class="card-subtitle">
+            Chọn một agent/team ở bảng bên trái để xem breakdown chi tiết: call
+            vs message vs viewing vs task, theo ngày. Chỉ thống kê tổng hợp,
+            không hiển thị nội dung cuộc gọi hay tin nhắn.
+          </p>
+        </div>
+        <div id="detail" style="display: none">
+          <div class="detail-section-title">Thông tin chung</div>
+          <div class="detail-grid">
+            <div>
+              <div class="detail-label">Agent / Team</div>
+              <div class="detail-value" id="dName"></div>
+            </div>
+            <div>
+              <div class="detail-label">Nhóm theo</div>
+              <div class="detail-value" id="dGroupType"></div>
+            </div>
+            <div>
+              <div class="detail-label">Kỳ báo cáo</div>
+              <div class="detail-value" id="dPeriod"></div>
+            </div>
+            <div>
+              <div class="detail-label">Đánh giá SLA (demo)</div>
+              <div class="detail-value" id="dSla"></div>
+            </div>
+          </div>
+
+          <div class="detail-section-title">Số lượng hoạt động</div>
+          <div class="detail-grid">
+            <div>
+              <div class="detail-label">Tổng calls</div>
+              <div class="detail-value" id="dCalls"></div>
+            </div>
+            <div>
+              <div class="detail-label">Tổng messages</div>
+              <div class="detail-value" id="dMessages"></div>
+            </div>
+            <div>
+              <div class="detail-label">Tổng viewings</div>
+              <div class="detail-value" id="dViewings"></div>
+            </div>
+            <div>
+              <div class="detail-label">Tổng tasks</div>
+              <div class="detail-value" id="dTasks"></div>
+            </div>
+          </div>
+
+          <div class="detail-section-title">Tóm tắt (demo)</div>
+          <div class="preview-box" id="summary"></div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const activities = [
+        {
+          id: 'AG-TYO-001',
+          label: 'Agent Tokyo Alpha',
+          groupType: 'agent',
+          period: '7d',
+          calls: 32,
+          messages: 84,
+          viewings: 18,
+          tasks: 40,
+          slaRisk: 'low',
+        },
+        {
+          id: 'AG-OSK-020',
+          label: 'Agent Osaka Homes',
+          groupType: 'agent',
+          period: '7d',
+          calls: 21,
+          messages: 63,
+          viewings: 10,
+          tasks: 26,
+          slaRisk: 'medium',
+        },
+        {
+          id: 'TM-KANTO',
+          label: 'Team Kanto East',
+          groupType: 'team',
+          period: '7d',
+          calls: 88,
+          messages: 210,
+          viewings: 54,
+          tasks: 97,
+          slaRisk: 'low',
+        },
+        {
+          id: 'TM-KINKI',
+          label: 'Team Kansai Core',
+          groupType: 'team',
+          period: '7d',
+          calls: 65,
+          messages: 170,
+          viewings: 39,
+          tasks: 80,
+          slaRisk: 'high',
+        },
+      ];
+
+      let selectedId = null;
+
+      const els = {
+        periodFilter: document.getElementById('periodFilter'),
+        groupFilter: document.getElementById('groupFilter'),
+        search: document.getElementById('search'),
+        kpiGrid: document.getElementById('kpiGrid'),
+        tbody: document.getElementById('tbody'),
+        emptyDetail: document.getElementById('emptyDetail'),
+        detail: document.getElementById('detail'),
+        exportCsv: document.getElementById('exportCsv'),
+        dName: document.getElementById('dName'),
+        dGroupType: document.getElementById('dGroupType'),
+        dPeriod: document.getElementById('dPeriod'),
+        dSla: document.getElementById('dSla'),
+        dCalls: document.getElementById('dCalls'),
+        dMessages: document.getElementById('dMessages'),
+        dViewings: document.getElementById('dViewings'),
+        dTasks: document.getElementById('dTasks'),
+        summary: document.getElementById('summary'),
+      };
+
+      function applyFilters() {
+        const p = els.periodFilter.value;
+        const g = els.groupFilter.value;
+        const q = els.search.value.trim().toLowerCase();
+        return activities.filter((a) => {
+          if (p && a.period !== p) return false;
+          if (g && a.groupType !== g) return false;
+          if (!q) return true;
+          return a.label.toLowerCase().includes(q);
+        });
+      }
+
+      function slaBadgeLabel(risk) {
+        if (risk === 'low') return 'Ổn định';
+        if (risk === 'medium') return 'Cần theo dõi';
+        return 'Nguy cơ SLA';
+      }
+
+      function slaBadge(risk) {
+        const span = document.createElement('span');
+        span.classList.add('badge');
+        if (risk === 'low') span.classList.add('badge-good');
+        else if (risk === 'medium') span.classList.add('badge-neutral');
+        else span.classList.add('badge-risk');
+        span.textContent = slaBadgeLabel(risk);
+        return span;
+      }
+
+      function renderKpis(list) {
+        let calls = 0;
+        let messages = 0;
+        let viewings = 0;
+        let tasks = 0;
+        list.forEach((a) => {
+          calls += a.calls;
+          messages += a.messages;
+          viewings += a.viewings;
+          tasks += a.tasks;
+        });
+
+        els.kpiGrid.innerHTML = '';
+        const mk = (label, value, sub) => {
+          const div = document.createElement('div');
+          div.className = 'kpi-card';
+          div.innerHTML = `
+            <div class="kpi-label">${label}</div>
+            <div class="kpi-value">${value.toLocaleString('ja-JP')}</div>
+            <div class="kpi-subtext">${sub}</div>
+          `;
+          return div;
+        };
+        els.kpiGrid.appendChild(
+          mk('Tổng calls', calls, 'Tổng cuộc gọi được ghi nhận (demo).'),
+        );
+        els.kpiGrid.appendChild(
+          mk('Tổng messages', messages, 'Bao gồm message từ customer/agent.'),
+        );
+        els.kpiGrid.appendChild(
+          mk('Tổng viewings', viewings, 'Số lịch viewing đã được lên lịch.'),
+        );
+        els.kpiGrid.appendChild(
+          mk('Tổng tasks', tasks, 'Bao gồm task nội bộ và follow‑up.'),
+        );
+      }
+
+      function renderTable() {
+        const list = applyFilters();
+        renderKpis(list);
+        els.tbody.innerHTML = '';
+        list.forEach((a) => {
+          const tr = document.createElement('tr');
+          if (a.id === selectedId) tr.classList.add('selected-row');
+
+          const tdName = document.createElement('td');
+          tdName.textContent = a.label;
+
+          const tdCalls = document.createElement('td');
+          tdCalls.textContent = a.calls.toLocaleString('ja-JP');
+
+          const tdMsg = document.createElement('td');
+          tdMsg.textContent = a.messages.toLocaleString('ja-JP');
+
+          const tdView = document.createElement('td');
+          tdView.textContent = a.viewings.toLocaleString('ja-JP');
+
+          const tdTask = document.createElement('td');
+          tdTask.textContent = a.tasks.toLocaleString('ja-JP');
+
+          const tdSla = document.createElement('td');
+          tdSla.appendChild(slaBadge(a.slaRisk));
+
+          tr.appendChild(tdName);
+          tr.appendChild(tdCalls);
+          tr.appendChild(tdMsg);
+          tr.appendChild(tdView);
+          tr.appendChild(tdTask);
+          tr.appendChild(tdSla);
+
+          tr.addEventListener('click', () => selectRow(a.id));
+          els.tbody.appendChild(tr);
+        });
+      }
+
+      function selectRow(id) {
+        const a = activities.find((x) => x.id === id);
+        if (!a) return;
+        selectedId = id;
+        els.emptyDetail.style.display = 'none';
+        els.detail.style.display = '';
+
+        els.dName.textContent = a.label;
+        els.dGroupType.textContent = a.groupType === 'agent' ? 'Agent' : 'Team';
+        els.dPeriod.textContent =
+          a.period === '7d'
+            ? '7 ngày gần nhất'
+            : a.period === '30d'
+              ? '30 ngày'
+              : '90 ngày';
+        els.dSla.textContent = slaBadgeLabel(a.slaRisk);
+        els.dCalls.textContent = a.calls.toLocaleString('ja-JP');
+        els.dMessages.textContent = a.messages.toLocaleString('ja-JP');
+        els.dViewings.textContent = a.viewings.toLocaleString('ja-JP');
+        els.dTasks.textContent = a.tasks.toLocaleString('ja-JP');
+
+        const lines = [];
+        lines.push(
+          `Trong ${els.dPeriod.textContent}, ${a.label} có tổng ${a.calls} calls, ${a.messages} messages, ${a.viewings} viewings và ${a.tasks} tasks (demo).`,
+        );
+        lines.push(
+          `Đánh giá SLA: ${slaBadgeLabel(a.slaRisk)} — chỉ phản ánh khối lượng & thời gian xử lý, không dùng nội dung cuộc gọi/tin nhắn.`,
+        );
+        lines.push(
+          'Dashboard này chỉ báo cáo chỉ số tổng hợp theo agent/team, không cho phép drill‑down tới nội dung từng contact.',
+        );
+        els.summary.textContent = lines.join('\n');
+
+        renderTable();
+      }
+
+      function exportCsv() {
+        const list = applyFilters();
+        const header = [
+          'id',
+          'label',
+          'groupType',
+          'period',
+          'calls',
+          'messages',
+          'viewings',
+          'tasks',
+          'slaRisk',
+        ];
+        const rows = list.map((a) => [
+          a.id,
+          a.label,
+          a.groupType,
+          a.period,
+          a.calls,
+          a.messages,
+          a.viewings,
+          a.tasks,
+          a.slaRisk,
+        ]);
+
+        const escapeCsv = (value) => {
+          if (value == null) return '';
+          const str = String(value);
+          if (/[",\n]/.test(str)) {
+            return '"' + str.replace(/"/g, '""') + '"';
+          }
+          return str;
+        };
+
+        const csv = [header, ...rows]
+          .map((row) => row.map(escapeCsv).join(','))
+          .join('\n');
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'yuushi_activity_summary_demo.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function init() {
+        els.periodFilter.addEventListener('change', renderTable);
+        els.groupFilter.addEventListener('change', renderTable);
+        els.search.addEventListener('input', renderTable);
+        els.exportCsv.addEventListener('click', exportCsv);
+        renderTable();
+      }
+
+      init();
+    </script>
+  </body>
+</html>

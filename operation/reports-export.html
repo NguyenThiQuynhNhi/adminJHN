@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Reports & Export</title>
+    <style>
+      :root {
+        --bg-body: #f5f3ef;
+        --bg-card: #fffaf2;
+        --border-subtle: #eadccd;
+        --accent: #c26b41;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px 24px 32px;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        letter-spacing: 0.02em;
+      }
+
+      .page-subtitle {
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 1.5fr 1.5fr;
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .card {
+        background-color: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        padding: 14px 16px 16px;
+        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .toolbar-right {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 11px;
+        font-size: 11px;
+        background-color: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+        color: var(--text-main);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #c26b41, #a55232);
+        border-color: #a55232;
+        color: #fffaf3;
+      }
+
+      .btn-ghost {
+        background: transparent;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 140px;
+      }
+
+      .field-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+
+      select,
+      input[type="text"] {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      select:focus,
+      input[type="text"]:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f7efe6;
+      }
+
+      th,
+      td {
+        padding: 7px 8px;
+        text-align: left;
+        border-bottom: 1px solid #efe0d4;
+      }
+
+      th {
+        font-weight: 500;
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      tbody tr {
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+
+      tbody tr:hover {
+        background-color: #f8f1ea;
+      }
+
+      tbody tr.selected-row {
+        background-color: #f1e3d5;
+      }
+
+      .detail-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+        margin-bottom: 8px;
+      }
+
+      .detail-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .detail-value {
+        font-size: 12px;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 70px;
+        border-radius: 10px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 8px;
+        font-size: 12px;
+        resize: vertical;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      .preview-box {
+        border-radius: 10px;
+        border: 1px dashed #deccba;
+        padding: 8px 9px;
+        background: #fffaf1;
+        font-size: 12px;
+        color: var(--text-main);
+        white-space: pre-line;
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Reports & Export</h1>
+      <p class="page-subtitle">
+        Tạo và export các báo cáo operations, sales, lead và performance cho
+        management/audit. Chỉ export dữ liệu tổng hợp hoặc metadata.
+      </p>
+    </div>
+
+    <div class="layout">
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Danh sách templates báo cáo</div>
+            <div class="card-subtitle">
+              Chọn template, phạm vi và định dạng export.
+            </div>
+          </div>
+        </div>
+
+        <div class="filters">
+          <div class="field-group">
+            <label class="field-label" for="categoryFilter">Nhóm báo cáo</label>
+            <select id="categoryFilter">
+              <option value="">Tất cả</option>
+              <option value="ops">Operations</option>
+              <option value="sales">Sales</option>
+              <option value="lead">Lead</option>
+              <option value="performance">Performance</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="frequencyFilter">Tần suất</label>
+            <select id="frequencyFilter">
+              <option value="">Tất cả</option>
+              <option value="ad-hoc">Ad-hoc</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          <div class="field-group" style="flex: 1 1 220px">
+            <label class="field-label" for="searchReport">Tìm template</label>
+            <input
+              id="searchReport"
+              type="text"
+              placeholder="VD: Sales by agent, Lead funnel..."
+            />
+          </div>
+        </div>
+
+        <div style="overflow: auto; max-height: 280px">
+          <table>
+            <thead>
+              <tr>
+                <th>Report</th>
+                <th>Nhóm</th>
+                <th>Tần suất</th>
+                <th>Định dạng</th>
+                <th>Lần chạy gần nhất</th>
+              </tr>
+            </thead>
+            <tbody id="reportsTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div id="reportsEmpty">
+          <div class="card-title">Chi tiết & export báo cáo</div>
+          <p class="card-subtitle">
+            Chọn một template để xem mô tả, phạm vi dữ liệu, lịch chạy định kỳ
+            và thực hiện export thủ công (demo). Không export content-level
+            messages/calls, chỉ số tổng hợp.
+          </p>
+        </div>
+        <div id="reportsDetail" style="display: none">
+          <div class="detail-section-title">Thông tin template</div>
+          <div class="detail-grid">
+            <div>
+              <div class="detail-label">Tên báo cáo</div>
+              <div class="detail-value" id="dName"></div>
+            </div>
+            <div>
+              <div class="detail-label">Nhóm</div>
+              <div class="detail-value" id="dCategory"></div>
+            </div>
+            <div>
+              <div class="detail-label">Tần suất</div>
+              <div class="detail-value" id="dFrequency"></div>
+            </div>
+            <div>
+              <div class="detail-label">Định dạng</div>
+              <div class="detail-value" id="dFormat"></div>
+            </div>
+          </div>
+
+          <div class="detail-section-title">Phạm vi & lịch</div>
+          <div class="detail-grid">
+            <div>
+              <div class="detail-label">Phạm vi dữ liệu</div>
+              <div class="detail-value" id="dScope"></div>
+            </div>
+            <div>
+              <div class="detail-label">Kỳ mặc định</div>
+              <div class="detail-value" id="dDefaultPeriod"></div>
+            </div>
+            <div>
+              <div class="detail-label">Lần chạy gần nhất</div>
+              <div class="detail-value" id="dLastRun"></div>
+            </div>
+            <div>
+              <div class="detail-label">Trạng thái gần nhất</div>
+              <div class="detail-value" id="dLastStatus"></div>
+            </div>
+          </div>
+
+          <div class="detail-section-title">Mô tả & lưu ý (demo)</div>
+          <textarea id="dDescription"></textarea>
+
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              margin-top: 6px;
+            "
+          >
+            <div>
+              <button id="btnRunCsv" class="btn btn-primary" type="button">
+                Generate CSV (demo)
+              </button>
+            </div>
+            <div>
+              <button id="btnRunXlsx" class="btn btn-ghost" type="button">
+                Generate XLSX (mock)
+              </button>
+            </div>
+          </div>
+
+          <div class="detail-section-title">Tóm tắt template (demo)</div>
+          <div class="preview-box" id="reportSummary"></div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const reports = [
+        {
+          id: "RPT-OPS-ACTIVITY",
+          name: "Operations - Activity by Agent",
+          category: "ops",
+          frequency: "daily",
+          formats: ["csv"],
+          scope: "Calls, messages, viewings, tasks aggregated by agent.",
+          defaultPeriod: "7 ngày gần nhất",
+          lastRunAt: "2026-04-10 02:00",
+          lastStatus: "Success",
+          description:
+            "Báo cáo hoạt động theo agent cho team operations, phục vụ giám sát workload & SLA. Không bao gồm nội dung chi tiết cuộc gọi/tin nhắn.",
+        },
+        {
+          id: "RPT-SALES-PIPELINE",
+          name: "Sales - Pipeline & Conversion",
+          category: "sales",
+          frequency: "weekly",
+          formats: ["csv"],
+          scope: "Deal stages, value, conversion rates, by team.",
+          defaultPeriod: "4 tuần gần nhất",
+          lastRunAt: "2026-04-08 03:30",
+          lastStatus: "Success",
+          description:
+            "Báo cáo pipeline sales theo team, tập trung vào stage, conversion rate và deal value. Không bao gồm thông tin cá nhân buyer/seller.",
+        },
+        {
+          id: "RPT-LEAD-FUNNEL",
+          name: "Lead - Funnel & Source",
+          category: "lead",
+          frequency: "monthly",
+          formats: ["csv"],
+          scope: "Lead volume by source, stage transitions, violation flags.",
+          defaultPeriod: "3 tháng gần nhất",
+          lastRunAt: "2026-04-01 01:15",
+          lastStatus: "Success",
+          description:
+            "Báo cáo funnel lead theo nguồn, trạng thái xử lý và tỷ lệ vi phạm (spam/fake). Chỉ tổng hợp số lượng, không lộ chi tiết từng lead.",
+        },
+        {
+          id: "RPT-PERF-ADS",
+          name: "Performance - Ads & Monetisation Overview",
+          category: "performance",
+          frequency: "ad-hoc",
+          formats: ["csv"],
+          scope: "Ad impressions, clicks, conversions, and revenue summary.",
+          defaultPeriod: "Tuỳ chọn khi chạy",
+          lastRunAt: "—",
+          lastStatus: "Not run",
+          description:
+            "Báo cáo hiệu quả quảng cáo và monetisation ở mức tổng hợp (IMP, CL, CV, doanh thu). Giao dịch chi tiết được quản lý ở hệ tài chính.",
+        },
+      ];
+
+      let selectedId = null;
+
+      const els = {
+        categoryFilter: document.getElementById("categoryFilter"),
+        frequencyFilter: document.getElementById("frequencyFilter"),
+        searchReport: document.getElementById("searchReport"),
+        reportsTbody: document.getElementById("reportsTbody"),
+        reportsEmpty: document.getElementById("reportsEmpty"),
+        reportsDetail: document.getElementById("reportsDetail"),
+        dName: document.getElementById("dName"),
+        dCategory: document.getElementById("dCategory"),
+        dFrequency: document.getElementById("dFrequency"),
+        dFormat: document.getElementById("dFormat"),
+        dScope: document.getElementById("dScope"),
+        dDefaultPeriod: document.getElementById("dDefaultPeriod"),
+        dLastRun: document.getElementById("dLastRun"),
+        dLastStatus: document.getElementById("dLastStatus"),
+        dDescription: document.getElementById("dDescription"),
+        btnRunCsv: document.getElementById("btnRunCsv"),
+        btnRunXlsx: document.getElementById("btnRunXlsx"),
+        reportSummary: document.getElementById("reportSummary"),
+      };
+
+      function categoryLabel(c) {
+        if (c === "ops") return "Operations";
+        if (c === "sales") return "Sales";
+        if (c === "lead") return "Lead";
+        return "Performance";
+      }
+
+      function freqLabel(f) {
+        if (f === "ad-hoc") return "Ad-hoc";
+        if (f === "daily") return "Daily";
+        if (f === "weekly") return "Weekly";
+        return "Monthly";
+      }
+
+      function applyFilters() {
+        const c = els.categoryFilter.value;
+        const f = els.frequencyFilter.value;
+        const q = els.searchReport.value.trim().toLowerCase();
+        return reports.filter((r) => {
+          if (c && r.category !== c) return false;
+          if (f && r.frequency !== f) return false;
+          if (!q) return true;
+          const text = (r.id + " " + r.name).toLowerCase();
+          return text.includes(q);
+        });
+      }
+
+      function renderTable() {
+        const list = applyFilters();
+        els.reportsTbody.innerHTML = "";
+        list.forEach((r) => {
+          const tr = document.createElement("tr");
+          if (r.id === selectedId) tr.classList.add("selected-row");
+
+          const tdName = document.createElement("td");
+          tdName.textContent = r.name;
+
+          const tdCat = document.createElement("td");
+          tdCat.textContent = categoryLabel(r.category);
+
+          const tdFreq = document.createElement("td");
+          tdFreq.textContent = freqLabel(r.frequency);
+
+          const tdFmt = document.createElement("td");
+          tdFmt.textContent = r.formats.join(", ").toUpperCase();
+
+          const tdLast = document.createElement("td");
+          tdLast.textContent = r.lastRunAt + " (" + r.lastStatus + ")";
+
+          tr.appendChild(tdName);
+          tr.appendChild(tdCat);
+          tr.appendChild(tdFreq);
+          tr.appendChild(tdFmt);
+          tr.appendChild(tdLast);
+
+          tr.addEventListener("click", () => selectReport(r.id));
+          els.reportsTbody.appendChild(tr);
+        });
+      }
+
+      function selectReport(id) {
+        const r = reports.find((x) => x.id === id);
+        if (!r) return;
+        selectedId = id;
+        els.reportsEmpty.style.display = "none";
+        els.reportsDetail.style.display = "";
+
+        els.dName.textContent = r.name;
+        els.dCategory.textContent = categoryLabel(r.category);
+        els.dFrequency.textContent = freqLabel(r.frequency);
+        els.dFormat.textContent = r.formats.join(", ").toUpperCase();
+        els.dScope.textContent = r.scope;
+        els.dDefaultPeriod.textContent = r.defaultPeriod;
+        els.dLastRun.textContent = r.lastRunAt;
+        els.dLastStatus.textContent = r.lastStatus;
+        els.dDescription.value = r.description;
+
+        const lines = [];
+        lines.push(`Template: ${r.name} (${categoryLabel(r.category)}).`);
+        lines.push(
+          `Tần suất: ${freqLabel(r.frequency)}, định dạng: ${r.formats
+            .join(", ")
+            .toUpperCase()}.`,
+        );
+        lines.push(`Phạm vi: ${r.scope}`);
+        lines.push(`Kỳ mặc định: ${r.defaultPeriod}.`);
+        lines.push(
+          `Lần chạy gần nhất: ${r.lastRunAt} (status: ${r.lastStatus}). Export chỉ dùng dữ liệu aggregate/metadata, không chứa content-level message/call.`,
+        );
+        els.reportSummary.textContent = lines.join("\n");
+
+        renderTable();
+      }
+
+      function mockGenerate(format) {
+        if (!selectedId) {
+          alert("Chọn một template trước.");
+          return;
+        }
+        const r = reports.find((x) => x.id === selectedId);
+        alert(
+          `Demo generate ${format.toUpperCase()} cho template "${r.name}". Thực tế sẽ gọi backend export và lưu file an toàn.`,
+        );
+      }
+
+      function init() {
+        els.categoryFilter.addEventListener("change", renderTable);
+        els.frequencyFilter.addEventListener("change", renderTable);
+        els.searchReport.addEventListener("input", renderTable);
+        els.btnRunCsv.addEventListener("click", () => mockGenerate("csv"));
+        els.btnRunXlsx.addEventListener("click", () => mockGenerate("xlsx"));
+        renderTable();
+      }
+
+      init();
+    </script>
+  </body>
+</html>

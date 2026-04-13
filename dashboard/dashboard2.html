@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AgentStatisticsDashboard</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f3eee5;
+        color: #2b2118;
+      }
+
+      .page-wrapper {
+        min-height: 100vh;
+        padding: 20px 24px 32px;
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .page-title {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .page-title h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a120b;
+      }
+
+      .page-title span {
+        font-size: 13px;
+        color: #7b6751;
+      }
+
+      .filters {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .filters-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .filters label {
+        font-size: 12px;
+        color: #6b5740;
+        margin-right: 4px;
+      }
+
+      .filters select {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #d0c2aa;
+        background: #faf6ee;
+        font-size: 13px;
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+
+      @media (max-width: 1200px) {
+        .kpi-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 768px) {
+        .kpi-grid {
+          grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+      }
+
+      .kpi-card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 14px 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        border: 1px solid #e2d4bf;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .kpi-label {
+        font-size: 12px;
+        color: #7b6751;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f130c;
+      }
+
+      .kpi-sub {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      .kpi-trend {
+        font-size: 11px;
+        font-weight: 600;
+        color: #0f7a4a;
+      }
+
+      .section-group {
+        margin-bottom: 22px;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .section-header h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #2b2118;
+      }
+
+      .section-header span {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      .charts-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      @media (max-width: 900px) {
+        .charts-grid-2 {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .chart-card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 12px 14px 4px;
+        border: 1px solid #e2d4bf;
+        min-height: 220px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .chart-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #483729;
+        margin-bottom: 8px;
+      }
+
+      .chart-wrapper {
+        position: relative;
+        flex: 1;
+        min-height: 180px;
+      }
+
+      .table-section {
+        background: #ffffff;
+        border-radius: 10px;
+        border: 1px solid #e2d4bf;
+        padding: 12px 14px 16px;
+        margin-top: 10px;
+      }
+
+      .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .table-header h3 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2b2118;
+      }
+
+      .btn-export {
+        padding: 6px 12px;
+        background: #c79e4c;
+        color: #fff;
+        border-radius: 6px;
+        border: none;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .btn-export:hover {
+        background: #b5893c;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f6eee1;
+      }
+
+      th,
+      td {
+        padding: 8px 6px;
+        text-align: left;
+        border-bottom: 1px solid #eee0cf;
+      }
+
+      th {
+        font-weight: 600;
+        color: #5b4632;
+      }
+
+      tbody tr:nth-child(even) {
+        background: #fdf8f0;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .status-active {
+        background: #e3f5ec;
+        color: #0f7a4a;
+      }
+
+      .status-inactive {
+        background: #f8e4e4;
+        color: #b03232;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <!-- React & Chart.js dependencies -->
+    <script
+      src="https://unpkg.com/react@18/umd/react.development.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+      crossorigin
+    ></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
+
+      function KPICard({ label, value, subtitle, trend }) {
+        return (
+          <div className="kpi-card">
+            <div className="kpi-label">{label}</div>
+            <div className="kpi-value">{value}</div>
+            {subtitle && <div className="kpi-sub">{subtitle}</div>}
+            {trend && <div className="kpi-trend">{trend}</div>}
+          </div>
+        );
+      }
+
+      function BaseChart({ type, title, data, options }) {
+        const canvasRef = useRef(null);
+
+        useEffect(() => {
+          if (!canvasRef.current) return;
+          const ctx = canvasRef.current.getContext("2d");
+          const chart = new Chart(ctx, {
+            type,
+            data,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: true,
+                  labels: { boxWidth: 12, font: { size: 11 } },
+                },
+                tooltip: {
+                  mode: "index",
+                  intersect: false,
+                },
+              },
+              scales:
+                type === "pie"
+                  ? {}
+                  : {
+                      x: {
+                        ticks: { font: { size: 10 } },
+                      },
+                      y: {
+                        beginAtZero: true,
+                        ticks: { font: { size: 10 } },
+                      },
+                    },
+              ...options,
+            },
+          });
+
+          return () => chart.destroy();
+        }, [type, JSON.stringify(data), JSON.stringify(options)]);
+
+        return (
+          <div className="chart-card">
+            <div className="chart-title">{title}</div>
+            <div className="chart-wrapper">
+              <canvas ref={canvasRef}></canvas>
+            </div>
+          </div>
+        );
+      }
+
+      function AgentStatisticsDashboard() {
+        const [locationFilter, setLocationFilter] = useState("all");
+        const [subscriptionFilter, setSubscriptionFilter] = useState("all");
+        const [activityFilter, setActivityFilter] = useState("all");
+
+        const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+        const activeAgentsByDayData = {
+          labels: days,
+          datasets: [
+            {
+              label: "Active agents",
+              data: [210, 220, 230, 240, 255, 260, 270],
+              borderColor: "#c79e4c",
+              backgroundColor: "rgba(199, 158, 76, 0.16)",
+              tension: 0.3,
+              fill: true,
+            },
+          ],
+        };
+
+        const topAgentsPropertiesData = {
+          labels: [
+            "Sakura Realty",
+            "Tokyo Prime Homes",
+            "Osaka Living",
+            "Nagoya Estate",
+            "Shinjuku Partners",
+            "Kyoto View",
+            "Fukuoka City Homes",
+            "BaySide Realty",
+            "Urban Axis",
+            "Hokkaido Homes",
+          ],
+          datasets: [
+            {
+              label: "Properties listed",
+              data: [320, 290, 270, 250, 230, 220, 210, 190, 180, 170],
+              backgroundColor: "#8fb3a2",
+              borderRadius: 6,
+            },
+          ],
+        };
+
+        const subscriptionPackageData = {
+          labels: ["Basic", "Standard", "Premium", "Enterprise"],
+          datasets: [
+            {
+              data: [32, 38, 22, 8],
+              backgroundColor: ["#f2c57c", "#dd9a68", "#8fb3a2", "#b196c9"],
+            },
+          ],
+        };
+
+        const monthlySpendTrendData = {
+          labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
+          datasets: [
+            {
+              label: "Agent monthly spend (¥ x 1,000)",
+              data: [420, 440, 465, 490, 520, 540, 570],
+              borderColor: "#b76e79",
+              backgroundColor: "rgba(183, 110, 121, 0.18)",
+              tension: 0.3,
+              fill: true,
+            },
+          ],
+        };
+
+        const agentsTable = [
+          {
+            name: "Sakura Realty",
+            location: "Tokyo",
+            properties: 320,
+            package: "Premium",
+            monthlySpend: 480000,
+            status: "Active",
+          },
+          {
+            name: "Tokyo Prime Homes",
+            location: "Tokyo",
+            properties: 290,
+            package: "Enterprise",
+            monthlySpend: 720000,
+            status: "Active",
+          },
+          {
+            name: "Osaka Living",
+            location: "Osaka",
+            properties: 270,
+            package: "Standard",
+            monthlySpend: 360000,
+            status: "Active",
+          },
+          {
+            name: "Nagoya Estate",
+            location: "Nagoya",
+            properties: 250,
+            package: "Standard",
+            monthlySpend: 340000,
+            status: "Inactive",
+          },
+          {
+            name: "Fukuoka City Homes",
+            location: "Fukuoka",
+            properties: 210,
+            package: "Basic",
+            monthlySpend: 180000,
+            status: "Active",
+          },
+          {
+            name: "Kyoto View",
+            location: "Kyoto",
+            properties: 190,
+            package: "Premium",
+            monthlySpend: 420000,
+            status: "Active",
+          },
+        ];
+
+        const filteredAgents = agentsTable.filter((a) => {
+          if (locationFilter !== "all" && a.location !== locationFilter)
+            return false;
+          if (
+            subscriptionFilter !== "all" &&
+            a.package.toLowerCase() !== subscriptionFilter
+          )
+            return false;
+          if (
+            activityFilter !== "all" &&
+            a.status.toLowerCase() !== activityFilter
+          )
+            return false;
+          return true;
+        });
+
+        const handleExportExcel = () => {
+          const header = [
+            "Agent Name",
+            "Location",
+            "Number of properties",
+            "Subscription package",
+            "Monthly spend",
+            "Activity status",
+          ];
+          const rows = filteredAgents.map((a) => [
+            a.name,
+            a.location,
+            a.properties,
+            a.package,
+            a.monthlySpend,
+            a.status,
+          ]);
+
+          const csvContent = [header, ...rows]
+            .map((r) =>
+              r
+                .map((v) => {
+                  const s = String(v).replace(/"/g, '""');
+                  return `"${s}"`;
+                })
+                .join(","),
+            )
+            .join("\n");
+
+          const blob = new Blob([csvContent], {
+            type: "text/csv;charset=utf-8;",
+          });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "agent_statistics.csv";
+          link.click();
+          URL.revokeObjectURL(url);
+        };
+
+        const totalAgentCompanies = agentsTable.length;
+        const activeAgentsMonthly = 540; // demo aggregated metric
+        const totalProperties = agentsTable.reduce(
+          (sum, a) => sum + a.properties,
+          0,
+        );
+        const avgMonthlySpendPerAgent = Math.round(
+          agentsTable.reduce((sum, a) => sum + a.monthlySpend, 0) /
+            agentsTable.length,
+        );
+
+        return (
+          <div className="page-wrapper">
+            <div className="page-header">
+              <div className="page-title">
+                <h1>Agent Statistics</h1>
+                <span>
+                  Performance and monetisation view of agent companies on Yuushi
+                </span>
+              </div>
+              <div className="filters">
+                <div className="filters-group">
+                  <label>Location</label>
+                  <select
+                    value={locationFilter}
+                    onChange={(e) => setLocationFilter(e.target.value)}
+                  >
+                    <option value="all">All</option>
+                    <option value="Tokyo">Tokyo</option>
+                    <option value="Osaka">Osaka</option>
+                    <option value="Nagoya">Nagoya</option>
+                    <option value="Fukuoka">Fukuoka</option>
+                    <option value="Kyoto">Kyoto</option>
+                  </select>
+                </div>
+                <div className="filters-group">
+                  <label>Subscription</label>
+                  <select
+                    value={subscriptionFilter}
+                    onChange={(e) => setSubscriptionFilter(e.target.value)}
+                  >
+                    <option value="all">All</option>
+                    <option value="basic">Basic</option>
+                    <option value="standard">Standard</option>
+                    <option value="premium">Premium</option>
+                    <option value="enterprise">Enterprise</option>
+                  </select>
+                </div>
+                <div className="filters-group">
+                  <label>Activity</label>
+                  <select
+                    value={activityFilter}
+                    onChange={(e) => setActivityFilter(e.target.value)}
+                  >
+                    <option value="all">All</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+                <button className="btn-export" onClick={handleExportExcel}>
+                  Download Excel
+                </button>
+              </div>
+            </div>
+
+            <div className="kpi-grid">
+              <KPICard
+                label="Total Agent Companies"
+                value={totalAgentCompanies}
+                subtitle="Registered agent organisations"
+                trend="+3 new this month"
+              />
+              <KPICard
+                label="Active Agents (monthly)"
+                value={activeAgentsMonthly}
+                subtitle="Agents with at least 1 active listing"
+                trend="+4.5% vs last month"
+              />
+              <KPICard
+                label="Total Properties by Agents"
+                value={totalProperties}
+                subtitle="Listings created by all agents"
+                trend="+2.1% vs last 30 days"
+              />
+              <KPICard
+                label="Avg Monthly Spend / Agent"
+                value={`¥ ${avgMonthlySpendPerAgent.toLocaleString()}`}
+                subtitle="Subscription + ads per paying agent"
+                trend="+6.3% vs previous month"
+              />
+            </div>
+
+            <div className="section-group">
+              <div className="section-header">
+                <h2>Agent Activity & Listings</h2>
+                <span>Engagement and inventory concentration</span>
+              </div>
+              <div className="charts-grid-2">
+                <BaseChart
+                  type="line"
+                  title="Active agents by day"
+                  data={activeAgentsByDayData}
+                />
+                <BaseChart
+                  type="bar"
+                  title="Properties listed per agent (Top 10)"
+                  data={topAgentsPropertiesData}
+                />
+              </div>
+            </div>
+
+            <div className="section-group">
+              <div className="section-header">
+                <h2>Packages & Spend</h2>
+                <span>Subscription mix and revenue dynamics</span>
+              </div>
+              <div className="charts-grid-2">
+                <BaseChart
+                  type="pie"
+                  title="Agent distribution by subscription package"
+                  data={subscriptionPackageData}
+                />
+                <BaseChart
+                  type="line"
+                  title="Agent monthly spend trend"
+                  data={monthlySpendTrendData}
+                />
+              </div>
+            </div>
+
+            <div className="section-group">
+              <div className="section-header">
+                <h2>Agent companies table</h2>
+                <span>Filtered cohort for offline analysis</span>
+              </div>
+              <div className="table-section">
+                <div className="table-header">
+                  <h3>Agent performance snapshot</h3>
+                </div>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Agent Name</th>
+                      <th>Location</th>
+                      <th>Properties</th>
+                      <th>Subscription</th>
+                      <th>Monthly spend (¥)</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAgents.map((a, idx) => (
+                      <tr key={idx}>
+                        <td>{a.name}</td>
+                        <td>{a.location}</td>
+                        <td>{a.properties}</td>
+                        <td>{a.package}</td>
+                        <td>{a.monthlySpend.toLocaleString()}</td>
+                        <td>
+                          <span
+                            className={
+                              "status-pill " +
+                              (a.status === "Active"
+                                ? "status-active"
+                                : "status-inactive")
+                            }
+                          >
+                            {a.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      const rootElement = document.getElementById("root");
+      const root = ReactDOM.createRoot(rootElement);
+      root.render(<AgentStatisticsDashboard />);
+    </script>
+  </body>
+</html>

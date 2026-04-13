@@ -1,0 +1,877 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Ad Performance Analysis</title>
+    <style>
+      :root {
+        --bg-body: #f5f3ef;
+        --bg-card: #fffaf2;
+        --border-subtle: #eadccd;
+        --accent: #c26b41;
+        --accent-soft: #f3d7c6;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+        --badge-green: #2f855a;
+        --badge-gray: #4a5568;
+        --badge-orange: #b7791f;
+        --badge-blue: #2b6cb0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px 24px 32px;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        letter-spacing: 0.02em;
+      }
+
+      .page-subtitle {
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 1.3fr 1.7fr;
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .card {
+        background-color: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        padding: 14px 16px 16px;
+        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .toolbar-right {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 11px;
+        font-size: 11px;
+        background-color: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+        color: var(--text-main);
+      }
+
+      .btn-ghost {
+        background: transparent;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #c26b41, #a55232);
+        border-color: #a55232;
+        color: #fffaf3;
+      }
+
+      .btn:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 120px;
+      }
+
+      .field-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+
+      input[type="text"],
+      select {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      input[type="text"]:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f7efe6;
+      }
+
+      th,
+      td {
+        padding: 7px 8px;
+        text-align: left;
+        border-bottom: 1px solid #efe0d4;
+      }
+
+      th {
+        font-weight: 500;
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      tbody tr {
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+
+      tbody tr:hover {
+        background-color: #f8f1ea;
+      }
+
+      tbody tr.selected-row {
+        background-color: #f1e3d5;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 500;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+
+      .badge-green {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+
+      .badge-gray {
+        background: #f7f7f8;
+        color: var(--badge-gray);
+        border-color: #d2d6dc;
+      }
+
+      .badge-orange {
+        background: #fffaf0;
+        color: var(--badge-orange);
+        border-color: #fbd38d;
+      }
+
+      .badge-blue {
+        background: #ebf8ff;
+        color: var(--badge-blue);
+        border-color: #90cdf4;
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .kpi-card {
+        border-radius: 10px;
+        border: 1px dashed var(--border-subtle);
+        padding: 7px 8px;
+        background: #fffdf7;
+        font-size: 12px;
+      }
+
+      .kpi-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .kpi-value {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+
+      .kpi-subtext {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .detail-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+
+      .detail-block {
+        margin-bottom: 8px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px 10px;
+      }
+
+      .detail-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .detail-value {
+        font-size: 12px;
+      }
+
+      .detail-value-strong {
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .preview-box {
+        border-radius: 10px;
+        border: 1px dashed #deccba;
+        padding: 8px 9px;
+        background: #fffaf1;
+        font-size: 12px;
+        color: var(--text-main);
+        white-space: pre-line;
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Ad Performance Analysis</h1>
+      <p class="page-subtitle">
+        So sánh hiệu quả campaign ads (IMP, CL, CTR, CV, CVR) với organic ở
+        level tổng hợp. Không drill-down tới user / session cụ thể.
+      </p>
+    </div>
+
+    <div class="layout">
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Bộ lọc & KPI tổng quan</div>
+            <div class="card-subtitle">
+              Chọn campaign / khoảng thời gian để xem hiệu quả high-level.
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <button id="exportPerfCsv" class="btn btn-ghost" type="button">
+              Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="filters">
+          <div class="field-group" style="flex: 1 1 220px">
+            <label class="field-label" for="searchCampaign">Tìm campaign</label>
+            <input
+              id="searchCampaign"
+              type="text"
+              placeholder="Tên campaign hoặc advertiser..."
+            />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="typeFilter">Loại ad</label>
+            <select id="typeFilter">
+              <option value="">Tất cả</option>
+              <option value="sponsored">Sponsored listing</option>
+              <option value="banner">Banner</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="placementFilter">Placement</label>
+            <select id="placementFilter">
+              <option value="">Tất cả</option>
+              <option value="search">Search result</option>
+              <option value="home">Homepage</option>
+              <option value="detail">Listing detail</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="windowFilter"
+              >Khoảng thời gian</label
+            >
+            <select id="windowFilter">
+              <option value="7">7 ngày gần nhất</option>
+              <option value="30" selected>30 ngày</option>
+              <option value="90">90 ngày</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="kpi-grid" id="kpiGrid"></div>
+
+        <div style="overflow: auto; max-height: 260px">
+          <table>
+            <thead>
+              <tr>
+                <th>Campaign</th>
+                <th>Loại</th>
+                <th>IMP</th>
+                <th>CL</th>
+                <th>CTR</th>
+                <th>CV</th>
+                <th>CVR</th>
+              </tr>
+            </thead>
+            <tbody id="perfTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div id="perfEmpty">
+          <div class="card-title">Chi tiết so sánh ads vs. organic</div>
+          <p class="card-subtitle">
+            Chọn một campaign ở bảng bên trái để xem hiệu quả tóm tắt theo nhóm
+            traffic (ads vs. organic). Không hiển thị impression log hay click
+            log từng user.
+          </p>
+        </div>
+        <div id="perfDetail" style="display: none">
+          <div class="detail-block">
+            <div class="detail-section-title">Tổng quan campaign</div>
+            <div class="detail-grid">
+              <div>
+                <div class="detail-label">Campaign</div>
+                <div class="detail-value-strong" id="dName"></div>
+              </div>
+              <div>
+                <div class="detail-label">Advertiser</div>
+                <div class="detail-value" id="dAdvertiser"></div>
+              </div>
+              <div>
+                <div class="detail-label">Loại ad</div>
+                <div class="detail-value" id="dType"></div>
+              </div>
+              <div>
+                <div class="detail-label">Placement</div>
+                <div class="detail-value" id="dPlacement"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-block">
+            <div class="detail-section-title">Hiệu quả traffic</div>
+            <div class="detail-grid">
+              <div>
+                <div class="detail-label">IMP (ads)</div>
+                <div class="detail-value" id="dAdsImp"></div>
+              </div>
+              <div>
+                <div class="detail-label">IMP (organic baseline)</div>
+                <div class="detail-value" id="dOrgImp"></div>
+              </div>
+              <div>
+                <div class="detail-label">Clicks (ads)</div>
+                <div class="detail-value" id="dAdsCl"></div>
+              </div>
+              <div>
+                <div class="detail-label">Clicks (organic)</div>
+                <div class="detail-value" id="dOrgCl"></div>
+              </div>
+              <div>
+                <div class="detail-label">CV (ads)</div>
+                <div class="detail-value" id="dAdsCv"></div>
+              </div>
+              <div>
+                <div class="detail-label">CV (organic)</div>
+                <div class="detail-value" id="dOrgCv"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-block">
+            <div class="detail-section-title">Rate & uplift</div>
+            <div class="detail-grid">
+              <div>
+                <div class="detail-label">CTR (ads)</div>
+                <div class="detail-value" id="dAdsCtr"></div>
+              </div>
+              <div>
+                <div class="detail-label">CTR (organic)</div>
+                <div class="detail-value" id="dOrgCtr"></div>
+              </div>
+              <div>
+                <div class="detail-label">CVR (ads)</div>
+                <div class="detail-value" id="dAdsCvr"></div>
+              </div>
+              <div>
+                <div class="detail-label">CVR (organic)</div>
+                <div class="detail-value" id="dOrgCvr"></div>
+              </div>
+              <div>
+                <div class="detail-label">Uplift CTR</div>
+                <div class="detail-value" id="dCtrUplift"></div>
+              </div>
+              <div>
+                <div class="detail-label">Uplift CVR</div>
+                <div class="detail-value" id="dCvrUplift"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-block">
+            <div class="detail-section-title">Nhận xét tổng quan (demo)</div>
+            <div class="preview-box" id="perfSummary"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const perfData = [
+        {
+          id: "AD-1001",
+          name: "Sponsored: Dự án căn hộ trung tâm Tokyo",
+          advertiser: "Tokyo Realty Co.",
+          type: "sponsored",
+          placement: "search",
+          windowDays: 30,
+          adsImp: 120000,
+          adsCl: 7200,
+          adsCv: 620,
+          orgImp: 80000,
+          orgCl: 3600,
+          orgCv: 260,
+        },
+        {
+          id: "AD-1010",
+          name: "Banner: Chiến dịch mùa xuân cho agent mới",
+          advertiser: "Yuushi Platform",
+          type: "banner",
+          placement: "home",
+          windowDays: 30,
+          adsImp: 90000,
+          adsCl: 5400,
+          adsCv: 410,
+          orgImp: 70000,
+          orgCl: 2800,
+          orgCv: 180,
+        },
+        {
+          id: "AD-1022",
+          name: "Sponsored: Listing premium khu Osaka",
+          advertiser: "Osaka Homes",
+          type: "sponsored",
+          placement: "detail",
+          windowDays: 30,
+          adsImp: 50000,
+          adsCl: 3500,
+          adsCv: 380,
+          orgImp: 40000,
+          orgCl: 1800,
+          orgCv: 140,
+        },
+        {
+          id: "AD-1035",
+          name: "Banner: Thử nghiệm A/B cho homepage",
+          advertiser: "Yuushi Experiment",
+          type: "banner",
+          placement: "home",
+          windowDays: 30,
+          adsImp: 60000,
+          adsCl: 3000,
+          adsCv: 190,
+          orgImp: 60000,
+          orgCl: 2600,
+          orgCv: 170,
+        },
+      ];
+
+      let selectedId = null;
+
+      const els = {
+        search: document.getElementById("searchCampaign"),
+        type: document.getElementById("typeFilter"),
+        placement: document.getElementById("placementFilter"),
+        window: document.getElementById("windowFilter"),
+        perfTbody: document.getElementById("perfTbody"),
+        kpiGrid: document.getElementById("kpiGrid"),
+        perfEmpty: document.getElementById("perfEmpty"),
+        perfDetail: document.getElementById("perfDetail"),
+        exportPerfCsv: document.getElementById("exportPerfCsv"),
+        dName: document.getElementById("dName"),
+        dAdvertiser: document.getElementById("dAdvertiser"),
+        dType: document.getElementById("dType"),
+        dPlacement: document.getElementById("dPlacement"),
+        dAdsImp: document.getElementById("dAdsImp"),
+        dOrgImp: document.getElementById("dOrgImp"),
+        dAdsCl: document.getElementById("dAdsCl"),
+        dOrgCl: document.getElementById("dOrgCl"),
+        dAdsCv: document.getElementById("dAdsCv"),
+        dOrgCv: document.getElementById("dOrgCv"),
+        dAdsCtr: document.getElementById("dAdsCtr"),
+        dOrgCtr: document.getElementById("dOrgCtr"),
+        dAdsCvr: document.getElementById("dAdsCvr"),
+        dOrgCvr: document.getElementById("dOrgCvr"),
+        dCtrUplift: document.getElementById("dCtrUplift"),
+        dCvrUplift: document.getElementById("dCvrUplift"),
+        perfSummary: document.getElementById("perfSummary"),
+      };
+
+      function applyFilters() {
+        const q = els.search.value.trim().toLowerCase();
+        const t = els.type.value;
+        const p = els.placement.value;
+        const w = Number(els.window.value || "30");
+
+        return perfData.filter((item) => {
+          if (t && item.type !== t) return false;
+          if (p && item.placement !== p) return false;
+          if (w && item.windowDays !== w) return false;
+          if (!q) return true;
+          const text = (
+            item.id +
+            " " +
+            item.name +
+            " " +
+            item.advertiser
+          ).toLowerCase();
+          return text.includes(q);
+        });
+      }
+
+      function pct(num, den) {
+        if (!den) return 0;
+        return (num / den) * 100;
+      }
+
+      function fmtPct(x) {
+        return x.toFixed(1) + "%";
+      }
+
+      function renderKpi(list) {
+        let sumAdsImp = 0,
+          sumAdsCl = 0,
+          sumAdsCv = 0,
+          sumOrgImp = 0,
+          sumOrgCl = 0,
+          sumOrgCv = 0;
+        list.forEach((i) => {
+          sumAdsImp += i.adsImp;
+          sumAdsCl += i.adsCl;
+          sumAdsCv += i.adsCv;
+          sumOrgImp += i.orgImp;
+          sumOrgCl += i.orgCl;
+          sumOrgCv += i.orgCv;
+        });
+
+        const adsCtr = pct(sumAdsCl, sumAdsImp);
+        const adsCvr = pct(sumAdsCv, sumAdsCl);
+        const orgCtr = pct(sumOrgCl, sumOrgImp);
+        const orgCvr = pct(sumOrgCv, sumOrgCl);
+
+        els.kpiGrid.innerHTML = "";
+
+        const k1 = document.createElement("div");
+        k1.className = "kpi-card";
+        k1.innerHTML = `
+          <div class="kpi-label">Tổng IMP (Ads vs. Organic)</div>
+          <div class="kpi-value">${sumAdsImp.toLocaleString("ja-JP")} vs. ${sumOrgImp.toLocaleString("ja-JP")}</div>
+          <div class="kpi-subtext">Ở level campaign aggregate, không theo user.</div>
+        `;
+
+        const k2 = document.createElement("div");
+        k2.className = "kpi-card";
+        const ctrUplift = adsCtr - orgCtr;
+        k2.innerHTML = `
+          <div class="kpi-label">CTR trung bình (Ads vs. Organic)</div>
+          <div class="kpi-value">${fmtPct(adsCtr)} vs. ${fmtPct(orgCtr)}</div>
+          <div class="kpi-subtext">Uplift CTR ~ ${fmtPct(ctrUplift)} (demo).</div>
+        `;
+
+        const k3 = document.createElement("div");
+        k3.className = "kpi-card";
+        const cvrUplift = adsCvr - orgCvr;
+        k3.innerHTML = `
+          <div class="kpi-label">CVR trung bình (Ads vs. Organic)</div>
+          <div class="kpi-value">${fmtPct(adsCvr)} vs. ${fmtPct(orgCvr)}</div>
+          <div class="kpi-subtext">Uplift CVR ~ ${fmtPct(cvrUplift)} (demo).</div>
+        `;
+
+        els.kpiGrid.appendChild(k1);
+        els.kpiGrid.appendChild(k2);
+        els.kpiGrid.appendChild(k3);
+      }
+
+      function renderTable() {
+        const list = applyFilters();
+        els.perfTbody.innerHTML = "";
+        renderKpi(list);
+
+        list.forEach((item) => {
+          const tr = document.createElement("tr");
+          if (item.id === selectedId) tr.classList.add("selected-row");
+
+          const ctrAds = pct(item.adsCl, item.adsImp);
+          const cvrAds = pct(item.adsCv, item.adsCl);
+
+          const tdCampaign = document.createElement("td");
+          tdCampaign.innerHTML = `
+            <div style="font-weight:600">${item.name}</div>
+            <div style="font-size:11px;color:var(--text-muted)">${item.id} · ${item.advertiser}</div>
+          `;
+
+          const tdType = document.createElement("td");
+          const badge = document.createElement("span");
+          badge.className = "badge badge-blue";
+          badge.textContent =
+            item.type === "sponsored" ? "Sponsored listing" : "Banner";
+          tdType.appendChild(badge);
+
+          const tdImp = document.createElement("td");
+          tdImp.textContent = item.adsImp.toLocaleString("ja-JP");
+
+          const tdCl = document.createElement("td");
+          tdCl.textContent = item.adsCl.toLocaleString("ja-JP");
+
+          const tdCtr = document.createElement("td");
+          tdCtr.textContent = fmtPct(ctrAds);
+
+          const tdCv = document.createElement("td");
+          tdCv.textContent = item.adsCv.toLocaleString("ja-JP");
+
+          const tdCvr = document.createElement("td");
+          tdCvr.textContent = fmtPct(cvrAds);
+
+          tr.appendChild(tdCampaign);
+          tr.appendChild(tdType);
+          tr.appendChild(tdImp);
+          tr.appendChild(tdCl);
+          tr.appendChild(tdCtr);
+          tr.appendChild(tdCv);
+          tr.appendChild(tdCvr);
+
+          tr.addEventListener("click", () => selectRow(item.id));
+          els.perfTbody.appendChild(tr);
+        });
+      }
+
+      function selectRow(id) {
+        const item = perfData.find((x) => x.id === id);
+        if (!item) return;
+        selectedId = id;
+
+        els.perfEmpty.style.display = "none";
+        els.perfDetail.style.display = "";
+
+        const adsCtr = pct(item.adsCl, item.adsImp);
+        const orgCtr = pct(item.orgCl, item.orgImp);
+        const adsCvr = pct(item.adsCv, item.adsCl);
+        const orgCvr = pct(item.orgCv, item.orgCl);
+
+        const ctrUplift = adsCtr - orgCtr;
+        const cvrUplift = adsCvr - orgCvr;
+
+        els.dName.textContent = item.name;
+        els.dAdvertiser.textContent = item.advertiser;
+        els.dType.textContent =
+          item.type === "sponsored" ? "Sponsored listing" : "Banner";
+        els.dPlacement.textContent =
+          item.placement === "search"
+            ? "Search result"
+            : item.placement === "home"
+              ? "Homepage"
+              : "Listing detail";
+
+        els.dAdsImp.textContent = item.adsImp.toLocaleString("ja-JP");
+        els.dOrgImp.textContent = item.orgImp.toLocaleString("ja-JP");
+        els.dAdsCl.textContent = item.adsCl.toLocaleString("ja-JP");
+        els.dOrgCl.textContent = item.orgCl.toLocaleString("ja-JP");
+        els.dAdsCv.textContent = item.adsCv.toLocaleString("ja-JP");
+        els.dOrgCv.textContent = item.orgCv.toLocaleString("ja-JP");
+
+        els.dAdsCtr.textContent = fmtPct(adsCtr);
+        els.dOrgCtr.textContent = fmtPct(orgCtr);
+        els.dAdsCvr.textContent = fmtPct(adsCvr);
+        els.dOrgCvr.textContent = fmtPct(orgCvr);
+        els.dCtrUplift.textContent = fmtPct(ctrUplift);
+        els.dCvrUplift.textContent = fmtPct(cvrUplift);
+
+        const lines = [];
+        lines.push(
+          `Trong ${item.windowDays} ngày, campaign "${item.name}" tạo ra ${item.adsImp.toLocaleString("ja-JP")} IMP ads và ${item.adsCl.toLocaleString("ja-JP")} clicks (CTR ${fmtPct(adsCtr)}).`,
+        );
+        lines.push(
+          `Baseline organic tương ứng: ${item.orgImp.toLocaleString("ja-JP")} IMP, ${item.orgCl.toLocaleString("ja-JP")} clicks (CTR ${fmtPct(orgCtr)}).`,
+        );
+        lines.push(
+          `Conversions: Ads ${item.adsCv.toLocaleString("ja-JP")} (CVR ${fmtPct(adsCvr)}), Organic ${item.orgCv.toLocaleString("ja-JP")} (CVR ${fmtPct(orgCvr)}).`,
+        );
+        lines.push(
+          `Uplift demo: CTR +${fmtPct(ctrUplift)}, CVR +${fmtPct(cvrUplift)} so với organic.`,
+        );
+        els.perfSummary.textContent = lines.join("\n");
+
+        renderTable();
+      }
+
+      function exportCsv() {
+        const list = applyFilters();
+        const header = [
+          "id",
+          "name",
+          "advertiser",
+          "type",
+          "placement",
+          "window_days",
+          "ads_imp",
+          "ads_clicks",
+          "ads_conversions",
+          "ads_ctr_pct",
+          "ads_cvr_pct",
+          "org_imp",
+          "org_clicks",
+          "org_conversions",
+          "org_ctr_pct",
+          "org_cvr_pct",
+        ];
+        const rows = list.map((i) => {
+          const adsCtr = pct(i.adsCl, i.adsImp);
+          const adsCvr = pct(i.adsCv, i.adsCl);
+          const orgCtr = pct(i.orgCl, i.orgImp);
+          const orgCvr = pct(i.orgCv, i.orgCl);
+          return [
+            i.id,
+            i.name,
+            i.advertiser,
+            i.type,
+            i.placement,
+            i.windowDays,
+            i.adsImp,
+            i.adsCl,
+            i.adsCv,
+            adsCtr.toFixed(3),
+            adsCvr.toFixed(3),
+            i.orgImp,
+            i.orgCl,
+            i.orgCv,
+            orgCtr.toFixed(3),
+            orgCvr.toFixed(3),
+          ];
+        });
+
+        const escapeCsv = (value) => {
+          if (value == null) return "";
+          const str = String(value);
+          if (/[",\n]/.test(str)) {
+            return '"' + str.replace(/"/g, '""') + '"';
+          }
+          return str;
+        };
+
+        const csv = [header, ...rows]
+          .map((row) => row.map(escapeCsv).join(","))
+          .join("\n");
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "yuushi_ad_performance_summary.csv";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function init() {
+        els.search.addEventListener("input", renderTable);
+        els.type.addEventListener("change", renderTable);
+        els.placement.addEventListener("change", renderTable);
+        els.window.addEventListener("change", renderTable);
+        els.exportPerfCsv.addEventListener("click", exportCsv);
+        renderTable();
+      }
+
+      init();
+    </script>
+  </body>
+</html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Ad Performance Analysis</title>
+  </head>
+  <body>
+    <h1>Ad Performance Analysis</h1>
+    <p>
+      Analyze ad effectiveness (IMP, CL, CTR, CV, CVR) vs. organic listings.
+      Placeholder screen.
+    </p>
+  </body>
+</html>

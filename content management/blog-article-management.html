@@ -1,0 +1,1538 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Blog / Article Management</title>
+    <style>
+      :root {
+        --bg-body: #f5f3ef;
+        --bg-card: #fffaf2;
+        --border-subtle: #eadccd;
+        --accent: #c26b41;
+        --accent-soft: #f3d7c6;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+        --badge-green: #2f855a;
+        --badge-red: #c53030;
+        --badge-gray: #4a5568;
+        --badge-blue: #2b6cb0;
+        --badge-orange: #b7791f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px 24px 32px;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        letter-spacing: 0.02em;
+      }
+
+      .page-subtitle {
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 7fr) minmax(0, 6fr);
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .card {
+        background-color: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        padding: 14px 16px 16px;
+        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .toolbar-right {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 11px;
+        font-size: 11px;
+        background-color: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+        color: var(--text-main);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #c26b41, #a55232);
+        border-color: #a55232;
+        color: #fffaf3;
+      }
+
+      .btn-ghost {
+        background: transparent;
+      }
+
+      .btn-danger {
+        border-color: var(--badge-red);
+        color: var(--badge-red);
+      }
+
+      .btn:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 120px;
+      }
+
+      .field-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+
+      input[type="text"],
+      select {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      input[type="text"]:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f7efe6;
+      }
+
+      th,
+      td {
+        padding: 7px 8px;
+        text-align: left;
+        border-bottom: 1px solid #efe0d4;
+      }
+
+      th {
+        font-weight: 500;
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      tbody tr {
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+
+      tbody tr:hover {
+        background-color: #f8f1ea;
+      }
+
+      tbody tr.selected-row {
+        background-color: #f1e3d5;
+      }
+
+      .article-title {
+        font-weight: 600;
+      }
+
+      .article-meta-line {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 500;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+
+      .badge-status-published {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+
+      .badge-status-draft {
+        background: #fff6e0;
+        color: var(--badge-orange);
+        border-color: #fbd38d;
+      }
+
+      .badge-status-scheduled {
+        background: #ebf8ff;
+        color: var(--badge-blue);
+        border-color: #bee3f8;
+      }
+
+      .badge-status-archived {
+        background: #f7f7f8;
+        color: var(--badge-gray);
+        border-color: #d2d6dc;
+      }
+
+      .badge-type {
+        background: #f0e3d7;
+        color: #744210;
+        border-color: #e2c6a8;
+      }
+
+      .badge-locale {
+        background: #fef3c7;
+        color: #92400e;
+        border-color: #fcd34d;
+      }
+
+      .badge-flag {
+        background: #fff5f5;
+        color: var(--badge-red);
+        border-color: #fed7d7;
+      }
+
+      .tag-chip {
+        display: inline-flex;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        background: #f4efe9;
+        color: #5b4633;
+        margin-right: 4px;
+      }
+
+      .detail-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .detail-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .detail-title-block h2 {
+        margin: 0 0 4px;
+        font-size: 16px;
+      }
+
+      .detail-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .detail-meta span + span::before {
+        content: "· ";
+        margin: 0 2px;
+      }
+
+      .detail-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+        margin-bottom: 4px;
+      }
+
+      .detail-field-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .detail-input,
+      .detail-select,
+      textarea {
+        width: 100%;
+        border-radius: 9px;
+        border: 1px solid var(--border-subtle);
+        padding: 5px 8px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      .detail-input:focus,
+      .detail-select:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      .detail-input[readonly] {
+        background: #f9f5f0;
+        color: var(--text-muted);
+      }
+
+      textarea {
+        min-height: 70px;
+        resize: vertical;
+        font-family: inherit;
+      }
+
+      .hint-text {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .preview-box {
+        border-radius: 10px;
+        border: 1px dashed #deccba;
+        padding: 8px 9px;
+        background: #fffaf1;
+        font-size: 12px;
+        color: var(--text-main);
+        max-height: 120px;
+        overflow: auto;
+      }
+
+      .footer-note {
+        margin-top: 4px;
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      /* Modal for blog/content structure editor (adapted to current style) */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 999;
+      }
+
+      .modal-backdrop.open {
+        display: flex;
+      }
+
+      .modal-shell {
+        width: 880px;
+        max-width: 95%;
+        max-height: 90vh;
+        background: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        box-shadow: 0 18px 45px rgba(115, 72, 39, 0.45);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .modal-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: #fffaf6;
+      }
+
+      .modal-header-main {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .modal-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-main);
+      }
+
+      .modal-subtitle {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .modal-close-btn {
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 18px;
+        line-height: 1;
+        color: var(--text-muted);
+      }
+
+      .modal-body {
+        padding: 12px 16px 10px;
+        overflow: auto;
+        font-size: 12px;
+        background: #fffaf2;
+      }
+
+      .modal-footer {
+        padding: 10px 16px 12px;
+        border-top: 1px solid var(--border-subtle);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        background: #f7efe6;
+      }
+
+      .modal-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 16px;
+      }
+
+      .modal-field-row {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .modal-field-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-weight: 500;
+      }
+
+      .modal-field-hint {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Content Library: Articles, News, FAQs, Area Guides</h1>
+      <p class="page-subtitle">
+        Manage core content records (Area Guides, Articles, News, FAQs) at the
+        metadata level: type, status, locale, tags and high-level summary. This
+        screen does not show full article text, comments, or any personal
+        content.
+      </p>
+    </div>
+
+    <div class="layout">
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Content list</div>
+            <div class="card-subtitle">
+              Filter by content type, publish status, locale, and tags.
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <button
+              id="exportArticlesCsvBtn"
+              class="btn btn-ghost"
+              type="button"
+            >
+              Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="filters">
+          <div class="field-group" style="flex: 1 1 200px">
+            <label class="field-label" for="searchInput">Search</label>
+            <input
+              id="searchInput"
+              type="text"
+              placeholder="Title, slug, tag..."
+            />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="typeFilter">Content type</label>
+            <select id="typeFilter">
+              <option value="">All</option>
+              <option value="area_guide">Area Guide</option>
+              <option value="article">Article</option>
+              <option value="news">News</option>
+              <option value="faq">FAQ</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="statusFilter">Status</label>
+            <select id="statusFilter">
+              <option value="">All</option>
+              <option value="draft">Draft</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="published">Published</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="localeFilter">Locale</label>
+            <select id="localeFilter">
+              <option value="">All</option>
+              <option value="ja-JP">ja-JP</option>
+              <option value="en-US">en-US</option>
+              <option value="vi-VN">vi-VN</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="authorFilter">Editor</label>
+            <select id="authorFilter">
+              <option value="">All</option>
+              <option value="Content Ops">Content Ops</option>
+              <option value="Market Research">Market Research</option>
+              <option value="Support JP">Support JP</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="overflow: auto; max-height: 380px">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Locale</th>
+                <th>Updated at</th>
+                <th>Publish window</th>
+              </tr>
+            </thead>
+            <tbody id="articlesTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="detail-layout" id="emptyDetail">
+          <div class="card-title">Article detail</div>
+          <p class="card-subtitle">
+            Select one record on the left to see metadata and status. Full
+            article content and user comments are not shown here.
+          </p>
+        </div>
+
+        <div class="detail-layout" id="detailPanel" style="display: none">
+          <div class="detail-header">
+            <div class="detail-title-block">
+              <h2 id="detailTitle"></h2>
+              <div class="detail-meta">
+                <span id="detailSlug"></span>
+                <span id="detailType"></span>
+                <span id="detailStatus"></span>
+              </div>
+            </div>
+            <div class="toolbar-right">
+              <button id="duplicateBtn" class="btn" type="button">
+                Duplicate
+              </button>
+              <button id="publishBtn" class="btn btn-primary" type="button">
+                Publish
+              </button>
+              <button id="unpublishBtn" class="btn" type="button">
+                Unpublish
+              </button>
+              <button id="archiveBtn" class="btn btn-danger" type="button">
+                Archive
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="detail-section-title">Basic metadata</div>
+            <div class="detail-grid">
+              <div>
+                <div class="detail-field-label">Display title</div>
+                <input id="inputTitle" class="detail-input" type="text" />
+              </div>
+              <div>
+                <div class="detail-field-label">Slug (read-only)</div>
+                <input
+                  id="inputSlug"
+                  class="detail-input"
+                  type="text"
+                  readonly
+                />
+              </div>
+              <div>
+                <div class="detail-field-label">Type</div>
+                <select id="inputType" class="detail-select">
+                  <option value="area_guide">Area Guide</option>
+                  <option value="article">Article</option>
+                  <option value="news">News</option>
+                  <option value="faq">FAQ</option>
+                </select>
+              </div>
+              <div>
+                <div class="detail-field-label">Status</div>
+                <select id="inputStatus" class="detail-select">
+                  <option value="draft">Draft</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="published">Published</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+              <div>
+                <div class="detail-field-label">Locale</div>
+                <select id="inputLocale" class="detail-select">
+                  <option value="ja-JP">ja-JP</option>
+                  <option value="en-US">en-US</option>
+                  <option value="vi-VN">vi-VN</option>
+                </select>
+              </div>
+              <div>
+                <div class="detail-field-label">Owner editor</div>
+                <select id="inputAuthor" class="detail-select">
+                  <option value="Content Ops">Content Ops</option>
+                  <option value="Market Research">Market Research</option>
+                  <option value="Support JP">Support JP</option>
+                </select>
+              </div>
+            </div>
+            <p class="hint-text">
+              Metadata only; detailed content is edited in a separate CMS and is
+              not visible here.
+            </p>
+          </div>
+
+          <div>
+            <div class="detail-section-title">Publish window & flag</div>
+            <div class="detail-grid">
+              <div>
+                <div class="detail-field-label">Publish from</div>
+                <input id="inputPublishFrom" class="detail-input" type="date" />
+              </div>
+              <div>
+                <div class="detail-field-label">Publish until (optional)</div>
+                <input
+                  id="inputPublishUntil"
+                  class="detail-input"
+                  type="date"
+                />
+              </div>
+              <div>
+                <div class="detail-field-label">Flag</div>
+                <select id="inputFlag" class="detail-select">
+                  <option value="none">Không</option>
+                  <option value="pinned">Pinned</option>
+                  <option value="campaign">Campaign</option>
+                </select>
+              </div>
+              <div>
+                <div class="detail-field-label">Placement group</div>
+                <select id="inputPlacement" class="detail-select">
+                  <option value="homepage">Homepage block</option>
+                  <option value="blog">Blog listing</option>
+                  <option value="faq">FAQ center</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="detail-section-title">Tags & short description</div>
+            <div class="detail-grid">
+              <div>
+                <div class="detail-field-label">Tags (comma-separated)</div>
+                <input id="inputTags" class="detail-input" type="text" />
+                <p class="hint-text">
+                  E.g.: tokyo, mortgage, first-time-buyer. Do not include any
+                  personal information.
+                </p>
+              </div>
+              <div>
+                <div class="detail-field-label">
+                  Meta description (max ~160 characters)
+                </div>
+                <textarea
+                  id="inputMetaDesc"
+                  placeholder="Short summary to help users quickly understand the article."
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="detail-section-title">Content summary preview</div>
+            <div class="preview-box" id="summaryPreview"></div>
+            <p class="hint-text">
+              Shows only the opening/summary from demo data, never full content
+              or personal data.
+            </p>
+          </div>
+
+          <div>
+            <div class="detail-section-title">Overview</div>
+            <div class="detail-grid">
+              <div>
+                <div class="detail-field-label">Last updated</div>
+                <div
+                  class="detail-input"
+                  id="detailUpdated"
+                  style="border: 0; padding-left: 0; background: transparent"
+                ></div>
+              </div>
+              <div>
+                <div class="detail-field-label">Last edited by</div>
+                <div
+                  class="detail-input"
+                  id="detailEditor"
+                  style="border: 0; padding-left: 0; background: transparent"
+                ></div>
+              </div>
+              <div>
+                <div class="detail-field-label">Version demo</div>
+                <div
+                  class="detail-input"
+                  id="detailVersion"
+                  style="border: 0; padding-left: 0; background: transparent"
+                ></div>
+              </div>
+              <div>
+                <div class="detail-field-label">Flag status</div>
+                <div
+                  class="detail-input"
+                  id="detailFlag"
+                  style="border: 0; padding-left: 0; background: transparent"
+                ></div>
+              </div>
+            </div>
+            <p class="footer-note">
+              This is a metadata oversight view only; view/CTR metrics, reading
+              logs, comments, etc. are handled by separate analytics/support
+              systems.
+            </p>
+          </div>
+
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              gap: 6px;
+              margin-top: 2px;
+            "
+          >
+            <button id="openBlogEditorBtn" class="btn btn-ghost" type="button">
+              Open content structure editor (demo)
+            </button>
+            <div style="display: flex; gap: 6px">
+              <button id="saveMetaBtn" class="btn" type="button">
+                Save metadata (demo)
+              </button>
+              <button
+                id="exportArticleJsonBtn"
+                class="btn btn-ghost"
+                type="button"
+              >
+                Export JSON
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- BLOG / CONTENT STRUCTURE EDITOR MODAL (demo only) -->
+    <div id="modal-blog-editor" class="modal-backdrop">
+      <div class="modal-shell">
+        <div class="modal-header">
+          <div class="modal-header-main">
+            <div class="modal-title" id="blog-editor-title">
+              Blog editor — Article / News
+            </div>
+            <div class="modal-subtitle">
+              Fields mirror the conceptual DB structure for Articles, News, FAQs
+              and Area Guides. Saving here is a front-end only demo and does not
+              affect any live CMS.
+            </div>
+          </div>
+          <button
+            class="modal-close-btn"
+            type="button"
+            onclick="closeModal('modal-blog-editor')"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-grid">
+            <div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">1. Blog / Content ID</div>
+                <input
+                  type="text"
+                  class="detail-input"
+                  value="AUTO-GENERATED"
+                  disabled
+                />
+                <div class="modal-field-hint">
+                  System-generated unique identifier used across frontends.
+                </div>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">2. Category tag</div>
+                <select class="detail-select" id="blog-category-tag">
+                  <option>Guides</option>
+                  <option>Blog</option>
+                  <option>Market Analysis</option>
+                  <option>Japan</option>
+                  <option>Real Estate</option>
+                  <option>Investment</option>
+                </select>
+                <div class="modal-field-hint">
+                  Articles use tags such as Guides / Blog / Market Analysis;
+                  News uses Japan / Real Estate / Investment.
+                </div>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">3. Transaction type</div>
+                <select class="detail-select">
+                  <option>None</option>
+                  <option>SellerGuide</option>
+                  <option>BuyerGuide</option>
+                  <option>Renter Guide</option>
+                </select>
+                <div class="modal-field-hint">
+                  Links the content to a funnel or transaction flow it supports.
+                </div>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">4. Thumbnail asset</div>
+                <input type="file" class="detail-input" />
+                <div class="modal-field-hint">
+                  Primary preview image used in cards and listings.
+                </div>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">
+                  5. Property prefecture scope
+                </div>
+                <select class="detail-select">
+                  <option>None</option>
+                  <option>All Prefectures</option>
+                  <option>Specific Prefecture</option>
+                </select>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">6. Property type scope</div>
+                <select class="detail-select">
+                  <option>None</option>
+                  <option>All Types</option>
+                  <option>Specific Type</option>
+                </select>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">7. Author (optional)</div>
+                <input
+                  type="text"
+                  class="detail-input"
+                  placeholder="Name of content creator or team"
+                />
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">8. Title</div>
+                <input
+                  type="text"
+                  class="detail-input"
+                  placeholder="Headline shown in cards and listings"
+                />
+              </div>
+            </div>
+            <div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">9. Display status</div>
+                <select class="detail-select">
+                  <option>Active (Visible)</option>
+                  <option>Inactive (Draft/Hidden)</option>
+                </select>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">10. Upload / publish date</div>
+                <input
+                  type="text"
+                  class="detail-input"
+                  value="Set on publish — read only in admin"
+                  disabled
+                />
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">
+                  11. Content body (rich text)
+                </div>
+                <textarea
+                  rows="7"
+                  class="detail-input"
+                  style="resize: vertical"
+                  placeholder="Headings, paragraphs, quotes, images, embedded video URLs..."
+                ></textarea>
+                <div class="modal-field-hint">
+                  In a real CMS this would be a rich text editor; the frontend
+                  components decide the exact rendering.
+                </div>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">12. Video status</div>
+                <span class="badge badge-locale">Auto-detected</span>
+                <div class="modal-field-hint">
+                  System scans the content; if a video embed is found it marks
+                  the record with a "Video" badge for UI purposes.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn"
+            type="button"
+            onclick="closeModal('modal-blog-editor')"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            type="button"
+            onclick="
+              alert('Save blog/content (mock).');
+              closeModal('modal-blog-editor');
+            "
+          >
+            Save blog (demo)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const articles = [
+        {
+          id: "guide-shibuya",
+          title: "Area Guide: Shibuya cho người mua lần đầu",
+          slug: "/area-guide/shibuya-first-time-buyer",
+          type: "area_guide",
+          status: "published",
+          locale: "ja-JP",
+          author: "Market Research",
+          publishFrom: "2025-11-01",
+          publishUntil: null,
+          flag: "pinned",
+          placement: "homepage",
+          tags: ["shibuya", "first-time-buyer", "area-guide"],
+          metaDesc:
+            "Tổng quan khu Shibuya cho người mua lần đầu: giá trung bình, loại bất động sản phổ biến, tiện ích xung quanh.",
+          summary:
+            "Bài viết cung cấp cái nhìn tổng quan, không chứa dữ liệu cá nhân, tập trung vào số liệu công khai và mô tả khu vực...",
+          updatedAt: "2026-03-18 09:30",
+          updatedBy: "Market Research",
+          version: 3,
+        },
+        {
+          id: "news-tax-2026",
+          title: "News: Cập nhật chính sách thuế bất động sản 2026",
+          slug: "/news/real-estate-tax-update-2026",
+          type: "news",
+          status: "scheduled",
+          locale: "ja-JP",
+          author: "Content Ops",
+          publishFrom: "2026-05-01",
+          publishUntil: null,
+          flag: "campaign",
+          placement: "blog",
+          tags: ["tax", "policy", "2026"],
+          metaDesc:
+            "Điểm lại các thay đổi chính trong chính sách thuế bất động sản Nhật Bản từ 2026.",
+          summary:
+            "Bài news này tổng hợp thông tin từ nguồn chính thức của chính phủ và các hiệp hội, không chứa ví dụ theo từng khách hàng...",
+          updatedAt: "2026-03-30 13:15",
+          updatedBy: "Content Ops",
+          version: 1,
+        },
+        {
+          id: "article-mortgage-basics",
+          title: "Article: Cơ bản về vay mua nhà tại Nhật",
+          slug: "/article/mortgage-basics-japan",
+          type: "article",
+          status: "published",
+          locale: "ja-JP",
+          author: "Content Ops",
+          publishFrom: "2025-09-15",
+          publishUntil: null,
+          flag: "none",
+          placement: "blog",
+          tags: ["mortgage", "loan", "first-time-buyer"],
+          metaDesc:
+            "Giải thích các khái niệm cơ bản về vay mua nhà, loại lãi suất, điều kiện phổ biến.",
+          summary:
+            "Nội dung đi qua các loại lãi suất cố định/thả nổi, điều kiện tối thiểu, ví dụ minh họa ở mức khái niệm, không dùng dữ liệu khách hàng...",
+          updatedAt: "2026-02-20 16:45",
+          updatedBy: "Content Ops",
+          version: 2,
+        },
+        {
+          id: "faq-rent-process",
+          title: "FAQ: Quy trình thuê nhà trên nền tảng",
+          slug: "/faq/rent-process",
+          type: "faq",
+          status: "draft",
+          locale: "ja-JP",
+          author: "Support JP",
+          publishFrom: "2026-04-20",
+          publishUntil: null,
+          flag: "none",
+          placement: "faq",
+          tags: ["rent", "process", "faq"],
+          metaDesc:
+            "Các câu hỏi thường gặp về bước thuê nhà, từ đăng ký xem nhà đến ký hợp đồng.",
+          summary:
+            "Danh sách câu hỏi/đáp án dạng tổng quát, chỉ mô tả flow chuẩn, không tham chiếu tới trao đổi cụ thể với khách...",
+          updatedAt: "2026-03-25 10:10",
+          updatedBy: "Support JP",
+          version: 1,
+        },
+      ];
+
+      let selectedArticleId = null;
+
+      const els = {
+        searchInput: document.getElementById("searchInput"),
+        typeFilter: document.getElementById("typeFilter"),
+        statusFilter: document.getElementById("statusFilter"),
+        localeFilter: document.getElementById("localeFilter"),
+        authorFilter: document.getElementById("authorFilter"),
+        tbody: document.getElementById("articlesTbody"),
+        exportArticlesCsvBtn: document.getElementById("exportArticlesCsvBtn"),
+        emptyDetail: document.getElementById("emptyDetail"),
+        detailPanel: document.getElementById("detailPanel"),
+        detailTitle: document.getElementById("detailTitle"),
+        detailSlug: document.getElementById("detailSlug"),
+        detailType: document.getElementById("detailType"),
+        detailStatus: document.getElementById("detailStatus"),
+        detailUpdated: document.getElementById("detailUpdated"),
+        detailEditor: document.getElementById("detailEditor"),
+        detailVersion: document.getElementById("detailVersion"),
+        detailFlag: document.getElementById("detailFlag"),
+        summaryPreview: document.getElementById("summaryPreview"),
+        inputTitle: document.getElementById("inputTitle"),
+        inputSlug: document.getElementById("inputSlug"),
+        inputType: document.getElementById("inputType"),
+        inputStatus: document.getElementById("inputStatus"),
+        inputLocale: document.getElementById("inputLocale"),
+        inputAuthor: document.getElementById("inputAuthor"),
+        inputPublishFrom: document.getElementById("inputPublishFrom"),
+        inputPublishUntil: document.getElementById("inputPublishUntil"),
+        inputFlag: document.getElementById("inputFlag"),
+        inputPlacement: document.getElementById("inputPlacement"),
+        inputTags: document.getElementById("inputTags"),
+        inputMetaDesc: document.getElementById("inputMetaDesc"),
+        duplicateBtn: document.getElementById("duplicateBtn"),
+        publishBtn: document.getElementById("publishBtn"),
+        unpublishBtn: document.getElementById("unpublishBtn"),
+        archiveBtn: document.getElementById("archiveBtn"),
+        saveMetaBtn: document.getElementById("saveMetaBtn"),
+        exportArticleJsonBtn: document.getElementById("exportArticleJsonBtn"),
+        openBlogEditorBtn: document.getElementById("openBlogEditorBtn"),
+      };
+
+      function statusBadge(status) {
+        const span = document.createElement("span");
+        span.classList.add("badge");
+        if (status === "published") {
+          span.classList.add("badge-status-published");
+          span.textContent = "Published";
+        } else if (status === "draft") {
+          span.classList.add("badge-status-draft");
+          span.textContent = "Draft";
+        } else if (status === "scheduled") {
+          span.classList.add("badge-status-scheduled");
+          span.textContent = "Scheduled";
+        } else {
+          span.classList.add("badge-status-archived");
+          span.textContent = "Archived";
+        }
+        return span;
+      }
+
+      function typeBadge(type) {
+        const span = document.createElement("span");
+        span.classList.add("badge", "badge-type");
+        if (type === "area_guide") span.textContent = "Area Guide";
+        else if (type === "article") span.textContent = "Article";
+        else if (type === "news") span.textContent = "News";
+        else span.textContent = "FAQ";
+        return span;
+      }
+
+      function localeBadge(locale) {
+        const span = document.createElement("span");
+        span.classList.add("badge", "badge-locale");
+        span.textContent = locale;
+        return span;
+      }
+
+      function flagBadge(flag) {
+        if (!flag || flag === "none") return null;
+        const span = document.createElement("span");
+        span.classList.add("badge", "badge-flag");
+        span.textContent = flag === "pinned" ? "Pinned" : "Campaign";
+        return span;
+      }
+
+      function applyFilters() {
+        const q = els.searchInput.value.trim().toLowerCase();
+        const typeVal = els.typeFilter.value;
+        const statusVal = els.statusFilter.value;
+        const localeVal = els.localeFilter.value;
+        const authorVal = els.authorFilter.value;
+
+        return articles.filter((a) => {
+          if (typeVal && a.type !== typeVal) return false;
+          if (statusVal && a.status !== statusVal) return false;
+          if (localeVal && a.locale !== localeVal) return false;
+          if (authorVal && a.author !== authorVal) return false;
+
+          if (!q) return true;
+          const text = (
+            a.title +
+            " " +
+            a.slug +
+            " " +
+            (a.tags || []).join(" ") +
+            " " +
+            (a.metaDesc || "")
+          ).toLowerCase();
+          return text.includes(q);
+        });
+      }
+
+      function renderTable() {
+        const filtered = applyFilters();
+        els.tbody.innerHTML = "";
+        filtered.forEach((a) => {
+          const tr = document.createElement("tr");
+          if (a.id === selectedArticleId) tr.classList.add("selected-row");
+
+          const tdTitle = document.createElement("td");
+          const tagLine = (a.tags || []).slice(0, 3).join(", ");
+          tdTitle.innerHTML = `<div class="article-title">${a.title}</div>
+            <div class="article-meta-line">${a.slug}$${
+              tagLine ? " · " + tagLine : ""
+            }</div>`;
+
+          const tdType = document.createElement("td");
+          tdType.appendChild(typeBadge(a.type));
+
+          const tdStatus = document.createElement("td");
+          tdStatus.appendChild(statusBadge(a.status));
+
+          const tdLocale = document.createElement("td");
+          tdLocale.appendChild(localeBadge(a.locale));
+
+          const tdUpdated = document.createElement("td");
+          tdUpdated.textContent = a.updatedAt;
+
+          const tdWindow = document.createElement("td");
+          const from = a.publishFrom || "—";
+          const until = a.publishUntil || "—";
+          tdWindow.textContent = `${from} → ${until}`;
+
+          tr.appendChild(tdTitle);
+          tr.appendChild(tdType);
+          tr.appendChild(tdStatus);
+          tr.appendChild(tdLocale);
+          tr.appendChild(tdUpdated);
+          tr.appendChild(tdWindow);
+
+          tr.addEventListener("click", () => selectArticle(a.id));
+
+          els.tbody.appendChild(tr);
+        });
+      }
+
+      function selectArticle(id) {
+        const article = articles.find((a) => a.id === id);
+        if (!article) return;
+        selectedArticleId = id;
+
+        els.emptyDetail.style.display = "none";
+        els.detailPanel.style.display = "";
+
+        els.detailTitle.textContent = article.title;
+        els.detailSlug.textContent = article.slug;
+        els.detailType.innerHTML = "";
+        els.detailType.appendChild(typeBadge(article.type));
+        els.detailStatus.innerHTML = "";
+        els.detailStatus.appendChild(statusBadge(article.status));
+        const fb = flagBadge(article.flag);
+        if (fb) els.detailStatus.appendChild(document.createTextNode(" "));
+        if (fb) els.detailStatus.appendChild(fb);
+
+        els.detailUpdated.textContent = article.updatedAt;
+        els.detailEditor.textContent = article.updatedBy;
+        els.detailVersion.textContent = `v${article.version || 1}`;
+        els.detailFlag.textContent =
+          article.flag === "pinned"
+            ? "Pinned"
+            : article.flag === "campaign"
+              ? "Campaign"
+              : "None";
+
+        els.inputTitle.value = article.title;
+        els.inputSlug.value = article.slug;
+        els.inputType.value = article.type;
+        els.inputStatus.value = article.status;
+        els.inputLocale.value = article.locale;
+        els.inputAuthor.value = article.author;
+        els.inputPublishFrom.value = article.publishFrom || "";
+        els.inputPublishUntil.value = article.publishUntil || "";
+        els.inputFlag.value = article.flag || "none";
+        els.inputPlacement.value = article.placement || "blog";
+        els.inputTags.value = (article.tags || []).join(", ");
+        els.inputMetaDesc.value = article.metaDesc || "";
+        els.summaryPreview.textContent = article.summary || "";
+
+        updateActionButtons(article);
+        renderTable();
+      }
+
+      function updateActionButtons(article) {
+        const status = article.status;
+        els.publishBtn.disabled =
+          status === "published" || status === "archived";
+        els.unpublishBtn.disabled = status === "draft" || status === "archived";
+        els.archiveBtn.disabled = status === "archived";
+      }
+
+      function saveMeta() {
+        if (!selectedArticleId) return;
+        const article = articles.find((a) => a.id === selectedArticleId);
+        if (!article) return;
+
+        article.title = els.inputTitle.value.trim() || article.title;
+        article.type = els.inputType.value;
+        article.status = els.inputStatus.value;
+        article.locale = els.inputLocale.value;
+        article.author = els.inputAuthor.value;
+        article.publishFrom = els.inputPublishFrom.value || null;
+        article.publishUntil = els.inputPublishUntil.value || null;
+        article.flag = els.inputFlag.value;
+        article.placement = els.inputPlacement.value;
+        article.tags = els.inputTags.value
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean);
+        article.metaDesc = els.inputMetaDesc.value.trim();
+
+        article.updatedAt = new Date().toLocaleString("en-GB", {
+          hour12: false,
+        });
+        article.updatedBy = "Admin demo";
+        article.version = (article.version || 1) + 1;
+
+        selectArticle(article.id);
+        alert("Article metadata saved (demo).");
+      }
+
+      function changeStatus(newStatus) {
+        if (!selectedArticleId) return;
+        const article = articles.find((a) => a.id === selectedArticleId);
+        if (!article) return;
+
+        article.status = newStatus;
+        if (newStatus === "archived") {
+          article.flag = "none";
+        }
+        article.updatedAt = new Date().toLocaleString("en-GB", {
+          hour12: false,
+        });
+        article.updatedBy = "Admin demo";
+        article.version = (article.version || 1) + 1;
+
+        selectArticle(article.id);
+      }
+
+      function onPublish() {
+        if (!selectedArticleId) return;
+        const article = articles.find((a) => a.id === selectedArticleId);
+        if (!article) return;
+        if (!article.publishFrom) {
+          if (
+            !confirm(
+              "This article does not have a publish-from date yet. Set today and publish (demo)?",
+            )
+          ) {
+            return;
+          }
+          article.publishFrom = new Date().toISOString().slice(0, 10);
+        }
+        changeStatus("published");
+      }
+
+      function onUnpublish() {
+        if (!selectedArticleId) return;
+        const article = articles.find((a) => a.id === selectedArticleId);
+        if (!article) return;
+        if (
+          !confirm(
+            "Set this article back to Draft (demo)? This does not affect any real system.",
+          )
+        ) {
+          return;
+        }
+        changeStatus("draft");
+      }
+
+      function onArchive() {
+        if (!selectedArticleId) return;
+        const article = articles.find((a) => a.id === selectedArticleId);
+        if (!article) return;
+        if (
+          !confirm(
+            "Archive this article at metadata level only (demo)? Content in the real CMS is not deleted.",
+          )
+        ) {
+          return;
+        }
+        changeStatus("archived");
+      }
+
+      function duplicateArticle() {
+        if (!selectedArticleId) return;
+        const article = articles.find((a) => a.id === selectedArticleId);
+        if (!article) return;
+        const clone = JSON.parse(JSON.stringify(article));
+        clone.id = `${article.id}-copy-${Date.now()}`;
+        clone.title = `${article.title} (Copy)`;
+        clone.slug = `${article.slug}-copy`;
+        clone.status = "draft";
+        clone.flag = "none";
+        clone.publishFrom = null;
+        clone.publishUntil = null;
+        clone.updatedAt = new Date().toLocaleString("en-GB", { hour12: false });
+        clone.updatedBy = "Admin demo";
+        clone.version = 1;
+
+        articles.push(clone);
+        renderTable();
+        selectArticle(clone.id);
+      }
+
+      function exportArticlesCsv() {
+        const filtered = applyFilters();
+        const header = [
+          "id",
+          "title",
+          "slug",
+          "type",
+          "status",
+          "locale",
+          "author",
+          "publishFrom",
+          "publishUntil",
+          "flag",
+          "placement",
+          "tags",
+          "updatedAt",
+          "updatedBy",
+          "version",
+        ];
+        const rows = filtered.map((a) => [
+          a.id,
+          a.title,
+          a.slug,
+          a.type,
+          a.status,
+          a.locale,
+          a.author,
+          a.publishFrom || "",
+          a.publishUntil || "",
+          a.flag || "none",
+          a.placement || "",
+          (a.tags || []).join("|"),
+          a.updatedAt,
+          a.updatedBy,
+          a.version || 1,
+        ]);
+
+        const escapeCsv = (value) => {
+          if (value == null) return "";
+          const str = String(value);
+          if (/[",\n]/.test(str)) {
+            return '"' + str.replace(/"/g, '""') + '"';
+          }
+          return str;
+        };
+
+        const csv = [header, ...rows]
+          .map((row) => row.map(escapeCsv).join(","))
+          .join("\n");
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "yuushi_articles_overview.csv";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function exportArticleJson() {
+        if (!selectedArticleId) return;
+        const article = articles.find((a) => a.id === selectedArticleId);
+        if (!article) return;
+        const blob = new Blob([JSON.stringify(article, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `yuushi_article_${article.id}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function openModal(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.add("open");
+      }
+
+      function closeModal(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove("open");
+      }
+
+      function openBlogEditorForSelected() {
+        if (!selectedArticleId) {
+          alert("Select an article first (demo).");
+          return;
+        }
+        const article = articles.find((a) => a.id === selectedArticleId);
+        if (!article) return;
+
+        const titleEl = document.getElementById("blog-editor-title");
+        if (titleEl) {
+          if (article.type === "news") {
+            titleEl.textContent = "Blog editor — News";
+          } else if (article.type === "article") {
+            titleEl.textContent = "Blog editor — Article";
+          } else if (article.type === "area_guide") {
+            titleEl.textContent = "Area guide editor";
+          } else if (article.type === "faq") {
+            titleEl.textContent = "FAQ editor — Shared FAQ store";
+          } else {
+            titleEl.textContent = "Blog editor — Article / News";
+          }
+        }
+
+        openModal("modal-blog-editor");
+      }
+
+      function init() {
+        els.searchInput.addEventListener("input", renderTable);
+        els.typeFilter.addEventListener("change", renderTable);
+        els.statusFilter.addEventListener("change", renderTable);
+        els.localeFilter.addEventListener("change", renderTable);
+        els.authorFilter.addEventListener("change", renderTable);
+        els.exportArticlesCsvBtn.addEventListener("click", exportArticlesCsv);
+
+        els.saveMetaBtn.addEventListener("click", saveMeta);
+        els.publishBtn.addEventListener("click", onPublish);
+        els.unpublishBtn.addEventListener("click", onUnpublish);
+        els.archiveBtn.addEventListener("click", onArchive);
+        els.duplicateBtn.addEventListener("click", duplicateArticle);
+        els.exportArticleJsonBtn.addEventListener("click", exportArticleJson);
+        if (els.openBlogEditorBtn) {
+          els.openBlogEditorBtn.addEventListener(
+            "click",
+            openBlogEditorForSelected,
+          );
+        }
+
+        renderTable();
+      }
+
+      init();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Login Recovery Management</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background: #f5f3ef;
+        color: #2a2118;
+      }
+
+      .page {
+        padding: 24px 32px 32px;
+      }
+
+      .page-header {
+        margin-bottom: 18px;
+      }
+
+      .page-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .page-subtitle {
+        font-size: 13px;
+        color: #7c6a55;
+        max-width: 640px;
+      }
+
+      .pill {
+        margin-top: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #efe3cf;
+        color: #7b623f;
+        display: inline-block;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 2.3fr) minmax(0, 2fr);
+        gap: 18px;
+      }
+
+      .card {
+        background: #fffaf2;
+        border-radius: 10px;
+        border: 1px solid #eadccd;
+        padding: 14px 16px 16px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      }
+
+      .card-header {
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: #7c6a55;
+      }
+
+      .field-row {
+        margin-bottom: 10px;
+      }
+
+      .field-row label {
+        display: block;
+        font-size: 12px;
+        color: #7c6a55;
+        margin-bottom: 3px;
+      }
+
+      .field-row input,
+      .field-row select {
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #ddcdb9;
+        padding: 6px 8px;
+        font-size: 12px;
+        background: #fdf8f0;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: none;
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .btn-primary {
+        background: #3a6b3c;
+        color: #fff;
+      }
+
+      .btn-secondary {
+        background: #f7efe4;
+        color: #6a5641;
+        border: 1px solid #ddcdb9;
+      }
+
+      .btn-sm {
+        padding: 4px 10px;
+        font-size: 11px;
+      }
+
+      .search-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 4px;
+      }
+
+      .user-summary {
+        font-size: 12px;
+        color: #6d5b45;
+        margin-top: 8px;
+      }
+
+      .user-summary div {
+        margin-bottom: 3px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f1e4d4;
+      }
+
+      th,
+      td {
+        padding: 8px 6px;
+        text-align: left;
+        border-bottom: 1px solid #efe2d3;
+      }
+
+      th {
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        color: #7b623f;
+      }
+
+      .empty-state {
+        font-size: 12px;
+        color: #7c6a55;
+        text-align: center;
+        padding: 14px 0;
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="page-header">
+        <div class="page-title">Login Recovery Management</div>
+        <div class="page-subtitle">
+          Admin-initiated help for users who cannot complete standard password
+          recovery (lost email access, SSO issues, etc.).
+        </div>
+        <div class="pill">Users Management · Recovery</div>
+      </div>
+
+      <div class="layout">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Search user</div>
+            <div class="card-subtitle">
+              Identify the correct account before triggering any recovery
+              action.
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="searchInput">User ID / Email</label>
+            <input
+              id="searchInput"
+              type="text"
+              placeholder="Enter user ID or email"
+            />
+            <div class="search-actions">
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                id="searchBtn"
+              >
+                Search
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                id="clearBtn"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div id="userSummary" class="user-summary">No user selected.</div>
+
+          <div style="margin-top: 12px">
+            <div class="card-title" style="font-size: 13px; margin-bottom: 4px">
+              Recovery actions
+            </div>
+            <div class="card-subtitle" style="margin-bottom: 8px">
+              Only high-level actions are exposed. No password is ever visible
+              to admins.
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap">
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                id="sendResetBtn"
+              >
+                Send password reset email
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                id="generateLinkBtn"
+              >
+                Generate one-time login link
+              </button>
+            </div>
+          </div>
+
+          <div style="margin-top: 12px; font-size: 12px; color: #7c6a55">
+            Note: Any admin-triggered recovery should require a short reason and
+            be visible in audit logs.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Recent recovery events</div>
+            <div class="card-subtitle">
+              Read-only log of manual recovery actions.
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Admin</th>
+              </tr>
+            </thead>
+            <tbody id="logBody"></tbody>
+          </table>
+          <div class="empty-state" id="logEmpty" style="display: none">
+            No recovery events recorded in this demo.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const mockUsers = [
+        {
+          id: "U-1001",
+          email: "anh.nguyen@example.com",
+          name: "Nguyen Anh",
+          type: "End User",
+          status: "Active",
+        },
+        {
+          id: "A-2001",
+          email: "info@sakura-realty.jp",
+          name: "Sakura Realty Co.",
+          type: "Agent",
+          status: "Active",
+        },
+      ];
+
+      const logs = [
+        {
+          time: "2026-04-10 09:12",
+          user: "U-1001",
+          action: "Password reset email sent",
+          admin: "Admin Tanaka",
+        },
+        {
+          time: "2026-04-08 16:33",
+          user: "A-2001",
+          action: "One-time login link generated",
+          admin: "Admin Sato",
+        },
+      ];
+
+      let selectedUser = null;
+
+      function renderLogs() {
+        const body = document.getElementById("logBody");
+        const empty = document.getElementById("logEmpty");
+        body.innerHTML = "";
+        if (!logs.length) {
+          empty.style.display = "block";
+          return;
+        }
+        empty.style.display = "none";
+        logs
+          .slice()
+          .reverse()
+          .forEach((log) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${log.time}</td>
+              <td>${log.user}</td>
+              <td>${log.action}</td>
+              <td>${log.admin}</td>
+            `;
+            body.appendChild(tr);
+          });
+      }
+
+      function renderUserSummary() {
+        const div = document.getElementById("userSummary");
+        if (!selectedUser) {
+          div.textContent = "No user selected.";
+          return;
+        }
+        div.innerHTML = `
+          <div><strong>User ID:</strong> ${selectedUser.id}</div>
+          <div><strong>Name:</strong> ${selectedUser.name}</div>
+          <div><strong>Email:</strong> ${selectedUser.email}</div>
+          <div><strong>Type:</strong> ${selectedUser.type}</div>
+          <div><strong>Status:</strong> ${selectedUser.status}</div>
+        `;
+      }
+
+      function searchUser() {
+        const term = document.getElementById("searchInput").value.trim();
+        if (!term) {
+          alert("Enter user ID or email to search.");
+          return;
+        }
+        const found = mockUsers.find(
+          (u) => u.id === term || u.email.toLowerCase() === term.toLowerCase()
+        );
+        if (!found) {
+          selectedUser = null;
+          renderUserSummary();
+          alert("No matching user found in demo data.");
+          return;
+        }
+        selectedUser = found;
+        renderUserSummary();
+      }
+
+      function clearSearch() {
+        document.getElementById("searchInput").value = "";
+        selectedUser = null;
+        renderUserSummary();
+      }
+
+      function addLog(action) {
+        if (!selectedUser) {
+          alert("Select a user first.");
+          return;
+        }
+        const reason = prompt(
+          `Reason for \"${action}\" for ${selectedUser.id}? (Stored in audit logs)`
+        );
+        if (reason === null) return;
+        const now = new Date();
+        const ts = now.toISOString().slice(0, 16).replace("T", " ");
+        logs.push({
+          time: ts,
+          user: selectedUser.id,
+          action: `${action} (${reason || "no reason provided"})`,
+          admin: "Admin Tanaka",
+        });
+        renderLogs();
+        alert(
+          `${action} triggered for ${selectedUser.id}. Email / in-site flow is simulated only."
+        );
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderLogs();
+        renderUserSummary();
+
+        document
+          .getElementById("searchBtn")
+          .addEventListener("click", searchUser);
+        document
+          .getElementById("clearBtn")
+          .addEventListener("click", clearSearch);
+        document
+          .getElementById("sendResetBtn")
+          .addEventListener("click", () =>
+            addLog("Password reset email sent")
+          );
+        document
+          .getElementById("generateLinkBtn")
+          .addEventListener("click", () =>
+            addLog("One-time login link generated")
+          );
+      });
+    </script>
+  </body>
+</html>

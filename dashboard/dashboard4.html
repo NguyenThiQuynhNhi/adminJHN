@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PropertyStatisticsDashboard</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f3eee5;
+        color: #2b2118;
+      }
+
+      .page-wrapper {
+        min-height: 100vh;
+        padding: 20px 24px 32px;
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .page-title {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .page-title h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a120b;
+      }
+
+      .page-title span {
+        font-size: 13px;
+        color: #7b6751;
+      }
+
+      .filters {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .filters-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .filters label {
+        font-size: 12px;
+        color: #6b5740;
+        margin-right: 4px;
+      }
+
+      .filters select {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #d0c2aa;
+        background: #faf6ee;
+        font-size: 13px;
+      }
+
+      .btn-export {
+        padding: 6px 12px;
+        background: #c79e4c;
+        color: #fff;
+        border-radius: 6px;
+        border: none;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .btn-export:hover {
+        background: #b5893c;
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+
+      @media (max-width: 1200px) {
+        .kpi-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 768px) {
+        .kpi-grid {
+          grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+      }
+
+      .kpi-card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 14px 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        border: 1px solid #e2d4bf;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .kpi-label {
+        font-size: 12px;
+        color: #7b6751;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f130c;
+      }
+
+      .kpi-sub {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      .kpi-trend {
+        font-size: 11px;
+        font-weight: 600;
+        color: #0f7a4a;
+      }
+
+      .kpi-trend.down {
+        color: #b03232;
+      }
+
+      .section-group {
+        margin-bottom: 22px;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .section-header h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #2b2118;
+      }
+
+      .section-header span {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      .charts-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      @media (max-width: 900px) {
+        .charts-grid-2 {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .chart-card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 12px 14px 4px;
+        border: 1px solid #e2d4bf;
+        min-height: 220px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .chart-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #483729;
+        margin-bottom: 8px;
+      }
+
+      .chart-wrapper {
+        position: relative;
+        flex: 1;
+        min-height: 180px;
+      }
+
+      .insights-card {
+        background: #ffffff;
+        border-radius: 10px;
+        border: 1px solid #e2d4bf;
+        padding: 14px 16px;
+      }
+
+      .insights-metrics {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      @media (max-width: 900px) {
+        .insights-metrics {
+          grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+      }
+
+      .insight-item {
+        font-size: 12px;
+        color: #5b4632;
+      }
+
+      .insight-item strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script
+      src="https://unpkg.com/react@18/umd/react.development.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+      crossorigin
+    ></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
+
+      function KPICard({ label, value, subtitle, trend, trendDirection }) {
+        return (
+          <div className="kpi-card">
+            <div className="kpi-label">{label}</div>
+            <div className="kpi-value">{value}</div>
+            {subtitle && <div className="kpi-sub">{subtitle}</div>}
+            {trend && (
+              <div
+                className={
+                  "kpi-trend" + (trendDirection === "down" ? " down" : "")
+                }
+              >
+                {trend}
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      function BaseChart({ type, title, data, options }) {
+        const canvasRef = useRef(null);
+
+        useEffect(() => {
+          if (!canvasRef.current) return;
+          const ctx = canvasRef.current.getContext("2d");
+          const chart = new Chart(ctx, {
+            type,
+            data,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: true,
+                  labels: { boxWidth: 12, font: { size: 11 } },
+                },
+                tooltip: { mode: "index", intersect: false },
+              },
+              scales:
+                type === "pie"
+                  ? {}
+                  : {
+                      x: { ticks: { font: { size: 10 } } },
+                      y: {
+                        beginAtZero: true,
+                        ticks: { font: { size: 10 } },
+                      },
+                    },
+              ...options,
+            },
+          });
+
+          return () => chart.destroy();
+        }, [type, JSON.stringify(data), JSON.stringify(options)]);
+
+        return (
+          <div className="chart-card">
+            <div className="chart-title">{title}</div>
+            <div className="chart-wrapper">
+              <canvas ref={canvasRef}></canvas>
+            </div>
+          </div>
+        );
+      }
+
+      function PropertyStatisticsDashboard() {
+        const [cityFilter, setCityFilter] = useState("all");
+        const [typeFilter, setTypeFilter] = useState("all");
+        const [periodFilter, setPeriodFilter] = useState("30d");
+
+        const cities = ["Tokyo", "Osaka", "Nagoya", "Fukuoka", "Sapporo"];
+
+        const propertyDataset = [
+          {
+            id: 1,
+            city: "Tokyo",
+            type: "Apartment",
+            value: 78000000,
+            daysOnMarket: 32,
+            views: 420,
+          },
+          {
+            id: 2,
+            city: "Osaka",
+            type: "House",
+            value: 52000000,
+            daysOnMarket: 45,
+            views: 310,
+          },
+          {
+            id: 3,
+            city: "Nagoya",
+            type: "Apartment",
+            value: 43000000,
+            daysOnMarket: 28,
+            views: 260,
+          },
+          {
+            id: 4,
+            city: "Fukuoka",
+            type: "House",
+            value: 39000000,
+            daysOnMarket: 36,
+            views: 210,
+          },
+          {
+            id: 5,
+            city: "Tokyo",
+            type: "House",
+            value: 96000000,
+            daysOnMarket: 52,
+            views: 580,
+          },
+        ];
+
+        const filteredProperties = propertyDataset.filter((p) => {
+          if (cityFilter !== "all" && p.city !== cityFilter) return false;
+          if (typeFilter !== "all" && p.type.toLowerCase() !== typeFilter)
+            return false;
+          return true;
+        });
+
+        const totalProperties = 1820;
+        const avgValue = 56500000;
+        const propertiesThisPeriod = 210;
+        const avgDuration = 41;
+
+        const byTypeData = {
+          labels: ["House", "Apartment"],
+          datasets: [
+            {
+              label: "Property count",
+              data: [680, 1140],
+              backgroundColor: ["#8fb3a2", "#c79e4c"],
+              borderRadius: 6,
+            },
+          ],
+        };
+
+        const byCityData = {
+          labels: cities,
+          datasets: [
+            {
+              label: "Properties",
+              data: [620, 420, 260, 210, 310],
+              backgroundColor: "#cfb27a",
+              borderRadius: 6,
+            },
+          ],
+        };
+
+        const priceOverTimeData = {
+          labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
+          datasets: [
+            {
+              label: "Avg property price (¥ x 1M)",
+              data: [52, 53, 54, 55, 56, 57, 58],
+              borderColor: "#b76e79",
+              backgroundColor: "rgba(183, 110, 121, 0.18)",
+              tension: 0.3,
+              fill: true,
+            },
+          ],
+        };
+
+        const priceChangeData = {
+          labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
+          datasets: [
+            {
+              label: "% change vs prev. month",
+              data: [0.8, 0.6, 0.9, 1.1, 0.7, 0.9, 1.0],
+              borderColor: "#3c6e71",
+              backgroundColor: "rgba(60, 110, 113, 0.18)",
+              tension: 0.3,
+              fill: true,
+            },
+          ],
+        };
+
+        const viewsData = {
+          labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+          datasets: [
+            {
+              label: "Daily views",
+              data: [820, 860, 910, 960, 1040, 1100, 980],
+              borderColor: "#c79e4c",
+              backgroundColor: "rgba(199, 158, 76, 0.12)",
+              tension: 0.3,
+              fill: true,
+            },
+            {
+              label: "Weekly views",
+              data: [5100, 5220, 5340, 5480, 5600, 5720, 5860],
+              borderColor: "#8fb3a2",
+              backgroundColor: "rgba(143, 179, 162, 0.12)",
+              tension: 0.3,
+              fill: false,
+            },
+            {
+              label: "Monthly views",
+              data: [21200, 21400, 21700, 22050, 22400, 22780, 23120],
+              borderColor: "#b196c9",
+              backgroundColor: "rgba(177, 150, 201, 0.12)",
+              tension: 0.3,
+              fill: false,
+            },
+          ],
+        };
+
+        const handleExportExcel = () => {
+          const header = [
+            "ID",
+            "City",
+            "Type",
+            "Value",
+            "Days on market",
+            "Views",
+          ];
+          const rows = filteredProperties.map((p) => [
+            p.id,
+            p.city,
+            p.type,
+            p.value,
+            p.daysOnMarket,
+            p.views,
+          ]);
+
+          const csvContent = [header, ...rows]
+            .map((r) =>
+              r
+                .map((v) => {
+                  const s = String(v).replace(/"/g, '""');
+                  return `"${s}"`;
+                })
+                .join(","),
+            )
+            .join("\n");
+
+          const blob = new Blob([csvContent], {
+            type: "text/csv;charset=utf-8;",
+          });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "property_statistics.csv";
+          link.click();
+          URL.revokeObjectURL(url);
+        };
+
+        return (
+          <div className="page-wrapper">
+            <div className="page-header">
+              <div className="page-title">
+                <h1>Property Statistics</h1>
+                <span>
+                  Platform-wide property performance for Yuushi market analytics
+                </span>
+              </div>
+              <div className="filters">
+                <div className="filters-group">
+                  <label>City</label>
+                  <select
+                    value={cityFilter}
+                    onChange={(e) => setCityFilter(e.target.value)}
+                  >
+                    <option value="all">All</option>
+                    {cities.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="filters-group">
+                  <label>Type</label>
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                  >
+                    <option value="all">All</option>
+                    <option value="house">House</option>
+                    <option value="apartment">Apartment</option>
+                  </select>
+                </div>
+                <div className="filters-group">
+                  <label>Period</label>
+                  <select
+                    value={periodFilter}
+                    onChange={(e) => setPeriodFilter(e.target.value)}
+                  >
+                    <option value="today">Today</option>
+                    <option value="7d">Last 7 days</option>
+                    <option value="30d">Last 30 days</option>
+                    <option value="90d">Last 90 days</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+                <button className="btn-export" onClick={handleExportExcel}>
+                  Download Excel
+                </button>
+              </div>
+            </div>
+
+            <div className="kpi-grid">
+              <KPICard
+                label="Total Properties Listed"
+                value={totalProperties.toLocaleString()}
+                subtitle="Currently live and visible on platform"
+                trend="+3.2% vs last 30 days"
+              />
+              <KPICard
+                label="Average Property Value"
+                value={`¥ ${avgValue.toLocaleString()}`}
+                subtitle="Across all active listings"
+                trend="+1.0% vs previous quarter"
+              />
+              <KPICard
+                label="Properties Listed This Period"
+                value={propertiesThisPeriod.toLocaleString()}
+                subtitle="Newly created in selected period"
+                trend="+4.5% vs previous period"
+              />
+              <KPICard
+                label="Average Listing Duration"
+                value={`${avgDuration} days`}
+                subtitle="From publish to deal/withdrawn"
+                trend="-2.1 days vs last quarter"
+                trendDirection="down"
+              />
+            </div>
+
+            <div className="section-group">
+              <div className="section-header">
+                <h2>Inventory distribution</h2>
+                <span>Mix by property type and geography</span>
+              </div>
+              <div className="charts-grid-2">
+                <BaseChart
+                  type="bar"
+                  title="Property count by type"
+                  data={byTypeData}
+                />
+                <BaseChart
+                  type="bar"
+                  title="Property count by city"
+                  data={byCityData}
+                />
+              </div>
+            </div>
+
+            <div className="section-group">
+              <div className="section-header">
+                <h2>Price & demand trends</h2>
+                <span>Market-level value and attention signals</span>
+              </div>
+              <div className="charts-grid-2">
+                <BaseChart
+                  type="line"
+                  title="Average property price over time"
+                  data={priceOverTimeData}
+                />
+                <BaseChart
+                  type="line"
+                  title="Price change statistics by month"
+                  data={priceChangeData}
+                />
+              </div>
+              <div style={{ marginTop: 14 }}>
+                <BaseChart
+                  type="line"
+                  title="Property views (daily / weekly / monthly)"
+                  data={viewsData}
+                />
+              </div>
+            </div>
+
+            <div className="section-group">
+              <div className="section-header">
+                <h2>Market insight</h2>
+                <span>Supporting internal reports & monetisation decks</span>
+              </div>
+              <div className="insights-card">
+                <p style={{ fontSize: 13, color: "#5b4632" }}>
+                  Yuushi buyer interest remains concentrated around
+                  transit-adjacent apartments in Tokyo and Osaka, while detached
+                  houses in regional hubs show steady absorption and stable
+                  pricing.
+                </p>
+                <div className="insights-metrics">
+                  <div className="insight-item">
+                    <strong>Buyer vs seller ratio</strong>
+                    Current tracked enquiries suggest a<b> 1.8 : 1</b>{" "}
+                    buyer-to-seller ratio across the platform, signalling a
+                    mildly demand-driven market.
+                  </div>
+                  <div className="insight-item">
+                    <strong>Price vs previous year</strong>
+                    Average listing prices are approximately
+                    <b> +6.4%</b> higher year-on-year, with premium urban stock
+                    leading the uplift.
+                  </div>
+                  <div className="insight-item">
+                    <strong>City-level growth</strong>
+                    Tokyo and Fukuoka show the fastest price growth, while Osaka
+                    and Nagoya remain stable with moderate increases in the
+                    <b> 3–4% YoY</b> range.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      const rootElement = document.getElementById("root");
+      const root = ReactDOM.createRoot(rootElement);
+      root.render(<PropertyStatisticsDashboard />);
+    </script>
+  </body>
+</html>
