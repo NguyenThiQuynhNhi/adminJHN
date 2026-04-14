@@ -1,0 +1,848 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Agent Agreements</title>
+    <style>
+      :root {
+        --bg-body: #f5f3ef;
+        --bg-card: #fffaf2;
+        --border-subtle: #eadccd;
+        --accent: #c26b41;
+        --accent-soft: #f3d7c6;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+        --badge-green: #2f855a;
+        --badge-gray: #4a5568;
+        --badge-orange: #b7791f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px 24px 32px;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        letter-spacing: 0.02em;
+      }
+
+      .page-subtitle {
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: var(--text-muted);
+        max-width: 760px;
+      }
+
+      .layout-main {
+        display: grid;
+        grid-template-columns: minmax(0, 6fr) minmax(0, 7fr);
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .card {
+        background-color: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        padding: 14px 16px 16px;
+        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .toolbar-right {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 11px;
+        font-size: 11px;
+        background-color: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+        color: var(--text-main);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #c26b41, #a55232);
+        border-color: #a55232;
+        color: #fffaf3;
+      }
+
+      .btn-ghost {
+        background: transparent;
+      }
+
+      .btn:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 500;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+
+      .badge-status-draft {
+        background: #f7f7f8;
+        color: var(--badge-gray);
+        border-color: #d2d6dc;
+      }
+
+      .badge-status-published {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+
+      .badge-status-pending {
+        background: #fff6e0;
+        color: var(--badge-orange);
+        border-color: #fbd38d;
+      }
+
+      .badge-status-signed {
+        background: #e6fffa;
+        color: #2b6cb0;
+        border-color: #b2f5ea;
+      }
+
+      .list-scroll {
+        max-height: 360px;
+        overflow: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f7efe6;
+      }
+
+      th,
+      td {
+        padding: 7px 8px;
+        text-align: left;
+        border-bottom: 1px solid #efe0d4;
+      }
+
+      th {
+        font-weight: 500;
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+
+      tbody tr {
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+
+      tbody tr:hover {
+        background-color: #f8f1ea;
+      }
+
+      tbody tr.selected-row {
+        background-color: #f1e3d5;
+      }
+
+      .agreement-title-cell {
+        font-weight: 600;
+      }
+
+      .agreement-key {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .detail-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .detail-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+        margin-bottom: 4px;
+      }
+
+      .detail-field-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .detail-input,
+      .detail-select,
+      textarea {
+        width: 100%;
+        border-radius: 9px;
+        border: 1px solid var(--border-subtle);
+        padding: 5px 8px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      .detail-input:focus,
+      .detail-select:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      textarea {
+        min-height: 140px;
+        resize: vertical;
+        font-family: inherit;
+      }
+
+      .hint-text {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .stats-layout {
+        margin-top: 18px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+      }
+
+      .filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .filter-input,
+      .filter-select {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 5px 10px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      .pill-chip {
+        border-radius: 999px;
+        padding: 2px 7px;
+        font-size: 10px;
+        background: #f1e3d5;
+        color: #744210;
+      }
+
+      @media (max-width: 960px) {
+        .layout-main {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Agent agreement templates</h1>
+    </header>
+
+    <main class="layout-main">
+      <!-- LEFT: Agreements list -->
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Agreement templates</div>
+          </div>
+          <div class="toolbar-right">
+            <button id="newAgreementBtn" class="btn" type="button">
+              New agreement
+            </button>
+          </div>
+        </div>
+
+        <div class="list-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Note</th>
+                <th>Last updated</th>
+                <th>Last sent to agents</th>
+              </tr>
+            </thead>
+            <tbody id="agreementsTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- RIGHT: Agreement editor -->
+      <section class="card">
+        <div class="detail-layout" id="emptyDetail">
+          <div class="card-title">Agreement detail</div>
+        </div>
+
+        <div class="detail-layout" id="detailPanel" style="display: none">
+          <div class="card-header" style="padding: 0">
+            <div>
+              <div class="card-title" id="detailTitle"></div>
+              <div class="card-subtitle" id="detailMeta"></div>
+            </div>
+            <div class="toolbar-right">
+              <button id="sendToAgentsBtn" class="btn" type="button">
+                Send to agents (demo)
+              </button>
+              <button
+                id="saveAgreementBtn"
+                class="btn btn-primary"
+                type="button"
+              >
+                Save agreement (demo)
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="detail-section-title">Basic information</div>
+            <div class="detail-grid">
+              <div>
+                <div class="detail-field-label">Title</div>
+                <input id="inputTitle" class="detail-input" type="text" />
+              </div>
+              <div>
+                <div class="detail-field-label">Status</div>
+                <select id="inputStatus" class="detail-select">
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                </select>
+              </div>
+              <div>
+                <div class="detail-field-label">Effective from (optional)</div>
+                <input id="inputEffective" class="detail-input" type="date" />
+              </div>
+              <div>
+                <div class="detail-field-label">Version</div>
+                <input
+                  id="inputVersion"
+                  class="detail-input"
+                  type="text"
+                  readonly
+                />
+              </div>
+              <div>
+                <div class="detail-field-label">Last sent to agents</div>
+                <input
+                  id="inputLastSent"
+                  class="detail-input"
+                  type="text"
+                  readonly
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="detail-section-title">Agreement body</div>
+            <textarea
+              id="inputBody"
+              placeholder="Write the agreement clauses here. Example sections: Purpose, Definitions, Agent obligations, Platform obligations, Confidentiality, Termination, Governing law..."
+            ></textarea>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Agent acceptance overview -->
+    <section class="stats-layout">
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Agent acceptance overview</div>
+          </div>
+        </div>
+
+        <div class="filter-row">
+          <select id="filterAgreement" class="filter-select"></select>
+          <select id="filterStatus" class="filter-select">
+            <option value="all">Status: All</option>
+            <option value="signed">Signed</option>
+            <option value="pending">Pending</option>
+          </select>
+          <input
+            id="filterAgentSearch"
+            class="filter-input"
+            type="text"
+            placeholder="Search agent by name or ID"
+          />
+          <span id="summaryChip" class="pill-chip"></span>
+        </div>
+
+        <div class="list-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Agent ID</th>
+                <th>Agent name</th>
+                <th>Office</th>
+                <th>Status</th>
+                <th>Signed at</th>
+                <th>Version accepted</th>
+              </tr>
+            </thead>
+            <tbody id="acceptanceTbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <script>
+      // Demo seed data
+      const agreements = [
+        {
+          id: "code-of-conduct",
+          title: "Agent Code of Conduct",
+          key: "agent_code_of_conduct",
+          status: "published",
+          version: 2,
+          effectiveFrom: "2026-03-15",
+          lastUpdatedAt: "2026-03-20 10:05",
+          lastSentAt: "2026-03-20 10:10",
+          body: "Defines expected behaviour when using the platform, communication standards, and rules for handling client data.",
+        },
+        {
+          id: "data-usage-policy",
+          title: "Data usage & privacy policy (Agents)",
+          key: "agent_data_usage_policy",
+          status: "published",
+          version: 1,
+          effectiveFrom: "2026-02-01",
+          lastUpdatedAt: "2026-02-01 09:00",
+          lastSentAt: "2026-02-01 09:05",
+          body: "Explains how platform data may be accessed by agents and which logs are recorded for security and compliance.",
+        },
+        {
+          id: "new-feature-beta",
+          title: "Beta feature participation terms",
+          key: "beta_feature_terms",
+          status: "draft",
+          version: 0,
+          effectiveFrom: "",
+          lastUpdatedAt: "2026-04-01 14:32",
+          lastSentAt: "",
+          body: "Draft: conditions for participating in limited beta features, including feedback loops and rollback scenarios.",
+        },
+      ];
+
+      const agents = [
+        { id: "AG-001", name: "Tokyo Prime Realty", office: "Tokyo" },
+        { id: "AG-002", name: "Osaka Investment Desk", office: "Osaka" },
+        { id: "AG-003", name: "Fukuoka Residential", office: "Fukuoka" },
+      ];
+
+      const acceptanceRecords = [
+        {
+          agreementId: "code-of-conduct",
+          agentId: "AG-001",
+          status: "signed",
+          signedAt: "2026-03-21 11:10",
+          versionAccepted: 2,
+        },
+        {
+          agreementId: "code-of-conduct",
+          agentId: "AG-002",
+          status: "signed",
+          signedAt: "2026-03-22 09:05",
+          versionAccepted: 2,
+        },
+        {
+          agreementId: "code-of-conduct",
+          agentId: "AG-003",
+          status: "pending",
+          signedAt: "",
+          versionAccepted: null,
+        },
+        {
+          agreementId: "data-usage-policy",
+          agentId: "AG-001",
+          status: "signed",
+          signedAt: "2026-02-02 10:00",
+          versionAccepted: 1,
+        },
+        {
+          agreementId: "data-usage-policy",
+          agentId: "AG-002",
+          status: "pending",
+          signedAt: "",
+          versionAccepted: null,
+        },
+        {
+          agreementId: "data-usage-policy",
+          agentId: "AG-003",
+          status: "pending",
+          signedAt: "",
+          versionAccepted: null,
+        },
+      ];
+
+      let selectedAgreementId = null;
+
+      const els = {
+        agreementsTbody: document.getElementById("agreementsTbody"),
+        newAgreementBtn: document.getElementById("newAgreementBtn"),
+        exportAgreementBtn: document.getElementById("exportAgreementBtn"),
+        emptyDetail: document.getElementById("emptyDetail"),
+        detailPanel: document.getElementById("detailPanel"),
+        detailTitle: document.getElementById("detailTitle"),
+        detailMeta: document.getElementById("detailMeta"),
+        inputTitle: document.getElementById("inputTitle"),
+        inputStatus: document.getElementById("inputStatus"),
+        inputEffective: document.getElementById("inputEffective"),
+        inputVersion: document.getElementById("inputVersion"),
+        inputLastSent: document.getElementById("inputLastSent"),
+        inputBody: document.getElementById("inputBody"),
+        saveAgreementBtn: document.getElementById("saveAgreementBtn"),
+        sendToAgentsBtn: document.getElementById("sendToAgentsBtn"),
+        filterAgreement: document.getElementById("filterAgreement"),
+        filterStatus: document.getElementById("filterStatus"),
+        filterAgentSearch: document.getElementById("filterAgentSearch"),
+        acceptanceTbody: document.getElementById("acceptanceTbody"),
+        summaryChip: document.getElementById("summaryChip"),
+      };
+
+      function statusBadge(status) {
+        const span = document.createElement("span");
+        span.classList.add("badge");
+        if (status === "published") {
+          span.classList.add("badge-status-published");
+          span.textContent = "Published";
+        } else {
+          span.classList.add("badge-status-draft");
+          span.textContent = "Draft";
+        }
+        return span;
+      }
+
+      function acceptanceStatusBadge(status) {
+        const span = document.createElement("span");
+        span.classList.add("badge");
+        if (status === "signed") {
+          span.classList.add("badge-status-signed");
+          span.textContent = "Signed";
+        } else {
+          span.classList.add("badge-status-pending");
+          span.textContent = "Pending";
+        }
+        return span;
+      }
+
+      function renderAgreementsTable() {
+        els.agreementsTbody.innerHTML = "";
+        agreements.forEach((ag) => {
+          const tr = document.createElement("tr");
+          if (ag.id === selectedAgreementId) tr.classList.add("selected-row");
+
+          const tdTitle = document.createElement("td");
+          tdTitle.innerHTML = `<div class="agreement-title-cell">${ag.title}</div>
+						<div class="agreement-key">${ag.key}</div>`;
+
+          const tdStatus = document.createElement("td");
+          tdStatus.appendChild(statusBadge(ag.status));
+
+          const tdVersion = document.createElement("td");
+          tdVersion.textContent = ag.version || 0;
+
+          const tdUpdated = document.createElement("td");
+          tdUpdated.textContent = ag.lastUpdatedAt || "-";
+
+          const tdSent = document.createElement("td");
+          tdSent.textContent = ag.lastSentAt || "Not sent";
+
+          tr.appendChild(tdTitle);
+          tr.appendChild(tdStatus);
+          tr.appendChild(tdVersion);
+          tr.appendChild(tdUpdated);
+          tr.appendChild(tdSent);
+
+          tr.addEventListener("click", () => selectAgreement(ag.id));
+          els.agreementsTbody.appendChild(tr);
+        });
+      }
+
+      function selectAgreement(id) {
+        const ag = agreements.find((x) => x.id === id);
+        if (!ag) return;
+        selectedAgreementId = id;
+
+        els.emptyDetail.style.display = "none";
+        els.detailPanel.style.display = "";
+
+        els.detailTitle.textContent = ag.title;
+        els.detailMeta.textContent = `${ag.key} · Status: ${ag.status} · Version: ${
+          ag.version || 0
+        }`;
+
+        els.inputTitle.value = ag.title;
+        els.inputStatus.value = ag.status;
+        els.inputEffective.value = ag.effectiveFrom || "";
+        els.inputVersion.value = ag.version || 0;
+        els.inputLastSent.value = ag.lastSentAt || "Not sent";
+        els.inputBody.value = ag.body || "";
+
+        renderAgreementsTable();
+        renderAcceptanceTable();
+      }
+
+      function createNewAgreement() {
+        const now = new Date();
+        const id = `agreement-${now.getTime()}`;
+        const title = "New agent agreement";
+        const key = `agreement_${now.getTime()}`;
+        const ag = {
+          id,
+          title,
+          key,
+          status: "draft",
+          version: 0,
+          effectiveFrom: "",
+          lastUpdatedAt: new Date().toLocaleString("en-GB", { hour12: false }),
+          lastSentAt: "",
+          body: "",
+        };
+        agreements.unshift(ag);
+        renderAgreementsTable();
+        selectAgreement(id);
+        populateAgreementFilterOptions();
+      }
+
+      function saveAgreement() {
+        if (!selectedAgreementId) return;
+        const ag = agreements.find((x) => x.id === selectedAgreementId);
+        if (!ag) return;
+
+        ag.title = els.inputTitle.value.trim() || ag.title;
+        ag.status = els.inputStatus.value;
+        ag.effectiveFrom = els.inputEffective.value || "";
+        ag.body = els.inputBody.value.trim();
+        ag.lastUpdatedAt = new Date().toLocaleString("en-GB", {
+          hour12: false,
+        });
+
+        els.detailTitle.textContent = ag.title;
+        els.detailMeta.textContent = `${ag.key} · Status: ${ag.status} · Version: ${
+          ag.version || 0
+        }`;
+        renderAgreementsTable();
+        populateAgreementFilterOptions();
+        alert("Agreement template saved (demo, no backend write).");
+      }
+
+      function sendToAgents() {
+        if (!selectedAgreementId) return;
+        const ag = agreements.find((x) => x.id === selectedAgreementId);
+        if (!ag) return;
+
+        // Bump version on send to agents (demo behaviour)
+        ag.version = (ag.version || 0) + 1;
+        ag.lastSentAt = new Date().toLocaleString("en-GB", { hour12: false });
+        ag.lastUpdatedAt = ag.lastUpdatedAt || ag.lastSentAt;
+
+        els.inputVersion.value = ag.version;
+        els.inputLastSent.value = ag.lastSentAt;
+        els.detailMeta.textContent = `${ag.key} · Status: ${ag.status} · Version: ${
+          ag.version || 0
+        }`;
+        renderAgreementsTable();
+        renderAcceptanceTable();
+
+        alert(
+          "Send to agents (demo): agents would see a new banner in their portal and must accept this version before continuing.",
+        );
+      }
+
+      function exportAgreements() {
+        const blob = new Blob([JSON.stringify(agreements, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "agent_agreements_templates.json";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      // Acceptance overview
+      function populateAgreementFilterOptions() {
+        const current = els.filterAgreement.value;
+        els.filterAgreement.innerHTML = "";
+        agreements.forEach((ag, index) => {
+          const opt = document.createElement("option");
+          opt.value = ag.id;
+          opt.textContent = `${ag.title} (v${ag.version || 0})`;
+          if (!current && index === 0) {
+            opt.selected = true;
+          } else if (current === ag.id) {
+            opt.selected = true;
+          }
+          els.filterAgreement.appendChild(opt);
+        });
+      }
+
+      function renderAcceptanceTable() {
+        const agreementId =
+          els.filterAgreement.value || (agreements[0] && agreements[0].id);
+        if (!agreementId) return;
+
+        const statusFilter = els.filterStatus.value;
+        const search = els.filterAgentSearch.value.trim().toLowerCase();
+
+        els.acceptanceTbody.innerHTML = "";
+
+        let total = 0;
+        let signedCount = 0;
+
+        agents.forEach((agent) => {
+          let rec = acceptanceRecords.find(
+            (r) => r.agreementId === agreementId && r.agentId === agent.id,
+          );
+          if (!rec) {
+            rec = {
+              agreementId,
+              agentId: agent.id,
+              status: "pending",
+              signedAt: "",
+              versionAccepted: null,
+            };
+          }
+
+          if (statusFilter !== "all" && rec.status !== statusFilter) {
+            return;
+          }
+
+          if (search) {
+            const label = `${agent.id} ${agent.name}`.toLowerCase();
+            if (!label.includes(search)) return;
+          }
+
+          total += 1;
+          if (rec.status === "signed") signedCount += 1;
+
+          const tr = document.createElement("tr");
+          const tdId = document.createElement("td");
+          tdId.textContent = agent.id;
+          const tdName = document.createElement("td");
+          tdName.textContent = agent.name;
+          const tdOffice = document.createElement("td");
+          tdOffice.textContent = agent.office;
+
+          const tdStatus = document.createElement("td");
+          tdStatus.appendChild(acceptanceStatusBadge(rec.status));
+
+          const tdSignedAt = document.createElement("td");
+          tdSignedAt.textContent = rec.signedAt || "-";
+
+          const tdVersion = document.createElement("td");
+          tdVersion.textContent =
+            rec.status === "signed" && rec.versionAccepted != null
+              ? `v${rec.versionAccepted}`
+              : "-";
+
+          tr.appendChild(tdId);
+          tr.appendChild(tdName);
+          tr.appendChild(tdOffice);
+          tr.appendChild(tdStatus);
+          tr.appendChild(tdSignedAt);
+          tr.appendChild(tdVersion);
+          els.acceptanceTbody.appendChild(tr);
+        });
+
+        els.summaryChip.textContent = `${signedCount} signed / ${total} agents (demo)`;
+      }
+
+      function initEvents() {
+        els.newAgreementBtn.addEventListener("click", createNewAgreement);
+        els.saveAgreementBtn.addEventListener("click", saveAgreement);
+        els.sendToAgentsBtn.addEventListener("click", sendToAgents);
+        els.exportAgreementBtn.addEventListener("click", exportAgreements);
+
+        els.filterAgreement.addEventListener("change", renderAcceptanceTable);
+        els.filterStatus.addEventListener("change", renderAcceptanceTable);
+        els.filterAgentSearch.addEventListener("input", renderAcceptanceTable);
+      }
+
+      function init() {
+        renderAgreementsTable();
+        if (agreements.length) {
+          selectAgreement(agreements[0].id);
+        }
+        populateAgreementFilterOptions();
+        renderAcceptanceTable();
+        initEvents();
+      }
+
+      init();
+    </script>
+  </body>
+</html>

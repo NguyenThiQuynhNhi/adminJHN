@@ -595,12 +595,21 @@
   <body>
     <div class="page">
       <div class="page-header">
-        <div class="page-title">Property Approval &amp; Moderation</div>
-        <div class="page-subtitle">
-          Queue of new listings and reported listings to approve, suspend,
-          archive or remove according to platform rules.
+        <div style="margin-bottom: 8px">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            onclick="window.location.href = 'property-list-oversight.html'"
+          >
+            ← Back to Property List
+          </button>
         </div>
-        <div class="pill">Property Management · Moderation</div>
+        <div class="page-title">Property Approval &amp; Moderation</div>
+      </div>
+      <div class="page-subtitle">
+        Queue of new property listings awaiting approval. Use Approve / Reject
+        for new properties; suspension or re-activation of published listings is
+        handled from the main Property module.
       </div>
 
       <div class="layout">
@@ -608,7 +617,8 @@
           <div class="card-header">
             <div class="card-title">Moderation queue</div>
             <div class="card-subtitle">
-              Includes both new listings awaiting review and reported listings.
+              Includes new listings that must be approved or rejected before
+              going live.
             </div>
           </div>
 
@@ -624,8 +634,7 @@
                 <option value="">Property Status</option>
                 <option value="Pending">Pending</option>
                 <option value="Approved">Approved</option>
-                <option value="Suspended">Suspended</option>
-                <option value="Archived">Archived</option>
+                <option value="Rejected">Rejected</option>
               </select>
             </div>
 
@@ -638,12 +647,8 @@
               </select>
             </div>
 
-            <button class="add-filter-btn" type="button">
-              Add/Remove Filters
-            </button>
-
-            <button class="reset-icon" id="clearFilterBtn" type="button">
-              ⟳
+            <button class="add-filter-btn" id="clearFilterBtn" type="button">
+              Remove Filters
             </button>
 
             <div class="select-wrapper" style="margin-left: auto">
@@ -667,7 +672,6 @@
                 <th>Property</th>
                 <th>Agent</th>
                 <th>Reason</th>
-                <th>Severity</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -722,7 +726,7 @@
           id: "P-1103",
           title: "1K near Osaka station",
           agent: "Osaka Prime Realty",
-          status: "Suspended",
+          status: "Pending",
           reason: "System flag",
           severity: "High",
           reportedBy: "System",
@@ -808,13 +812,9 @@
           const tr = document.createElement("tr");
           tr.style.cursor = "pointer";
           tr.innerHTML = `
-            <td>
-              <div class="prop-title">${p.title}</div>
-              <div class="prop-meta">${p.id} · ${p.agent}</div>
-            </td>
+            <td>${p.title}</td>
             <td>${p.agent}</td>
             <td>${p.reason}</td>
-            <td><span class="badge ${severityClass(p.severity)}">${p.severity}</span></td>
             <td><span class="status-pill ${statusClass(p.status)}">${p.status}</span></td>
           `;
           tr.addEventListener("click", () => {
@@ -844,7 +844,6 @@
             '<div class="card-subtitle">Select a listing in the table on the left to review and make a decision.</div>';
           return;
         }
-        const logs = decisionLog.filter((d) => d.propertyId === p.id);
         div.innerHTML = `
           <div class="detail-label">Property</div>
           <div class="detail-value">${p.title}</div>
@@ -856,47 +855,24 @@
           <div class="detail-value">${p.reason} · Reported by: ${p.reportedBy}</div>
           <div class="detail-label">Severity</div>
           <div class="detail-value"><span class="badge ${severityClass(p.severity)}">${p.severity}</span></div>
-          <div class="detail-label">System note</div>
-          <div class="textarea-like">${p.note}</div>
 
           <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn btn-secondary btn-sm" id="btnApprove">Approve & publish</button>
-            <button class="btn btn-primary btn-sm" id="btnSuspend">Suspend listing</button>
-            <button class="btn btn-primary btn-sm" id="btnArchive">Archive listing</button>
-            <button class="btn btn-primary btn-sm" id="btnRemove">Remove listing</button>
+            <button class="btn btn-secondary btn-sm" id="btnApprove">Approve new property</button>
+            <button class="btn btn-primary btn-sm" id="btnReject">Reject new property</button>
           </div>
 
           <div style="margin-top:10px; font-size:11px; color:#7c6a55;">
             These actions only update in-memory demo data. In production you
             should log all details, notify the agent and related users, and
-            provide a proper appeal workflow.
-          </div>
-
-          <div style="margin-top:10px;">
-            <div class="detail-label">Decision history (demo)</div>
-            <div class="textarea-like" style="min-height:40px;">
-              ${
-                logs.length
-                  ? logs
-                      .map(
-                        (d) =>
-                          `${d.time}: ${d.decision} (${d.note || "no note"})`,
-                      )
-                      .join("\n")
-                  : "No decisions recorded yet."
-              }
-            </div>
+            route long-term lifecycle actions (suspend / re-activate) through
+            the main Property Management flow.
           </div>
         `;
 
         document.getElementById("btnApprove").onclick = () =>
-          performDecision(p, "Approve & publish", "Approved");
-        document.getElementById("btnSuspend").onclick = () =>
-          performDecision(p, "Suspend listing", "Suspended");
-        document.getElementById("btnArchive").onclick = () =>
-          performDecision(p, "Archive listing", "Archived");
-        document.getElementById("btnRemove").onclick = () =>
-          performDecision(p, "Remove listing", "Archived");
+          performDecision(p, "Approve new property", "Approved");
+        document.getElementById("btnReject").onclick = () =>
+          performDecision(p, "Reject new property", "Rejected");
       }
 
       function performDecision(record, label, newStatus) {

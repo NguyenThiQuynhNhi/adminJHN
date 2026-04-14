@@ -1,0 +1,1217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Static Page Management</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-body: #f5f3ef;
+        --bg-card: #fffaf2;
+        --border-subtle: #eadccd;
+        --accent: #c26b41;
+        --accent-soft: #f3d7c6;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+        --badge-green: #2f855a;
+        --badge-red: #c53030;
+        --badge-gray: #4a5568;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px 24px 32px;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        letter-spacing: 0.02em;
+      }
+
+      .page-subtitle {
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 7fr) minmax(0, 6fr);
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .card {
+        background-color: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        padding: 14px 16px 16px;
+        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 120px;
+      }
+
+      .field-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+
+      input[type="text"],
+      select {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      input[type="text"]:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f7efe6;
+      }
+
+      th,
+      td {
+        padding: 7px 8px;
+        text-align: left;
+        border-bottom: 1px solid #efe0d4;
+      }
+
+      th {
+        font-weight: 500;
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      tbody tr {
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+
+      tbody tr:hover {
+        background-color: #f8f1ea;
+      }
+
+      tbody tr.selected-row {
+        background-color: #f1e3d5;
+      }
+
+      .page-title {
+        font-weight: 600;
+      }
+
+      .slug {
+        font-family:
+          "Consolas", "SFMono-Regular", ui-monospace, Menlo, Monaco, monospace;
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 500;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+
+      .badge-status-published {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+
+      .badge-status-draft {
+        background: #fff6e0;
+        color: #b7791f;
+        border-color: #fbd38d;
+      }
+
+      .badge-status-hidden {
+        background: #f7f7f8;
+        color: var(--badge-gray);
+        border-color: #d2d6dc;
+      }
+
+      .badge-category {
+        background: #f0e3d7;
+        color: #744210;
+        border-color: #e2c6a8;
+      }
+
+      .badge-location {
+        background: #edf2f7;
+        color: #2c5282;
+        border-color: #cbd5e0;
+      }
+
+      .badge-locale {
+        background: #fef3c7;
+        color: #92400e;
+        border-color: #fcd34d;
+      }
+
+      .toolbar-right {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 11px;
+        font-size: 11px;
+        background-color: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+        color: var(--text-main);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #c26b41, #a55232);
+        border-color: #a55232;
+        color: #fffaf3;
+      }
+
+      .btn-ghost {
+        background: transparent;
+      }
+
+      .btn:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+
+      .detail-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .detail-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .detail-title-block h2 {
+        margin: 0 0 4px;
+        font-size: 16px;
+      }
+
+      .detail-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .detail-meta span + span::before {
+        content: "· ";
+        margin: 0 2px;
+      }
+
+      .detail-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+        margin-bottom: 4px;
+      }
+
+      .detail-field-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .detail-field-value,
+      .detail-input,
+      .detail-select {
+        font-size: 12px;
+      }
+
+      .detail-input,
+      .detail-select,
+      textarea {
+        width: 100%;
+        border-radius: 9px;
+        border: 1px solid var(--border-subtle);
+        padding: 5px 8px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      .detail-input:focus,
+      .detail-select:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      textarea {
+        min-height: 76px;
+        resize: vertical;
+        font-family: inherit;
+      }
+
+      .hint-text {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .content-preview-box {
+        border-radius: 10px;
+        border: 1px dashed #deccba;
+        padding: 8px 9px;
+        background: #fffaf1;
+        font-size: 12px;
+        color: var(--text-main);
+        max-height: 140px;
+        overflow: auto;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-bottom: 4px;
+      }
+
+      .chip {
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 10px;
+        background: #f4efe9;
+        color: #5b4633;
+      }
+
+      .footer-note {
+        margin-top: 4px;
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .pill-count {
+        border-radius: 999px;
+        padding: 2px 7px;
+        font-size: 10px;
+        background: #f1e3d5;
+        color: #744210;
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 16px;
+      }
+
+      .page-header h1 {
+        font-size: 20px;
+        margin: 0;
+      }
+
+      .page-tabs {
+        display: flex;
+        gap: 16px;
+        font-size: 13px;
+      }
+
+      .nav-link {
+        border: none;
+        background: transparent;
+        padding: 4px 0;
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .nav-link.active {
+        color: var(--accent);
+        font-weight: 600;
+        border-bottom: 2px solid var(--accent);
+      }
+
+      .footer-items {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .footer-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 8px;
+        border-radius: 10px;
+        background: #f7efe6;
+      }
+
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 40;
+      }
+
+      .modal {
+        background: #fffaf2;
+        border-radius: 16px;
+        border: 1px solid var(--border-subtle);
+        padding: 16px 18px 18px;
+        max-width: 480px;
+        width: 100%;
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+      }
+
+      .page-editor-modal {
+        max-width: 920px;
+        max-height: 92vh;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+      }
+
+      .page-editor-header {
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .page-editor-title-input {
+        border: none;
+        background: transparent;
+        font-size: 18px;
+        font-weight: 600;
+        outline: none;
+        flex: 1;
+      }
+
+      .page-editor-body {
+        padding: 14px 18px 16px;
+      }
+
+      .quill-container {
+        height: 320px;
+        background: #fffcf7;
+        border-radius: 10px;
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <div class="page-header">
+        <h1>Static Page Management</h1>
+        <div class="page-tabs">
+          <button id="nav-footer" class="nav-link active" type="button">
+            Footer management
+          </button>
+          <button id="nav-pages" class="nav-link" type="button">
+            Static pages library
+          </button>
+        </div>
+      </div>
+      <div class="toolbar-right" style="margin-bottom: 10px">
+        <button id="footerEditBtn" class="btn btn-ghost" type="button">
+          Edit footer
+        </button>
+        <button
+          id="footerSaveBtn"
+          class="btn btn-primary"
+          type="button"
+          disabled
+        >
+          Save changes (demo)
+        </button>
+      </div>
+    </div>
+
+    <section id="section-footer">
+      <h2 style="margin: 0 0 10px; font-size: 18px">Footer management</h2>
+      <div
+        class="layout"
+        style="grid-template-columns: repeat(3, minmax(0, 1fr))"
+      >
+        <section class="card">
+          <div class="card-header">
+            <div class="card-title">Company links</div>
+            <div class="toolbar-right">
+              <button id="openAddPageBtn" class="btn btn-primary" type="button">
+                Add from library
+              </button>
+            </div>
+          </div>
+          <div id="col1" class="footer-items"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <div class="card-title">User information links</div>
+          </div>
+          <div class="footer-items" id="col2"></div>
+          <div style="margin-top: 6px">
+            <button id="addUserLinkBtn" class="btn btn-ghost" type="button">
+              Add link
+            </button>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <div class="card-title">Social media</div>
+          </div>
+          <div class="footer-items" id="col3"></div>
+          <div style="margin-top: 6px">
+            <button id="addSocialLinkBtn" class="btn btn-ghost" type="button">
+              Add link
+            </button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="section-pages" style="display: none">
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">Static pages library</div>
+          <div class="toolbar-right">
+            <button id="addPageBtn" class="btn btn-primary" type="button">
+              Add page
+            </button>
+          </div>
+        </div>
+        <div style="overflow: auto; max-height: 380px">
+          <table>
+            <thead>
+              <tr>
+                <th>Page title</th>
+                <th>Status</th>
+                <th style="text-align: right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="pagesBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <div id="addPageModal" class="modal-backdrop" style="display: none">
+      <div class="modal">
+        <div class="card-header" style="margin-bottom: 8px">
+          <div class="card-title">Add page to company links</div>
+        </div>
+        <div
+          id="pageLibraryList"
+          style="max-height: 260px; overflow: auto; margin-bottom: 10px"
+        ></div>
+        <button
+          id="cancelAddPageBtn"
+          class="btn btn-ghost"
+          type="button"
+          style="width: 100%; justify-content: center; margin-top: 4px"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+    <div id="footerLinkModal" class="modal-backdrop" style="display: none">
+      <div class="modal">
+        <div class="card-header" style="margin-bottom: 8px">
+          <div class="card-title" id="footerLinkModalTitle">Add link</div>
+        </div>
+        <div class="detail-layout">
+          <div>
+            <div class="detail-field-label">Link name</div>
+            <input
+              id="footerLinkName"
+              class="detail-input"
+              type="text"
+              placeholder="Link label"
+            />
+          </div>
+          <div>
+            <div class="detail-field-label">URL</div>
+            <input
+              id="footerLinkUrl"
+              class="detail-input"
+              type="text"
+              placeholder="https://example.com/... or #"
+            />
+          </div>
+          <div id="footerLinkIconRow" style="display: none">
+            <div class="detail-field-label">Social icon</div>
+            <select id="footerLinkIcon" class="detail-select">
+              <option value="instagram">Instagram</option>
+              <option value="youtube">YouTube</option>
+              <option value="tiktok">TikTok</option>
+            </select>
+          </div>
+        </div>
+        <div
+          class="toolbar-right"
+          style="justify-content: flex-end; margin-top: 12px"
+        >
+          <button id="footerLinkCancelBtn" class="btn btn-ghost" type="button">
+            Cancel
+          </button>
+          <button id="footerLinkSaveBtn" class="btn btn-primary" type="button">
+            Save link
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="pageModal" class="modal-backdrop" style="display: none">
+      <div class="modal page-editor-modal">
+        <div class="page-editor-header">
+          <input
+            id="pageTitleInput"
+            class="page-editor-title-input"
+            type="text"
+            placeholder="Page title"
+          />
+          <div class="toolbar-right">
+            <select id="pageStatusSelect" class="detail-select">
+              <option value="draft">Draft</option>
+              <option value="published">Published</option>
+            </select>
+            <button id="pageCancelBtn" class="btn btn-ghost" type="button">
+              Cancel
+            </button>
+            <button id="pageSaveBtn" class="btn btn-primary" type="button">
+              Save page
+            </button>
+          </div>
+        </div>
+        <div class="page-editor-body">
+          <div id="quillEditor" class="quill-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const quillScript = document.createElement("script");
+      quillScript.src =
+        "https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js";
+      document.head.appendChild(quillScript);
+
+      const footerData = {
+        1: [
+          {
+            id: 1,
+            title: "Specified Commercial Transactions Act Disclosure",
+            url: "#",
+            order: 1,
+          },
+          { id: 2, title: "About Us", url: "#", order: 2 },
+          { id: 3, title: "Privacy Policy", url: "#", order: 3 },
+          { id: 4, title: "Terms of Use", url: "#", order: 4 },
+          { id: 5, title: "Cookie Policy", url: "#", order: 5 },
+          { id: 6, title: "Copyright Notice", url: "#", order: 6 },
+        ],
+        2: [
+          { id: 101, name: "Sitemap", url: "#", order: 1 },
+          { id: 102, name: "FAQ", url: "#", order: 2 },
+          { id: 103, name: "Contact Us", url: "#", order: 3 },
+          { id: 104, name: "Careers", url: "#", order: 4 },
+          { id: 105, name: "Advertising & Listings", url: "#", order: 5 },
+          { id: 106, name: "Media & Press", url: "#", order: 6 },
+          {
+            id: 107,
+            name: "Browser & System Requirements",
+            url: "#",
+            order: 7,
+          },
+        ],
+        3: [
+          {
+            id: 201,
+            name: "Instagram",
+            url: "https://instagram.com",
+            icon: "instagram",
+            order: 1,
+          },
+          {
+            id: 202,
+            name: "YouTube",
+            url: "https://youtube.com",
+            icon: "youtube",
+            order: 2,
+          },
+          {
+            id: 203,
+            name: "TikTok",
+            url: "https://tiktok.com",
+            icon: "tiktok",
+            order: 3,
+          },
+        ],
+      };
+
+      let staticPages = [
+        {
+          id: 1,
+          title: "Specified Commercial Transactions Act Disclosure",
+          status: "published",
+          protected: true,
+        },
+        { id: 2, title: "About Us", status: "published", protected: false },
+        {
+          id: 3,
+          title: "Privacy Policy",
+          status: "published",
+          protected: true,
+        },
+        { id: 4, title: "Terms of Use", status: "published", protected: true },
+        { id: 5, title: "Cookie Policy", status: "published", protected: true },
+        {
+          id: 6,
+          title: "Copyright Notice",
+          status: "published",
+          protected: true,
+        },
+        { id: 7, title: "FAQ", status: "published", protected: false },
+        { id: 8, title: "Contact Us", status: "published", protected: false },
+        { id: 9, title: "Careers", status: "draft", protected: false },
+        {
+          id: 10,
+          title: "Advertising & Listings",
+          status: "published",
+          protected: false,
+        },
+        {
+          id: 11,
+          title: "Media & Press",
+          status: "published",
+          protected: false,
+        },
+        {
+          id: 12,
+          title: "Browser & System Requirements",
+          status: "published",
+          protected: false,
+        },
+      ];
+
+      let footerEditMode = false;
+      let footerLinkCurrentColumn = null;
+      let footerLinkEditingId = null;
+      let editingPageId = null;
+      let quill = null;
+
+      function updateFooterEditControls() {
+        const editBtn = document.getElementById("footerEditBtn");
+        const saveBtn = document.getElementById("footerSaveBtn");
+        if (editBtn) editBtn.disabled = footerEditMode;
+        if (saveBtn) saveBtn.disabled = !footerEditMode;
+        ["openAddPageBtn", "addUserLinkBtn", "addSocialLinkBtn"].forEach(
+          (id) => {
+            const el = document.getElementById(id);
+            if (el) el.disabled = !footerEditMode;
+          },
+        );
+        renderFooter();
+      }
+
+      function startFooterEdit() {
+        footerEditMode = true;
+        updateFooterEditControls();
+      }
+
+      function saveFooterConfiguration() {
+        alert("Saved footer configuration (demo, not persisted). ");
+        footerEditMode = false;
+        updateFooterEditControls();
+      }
+
+      function renderFooter() {
+        const col1 = document.getElementById("col1");
+        const col2 = document.getElementById("col2");
+        const col3 = document.getElementById("col3");
+
+        col1.innerHTML = footerData[1]
+          .map(
+            (item) => `
+          <div class="footer-item">
+            <div class="page-title">${item.title}</div>
+            ${
+              footerEditMode
+                ? `<button type="button" class="btn btn-ghost" onclick="removeCompanyLink(${item.id})">Remove</button>`
+                : ""
+            }
+          </div>
+        `,
+          )
+          .join("");
+
+        col2.innerHTML = footerData[2]
+          .map(
+            (item) => `
+          <div class="footer-item">
+            <div>${item.name}</div>
+            ${
+              footerEditMode
+                ? `<button type="button" class="btn btn-ghost" onclick="editCustomLink(2, ${item.id})">Edit</button>`
+                : ""
+            }
+          </div>
+        `,
+          )
+          .join("");
+
+        col3.innerHTML = footerData[3]
+          .map(
+            (item) => `
+          <div class="footer-item">
+            <div>${item.name}</div>
+            ${
+              footerEditMode
+                ? `<button type="button" class="btn btn-ghost" onclick="editCustomLink(3, ${item.id})">Edit</button>`
+                : ""
+            }
+          </div>
+        `,
+          )
+          .join("");
+      }
+
+      function removeCompanyLink(id) {
+        if (!footerEditMode) return;
+        if (!confirm("Remove this page from Company links?")) return;
+        footerData[1] = footerData[1].filter((p) => p.id !== id);
+        renderFooter();
+      }
+
+      function openAddPageModal() {
+        const container = document.getElementById("pageLibraryList");
+        container.innerHTML = "";
+
+        staticPages.forEach((page) => {
+          if (footerData[1].some((p) => p.id === page.id)) return;
+
+          const row = document.createElement("div");
+          row.className = "footer-item";
+          row.style.cursor = "pointer";
+          row.style.background = "#fffaf2";
+          row.innerHTML = `
+            <div>
+              <div class="page-title">${page.title}</div>
+              <span class="badge ${
+                page.status === "published"
+                  ? "badge-status-published"
+                  : "badge-status-draft"
+              }">${page.status}</span>
+            </div>
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="addToCompanyLinks(${page.id}); event.stopPropagation();"
+            >
+              Add
+            </button>
+          `;
+          container.appendChild(row);
+        });
+
+        document.getElementById("addPageModal").style.display = "flex";
+      }
+
+      function addToCompanyLinks(pageId) {
+        const page = staticPages.find((p) => p.id === pageId);
+        if (!page) return;
+
+        footerData[1].push({
+          id: page.id,
+          title: page.title,
+          url: "#",
+          order: footerData[1].length + 1,
+        });
+
+        closeAddPageModal();
+        renderFooter();
+      }
+
+      function closeAddPageModal() {
+        document.getElementById("addPageModal").style.display = "none";
+      }
+
+      function addCustomLink(col) {
+        if (!footerEditMode) return;
+        footerLinkCurrentColumn = col;
+        footerLinkEditingId = null;
+        const modal = document.getElementById("footerLinkModal");
+        if (!modal) return;
+        document.getElementById("footerLinkModalTitle").textContent =
+          col === 3 ? "Add social link" : "Add link";
+        document.getElementById("footerLinkName").value = "";
+        document.getElementById("footerLinkUrl").value = "#";
+        const iconRow = document.getElementById("footerLinkIconRow");
+        if (iconRow) iconRow.style.display = col === 3 ? "" : "none";
+        if (col === 3) {
+          document.getElementById("footerLinkIcon").value = "instagram";
+        }
+        modal.style.display = "flex";
+      }
+
+      function editCustomLink(col, id) {
+        if (!footerEditMode) return;
+        footerLinkCurrentColumn = col;
+        footerLinkEditingId = id;
+        const link = footerData[col].find((l) => l.id === id);
+        if (!link) return;
+        const modal = document.getElementById("footerLinkModal");
+        if (!modal) return;
+        document.getElementById("footerLinkModalTitle").textContent =
+          "Edit link";
+        document.getElementById("footerLinkName").value = link.name || "";
+        document.getElementById("footerLinkUrl").value = link.url || "#";
+        const iconRow = document.getElementById("footerLinkIconRow");
+        if (iconRow) iconRow.style.display = col === 3 ? "" : "none";
+        if (col === 3) {
+          document.getElementById("footerLinkIcon").value =
+            link.icon || "instagram";
+        }
+        modal.style.display = "flex";
+      }
+
+      function closeFooterLinkModal() {
+        const modal = document.getElementById("footerLinkModal");
+        if (modal) modal.style.display = "none";
+        footerLinkCurrentColumn = null;
+        footerLinkEditingId = null;
+      }
+
+      function saveFooterLink() {
+        if (!footerEditMode || footerLinkCurrentColumn == null) {
+          closeFooterLinkModal();
+          return;
+        }
+        const nameInput = document.getElementById("footerLinkName");
+        const urlInput = document.getElementById("footerLinkUrl");
+        const iconSelect = document.getElementById("footerLinkIcon");
+        const name = nameInput.value.trim();
+        const url = urlInput.value.trim();
+        if (!name || !url) {
+          alert("Name and URL are required.");
+          return;
+        }
+        const col = footerLinkCurrentColumn;
+        if (footerLinkEditingId != null) {
+          const link = footerData[col].find(
+            (l) => l.id === footerLinkEditingId,
+          );
+          if (link) {
+            link.name = name;
+            link.url = url;
+            if (col === 3 && iconSelect) {
+              link.icon = iconSelect.value || link.icon;
+            }
+          }
+        } else {
+          const newLink = {
+            id: Date.now(),
+            name,
+            url,
+            order: footerData[col].length + 1,
+          };
+          if (col === 3 && iconSelect) {
+            newLink.icon = iconSelect.value || "instagram";
+          }
+          footerData[col].push(newLink);
+        }
+        closeFooterLinkModal();
+        renderFooter();
+      }
+
+      function renderPages() {
+        const tbody = document.getElementById("pagesBody");
+        tbody.innerHTML = staticPages
+          .map(
+            (page) => `
+          <tr class="${page.protected ? "" : ""}">
+            <td>
+              <div class="page-title">${page.title}</div>
+            </td>
+            <td>
+              <span
+                class="badge ${
+                  page.status === "published"
+                    ? "badge-status-published"
+                    : "badge-status-draft"
+                }"
+              >
+                ${page.status.toUpperCase()}
+              </span>
+            </td>
+            <td style="text-align: right">
+              <button
+                type="button"
+                class="btn btn-ghost"
+                onclick="openEditPageModal(${page.id})"
+              >
+                Edit
+              </button>
+              ${
+                page.protected
+                  ? '<span style="font-size: 11px; color: var(--text-muted); margin-left: 4px;">Protected</span>'
+                  : `<button type="button" class="btn btn-ghost" style="color: #c53030; margin-left: 4px;" onclick="deleteStaticPage(${page.id})">Delete</button>`
+              }
+            </td>
+          </tr>
+        `,
+          )
+          .join("");
+      }
+
+      function deleteStaticPage(id) {
+        if (!confirm("Delete this static page from library (demo only)?")) {
+          return;
+        }
+        staticPages = staticPages.filter((p) => p.id !== id);
+        footerData[1] = footerData[1].filter((p) => p.id !== id);
+        renderPages();
+        renderFooter();
+      }
+
+      function openNewPageModal() {
+        editingPageId = null;
+        const modal = document.getElementById("pageModal");
+        if (!modal) return;
+        document.getElementById("pageTitleInput").value = "";
+        document.getElementById("pageStatusSelect").value = "draft";
+        if (window.Quill && !quill) {
+          quill = new Quill("#quillEditor", {
+            theme: "snow",
+            modules: { toolbar: true },
+          });
+        }
+        if (quill) {
+          quill.setContents([]);
+        }
+        modal.style.display = "flex";
+      }
+
+      function openEditPageModal(id) {
+        const page = staticPages.find((p) => p.id === id);
+        if (!page) return;
+        editingPageId = id;
+        const modal = document.getElementById("pageModal");
+        if (!modal) return;
+        document.getElementById("pageTitleInput").value = page.title || "";
+        document.getElementById("pageStatusSelect").value =
+          page.status || "draft";
+        if (window.Quill && !quill) {
+          quill = new Quill("#quillEditor", {
+            theme: "snow",
+            modules: { toolbar: true },
+          });
+        }
+        if (quill) {
+          quill.root.innerHTML = page.content || "";
+        }
+        modal.style.display = "flex";
+      }
+
+      function savePageFromModal() {
+        const title = document.getElementById("pageTitleInput").value.trim();
+        const status = document.getElementById("pageStatusSelect").value;
+        const contentHtml = quill ? quill.root.innerHTML : "";
+        if (!title) {
+          alert("Page title is required.");
+          return;
+        }
+        if (editingPageId) {
+          const page = staticPages.find((p) => p.id === editingPageId);
+          if (page) {
+            page.title = title;
+            page.status = status;
+            page.content = contentHtml;
+          }
+        } else {
+          staticPages.push({
+            id: Date.now(),
+            title,
+            status,
+            content: contentHtml,
+            protected: false,
+          });
+        }
+        closePageModal();
+        renderPages();
+      }
+
+      function closePageModal() {
+        const modal = document.getElementById("pageModal");
+        if (modal) modal.style.display = "none";
+        editingPageId = null;
+      }
+
+      function showSection(section) {
+        const footerSection = document.getElementById("section-footer");
+        const pagesSection = document.getElementById("section-pages");
+        footerSection.style.display = section === "footer" ? "" : "none";
+        pagesSection.style.display = section === "pages" ? "" : "none";
+
+        document
+          .getElementById("nav-footer")
+          .classList.toggle("active", section === "footer");
+        document
+          .getElementById("nav-pages")
+          .classList.toggle("active", section === "pages");
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("nav-footer").addEventListener("click", (e) => {
+          e.preventDefault();
+          showSection("footer");
+        });
+
+        document.getElementById("nav-pages").addEventListener("click", (e) => {
+          e.preventDefault();
+          showSection("pages");
+        });
+
+        document
+          .getElementById("openAddPageBtn")
+          .addEventListener("click", openAddPageModal);
+
+        document
+          .getElementById("cancelAddPageBtn")
+          .addEventListener("click", closeAddPageModal);
+
+        document
+          .getElementById("addUserLinkBtn")
+          .addEventListener("click", () => addCustomLink(2));
+
+        document
+          .getElementById("addSocialLinkBtn")
+          .addEventListener("click", () => addCustomLink(3));
+
+        document
+          .getElementById("footerEditBtn")
+          .addEventListener("click", startFooterEdit);
+
+        document
+          .getElementById("footerSaveBtn")
+          .addEventListener("click", saveFooterConfiguration);
+
+        document
+          .getElementById("footerLinkCancelBtn")
+          .addEventListener("click", closeFooterLinkModal);
+
+        document
+          .getElementById("footerLinkSaveBtn")
+          .addEventListener("click", saveFooterLink);
+
+        document
+          .getElementById("addPageBtn")
+          .addEventListener("click", openNewPageModal);
+
+        document
+          .getElementById("pageCancelBtn")
+          .addEventListener("click", closePageModal);
+
+        document
+          .getElementById("pageSaveBtn")
+          .addEventListener("click", savePageFromModal);
+
+        renderFooter();
+        renderPages();
+        updateFooterEditControls();
+        showSection("footer");
+      });
+    </script>
+  </body>
+</html>

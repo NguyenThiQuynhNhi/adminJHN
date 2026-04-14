@@ -1,0 +1,1622 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - End User Management</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background: #f5f3ef;
+        color: #2a2118;
+      }
+
+      .page {
+        padding: 24px 32px 32px;
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 18px;
+      }
+
+      .top-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 12px;
+        gap: 8px;
+      }
+
+      .page-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .page-subtitle {
+        font-size: 13px;
+        color: #7c6a55;
+        max-width: 640px;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+        gap: 18px;
+      }
+
+      .card {
+        background: #fffaf2;
+        border-radius: 10px;
+        border: 1px solid #eadccd;
+        padding: 14px 16px 16px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: #7c6a55;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .filters input[type="text"],
+      .filters select {
+        border-radius: 999px;
+        border: 1px solid #ddcdb9;
+        padding: 6px 10px;
+        font-size: 12px;
+        background: #fdf8f0;
+      }
+
+      .filters input[type="text"] {
+        flex: 1;
+        min-width: 200px;
+      }
+
+      .filters select {
+        min-width: 140px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f1e4d4;
+      }
+
+      th,
+      td {
+        padding: 8px 6px;
+        text-align: left;
+        border-bottom: 1px solid #efe2d3;
+      }
+
+      th {
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        color: #7b623f;
+      }
+
+      tbody tr:hover td {
+        background: #f8efe3;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 600;
+      }
+
+      .status-active {
+        background: #e0f6df;
+        color: #266734;
+      }
+
+      .status-suspended {
+        background: #fde0dd;
+        color: #9a2136;
+      }
+
+      .status-pending {
+        background: #fff5d6;
+        color: #8a6a21;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: none;
+        padding: 4px 10px;
+        font-size: 11px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .btn-ghost {
+        background: #f7efe4;
+        color: #6a5641;
+        border: 1px solid #ddcdb9;
+      }
+
+      .btn-primary {
+        background: #3a6b3c;
+        color: #fff;
+      }
+
+      .btn-danger {
+        background: #b53838;
+        color: #fff;
+      }
+
+      .btn-sm {
+        padding: 3px 8px;
+        font-size: 10px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 6px;
+      }
+
+      .empty-state {
+        font-size: 12px;
+        color: #7c6a55;
+        text-align: center;
+        padding: 14px 0;
+      }
+
+      .detail-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+
+      .detail-section {
+        margin-bottom: 14px;
+      }
+
+      .detail-list {
+        list-style: none;
+        padding-left: 0;
+        margin: 0;
+        font-size: 12px;
+        color: #6d5b45;
+      }
+
+      .detail-list li {
+        margin-bottom: 4px;
+      }
+
+      .badge-soft {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: #f1e4d4;
+        color: #7b623f;
+      }
+
+      .avatar-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .avatar-circle {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #c9a574, #8c6845);
+        color: #fffaf2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      .kpi-card {
+        background: #fffaf2;
+        border-radius: 10px;
+        border: 1px solid #eadccd;
+        padding: 10px 12px;
+      }
+
+      .kpi-label {
+        font-size: 11px;
+        color: #7c6a55;
+        margin-bottom: 2px;
+      }
+
+      .kpi-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: #2a2118;
+      }
+
+      .kpi-sub {
+        font-size: 11px;
+        color: #9a8465;
+      }
+
+      .field-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+      }
+
+      .field-grid label {
+        font-size: 11px;
+        color: #7c6a55;
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      .field-grid input,
+      .field-grid select {
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #ddcdb9;
+        padding: 5px 8px;
+        font-size: 12px;
+        background: #fdf8f0;
+      }
+
+      .field-row {
+        margin-bottom: 8px;
+      }
+
+      .field-row textarea {
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #ddcdb9;
+        padding: 6px 8px;
+        font-size: 12px;
+        background: #fdf8f0;
+        resize: vertical;
+        min-height: 60px;
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .kpi-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">End User Management</div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button type="button" class="btn btn-ghost" id="exportCsvBtn">
+          Export CSV
+        </button>
+      </div>
+
+      <div class="kpi-grid" id="kpiGrid"></div>
+
+      <div id="listView">
+        <div class="card">
+          <div class="filters">
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="Search name, email, phone"
+            />
+            <select id="buyerStatusFilter">
+              <option value="">All buyer statuses</option>
+              <option value="First-time buyer">First-time buyer</option>
+              <option value="Cash buyer">Cash buyer</option>
+              <option value="Need to sell existing property first">
+                Need to sell existing property first
+              </option>
+              <option value="Investor">Investor</option>
+            </select>
+            <select id="statusFilter">
+              <option value="">Any status</option>
+              <option value="Active">Active</option>
+              <option value="Suspended">Suspended</option>
+            </select>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Buyer status</th>
+                <th>Nation</th>
+                <th>Status</th>
+                <th>Last active</th>
+                <th>Logins</th>
+                <th>Avg session (min)</th>
+                <th>Saved searches</th>
+                <th>Saved properties</th>
+                <th>Appraisals</th>
+                <th>Alerts</th>
+              </tr>
+            </thead>
+            <tbody id="accountTableBody"></tbody>
+          </table>
+          <div class="empty-state" id="emptyState" style="display: none">
+            No accounts match current filters.
+          </div>
+        </div>
+      </div>
+
+      <div id="detailView" style="display: none">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">End user profile &amp; settings</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px">
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                id="backToListBtn"
+              >
+                ← Back
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                id="saveLeadEndUserBtn"
+              >
+                ★ Save as lead
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                id="unsaveLeadEndUserBtn"
+              >
+                ✕ Unsave lead
+              </button>
+              <span class="badge-soft" id="selectedBadge"
+                >No account selected</span
+              >
+            </div>
+          </div>
+
+          <form id="detailForm">
+            <div class="detail-section">
+              <div class="detail-title">0. Engagement analytics</div>
+              <ul class="detail-list" id="analyticsPanel">
+                <li>
+                  Select an end user in the list to view login frequency,
+                  session time and saved items.
+                </li>
+              </ul>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">1. Profile</div>
+              <input id="fieldId" type="hidden" />
+              <div class="field-row" style="margin-bottom: 10px">
+                <label>Avatar</label>
+                <div class="avatar-wrapper">
+                  <div class="avatar-circle" id="avatarPreviewCircle">U</div>
+                  <img
+                    id="avatarPreviewImage"
+                    src=""
+                    alt="Avatar"
+                    style="
+                      width: 32px;
+                      height: 32px;
+                      border-radius: 50%;
+                      object-fit: cover;
+                      background: #ddd;
+                      display: none;
+                    "
+                  />
+                  <input
+                    id="fieldAvatarUrl"
+                    type="text"
+                    placeholder="Image URL (optional)"
+                    style="flex: 1; min-width: 0"
+                  />
+                </div>
+              </div>
+              <div class="field-grid">
+                <div>
+                  <label for="fieldType">Type</label>
+                  <input id="fieldType" type="text" value="End User" readonly />
+                </div>
+                <div>
+                  <label for="fieldFirstName">First name</label>
+                  <input id="fieldFirstName" type="text" />
+                </div>
+                <div>
+                  <label for="fieldName">Full name</label>
+                  <input id="fieldName" type="text" />
+                </div>
+                <div>
+                  <label for="fieldEmail">Email</label>
+                  <input id="fieldEmail" type="email" />
+                </div>
+                <div>
+                  <label for="fieldCountryCode">Country code</label>
+                  <input id="fieldCountryCode" type="text" placeholder="+81" />
+                </div>
+                <div>
+                  <label for="fieldStatus">Status</label>
+                  <select id="fieldStatus">
+                    <option value="Active">Active</option>
+                    <option value="Suspended">Suspended</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="fieldPhone">Phone number</label>
+                  <input id="fieldPhone" type="text" />
+                </div>
+                <div>
+                  <label for="fieldAddress">Current address</label>
+                  <input id="fieldAddress" type="text" />
+                </div>
+                <div>
+                  <label for="fieldNationality">Nationality</label>
+                  <input id="fieldNationality" type="text" />
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">
+                2. Additional info (Optional / Behavioural)
+              </div>
+              <div class="field-grid">
+                <div>
+                  <label for="fieldOwnedJapan">
+                    Has previously owned property in Japan?
+                  </label>
+                  <select id="fieldOwnedJapan">
+                    <option value="">Not set</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="fieldLocation">Nation (khu vực quan tâm)</label>
+                  <input
+                    id="fieldLocation"
+                    type="text"
+                    placeholder="Japan, Vietnam, Singapore..."
+                  />
+                </div>
+                <div>
+                  <label for="fieldBuyerStatus">Buyer status</label>
+                  <select id="fieldBuyerStatus">
+                    <option value="">Not set</option>
+                    <option value="First-time buyer">First-time buyer</option>
+                    <option value="Cash buyer">Cash buyer</option>
+                    <option value="Need to sell existing property first">
+                      Need to sell existing property first
+                    </option>
+                    <option value="Investor">Investor</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">3. Security (Bảo mật)</div>
+              <div class="field-grid">
+                <div>
+                  <label for="fieldSecQuestion">Security question</label>
+                  <input id="fieldSecQuestion" type="text" />
+                </div>
+                <div>
+                  <label for="fieldSecAnswer">Security answer</label>
+                  <input
+                    id="fieldSecAnswer"
+                    type="password"
+                    placeholder="Hidden – only reset, never shown"
+                  />
+                </div>
+              </div>
+              <div class="field-row" style="margin-top: 8px">
+                <label for="fieldPasswordNote">Password</label>
+                <input
+                  id="fieldPasswordNote"
+                  type="text"
+                  readonly
+                  value="reset"
+                  style="background: #f1e4d4; border-color: #ddcdb9"
+                />
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">4. Investment Criteria</div>
+              <div class="field-grid">
+                <div>
+                  <label for="fieldPropertyType">Property type</label>
+                  <input id="fieldPropertyType" type="text" />
+                </div>
+                <div>
+                  <label for="fieldDesiredCity">Desired city</label>
+                  <input id="fieldDesiredCity" type="text" />
+                </div>
+                <div>
+                  <label for="fieldDesiredArea">Desired area</label>
+                  <input id="fieldDesiredArea" type="text" />
+                </div>
+                <div>
+                  <label for="fieldBudgetFrom">Budget from</label>
+                  <input id="fieldBudgetFrom" type="number" />
+                </div>
+                <div>
+                  <label for="fieldBudgetTo">Budget to</label>
+                  <input id="fieldBudgetTo" type="number" />
+                </div>
+                <div>
+                  <label for="fieldYield">Target yield (%)</label>
+                  <input id="fieldYield" type="number" step="0.1" />
+                </div>
+                <div>
+                  <label for="fieldBedrooms">Number of bedrooms</label>
+                  <input id="fieldBedrooms" type="number" />
+                </div>
+                <div>
+                  <label for="fieldPurpose">Purpose of purchase</label>
+                  <input id="fieldPurpose" type="text" />
+                </div>
+                <div>
+                  <label for="fieldPropertyStatus">Property status</label>
+                  <input id="fieldPropertyStatus" type="text" />
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">5. Notification Settings</div>
+              <div class="field-row">
+                <label>5.1 Email notifications</label>
+                <label style="font-size: 11px; color: #7c6a55">
+                  <input type="checkbox" id="notifEmailOn" /> Enable email
+                  notifications
+                </label>
+              </div>
+
+              <div class="field-row">
+                <label>5.2 Property &amp; service updates</label>
+                <div
+                  style="font-size: 11px; color: #7c6a55; margin-bottom: 4px"
+                >
+                  Saved Property Updates
+                </div>
+                <label
+                  style="font-size: 11px; color: #7c6a55; margin-right: 12px"
+                >
+                  <input type="checkbox" id="notifPricesOnly" /> Prices only
+                </label>
+                <label style="font-size: 11px; color: #7c6a55">
+                  <input type="checkbox" id="notifAnyUpdates" /> Any other
+                  updates
+                </label>
+                <div style="margin-top: 4px" class="field-grid">
+                  <div>
+                    <label for="notifFrequency">Frequency</label>
+                    <select id="notifFrequency">
+                      <option value="Immediate">Immediate</option>
+                      <option value="Daily">Daily</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="notifTime">Time</label>
+                    <input id="notifTime" type="time" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <label>5.3 Proposals &amp; replies</label>
+                <div class="field-grid">
+                  <div>
+                    <label for="notifAgentComm">Agent communications</label>
+                    <select id="notifAgentComm">
+                      <option value="Immediate">Immediate</option>
+                      <option value="Daily">Daily</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="notifSupportComm">Support communications</label>
+                    <select id="notifSupportComm">
+                      <option value="Immediate">Immediate</option>
+                      <option value="Daily">Daily</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <label>5.4 Other notifications</label>
+                <label style="font-size: 11px; color: #7c6a55">
+                  <input type="checkbox" id="notifPromo" /> Promotional messages
+                  (On/Off)
+                </label>
+              </div>
+
+              <div class="field-row">
+                <label>5.5 Quiet hours</label>
+                <div class="field-grid">
+                  <div>
+                    <label for="quietEnabled">Enable Quiet Hours</label>
+                    <select id="quietEnabled">
+                      <option value="Off">Off</option>
+                      <option value="On">On</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="quietFrom">From</label>
+                    <input id="quietFrom" type="time" />
+                  </div>
+                  <div>
+                    <label for="quietTo">To</label>
+                    <input id="quietTo" type="time" />
+                  </div>
+                  <div>
+                    <label for="quietTz">Timezone</label>
+                    <input id="quietTz" type="text" placeholder="Asia/Tokyo" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">Admin notes (internal)</div>
+              <div class="field-row">
+                <textarea
+                  id="fieldNotes"
+                  placeholder="Short internal note about this account (e.g. risk flags, VIP handling)."
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">Actions</div>
+              <div class="actions">
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  id="saveBtn"
+                >
+                  Save changes
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm"
+                  id="suspendBtn"
+                >
+                  Suspend
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm"
+                  id="deleteBtn"
+                >
+                  Delete account
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const accounts = [
+        {
+          id: "U-1001",
+          name: "Nguyen Anh",
+          email: "anh.nguyen@example.com",
+          type: "End User",
+          status: "Active",
+          subscription: "Free",
+          createdAt: "2025-11-10",
+          lastActive: "2026-04-10",
+          trafficSource: "Google",
+          loginCount: 34,
+          engagementScore: 78,
+          crmTier: "Basic",
+          alerts: ["Unverified phone number"],
+          supportTickets: 1,
+          avgSessionMinutes: 9.4,
+          buyerStatus: "First-time buyer",
+          location: "Vietnam",
+          savedSearchCount: 5,
+          savedPropertyCount: 18,
+          appraisalFormCount: 1,
+          notes: "Engaged user via organic search.",
+        },
+        {
+          id: "U-1002",
+          name: "Tran Mai",
+          email: "mai.tran@example.com",
+          type: "End User",
+          status: "Active",
+          subscription: "Standard",
+          createdAt: "2025-12-02",
+          lastActive: "2026-04-12",
+          trafficSource: "Facebook",
+          loginCount: 21,
+          engagementScore: 92,
+          crmTier: "Standard",
+          alerts: [],
+          supportTickets: 0,
+          avgSessionMinutes: 14.1,
+          buyerStatus: "Investor",
+          location: "Japan",
+          savedSearchCount: 2,
+          savedPropertyCount: 7,
+          appraisalFormCount: 0,
+          notes: "High intent investor.",
+        },
+        {
+          id: "U-1003",
+          name: "Pham Thu",
+          email: "thu.pham@example.com",
+          type: "End User",
+          status: "Suspended",
+          subscription: "Free",
+          createdAt: "2025-09-18",
+          lastActive: "2026-02-01",
+          trafficSource: "Email",
+          loginCount: 12,
+          engagementScore: 45,
+          crmTier: "Basic",
+          alerts: ["Unverified phone number"],
+          supportTickets: 3,
+          avgSessionMinutes: 5.2,
+          buyerStatus: "Cash buyer",
+          location: "Singapore",
+          savedSearchCount: 1,
+          savedPropertyCount: 3,
+          appraisalFormCount: 0,
+          notes: "Suspended due to suspicious activity.",
+        },
+        {
+          id: "U-1004",
+          name: "Le Minh",
+          email: "minh.le@example.com",
+          type: "End User",
+          status: "Active",
+          subscription: "Free",
+          createdAt: "2026-03-05",
+          lastActive: "2026-03-10",
+          trafficSource: "Google",
+          loginCount: 3,
+          engagementScore: 26,
+          crmTier: "Prospect",
+          alerts: [],
+          supportTickets: 0,
+          avgSessionMinutes: 3.1,
+          buyerStatus: "First-time buyer",
+          location: "Japan",
+          savedSearchCount: 0,
+          savedPropertyCount: 1,
+          appraisalFormCount: 0,
+          notes: "Waiting for KYC verification.",
+        },
+        {
+          id: "U-1005",
+          name: "Ito Haru",
+          email: "haru.ito@example.com",
+          type: "End User",
+          status: "Active",
+          subscription: "Premium",
+          createdAt: "2024-12-22",
+          lastActive: "2026-04-13",
+          trafficSource: "Safari",
+          loginCount: 87,
+          engagementScore: 96,
+          crmTier: "VIP",
+          alerts: ["Unverified phone number"],
+          supportTickets: 5,
+          avgSessionMinutes: 18.7,
+          buyerStatus: "Investor",
+          location: "Japan",
+          savedSearchCount: 12,
+          savedPropertyCount: 34,
+          appraisalFormCount: 4,
+          notes: "Top-tier investor, priority routing.",
+        },
+        {
+          id: "U-1006",
+          name: "Nguyen Long",
+          email: "long.nguyen@example.com",
+          type: "End User",
+          status: "Active",
+          subscription: "Standard",
+          createdAt: "2025-05-01",
+          lastActive: "2026-04-08",
+          trafficSource: "Email",
+          loginCount: 19,
+          engagementScore: 63,
+          crmTier: "Standard",
+          alerts: [],
+          supportTickets: 1,
+          avgSessionMinutes: 7.9,
+          buyerStatus: "Need to sell existing property first",
+          location: "Hong Kong",
+          savedSearchCount: 4,
+          savedPropertyCount: 9,
+          appraisalFormCount: 2,
+          notes: "Interested in upgrading from current condo.",
+        },
+        {
+          id: "U-1007",
+          name: "Sato Yuri",
+          email: "yuri.sato@example.com",
+          type: "End User",
+          status: "Active",
+          subscription: "Free",
+          createdAt: "2025-01-11",
+          lastActive: "2026-03-30",
+          trafficSource: "Instagram",
+          loginCount: 15,
+          engagementScore: 58,
+          crmTier: "Basic",
+          alerts: [],
+          supportTickets: 0,
+          avgSessionMinutes: 6.4,
+          buyerStatus: "Cash buyer",
+          location: "Japan",
+          savedSearchCount: 3,
+          savedPropertyCount: 5,
+          appraisalFormCount: 1,
+          notes: "Prefers heritage properties in Kyoto.",
+        },
+        {
+          id: "U-1008",
+          name: "Hoang Linh",
+          email: "linh.hoang@example.com",
+          type: "End User",
+          status: "Suspended",
+          subscription: "Free",
+          createdAt: "2024-11-02",
+          lastActive: "2025-12-19",
+          trafficSource: "Google",
+          loginCount: 7,
+          engagementScore: 31,
+          crmTier: "Dormant",
+          alerts: [],
+          supportTickets: 2,
+          avgSessionMinutes: 4.3,
+          buyerStatus: "Investor",
+          location: "Thailand",
+          savedSearchCount: 1,
+          savedPropertyCount: 0,
+          appraisalFormCount: 0,
+          notes: "Email hard bounce, contact disabled.",
+        },
+      ];
+
+      let selectedId = null;
+
+      function applyFilters(list) {
+        const keyword = document
+          .getElementById("searchInput")
+          .value.toLowerCase();
+        const buyerSelect = document.getElementById("buyerStatusFilter");
+        const buyerStatusValues = Array.from(
+          (buyerSelect && buyerSelect.selectedOptions) || [],
+        )
+          .map((opt) => opt.value)
+          .filter((v) => v);
+        const status = document.getElementById("statusFilter").value;
+
+        return list.filter((a) => {
+          if (keyword) {
+            const text = `${a.id} ${a.name} ${a.email} ${
+              a.phone || ""
+            }`.toLowerCase();
+            if (!text.includes(keyword)) return false;
+          }
+          if (
+            buyerStatusValues.length &&
+            !buyerStatusValues.includes(a.buyerStatus)
+          ) {
+            return false;
+          }
+          if (status && a.status !== status) return false;
+          return true;
+        });
+      }
+
+      function computeKpis() {
+        const total = accounts.length;
+        const active = accounts.filter((u) => u.status === "Active").length;
+        const firstTime = accounts.filter(
+          (u) => u.buyerStatus === "First-time buyer",
+        ).length;
+        const investors = accounts.filter(
+          (u) => u.buyerStatus === "Investor",
+        ).length;
+        const avgEngagement = total
+          ? (
+              accounts.reduce((sum, u) => sum + (u.engagementScore || 0), 0) /
+              total
+            ).toFixed(1)
+          : "0.0";
+        return {
+          total,
+          active,
+          firstTime,
+          investors,
+          avgEngagement,
+        };
+      }
+
+      function renderKpis() {
+        const grid = document.getElementById("kpiGrid");
+        if (!grid) return;
+        const k = computeKpis();
+        grid.innerHTML = "";
+        const items = [
+          {
+            label: "Total end users",
+            value: k.total,
+            sub: "Tổng số buyer / investor đăng ký",
+          },
+          {
+            label: "Active end users",
+            value: k.active,
+            sub: `Engagement score avg ${k.avgEngagement}`,
+          },
+          {
+            label: "First-time buyers",
+            value: k.firstTime,
+            sub: "Người mua lần đầu",
+          },
+          {
+            label: "Investors",
+            value: k.investors,
+            sub: "End user chủ yếu đầu tư",
+          },
+        ];
+        items.forEach((m) => {
+          const div = document.createElement("div");
+          div.className = "kpi-card";
+          div.innerHTML = `
+            <div class="kpi-label">${m.label}</div>
+            <div class="kpi-value">${m.value}</div>
+            <div class="kpi-sub">${m.sub}</div>
+          `;
+          grid.appendChild(div);
+        });
+      }
+
+      function renderTable() {
+        const body = document.getElementById("accountTableBody");
+        const empty = document.getElementById("emptyState");
+        const filtered = applyFilters(accounts);
+
+        body.innerHTML = "";
+        if (!filtered.length) {
+          empty.style.display = "block";
+          return;
+        }
+        empty.style.display = "none";
+
+        filtered.forEach((a) => {
+          const tr = document.createElement("tr");
+          const statusClass =
+            a.status === "Active"
+              ? "status-active"
+              : a.status === "Suspended"
+                ? "status-suspended"
+                : "status-pending";
+          const alerts = (a.alerts || [])
+            .map((al) => `<span class="badge-soft">${al}</span>`)
+            .join(" ");
+          const avatarUrl = a.avatarUrl || "";
+          const initials =
+            (a.name || "")
+              .split(/\s+/)
+              .filter(Boolean)
+              .map((part) => part[0])
+              .join("")
+              .slice(0, 2)
+              .toUpperCase() || "U";
+          tr.innerHTML = `
+            <td>
+              <div class="avatar-wrapper">
+                <div class="avatar-circle">${initials}</div>
+                ${
+                  avatarUrl
+                    ? `<img src="${avatarUrl}" alt="Avatar" style="width:28px;height:28px;border-radius:50%;object-fit:cover;background:#ddd;" />`
+                    : ""
+                }
+                <div>
+                  <div style="font-weight:600;">${a.name}</div>
+                  <div style="font-size:10px;color:#7c6a55;">${a.email}</div>
+                </div>
+              </div>
+            </td>
+            <td>${a.buyerStatus || "-"}</td>
+            <td>${a.location || "-"}</td>
+            <td><span class="status-pill ${statusClass}">${a.status}</span></td>
+            <td>${a.lastActive || "-"}</td>
+            <td>${typeof a.loginCount === "number" ? a.loginCount : "-"}</td>
+            <td>${
+              typeof a.avgSessionMinutes === "number"
+                ? a.avgSessionMinutes
+                : "-"
+            }</td>
+            <td>${
+              typeof a.savedSearchCount === "number" ? a.savedSearchCount : 0
+            }</td>
+            <td>${
+              typeof a.savedPropertyCount === "number"
+                ? a.savedPropertyCount
+                : 0
+            }</td>
+            <td>${
+              typeof a.appraisalFormCount === "number"
+                ? a.appraisalFormCount
+                : 0
+            }</td>
+            <td>${alerts || "-"}</td>
+          `;
+          tr.addEventListener("click", () => {
+            openDetail(a.id);
+          });
+          body.appendChild(tr);
+        });
+      }
+
+      function openDetail(id) {
+        const listView = document.getElementById("listView");
+        const detailView = document.getElementById("detailView");
+        if (listView && detailView) {
+          listView.style.display = "none";
+          detailView.style.display = "block";
+        }
+        selectAccount(id);
+      }
+
+      function selectAccount(id) {
+        selectedId = id;
+        const a = accounts.find((x) => x.id === id);
+        const badge = document.getElementById("selectedBadge");
+        const analytics = document.getElementById("analyticsPanel");
+        if (!a) {
+          badge.textContent = "No account selected";
+          if (analytics) {
+            analytics.innerHTML =
+              "<li>Select an end user in the list to view traffic source, login frequency, session time and saved items.</li>";
+          }
+          return;
+        }
+        badge.textContent = `${a.name} · ${a.type}`;
+        const name = a.name || "";
+        const parts = name.split(" ").filter(Boolean);
+        const firstName = parts.length ? parts[parts.length - 1] : name;
+
+        document.getElementById("fieldId").value = a.id;
+        document.getElementById("fieldType").value = a.type;
+        document.getElementById("fieldFirstName").value = firstName;
+        document.getElementById("fieldName").value = name;
+        document.getElementById("fieldEmail").value = a.email || "";
+        document.getElementById("fieldCountryCode").value = a.countryCode || "";
+        document.getElementById("fieldStatus").value = a.status || "Active";
+        document.getElementById("fieldPhone").value = a.phone || "";
+        document.getElementById("fieldAddress").value = a.address || "";
+        document.getElementById("fieldNationality").value = a.nationality || "";
+
+        document.getElementById("fieldOwnedJapan").value = a.ownedJapan || "";
+        document.getElementById("fieldLocation").value = a.location || "";
+        document.getElementById("fieldBuyerStatus").value = a.buyerStatus || "";
+
+        document.getElementById("fieldSecQuestion").value =
+          a.securityQuestion || "";
+        document.getElementById("fieldSecAnswer").value =
+          a.securityAnswer || "";
+
+        document.getElementById("fieldPropertyType").value =
+          a.propertyType || "";
+        document.getElementById("fieldDesiredCity").value = a.desiredCity || "";
+        document.getElementById("fieldDesiredArea").value = a.desiredArea || "";
+        document.getElementById("fieldBudgetFrom").value = a.budgetFrom || "";
+        document.getElementById("fieldBudgetTo").value = a.budgetTo || "";
+        document.getElementById("fieldYield").value = a.targetYield || "";
+        document.getElementById("fieldBedrooms").value = a.bedrooms || "";
+        document.getElementById("fieldPurpose").value = a.purchasePurpose || "";
+        document.getElementById("fieldPropertyStatus").value =
+          a.propertyStatus || "";
+
+        document.getElementById("notifEmailOn").checked =
+          a.notifEmailOn === false ? false : true;
+        document.getElementById("notifPricesOnly").checked =
+          !!a.notifPricesOnly;
+        document.getElementById("notifAnyUpdates").checked =
+          !!a.notifAnyUpdates;
+        document.getElementById("notifFrequency").value =
+          a.notifFrequency || "Immediate";
+        document.getElementById("notifTime").value = a.notifTime || "";
+        document.getElementById("notifAgentComm").value =
+          a.notifAgentComm || "Immediate";
+        document.getElementById("notifSupportComm").value =
+          a.notifSupportComm || "Immediate";
+        document.getElementById("notifPromo").checked = !!a.notifPromo;
+        document.getElementById("quietEnabled").value = a.quietEnabled || "Off";
+        document.getElementById("quietFrom").value = a.quietFrom || "";
+        document.getElementById("quietTo").value = a.quietTo || "";
+        document.getElementById("quietTz").value = a.quietTz || "";
+
+        document.getElementById("fieldNotes").value = a.notes || "";
+
+        const avatarUrl = a.avatarUrl || "";
+        const avatarInput = document.getElementById("fieldAvatarUrl");
+        const avatarCircle = document.getElementById("avatarPreviewCircle");
+        const avatarImg = document.getElementById("avatarPreviewImage");
+        if (avatarInput) {
+          avatarInput.value = avatarUrl;
+        }
+        const initials =
+          (name || "")
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((part) => part[0])
+            .join("")
+            .slice(0, 2)
+            .toUpperCase() || "U";
+        if (avatarCircle) {
+          avatarCircle.textContent = initials;
+        }
+        if (avatarImg && avatarCircle) {
+          if (avatarUrl) {
+            avatarImg.src = avatarUrl;
+            avatarImg.style.display = "block";
+            avatarCircle.style.display = "none";
+          } else {
+            avatarImg.style.display = "none";
+            avatarCircle.style.display = "flex";
+          }
+        }
+
+        if (analytics) {
+          analytics.innerHTML = `
+            <li><strong>Total logins:</strong> ${
+              typeof a.loginCount === "number" ? a.loginCount : "-"
+            }</li>
+            <li><strong>Last login:</strong> ${a.lastActive || "-"}</li>
+            <li><strong>Average session length:</strong> ${
+              typeof a.avgSessionMinutes === "number"
+                ? a.avgSessionMinutes + " minutes"
+                : "-"
+            }</li>
+            <li><strong>Saved searches:</strong> ${
+              typeof a.savedSearchCount === "number" ? a.savedSearchCount : 0
+            }</li>
+            <li><strong>Saved properties:</strong> ${
+              typeof a.savedPropertyCount === "number"
+                ? a.savedPropertyCount
+                : 0
+            }</li>
+            <li><strong>Appraisal forms submitted:</strong> ${
+              typeof a.appraisalFormCount === "number"
+                ? a.appraisalFormCount
+                : 0
+            }</li>
+          `;
+        }
+      }
+
+      function saveChanges() {
+        if (!selectedId) {
+          alert("Select an account first.");
+          return;
+        }
+        const a = accounts.find((x) => x.id === selectedId);
+        if (!a) return;
+        a.name = document.getElementById("fieldName").value;
+        a.email = document.getElementById("fieldEmail").value;
+        a.countryCode = document.getElementById("fieldCountryCode").value;
+        a.status = document.getElementById("fieldStatus").value;
+        a.phone = document.getElementById("fieldPhone").value;
+        a.address = document.getElementById("fieldAddress").value;
+        a.nationality = document.getElementById("fieldNationality").value;
+
+        a.ownedJapan = document.getElementById("fieldOwnedJapan").value;
+        a.location = document.getElementById("fieldLocation").value;
+        a.buyerStatus = document.getElementById("fieldBuyerStatus").value;
+
+        a.securityQuestion = document.getElementById("fieldSecQuestion").value;
+        a.securityAnswer = document.getElementById("fieldSecAnswer").value;
+
+        a.propertyType = document.getElementById("fieldPropertyType").value;
+        a.desiredCity = document.getElementById("fieldDesiredCity").value;
+        a.desiredArea = document.getElementById("fieldDesiredArea").value;
+        a.budgetFrom = document.getElementById("fieldBudgetFrom").value;
+        a.budgetTo = document.getElementById("fieldBudgetTo").value;
+        a.targetYield = document.getElementById("fieldYield").value;
+        a.bedrooms = document.getElementById("fieldBedrooms").value;
+        a.purchasePurpose = document.getElementById("fieldPurpose").value;
+        a.propertyStatus = document.getElementById("fieldPropertyStatus").value;
+
+        a.notifEmailOn = document.getElementById("notifEmailOn").checked;
+        a.notifPricesOnly = document.getElementById("notifPricesOnly").checked;
+        a.notifAnyUpdates = document.getElementById("notifAnyUpdates").checked;
+        a.notifFrequency = document.getElementById("notifFrequency").value;
+        a.notifTime = document.getElementById("notifTime").value;
+        a.notifAgentComm = document.getElementById("notifAgentComm").value;
+        a.notifSupportComm = document.getElementById("notifSupportComm").value;
+        a.notifPromo = document.getElementById("notifPromo").checked;
+        a.quietEnabled = document.getElementById("quietEnabled").value;
+        a.quietFrom = document.getElementById("quietFrom").value;
+        a.quietTo = document.getElementById("quietTo").value;
+        a.quietTz = document.getElementById("quietTz").value;
+
+        a.avatarUrl = document.getElementById("fieldAvatarUrl").value.trim();
+        a.notes = document.getElementById("fieldNotes").value;
+        alert(
+          "Changes saved locally (demo). In production this would update the user profile and write to audit logs.",
+        );
+        renderTable();
+        renderKpis();
+      }
+
+      function toggleSuspend(id) {
+        const a = accounts.find((x) => x.id === id);
+        if (!a) return;
+        if (a.status === "Suspended") {
+          if (
+            !confirm(
+              `Unsuspend account ${a.name} (${a.email})? User will regain access to the platform.`,
+            )
+          ) {
+            return;
+          }
+          a.status = "Active";
+        } else {
+          if (
+            !confirm(
+              `Suspend account ${a.name} (${a.email})? User will be blocked from logging in.`,
+            )
+          ) {
+            return;
+          }
+          a.status = "Suspended";
+        }
+        if (selectedId === id) {
+          document.getElementById("fieldStatus").value = a.status;
+        }
+        renderTable();
+        renderKpis();
+      }
+
+      function deleteAccount(id) {
+        const index = accounts.findIndex((x) => x.id === id);
+        if (index === -1) return;
+        const a = accounts[index];
+        if (
+          !confirm(
+            `Delete account ${a.name} (${a.email})? This should only be used for GDPR/PDPA compliant erasure. (Demo only)`,
+          )
+        ) {
+          return;
+        }
+        accounts.splice(index, 1);
+        if (selectedId === id) {
+          selectedId = null;
+          document.getElementById("detailForm").reset();
+          document.getElementById("selectedBadge").textContent =
+            "No account selected";
+        }
+        renderTable();
+        renderKpis();
+      }
+
+      function exportCsv() {
+        const filtered = applyFilters(accounts);
+        if (!filtered.length) {
+          alert("No users to export for current filter set.");
+          return;
+        }
+        const header = [
+          "User ID",
+          "Name",
+          "Email",
+          "Buyer status",
+          "Nation",
+          "Status",
+          "Last Active",
+          "Login Count",
+          "Engagement Score",
+          "Alerts",
+          "Support Tickets",
+          "Avg Session Minutes",
+          "Saved Searches",
+          "Saved Properties",
+          "Appraisal Forms",
+        ];
+        const rows = filtered.map((u) => [
+          u.id,
+          u.name,
+          u.email,
+          u.buyerStatus || "",
+          u.location || "",
+          u.status,
+          u.lastActive || "",
+          u.loginCount ?? "",
+          u.engagementScore ?? "",
+          (u.alerts || []).join(" | "),
+          u.supportTickets ?? "",
+          u.avgSessionMinutes ?? "",
+          u.savedSearchCount ?? "",
+          u.savedPropertyCount ?? "",
+          u.appraisalFormCount ?? "",
+        ]);
+
+        const csvLines = [
+          header.join(","),
+          ...rows.map((r) =>
+            r
+              .map((val) => {
+                const v = String(val ?? "");
+                return `"${v.replace(/"/g, '""')}"`;
+              })
+              .join(","),
+          ),
+        ];
+        const csv = csvLines.join("\n");
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "yuushi_end_user_management.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+
+      const LEAD_STORAGE_KEY = "yuushiAdminLeads";
+
+      function getStoredLeads() {
+        try {
+          const raw = window.localStorage.getItem(LEAD_STORAGE_KEY);
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+          console.error("Failed to read leads from storage", e);
+          return [];
+        }
+      }
+
+      function saveStoredLeads(list) {
+        try {
+          window.localStorage.setItem(LEAD_STORAGE_KEY, JSON.stringify(list));
+        } catch (e) {
+          console.error("Failed to write leads to storage", e);
+          alert(
+            "Unable to save lead in this browser (localStorage blocked). Demo only.",
+          );
+        }
+      }
+
+      function upsertLead(lead) {
+        const list = getStoredLeads();
+        const keyId = String(lead.id);
+        const idx = list.findIndex(
+          (l) =>
+            l && l.entityType === lead.entityType && String(l.id) === keyId,
+        );
+        const now = new Date().toISOString().slice(0, 10);
+        if (idx >= 0) {
+          list[idx] = { ...list[idx], ...lead, updatedDate: now };
+        } else {
+          list.push({ ...lead, createdDate: lead.createdDate || now });
+        }
+        saveStoredLeads(list);
+      }
+
+      function removeLead(entityType, id) {
+        const all = getStoredLeads();
+        const keyId = String(id);
+        const filtered = all.filter(
+          (l) => !(l && l.entityType === entityType && String(l.id) === keyId),
+        );
+        saveStoredLeads(filtered);
+      }
+
+      function isLead(entityType, id) {
+        const all = getStoredLeads();
+        const keyId = String(id);
+        return all.some(
+          (l) => l && l.entityType === entityType && String(l.id) === keyId,
+        );
+      }
+
+      function updateLeadButtonsForEndUser() {
+        const saveBtn = document.getElementById("saveLeadEndUserBtn");
+        const unsaveBtn = document.getElementById("unsaveLeadEndUserBtn");
+        if (!saveBtn || !unsaveBtn) return;
+        if (!selectedId) {
+          saveBtn.style.display = "inline-flex";
+          unsaveBtn.style.display = "none";
+          return;
+        }
+        if (isLead("end_user", selectedId)) {
+          saveBtn.style.display = "none";
+          unsaveBtn.style.display = "inline-flex";
+        } else {
+          saveBtn.style.display = "inline-flex";
+          unsaveBtn.style.display = "none";
+        }
+      }
+
+      function saveLeadFromEndUser() {
+        if (!selectedId) {
+          alert("Select an account first to save as lead.");
+          return;
+        }
+        const a = accounts.find((x) => x.id === selectedId);
+        if (!a) {
+          alert("Selected account not found in current dataset.");
+          return;
+        }
+
+        const lead = {
+          id: a.id,
+          entityType: "end_user",
+          name: a.name || "",
+          email: a.email || "",
+          phone: a.phone || "",
+          leadStatus: "New",
+          accountStatus: a.status || "Active",
+          buyerStatus: a.buyerStatus || "",
+          location: a.location || "",
+          crmTier: a.crmTier || "",
+          source: "End User Management",
+        };
+
+        upsertLead(lead);
+        alert(
+          "Saved as lead for admin overview (demo only, stored in browser localStorage).",
+        );
+        updateLeadButtonsForEndUser();
+      }
+
+      function unsaveLeadFromEndUser() {
+        if (!selectedId) {
+          alert("Select an account first to unsave lead.");
+          return;
+        }
+        removeLead("end_user", selectedId);
+        alert("Lead removed from admin overview (demo only).");
+        updateLeadButtonsForEndUser();
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderKpis();
+        renderTable();
+        selectAccount(null);
+
+        ["searchInput", "buyerStatusFilter", "statusFilter"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.addEventListener("input", renderTable);
+          el.addEventListener("change", renderTable);
+        });
+
+        const exportBtn = document.getElementById("exportCsvBtn");
+        if (exportBtn) {
+          exportBtn.addEventListener("click", exportCsv);
+        }
+
+        const saveLeadBtn = document.getElementById("saveLeadEndUserBtn");
+        if (saveLeadBtn) {
+          saveLeadBtn.addEventListener("click", saveLeadFromEndUser);
+        }
+
+        const unsaveLeadBtn = document.getElementById("unsaveLeadEndUserBtn");
+        if (unsaveLeadBtn) {
+          unsaveLeadBtn.addEventListener("click", unsaveLeadFromEndUser);
+        }
+
+        const backBtn = document.getElementById("backToListBtn");
+        if (backBtn) {
+          backBtn.addEventListener("click", () => {
+            const listView = document.getElementById("listView");
+            const detailView = document.getElementById("detailView");
+            if (listView && detailView) {
+              detailView.style.display = "none";
+              listView.style.display = "block";
+            }
+            selectedId = null;
+            selectAccount(null);
+          });
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const from = params.get("from");
+        const leadId = params.get("leadId");
+        if (from === "leads" && leadId) {
+          const match = accounts.find((a) => String(a.id) === String(leadId));
+          if (match) {
+            openDetail(match.id);
+          }
+        }
+
+        // Khởi tạo state nút Save/Unsave
+        updateLeadButtonsForEndUser();
+
+        document
+          .getElementById("saveBtn")
+          .addEventListener("click", saveChanges);
+        document.getElementById("suspendBtn").addEventListener("click", () => {
+          if (!selectedId) {
+            alert("Select an account first.");
+            return;
+          }
+          toggleSuspend(selectedId);
+        });
+        document.getElementById("deleteBtn").addEventListener("click", () => {
+          if (!selectedId) {
+            alert("Select an account first.");
+            return;
+          }
+          deleteAccount(selectedId);
+        });
+      });
+    </script>
+  </body>
+</html>

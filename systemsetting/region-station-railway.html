@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Region / Station / Railway Master Data</title>
+    <style>
+      :root {
+        --bg-body: #f5f3ef;
+        --bg-card: #fffaf2;
+        --border-subtle: #eadccd;
+        --accent: #c26b41;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px 24px 32px;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        letter-spacing: 0.02em;
+      }
+
+      .page-subtitle {
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .settings-shell {
+        max-width: 1200px;
+        margin: 24px auto;
+        padding: 0 16px 24px;
+      }
+
+      .settings-header {
+        margin-bottom: 16px;
+      }
+
+      .settings-header-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 4px;
+      }
+
+      .settings-header-sub {
+        font-size: 13px;
+        color: var(--text-muted);
+        max-width: 720px;
+      }
+
+      .settings-layout {
+        margin-top: 20px;
+        border-radius: 14px;
+        overflow: hidden;
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        min-height: 520px;
+      }
+
+      .settings-content-wrap {
+        padding: 20px 20px 26px;
+        background: #f3eee5;
+      }
+
+      .setting-pane-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .setting-pane-desc {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 18px;
+        max-width: 720px;
+      }
+
+      .settings-card {
+        background: var(--bg-card);
+        border-radius: 12px;
+        border: 1px solid var(--border-subtle);
+        padding: 12px 14px 10px;
+        margin-bottom: 12px;
+      }
+
+      .settings-card-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .setting-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 10px 0;
+        border-top: 1px solid #efe0d4;
+      }
+
+      .setting-info {
+        flex: 1 1 auto;
+      }
+
+      .setting-name {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .setting-desc {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .setting-control {
+        width: 220px;
+        flex-shrink: 0;
+      }
+
+      .btn {
+        padding: 7px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        background: #fffaf2;
+        color: var(--text-main);
+        font-size: 12px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+      }
+
+      .btn-secondary {
+        background: #f7efe4;
+      }
+
+      .btn-primary {
+        background: #3a6b3c;
+        border-color: #3a6b3c;
+        color: #fffaf2;
+      }
+
+      .btn-text {
+        border: none;
+        background: transparent;
+        padding: 0;
+        font-size: 12px;
+        color: #6b4f2c;
+        cursor: pointer;
+      }
+
+      .table-mini {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      .table-mini th,
+      .table-mini td {
+        padding: 6px 8px;
+        border-bottom: 1px solid #efe0d4;
+        text-align: left;
+      }
+
+      .table-mini th {
+        font-weight: 600;
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .table-wrap {
+        border-radius: 8px;
+        border: 1px solid #efe0d4;
+        overflow: hidden;
+        background: #fffaf2;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 600;
+        border: 1px solid transparent;
+      }
+
+      .badge-success {
+        background: #e0f6df;
+        border-color: #b7e4cc;
+        color: #276749;
+      }
+
+      .badge-gray {
+        background: #f4f1eb;
+        border-color: #ddd0c0;
+        color: #6b5a4a;
+      }
+
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(25, 13, 0, 0.45);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 999;
+      }
+
+      .modal-backdrop.open {
+        display: flex;
+      }
+
+      .modal-shell {
+        width: 880px;
+        max-width: 95%;
+        max-height: 90vh;
+        background: var(--bg-card);
+        border-radius: 10px;
+        box-shadow: 0 16px 40px rgba(37, 24, 12, 0.4);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .modal-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: #f7efe4;
+      }
+
+      .modal-header-main {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .modal-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-main);
+      }
+
+      .modal-subtitle {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+
+      .modal-close-btn {
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 18px;
+        line-height: 1;
+        color: var(--text-muted);
+      }
+
+      .modal-body {
+        padding: 12px 16px 10px;
+        overflow: auto;
+        font-size: 12px;
+        background: #f5f1e9;
+      }
+
+      .modal-footer {
+        padding: 10px 16px 12px;
+        border-top: 1px solid var(--border-subtle);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        background: #f7efe4;
+      }
+
+      .modal-two-column {
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        gap: 12px;
+      }
+
+      .filter-input {
+        min-width: 150px;
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 1px solid var(--border-subtle);
+        font-size: 12px;
+        background: #fffaf2;
+      }
+
+      @media (max-width: 960px) {
+        .modal-two-column {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="settings-shell">
+      <div class="settings-header">
+        <div class="settings-header-title">
+          Master Data — Region &amp; Station
+        </div>
+      </div>
+
+      <div class="settings-layout">
+        <section class="settings-content-wrap">
+          <div>
+            <div class="settings-card">
+              <div class="settings-card-title">Regions &amp; prefectures</div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-name">Prefecture / City management</div>
+                  <div class="setting-desc">
+                    Tree view for Prefecture City hierarchy. Nodes already used
+                    by listings or CMS cannot be deleted.
+                  </div>
+                </div>
+                <div class="setting-control">
+                  <button
+                    class="btn btn-secondary"
+                    style="width: 100%"
+                    onclick="openModal('modal-region-manager')"
+                  >
+                    Open region manager
+                  </button>
+                </div>
+              </div>
+
+              <div class="setting-row" style="border-bottom: none">
+                <div class="setting-info">
+                  <div class="setting-name">Regional content presets</div>
+                  <div class="setting-desc">
+                    Configure regional labels / descriptions used by Client and
+                    Agent portals.
+                  </div>
+                </div>
+                <div class="setting-control">
+                  <button
+                    class="btn btn-secondary"
+                    style="width: 100%"
+                    onclick="openModal('modal-regional-content')"
+                  >
+                    Open regional content screen
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-title">
+                Railway, lines &amp; stations
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-name">Line / Station hierarchy</div>
+                  <div class="setting-desc">
+                    Manage railway companies, lines, and stations.
+                  </div>
+                </div>
+                <div class="setting-control">
+                  <button
+                    class="btn btn-secondary"
+                    style="width: 100%"
+                    onclick="openModal('modal-railway-station')"
+                  >
+                    Open railway &amp; station screen
+                  </button>
+                </div>
+              </div>
+
+              <div class="setting-row" style="border-bottom: none">
+                <div class="setting-info">
+                  <div class="setting-name">Place name content presets</div>
+                  <div class="setting-desc">
+                    Maintain mapping for renamed stations / areas so legacy
+                    records continue to resolve correctly.
+                  </div>
+                </div>
+                <div class="setting-control">
+                  <button
+                    class="btn btn-secondary"
+                    style="width: 100%"
+                    onclick="openModal('modal-place-history')"
+                  >
+                    Open place-name history screen
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="modal-region-manager">
+      <div class="modal-shell">
+        <div class="modal-header">
+          <div class="modal-header-main">
+            <div class="modal-title">Region &amp; Prefecture manager</div>
+            <div class="modal-subtitle">
+              Tree view for Prefecture / City. Nodes already used by listings or
+              CMS cannot be deleted.
+            </div>
+          </div>
+          <button
+            class="modal-close-btn"
+            onclick="closeModal('modal-region-manager')"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body modal-two-column">
+          <div>
+            <div class="setting-name" style="margin-bottom: 6px">
+              Prefectures
+            </div>
+            <div class="table-wrap">
+              <table class="table-mini">
+                <thead>
+                  <tr>
+                    <th>Prefecture</th>
+                    <th>Active</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Tokyo</td>
+                    <td><span class="badge badge-success">Yes</span></td>
+                  </tr>
+                  <tr>
+                    <td>Kanagawa</td>
+                    <td><span class="badge badge-success">Yes</span></td>
+                  </tr>
+                  <tr>
+                    <td>Osaka</td>
+                    <td><span class="badge badge-success">Yes</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <button class="btn btn-secondary" style="margin-top: 6px">
+              Add prefecture
+            </button>
+          </div>
+          <div>
+            <div class="setting-name" style="margin-bottom: 6px">
+              Cities in selected prefecture
+            </div>
+            <div class="table-wrap">
+              <table class="table-mini">
+                <thead>
+                  <tr>
+                    <th>City</th>
+                    <th>Listings linked</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Shinjuku</td>
+                    <td>184</td>
+                    <td><span class="badge badge-success">Locked</span></td>
+                  </tr>
+                  <tr>
+                    <td>Shibuya</td>
+                    <td>92</td>
+                    <td><span class="badge badge-success">Locked</span></td>
+                  </tr>
+                  <tr>
+                    <td>Adachi</td>
+                    <td>0</td>
+                    <td><span class="badge badge-gray">Deletable</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="margin-top: 6px; display: flex; gap: 8px">
+              <button class="btn btn-secondary">Add city</button>
+              <button class="btn btn-secondary">Merge / rename</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            onclick="closeModal('modal-region-manager')"
+          >
+            Close
+          </button>
+          <button class="btn btn-primary">Save changes</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="modal-regional-content">
+      <div class="modal-shell">
+        <div class="modal-header">
+          <div class="modal-header-main">
+            <div class="modal-title">Regional content presets</div>
+            <div class="modal-subtitle">
+              Configure short labels / descriptions per region. These are used
+              by Client and Agent portals.
+            </div>
+          </div>
+          <button
+            class="modal-close-btn"
+            onclick="closeModal('modal-regional-content')"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="table-wrap">
+            <table class="table-mini">
+              <thead>
+                <tr>
+                  <th>Prefecture</th>
+                  <th>Area label</th>
+                  <th>Short description</th>
+                  <th>Last updated</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Tokyo</td>
+                  <td>Central Tokyo</td>
+                  <td>Urban core, Yamanote line access</td>
+                  <td>2026-03-20</td>
+                  <td><button class="btn-text">Edit</button></td>
+                </tr>
+                <tr>
+                  <td>Kanagawa</td>
+                  <td>Yokohama area</td>
+                  <td>Port city, commuter access to Tokyo</td>
+                  <td>2026-03-12</td>
+                  <td><button class="btn-text">Edit</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <button class="btn btn-secondary" style="margin-top: 8px">
+            Add regional preset
+          </button>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            onclick="closeModal('modal-regional-content')"
+          >
+            Close
+          </button>
+          <button class="btn btn-primary">Save changes</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="modal-railway-station">
+      <div class="modal-shell">
+        <div class="modal-header">
+          <div class="modal-header-main">
+            <div class="modal-title">Railway &amp; station master</div>
+            <div class="modal-subtitle">
+              Manage Company / Line / Station hierarchy. Deletion is blocked
+              when stations are referenced by listings.
+            </div>
+          </div>
+          <button
+            class="modal-close-btn"
+            onclick="closeModal('modal-railway-station')"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="table-wrap">
+            <table class="table-mini">
+              <thead>
+                <tr>
+                  <th>Company</th>
+                  <th>Line</th>
+                  <th>Station</th>
+                  <th>Transfer</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>JR East</td>
+                  <td>Yamanote</td>
+                  <td>Shinjuku</td>
+                  <td><span class="badge badge-success">Yes</span></td>
+                  <td><span class="badge badge-success">Active</span></td>
+                </tr>
+                <tr>
+                  <td>JR East</td>
+                  <td>Chuo</td>
+                  <td>Tokyo</td>
+                  <td><span class="badge badge-success">Yes</span></td>
+                  <td><span class="badge badge-success">Active</span></td>
+                </tr>
+                <tr>
+                  <td>Tokyu</td>
+                  <td>Toyoko</td>
+                  <td>Daikanyama</td>
+                  <td><span class="badge badge-gray">No</span></td>
+                  <td><span class="badge badge-success">Active</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top: 8px; display: flex; gap: 8px">
+            <button class="btn btn-secondary">Add station</button>
+            <button class="btn btn-secondary">Add line</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            onclick="closeModal('modal-railway-station')"
+          >
+            Close
+          </button>
+          <button class="btn btn-primary">Save changes</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="modal-place-history">
+      <div class="modal-shell">
+        <div class="modal-header">
+          <div class="modal-header-main">
+            <div class="modal-title">Place name history</div>
+            <div class="modal-subtitle">
+              Maintain mappings from old to new station / area names so legacy
+              records can still be resolved.
+            </div>
+          </div>
+          <button
+            class="modal-close-btn"
+            onclick="closeModal('modal-place-history')"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="table-wrap">
+            <table class="table-mini">
+              <thead>
+                <tr>
+                  <th>Old name</th>
+                  <th>New name</th>
+                  <th>Type</th>
+                  <th>Effective from</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Heiwajima</td>
+                  <td>Omori-Minami</td>
+                  <td>Station</td>
+                  <td>2025-10-01</td>
+                  <td><span class="badge badge-success">Active</span></td>
+                </tr>
+                <tr>
+                  <td>Old Town A</td>
+                  <td>New Town A</td>
+                  <td>Area</td>
+                  <td>2024-04-01</td>
+                  <td><span class="badge badge-success">Active</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <button class="btn btn-secondary" style="margin-top: 8px">
+            Add mapping
+          </button>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            onclick="closeModal('modal-place-history')"
+          >
+            Close
+          </button>
+          <button class="btn btn-primary">Save changes</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function openModal(id) {
+        var el = document.getElementById(id);
+        if (el) {
+          el.classList.add("open");
+        }
+      }
+
+      function closeModal(id) {
+        var el = document.getElementById(id);
+        if (el) {
+          el.classList.remove("open");
+        }
+      }
+    </script>
+  </body>
+</html>

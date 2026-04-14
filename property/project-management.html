@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin - Project Management</title>
+    <title>Admin - New Development Properties</title>
     <style>
       * {
         box-sizing: border-box;
@@ -326,36 +326,26 @@
   <body>
     <div class="page">
       <div class="page-header">
-        <div class="page-title">Project Management</div>
-        <div class="page-subtitle">
-          Manage building / development projects at overview level and link to
-          listings. Only aggregate metrics are shown here; no message or
-          contract content is visible.
-        </div>
-        <div class="pill">Property Management · Projects</div>
+        <div class="page-title">New development properties</div>
       </div>
 
       <div class="layout">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">Project list</div>
-            <div class="card-subtitle">
-              List of projects in the system with the number of active listings
-              per project.
-            </div>
+            <div class="card-title">New development properties list</div>
           </div>
 
           <div class="filters">
             <input
               id="searchInput"
               type="text"
-              placeholder="Search by project name, ID, developer"
+              placeholder="Search by property title, ID, developer"
             />
             <select id="statusFilter">
               <option value="">Status: All</option>
-              <option value="Active">Active</option>
-              <option value="Planning">Planning</option>
-              <option value="Closed">Closed</option>
+              <option value="On sale">On sale</option>
+              <option value="Coming soon">Coming soon</option>
+              <option value="Sold out">Sold out</option>
             </select>
             <select id="cityFilter">
               <option value="">City: All</option>
@@ -368,10 +358,10 @@
           <table>
             <thead>
               <tr>
-                <th>Project</th>
+                <th>Property</th>
                 <th>City</th>
+                <th>Type</th>
                 <th>Developer</th>
-                <th>Listings</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -390,413 +380,69 @@
 
         <div class="card">
           <div class="card-header">
-            <div class="card-title">
-              Project overview &amp; property template
-            </div>
-            <div class="card-subtitle">
-              Select a project to see summary and the expected property detail
-              template by group (Single Unit, Whole Building, Land, Rental, New
-              Developments).
-            </div>
+            <div class="card-title">Selected property overview</div>
           </div>
 
           <div id="detailContainer">
-            <div class="card-subtitle">
-              No project selected yet. Click a row on the left to view details.
-            </div>
+            <div class="card-subtitle">No property selected.</div>
           </div>
         </div>
       </div>
     </div>
 
     <script>
-      const projects = [
+      const newDevProperties = [
         {
-          id: "PRJ-001",
-          name: "Shinjuku Garden Towers",
+          id: "ND-2026-001",
+          title: "Shinjuku Garden Towers (Phase 1)",
           city: "Tokyo",
           area: "Shinjuku-ku",
+          type: "Apartments",
           developer: "Yuushi Development",
-          status: "Active",
+          status: "On sale",
           totalUnits: 220,
-          activeListings: 42,
-          soldOutUnits: 160,
-          avgPrice: 98000000,
-          tags: ["Family", "Near station", "Pet friendly"],
-          properties: [
-            {
-              id: "P-1001",
-              title: "2LDK south-facing corner unit",
-              status: "Active",
-            },
-            {
-              id: "P-1002",
-              title: "3LDK high-floor city view",
-              status: "Active",
-            },
-          ],
+          availableUnits: 42,
+          priceMin: 78000000,
+          priceMax: 118000000,
         },
         {
-          id: "PRJ-002",
-          name: "Osaka Riverside Residences",
+          id: "ND-2026-002",
+          title: "Osaka Riverside Residences",
           city: "Osaka",
           area: "Kita-ku",
+          type: "Apartments",
           developer: "Osaka Prime Dev",
-          status: "Planning",
+          status: "Coming soon",
           totalUnits: 180,
-          activeListings: 0,
-          soldOutUnits: 0,
-          avgPrice: 72000000,
-          tags: ["River view", "New development"],
-          properties: [],
+          availableUnits: 0,
+          priceMin: 0,
+          priceMax: 0,
         },
         {
-          id: "PRJ-003",
-          name: "Nagoya Central Tower",
+          id: "ND-2025-015",
+          title: "Nagoya Central Terrace Houses",
           city: "Nagoya",
           area: "Naka-ku",
+          type: "Houses",
           developer: "Central Estate",
-          status: "Closed",
-          totalUnits: 150,
-          activeListings: 0,
-          soldOutUnits: 150,
-          avgPrice: 65000000,
-          tags: ["Completed", "City center"],
-          properties: [
-            {
-              id: "P-2001",
-              title: "1LDK remaining stock (resale)",
-              status: "Closed",
-            },
-          ],
+          status: "Sold out",
+          totalUnits: 60,
+          availableUnits: 0,
+          priceMin: 62000000,
+          priceMax: 88000000,
         },
       ];
 
       let filters = { search: "", status: "", city: "" };
       let selectedId = null;
-      let selectedGroupId = "G1";
-
-      const propertyGroups = [
-        {
-          id: "G1",
-          label: "Group 1 · Single Unit",
-          note: "Investment properties with a single unit (apartment, retail/office unit, etc.)",
-          sections: [
-            {
-              id: "basic",
-              title: "1. Basic information",
-              note: "Core classification, address and publishing status.",
-              rows: [
-                {
-                  field: "Property Type",
-                  display: "Dropdown (6 single-unit types)",
-                  note: "Used to classify the listing into Group 1.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Property Name / Romaji",
-                  display: "Text box",
-                  note: "Internal + investor-facing name; Romaji for search.",
-                  status: "Finalized",
-                },
-                {
-                  field:
-                    "Address (Post code, Prefecture, City, Ward, Chome, Building, Unit)",
-                  display: "Mix of dropdowns + text boxes",
-                  note: "Structured Japanese address; wording aligned to spec.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Current Status",
-                  display:
-                    "Dropdown (Owner Occupied / Vacant / Tenanted / Under Construction)",
-                  note: "If tenanted, enables Rental Contract section.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Build Status / Move in Period",
-                  display: "Dropdown lists",
-                  note: "Newly-built vs secondhand + availability timing.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Publish & Members Only",
-                  display:
-                    "Dropdowns (Published / Private / Closed, Open / Members only)",
-                  note: "Controls portal visibility and member gating.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Dates & Special Updates",
-                  display: "Text boxes + tickboxes",
-                  note: "Published / updated dates and flags like price reduction.",
-                  status: "Finalized",
-                },
-              ],
-            },
-            {
-              id: "price",
-              title: "2. Selling & rental price",
-              note: "Headline sell price and (if tenanted) rental contract.",
-              rows: [
-                {
-                  field: "Selling Price (Buy)",
-                  display: "Number box + tax dropdown",
-                  note: "Portal shows tax-included or excluded as configured.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Gross Yield",
-                  display: "Text box (%)",
-                  note: "Only shown when tenanted.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Current Monthly Rental Price",
-                  display: "Number box + tax dropdown",
-                  note: "Rental contract details for tenanted units.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Security Deposit & Contract",
-                  display: "Number boxes + lease type / period dropdowns",
-                  note: "Standard Japanese lease modelled in admin.",
-                  status: "Finalized",
-                },
-              ],
-            },
-            {
-              id: "unit-details",
-              title: "3. Property details (unit level)",
-              note: "Layout, area metrics and income assumptions.",
-              rows: [
-                {
-                  field: "Layout",
-                  display: "Dropdown (1K, 1R, 1DK, 1LDK, …)",
-                  note: "Standard Japanese unit layout codes.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Floor Plan counts",
-                  display:
-                    "Number boxes (bedrooms, toilets, bathrooms, WIC, SIC, etc.)",
-                  note: "Detailed breakdown used in portal highlights.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Expected Income & Yield",
-                  display: "Text / number boxes",
-                  note: "Expected annual/monthly income and estimated gross yield.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Exclusive Area / Balcony / Floor",
-                  display:
-                    "Text / number boxes + dropdown for measurement method",
-                  note: "Wall-to-wall vs centre-line vs registered area.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Balcony Direction",
-                  display: "Dropdown (N/S/E/W & diagonals)",
-                  note: "Main balcony orientation shown to users.",
-                  status: "Finalized",
-                },
-              ],
-            },
-          ],
-        },
-        {
-          id: "G2",
-          label: "Group 2 · Whole Building",
-          note: "Whole buildings (house, MF residential, retail/office, hotel, mixed-use).",
-          sections: [
-            {
-              id: "basic-whole",
-              title: "1. Basic information",
-              note: "Whole building classification and publishing.",
-              rows: [
-                {
-                  field: "Property Type",
-                  display:
-                    "Dropdown (House, MF building, Retail building, etc.)",
-                  note: "Maps directly to Group 2 types.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Current Status",
-                  display:
-                    "Dropdown (Fully occupied / Partially occupied / Vacant / …)",
-                  note: "Drives Occupancy details section.",
-                  status: "Finalized",
-                },
-              ],
-            },
-            {
-              id: "occupancy",
-              title: "2.3 Occupancy details",
-              note: "Only for whole buildings with multiple units.",
-              rows: [
-                {
-                  field: "Number of Units Occupied",
-                  display: "Number box",
-                  note: "Used to calculate occupancy rate.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Occupancy Rate & Gross Return",
-                  display: "Number boxes (%)",
-                  note: "Current vs estimated at full occupancy.",
-                  status: "Finalized",
-                },
-              ],
-            },
-          ],
-        },
-        {
-          id: "G3",
-          label: "Group 3 · Land",
-          note: "Residential / commercial land and carparks.",
-          sections: [
-            {
-              id: "basic-land",
-              title: "1. Basic information",
-              note: "Land type, status and publishing.",
-              rows: [
-                {
-                  field: "Property Type",
-                  display: "Dropdown (Residential Land, Commercial Land, …)",
-                  note: "Includes operational / development carparks.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Current Situation",
-                  display: "Dropdown (Vacant land, With building, Car park, …)",
-                  note: "High-level land condition.",
-                  status: "Finalized",
-                },
-              ],
-            },
-          ],
-        },
-        {
-          id: "G4",
-          label: "Group 4 · Rental",
-          note: "Rental properties (units, land for lease, car parks).",
-          sections: [
-            {
-              id: "rental-price",
-              title: "2.1 Rental price",
-              note: "Monthly rent, key money, management and renewal fees.",
-              rows: [
-                {
-                  field: "Monthly Rent",
-                  display: "Number box + tax dropdown",
-                  note: "Core rental headline displayed to tenants.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Key Money & Deposits",
-                  display: "Number boxes + tax options",
-                  note: "Japanese-style key money model.",
-                  status: "Finalized",
-                },
-              ],
-            },
-          ],
-        },
-        {
-          id: "G5",
-          label: "Group 5 · New Dev. Apts",
-          note: "New development apartments (project-level).",
-          sections: [
-            {
-              id: "nd-basic",
-              title: "Section 1 · Basic information",
-              note: "Project-level name, permit and publishing.",
-              rows: [
-                {
-                  field: "Property Name (JP / Romaji)",
-                  display: "Text boxes",
-                  note: "Project branding and overseas search.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Sales Status / Members only",
-                  display: "Dropdown lists",
-                  note: "Pre-sale, on sale, sold out, members-only gating.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Building Permit No.",
-                  display: "Text box",
-                  note: "Legal disclosure for brokerage act.",
-                  status: "Finalized",
-                },
-              ],
-            },
-            {
-              id: "nd-type",
-              title: "Section 2 · Type / plan block",
-              note: "Repeating block for each unit type (A–D free, E+ paid).",
-              rows: [
-                {
-                  field: "Type Name (A–D, E…)",
-                  display: "Text box",
-                  note: "Standard 4 types free; extra types are monetized.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Layout & counts",
-                  display: "Tickbox list + number boxes",
-                  note: "Per-type bedrooms, bathrooms, WIC, SIC.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Price range & area",
-                  display: "Number ranges (price, exclusive area)",
-                  note: "Supports Price TBD and automatic price-per-m².",
-                  status: "Finalized",
-                },
-              ],
-            },
-          ],
-        },
-        {
-          id: "G6",
-          label: "Group 6 · New Dev. Houses",
-          note: "New development single-family homes.",
-          sections: [
-            {
-              id: "g6-basic",
-              title: "Section 1 · Basic information",
-              note: "Project-level info for new houses.",
-              rows: [
-                {
-                  field: "Property Name (JP / Romaji)",
-                  display: "Text boxes",
-                  note: "Targeted at overseas investors.",
-                  status: "Finalized",
-                },
-                {
-                  field: "Total Houses in Development",
-                  display: "Text / number box",
-                  note: "Total count across entire development.",
-                  status: "Finalized",
-                },
-              ],
-            },
-          ],
-        },
-      ];
 
       function statusClass(status) {
         switch (status) {
-          case "Active":
+          case "On sale":
             return "badge badge-status-active";
-          case "Planning":
+          case "Coming soon":
             return "badge badge-status-planning";
-          case "Closed":
+          case "Sold out":
             return "badge badge-status-closed";
           default:
             return "badge";
@@ -805,12 +451,12 @@
 
       function applyFilters() {
         const search = filters.search.toLowerCase();
-        return projects.filter((p) => {
+        return newDevProperties.filter((p) => {
           if (
             search &&
             !(
               p.id.toLowerCase().includes(search) ||
-              p.name.toLowerCase().includes(search) ||
+              p.title.toLowerCase().includes(search) ||
               p.developer.toLowerCase().includes(search)
             )
           ) {
@@ -822,7 +468,7 @@
         });
       }
 
-      function renderProjects() {
+      function renderList() {
         const tbody = document.getElementById("projectBody");
         const empty = document.getElementById("projectEmpty");
         tbody.innerHTML = "";
@@ -832,16 +478,17 @@
           return;
         }
         empty.style.display = "none";
+
         data.forEach((p) => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td>
-              <div class="project-name">${p.name}</div>
+              <div class="project-name">${p.title}</div>
               <div class="project-meta">${p.id} · ${p.area}</div>
             </td>
             <td>${p.city}</td>
+            <td>${p.type}</td>
             <td>${p.developer}</td>
-            <td>${p.activeListings} / ${p.totalUnits}</td>
             <td><span class="${statusClass(p.status)}">${p.status}</span></td>
           `;
           tr.onclick = () => {
@@ -854,165 +501,73 @@
 
       function renderDetail() {
         const container = document.getElementById("detailContainer");
-        const project = projects.find((p) => p.id === selectedId);
-        if (!project) {
+        const prop = newDevProperties.find((p) => p.id === selectedId);
+        if (!prop) {
           container.innerHTML =
-            '<div class="card-subtitle">No project selected.</div>';
+            '<div class="card-subtitle">No property selected.</div>';
           return;
         }
 
-        const occupancy = project.totalUnits
-          ? Math.round((project.soldOutUnits / project.totalUnits) * 100)
-          : 0;
-
-        const propsList = project.properties
-          .map((pr) => `• ${pr.id} – ${pr.title} (${pr.status})`)
-          .join("\n");
-
-        const group =
-          propertyGroups.find((g) => g.id === selectedGroupId) ||
-          propertyGroups[0];
-
-        const groupTabsHtml = propertyGroups
-          .map(
-            (g) => `
-          <button
-            type="button"
-            class="group-tab ${g.id === group.id ? "active" : ""}"
-            data-group-id="${g.id}"
-          >
-            ${g.label}
-          </button>
-        `,
-          )
-          .join("");
-
-        const sectionsHtml = (group.sections || [])
-          .map((sec) => {
-            const rows = (sec.rows || [])
-              .map(
-                (r) => `
-              <tr>
-                <td>${r.field}</td>
-                <td>${r.display}</td>
-              </tr>
-            `,
-              )
-              .join("");
-            return `
-              <div class="section-card">
-                <div class="section-header">
-                  <div class="section-title">${sec.title}</div>
-                  <div class="section-meta">${sec.note || ""}</div>
-                </div>
-                <table class="matrix">
-                  <thead>
-                    <tr>
-                      <th>Field</th>
-                      <th>Type of display</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${rows}
-                  </tbody>
-                </table>
-              </div>
-            `;
-          })
-          .join("");
+        const availabilityText = `${prop.availableUnits} available / ${prop.totalUnits} total units`;
+        const priceText =
+          prop.priceMin && prop.priceMax
+            ? `${(prop.priceMin / 1000000).toFixed(1)}–${(prop.priceMax / 1000000).toFixed(1)}M JPY`
+            : "TBD";
 
         container.innerHTML = `
           <div class="kv-row">
-            <div class="kv-label">Project</div>
-            <div>${project.name} (${project.id})</div>
+            <div class="kv-label">Property</div>
+            <div>${prop.title} (${prop.id})</div>
           </div>
           <div class="kv-row">
             <div class="kv-label">Location</div>
-            <div>${project.city} · ${project.area}</div>
+            <div>${prop.city} · ${prop.area}</div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-label">Type</div>
+            <div>${prop.type}</div>
           </div>
           <div class="kv-row">
             <div class="kv-label">Developer</div>
-            <div>${project.developer}</div>
+            <div>${prop.developer}</div>
           </div>
           <div class="kv-row">
             <div class="kv-label">Status</div>
-            <div><span class="${statusClass(project.status)}">${
-              project.status
-            }</span></div>
+            <div><span class="${statusClass(prop.status)}">${prop.status}</span></div>
           </div>
           <div class="kv-row">
             <div class="kv-label">Units</div>
-            <div>${project.activeListings} active · ${
-              project.soldOutUnits
-            } sold · ${project.totalUnits} total</div>
+            <div>${availabilityText}</div>
           </div>
           <div class="kv-row">
-            <div class="kv-label">Occupancy</div>
-            <div>${occupancy}% (based on sold units)</div>
-          </div>
-          <div class="kv-row">
-            <div class="kv-label">Tags</div>
-            <div class="list-chip-row">
-              ${project.tags
-                .map((t) => `<span class="chip">${t}</span>`)
-                .join("")}
-            </div>
-          </div>
-          <div class="kv-row">
-            <div class="kv-label">Linked listings (aggregate)</div>
-            <div class="textarea-like">${
-              propsList ||
-              "No listings are linked to this project yet in the demo."
-            }</div>
-          </div>
-
-          <div class="kv-row" style="margin-top:10px;">
-            <div class="kv-label">Property template group</div>
-            <div>
-              <div class="group-tabs">
-                ${groupTabsHtml}
-              </div>
-              <div style="font-size:11px; color:#7c6a55; margin-bottom:6px;">
-                ${group.note}
-              </div>
-              ${
-                sectionsHtml ||
-                '<div class="card-subtitle">No sections configured in this demo group yet.</div>'
-              }
-            </div>
+            <div class="kv-label">Headline price range</div>
+            <div>${priceText}</div>
           </div>
         `;
-
-        container.querySelectorAll(".group-tab").forEach((btn) =>
-          btn.addEventListener("click", () => {
-            const gid = btn.getAttribute("data-group-id");
-            if (!gid) return;
-            selectedGroupId = gid;
-            renderDetail();
-          }),
-        );
       }
 
       function exportCsv() {
         const rows = [
           [
-            "Project ID",
-            "Project name",
+            "Property ID",
+            "Title",
             "City",
             "Area",
+            "Type",
             "Developer",
             "Status",
-            "Active listings",
+            "Available units",
             "Total units",
           ],
           ...applyFilters().map((p) => [
             p.id,
-            p.name,
+            p.title,
             p.city,
             p.area,
+            p.type,
             p.developer,
             p.status,
-            String(p.activeListings),
+            String(p.availableUnits),
             String(p.totalUnits),
           ]),
         ];
@@ -1026,7 +581,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "yuushi_projects_overview.csv";
+        a.download = "yuushi_new_development_properties.csv";
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -1039,24 +594,24 @@
           .getElementById("searchInput")
           .addEventListener("input", (e) => {
             filters.search = e.target.value;
-            renderProjects();
+            renderList();
           });
         document
           .getElementById("statusFilter")
           .addEventListener("change", (e) => {
             filters.status = e.target.value;
-            renderProjects();
+            renderList();
           });
         document
           .getElementById("cityFilter")
           .addEventListener("change", (e) => {
             filters.city = e.target.value;
-            renderProjects();
+            renderList();
           });
         document
           .getElementById("exportBtn")
           .addEventListener("click", exportCsv);
-        renderProjects();
+        renderList();
       });
     </script>
   </body>

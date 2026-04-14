@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin - Property List &amp; Oversight</title>
+    <title>Admin - Property Management</title>
     <style>
       * {
         box-sizing: border-box;
@@ -56,16 +56,43 @@
         background: #fffaf2;
         border-radius: 10px;
         border: 1px solid #eadccd;
-        padding: 14px 16px 16px;
+        padding: 16px 18px 18px;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
       }
 
       .toolbar {
         display: flex;
-        justify-content: space-between;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+
+      .toolbar-left {
+        flex: 1 1 520px;
+        min-width: 0;
+      }
+
+      .toolbar-right {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+      }
+
+      .toolbar-right-top {
+        display: flex;
         align-items: center;
         gap: 8px;
-        margin-bottom: 10px;
+      }
+
+      .toolbar-right-bottom {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: flex-end;
+        width: 100%;
       }
 
       .filters {
@@ -259,15 +286,24 @@
         gap: 4px;
       }
 
-      .btn-primary {
-        background: #3a6b3c;
-        color: #fff;
-      }
-
       .btn-secondary {
         background: #f7efe4;
         color: #6a5641;
         border: 1px solid #ddcdb9;
+      }
+
+      .toolbar-badge {
+        min-width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        background: #c41e3a;
+        color: #fffaf2;
+        font-size: 11px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 6px;
+        font-weight: 600;
       }
 
       .add-filter-btn {
@@ -346,9 +382,15 @@
         color: #ad986e;
       }
 
+      #propGrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 12px;
+      }
+
       .layout {
         display: grid;
-        grid-template-columns: minmax(0, 2.4fr) minmax(0, 2fr);
+        grid-template-columns: minmax(0, 1fr);
         gap: 16px;
       }
 
@@ -715,9 +757,52 @@
         line-height: 1.5;
       }
 
+      .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 10px;
+        font-size: 12px;
+        color: #7c6a55;
+      }
+
+      .pagination button {
+        border-radius: 999px;
+        border: 1px solid #ddcdb9;
+        padding: 5px 10px;
+        font-size: 12px;
+        background: #fffaf2;
+        color: #6a5641;
+        cursor: pointer;
+      }
+
+      .pagination button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+
       @media (max-width: 960px) {
         .layout {
           grid-template-columns: minmax(0, 1fr);
+        }
+
+        .toolbar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .toolbar-right {
+          align-items: stretch;
+        }
+
+        .toolbar-right-top {
+          justify-content: space-between;
+        }
+
+        .toolbar-right-bottom {
+          justify-content: flex-start;
+          flex-wrap: wrap;
         }
       }
     </style>
@@ -725,110 +810,141 @@
   <body>
     <div class="page">
       <div class="page-header">
-        <div class="page-title">Property List &amp; Oversight</div>
-        <div class="page-subtitle">
-          All properties on the platform with sort/filter by type, agent,
-          location, price, listing date, duration and status.
-        </div>
-        <div class="pill">Property Management · Oversight</div>
+        <div class="page-title">Property Management</div>
       </div>
 
       <div class="card" style="margin-bottom: 14px">
         <div class="toolbar">
-          <div class="filters">
-            <input
-              id="searchInput"
-              type="text"
-              placeholder="Search by title, ID, agent, location"
-            />
+          <div class="toolbar-left">
+            <div class="filters">
+              <input
+                id="searchInput"
+                type="text"
+                placeholder="Search by title, ID, agent, location"
+              />
 
-            <div class="select-wrapper">
-              <select id="typeFilter">
-                <option value="">Property Type</option>
-                <option value="Apartment">Apartment</option>
-                <option value="House">House</option>
-                <option value="Land">Land</option>
-              </select>
-            </div>
+              <div class="select-wrapper">
+                <select id="typeFilter">
+                  <option value="">Property Type</option>
+                  <option value="Apartment">Apartment</option>
+                  <option value="House">House</option>
+                  <option value="Land">Land</option>
+                </select>
+              </div>
 
-            <div class="region-filter">
-              <button id="regionFilterToggle" class="filter-chip" type="button">
-                <span class="label">Region / Station</span>
-                <span
-                  id="regionFilterCount"
-                  class="count-pill"
-                  style="display: none"
-                  >0</span
+              <div class="region-filter">
+                <button
+                  id="regionFilterToggle"
+                  class="filter-chip"
+                  type="button"
                 >
+                  <span class="label">Region / Station</span>
+                  <span
+                    id="regionFilterCount"
+                    class="count-pill"
+                    style="display: none"
+                    >0</span
+                  >
+                </button>
+              </div>
+
+              <div class="select-wrapper">
+                <select>
+                  <option>Transaction Type</option>
+                </select>
+              </div>
+
+              <div class="select-wrapper">
+                <select>
+                  <option>Home Size (Sqft)</option>
+                </select>
+              </div>
+
+              <div class="select-wrapper">
+                <select>
+                  <option>Price</option>
+                </select>
+              </div>
+
+              <div class="select-wrapper">
+                <select>
+                  <option>Bedrooms</option>
+                </select>
+              </div>
+
+              <div class="select-wrapper">
+                <select id="statusFilter">
+                  <option value="">Property Status</option>
+                  <option value="Active">Active</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Suspended">Suspended</option>
+                </select>
+              </div>
+
+              <div class="select-wrapper">
+                <select id="agentFilter">
+                  <option value="">Seller</option>
+                </select>
+              </div>
+
+              <button class="add-filter-btn" id="clearFilterBtn" type="button">
+                Remove Filters
               </button>
-            </div>
-
-            <div class="select-wrapper">
-              <select>
-                <option>Transaction Type</option>
-              </select>
-            </div>
-
-            <div class="select-wrapper">
-              <select>
-                <option>Home Size (Sqft)</option>
-              </select>
-            </div>
-
-            <div class="select-wrapper">
-              <select>
-                <option>Price</option>
-              </select>
-            </div>
-
-            <div class="select-wrapper">
-              <select>
-                <option>Bedrooms</option>
-              </select>
-            </div>
-
-            <div class="select-wrapper">
-              <select id="statusFilter">
-                <option value="">Property Status</option>
-                <option value="Active">Active</option>
-                <option value="Pending">Pending</option>
-                <option value="Suspended">Suspended</option>
-              </select>
-            </div>
-
-            <div class="select-wrapper">
-              <select id="agentFilter">
-                <option value="">Seller</option>
-              </select>
-            </div>
-
-            <button class="add-filter-btn" type="button">
-              Add/Remove Filters
-            </button>
-
-            <button class="reset-icon" id="clearFilterBtn" type="button">
-              ⟳
-            </button>
-
-            <div class="select-wrapper" style="margin-left: auto">
-              <select class="sort-select" id="sortSelect">
-                <option value="listingDate_desc">Newest to Oldest</option>
-                <option value="listingDate_asc">Oldest to Newest</option>
-                <option value="price_asc">Price: Low to High</option>
-                <option value="price_desc">Price: High to Low</option>
-              </select>
-            </div>
-
-            <div class="view-options">
-              <button class="view-btn active" type="button">G</button>
-              <button class="view-btn" type="button">M</button>
-              <button class="view-btn" type="button">L</button>
             </div>
           </div>
 
-          <button class="btn btn-primary" id="exportBtn" type="button">
-            Export CSV
-          </button>
+          <div class="toolbar-right">
+            <div class="toolbar-right-top">
+              <div class="select-wrapper">
+                <select class="sort-select" id="sortSelect">
+                  <option value="listingDate_desc">Newest to Oldest</option>
+                  <option value="listingDate_asc">Oldest to Newest</option>
+                  <option value="price_asc">Price: Low to High</option>
+                  <option value="price_desc">Price: High to Low</option>
+                </select>
+              </div>
+
+              <div class="view-options">
+                <button class="view-btn active" type="button" data-view="grid">
+                  Grid
+                </button>
+                <button class="view-btn" type="button" data-view="table">
+                  Table
+                </button>
+              </div>
+            </div>
+
+            <div class="toolbar-right-bottom">
+              <button
+                class="btn btn-secondary"
+                type="button"
+                onclick="
+                  window.location.href = 'property-report-management.html'
+                "
+              >
+                <span>Property Report Management</span>
+                <span
+                  id="pendingReportsCount"
+                  class="toolbar-badge"
+                  style="display: none"
+                ></span>
+              </button>
+              <!-- <button
+                class="btn btn-secondary"
+                type="button"
+                onclick="
+                  window.location.href = 'property-approval-moderation.html'
+                "
+              >
+                <span>Property Approval & Moderation</span>
+                <span
+                  id="pendingApprovalsCount"
+                  class="toolbar-badge"
+                  style="display: none"
+                ></span>
+              </button> -->
+            </div>
+          </div>
         </div>
 
         <div
@@ -980,50 +1096,56 @@
 
       <div class="layout">
         <div class="card">
-          <table>
-            <thead>
-              <tr>
-                <th data-sort="title">
-                  Property
-                  <span class="sort-indicator">↕</span>
-                </th>
-                <th data-sort="type">
-                  Type
-                  <span class="sort-indicator">↕</span>
-                </th>
-                <th data-sort="agent">
-                  Agent
-                  <span class="sort-indicator">↕</span>
-                </th>
-                <th data-sort="price">
-                  Price
-                  <span class="sort-indicator">↕</span>
-                </th>
-                <th data-sort="listingDate">
-                  Listing date
-                  <span class="sort-indicator">↕</span>
-                </th>
-                <th data-sort="durationDays">
-                  Duration (days)
-                  <span class="sort-indicator">↕</span>
-                </th>
-                <th data-sort="status">
-                  Status
-                  <span class="sort-indicator">↕</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody id="propTableBody"></tbody>
-          </table>
-          <div class="empty-state" id="propEmpty" style="display: none">
-            No properties match current filters.
+          <div id="tableView">
+            <table>
+              <thead>
+                <tr>
+                  <th>Picture</th>
+                  <th data-sort="title">
+                    Property Name
+                    <span class="sort-indicator">↕</span>
+                  </th>
+                  <th data-sort="type">
+                    Property Type
+                    <span class="sort-indicator">↕</span>
+                  </th>
+                  <th data-sort="location">
+                    Location
+                    <span class="sort-indicator">↕</span>
+                  </th>
+                  <th data-sort="status">
+                    Property Status
+                    <span class="sort-indicator">↕</span>
+                  </th>
+                  <th data-sort="price">
+                    List Price
+                    <span class="sort-indicator">↕</span>
+                  </th>
+                  <th data-sort="rentalPrice">
+                    Rental Price
+                    <span class="sort-indicator">↕</span>
+                  </th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="propTableBody"></tbody>
+            </table>
+            <div class="empty-state" id="propEmpty" style="display: none">
+              No properties match current filters.
+            </div>
           </div>
-        </div>
 
-        <div class="card">
-          <div class="detail-label">Property detail (read-only)</div>
-          <div id="detailContainer" class="detail-value">
-            Select a property on the left to see oversight details.
+          <div id="gridView" style="display: none">
+            <div id="propGrid"></div>
+            <div class="empty-state" id="propGridEmpty" style="display: none">
+              No properties match current filters.
+            </div>
+          </div>
+
+          <div id="pagination" class="pagination">
+            <button id="prevPageBtn" type="button">◀</button>
+            <span id="pageInfo">1 / 1</span>
+            <button id="nextPageBtn" type="button">▶</button>
           </div>
         </div>
       </div>
@@ -1035,9 +1157,11 @@
           id: "P-1001",
           title: "2LDK apartment near Shinjuku",
           type: "Apartment",
+          groupKey: "single_unit_buy",
           agent: "Sakura Realty",
           location: "Tokyo · Shinjuku",
           price: 98000000,
+          rentalPrice: null,
           listingDate: "2026-03-20",
           durationDays: 24,
           status: "Active",
@@ -1050,9 +1174,11 @@
           id: "P-1002",
           title: "Family house in Yokohama",
           type: "House",
+          groupKey: "new_dev_house",
           agent: "Hikari Homes",
           location: "Kanagawa · Yokohama",
           price: 72000000,
+          rentalPrice: 220000,
           listingDate: "2026-02-15",
           durationDays: 58,
           status: "Pending",
@@ -1065,9 +1191,11 @@
           id: "P-1003",
           title: "Land plot near Osaka station",
           type: "Land",
+          groupKey: "land_buy",
           agent: "Osaka Prime Realty",
           location: "Osaka · Kita-ku",
           price: 65000000,
+          rentalPrice: null,
           listingDate: "2026-03-05",
           durationDays: 39,
           status: "Suspended",
@@ -1076,7 +1204,303 @@
           floorPlan: "-",
           station: "Osaka (8 min)",
         },
+        {
+          id: "P-1004",
+          title: "1LDK compact apartment in Shibuya",
+          type: "Apartment",
+          groupKey: "single_unit_rent",
+          agent: "Sakura Realty",
+          location: "Tokyo · Shibuya",
+          price: 54000000,
+          rentalPrice: 180000,
+          listingDate: "2026-03-28",
+          durationDays: 18,
+          status: "Active",
+          project: "Urban Tokyo Collection",
+          size: "42 m²",
+          floorPlan: "1LDK",
+          station: "Shibuya (7 min)",
+        },
+        {
+          id: "P-1005",
+          title: "New-build 3LDK house in Setagaya",
+          type: "House",
+          groupKey: "new_dev_house",
+          agent: "Hikari Homes",
+          location: "Tokyo · Setagaya",
+          price: 88000000,
+          rentalPrice: null,
+          listingDate: "2026-01-30",
+          durationDays: 74,
+          status: "Pending",
+          project: "Setagaya Family Hills",
+          size: "95 m²",
+          floorPlan: "3LDK",
+          station: "Sangenjaya (10 min)",
+        },
+        {
+          id: "P-1006",
+          title: "Renovated 2DK near Yokohama bay",
+          type: "Apartment",
+          groupKey: "single_unit_buy",
+          agent: "Bayfront Living",
+          location: "Kanagawa · Yokohama",
+          price: 62000000,
+          rentalPrice: null,
+          listingDate: "2026-03-10",
+          durationDays: 34,
+          status: "Active",
+          project: "Yokohama Bayfront",
+          size: "50 m²",
+          floorPlan: "2DK",
+          station: "Yokohama (9 min)",
+        },
+        {
+          id: "P-1007",
+          title: "High-rise 3LDK Osaka city view",
+          type: "Apartment",
+          groupKey: "single_unit_buy",
+          agent: "Osaka Prime Realty",
+          location: "Osaka · Kita-ku",
+          price: 99000000,
+          rentalPrice: null,
+          listingDate: "2026-02-05",
+          durationDays: 68,
+          status: "Active",
+          project: "Osaka Business Hub",
+          size: "78 m²",
+          floorPlan: "3LDK",
+          station: "Osaka (6 min)",
+        },
+        {
+          id: "P-1008",
+          title: "Compact studio near Shinjuku Gyoen",
+          type: "Apartment",
+          groupKey: "single_unit_rent",
+          agent: "Metro City Agents",
+          location: "Tokyo · Shinjuku",
+          price: 38000000,
+          rentalPrice: 140000,
+          listingDate: "2026-03-02",
+          durationDays: 42,
+          status: "Pending",
+          project: "Tokyo Compact Series",
+          size: "30 m²",
+          floorPlan: "1K",
+          station: "Shinjuku-gyoemmae (4 min)",
+        },
+        {
+          id: "P-1009",
+          title: "Corner 4LDK house in Yokohama hills",
+          type: "House",
+          groupKey: "new_dev_house",
+          agent: "Hikari Homes",
+          location: "Kanagawa · Yokohama",
+          price: 76000000,
+          rentalPrice: null,
+          listingDate: "2026-01-10",
+          durationDays: 94,
+          status: "Suspended",
+          project: "Yokohama Hillside Estate",
+          size: "120 m²",
+          floorPlan: "4LDK",
+          station: "Yokohama (15 min)",
+        },
+        {
+          id: "P-1010",
+          title: "Investment land near Shin-Osaka",
+          type: "Land",
+          groupKey: "land_buy",
+          agent: "Kansai Asset Partners",
+          location: "Osaka · Yodogawa",
+          price: 58000000,
+          rentalPrice: null,
+          listingDate: "2026-02-25",
+          durationDays: 48,
+          status: "Active",
+          project: "Shin-Osaka Commerce Zone",
+          size: "95 m²",
+          floorPlan: "-",
+          station: "Shin-Osaka (11 min)",
+        },
+        {
+          id: "P-1011",
+          title: "Loft-style 1LDK in Daikanyama",
+          type: "Apartment",
+          groupKey: "single_unit_buy",
+          agent: "Sakura Realty",
+          location: "Tokyo · Shibuya",
+          price: 87000000,
+          rentalPrice: null,
+          listingDate: "2026-03-08",
+          durationDays: 38,
+          status: "Active",
+          project: "Daikanyama Loft Collection",
+          size: "60 m²",
+          floorPlan: "1LDK",
+          station: "Daikanyama (6 min)",
+        },
+        {
+          id: "P-1012",
+          title: "Pet-friendly 2LDK in Yokohama",
+          type: "Apartment",
+          groupKey: "single_unit_rent",
+          agent: "Bayfront Living",
+          location: "Kanagawa · Yokohama",
+          price: 52000000,
+          rentalPrice: 190000,
+          listingDate: "2026-02-20",
+          durationDays: 53,
+          status: "Pending",
+          project: "Yokohama Pet Series",
+          size: "58 m²",
+          floorPlan: "2LDK",
+          station: "Yokohama (10 min)",
+        },
+        {
+          id: "P-1013",
+          title: "Serviced apartment near Umeda",
+          type: "Apartment",
+          groupKey: "single_unit_rent",
+          agent: "Osaka Prime Realty",
+          location: "Osaka · Kita-ku",
+          price: 61000000,
+          rentalPrice: 230000,
+          listingDate: "2026-03-18",
+          durationDays: 24,
+          status: "Active",
+          project: "Umeda Executive Suites",
+          size: "52 m²",
+          floorPlan: "1LDK",
+          station: "Umeda (5 min)",
+        },
+        {
+          id: "P-1014",
+          title: "Corner office-convertible land plot",
+          type: "Land",
+          groupKey: "land_buy",
+          agent: "Kansai Asset Partners",
+          location: "Osaka · Chuo-ku",
+          price: 73000000,
+          rentalPrice: null,
+          listingDate: "2026-01-22",
+          durationDays: 82,
+          status: "Suspended",
+          project: "Osaka Central Redevelopment",
+          size: "105 m²",
+          floorPlan: "-",
+          station: "Honmachi (9 min)",
+        },
+        {
+          id: "P-1015",
+          title: "Compact 1K near Ikebukuro",
+          type: "Apartment",
+          groupKey: "single_unit_rent",
+          agent: "Metro City Agents",
+          location: "Tokyo · Toshima",
+          price: 36000000,
+          rentalPrice: 120000,
+          listingDate: "2026-03-01",
+          durationDays: 43,
+          status: "Active",
+          project: "Tokyo Compact Series",
+          size: "28 m²",
+          floorPlan: "1K",
+          station: "Ikebukuro (6 min)",
+        },
+        {
+          id: "P-1016",
+          title: "Family 3LDK in Kawasaki",
+          type: "House",
+          groupKey: "new_dev_house",
+          agent: "Hikari Homes",
+          location: "Kanagawa · Kawasaki",
+          price: 69000000,
+          rentalPrice: null,
+          listingDate: "2026-02-12",
+          durationDays: 61,
+          status: "Pending",
+          project: "Kawasaki Family Garden",
+          size: "98 m²",
+          floorPlan: "3LDK",
+          station: "Kawasaki (13 min)",
+        },
+        {
+          id: "P-1017",
+          title: "Luxury penthouse in Shinjuku",
+          type: "Apartment",
+          groupKey: "single_unit_buy",
+          agent: "Sakura Realty",
+          location: "Tokyo · Shinjuku",
+          price: 165000000,
+          rentalPrice: null,
+          listingDate: "2026-03-22",
+          durationDays: 22,
+          status: "Active",
+          project: "Shinjuku Sky Residences",
+          size: "130 m²",
+          floorPlan: "3LDK",
+          station: "Shinjuku (3 min)",
+        },
+        {
+          id: "P-1018",
+          title: "Budget studio in Saitama",
+          type: "Apartment",
+          groupKey: "single_unit_rent",
+          agent: "Metro City Agents",
+          location: "Saitama · Omiya",
+          price: 22000000,
+          rentalPrice: 80000,
+          listingDate: "2026-01-05",
+          durationDays: 99,
+          status: "Suspended",
+          project: "Greater Tokyo Budget Series",
+          size: "22 m²",
+          floorPlan: "1R",
+          station: "Omiya (8 min)",
+        },
+        {
+          id: "P-1019",
+          title: "Investor 1R near Shinagawa",
+          type: "Apartment",
+          groupKey: "single_unit_buy",
+          agent: "Bayfront Living",
+          location: "Tokyo · Shinagawa",
+          price: 51000000,
+          rentalPrice: null,
+          listingDate: "2026-02-28",
+          durationDays: 46,
+          status: "Active",
+          project: "Shinagawa Investor Series",
+          size: "26 m²",
+          floorPlan: "1R",
+          station: "Shinagawa (9 min)",
+        },
+        {
+          id: "P-1020",
+          title: "Retail land near Yokohama station",
+          type: "Land",
+          groupKey: "land_buy",
+          agent: "Kansai Asset Partners",
+          location: "Kanagawa · Yokohama",
+          price: 81000000,
+          rentalPrice: null,
+          listingDate: "2026-03-12",
+          durationDays: 32,
+          status: "Active",
+          project: "Yokohama Retail Strip",
+          size: "88 m²",
+          floorPlan: "-",
+          station: "Yokohama (6 min)",
+        },
       ];
+
+      // Demo counters for unresolved items (can be wired to backend later)
+      const pendingReportCount = 2; // e.g. pending property reports
+      const pendingApprovalCount = 3; // e.g. pending property approvals
+
+      const pageSize = 15;
+      let currentPage = 1;
 
       let sortState = { field: "listingDate", direction: "desc" };
       let filters = {
@@ -1087,7 +1511,7 @@
         regions: [],
         stations: [],
       };
-      let selectedPropId = null;
+      let currentViewMode = "table";
 
       function statusClass(status) {
         switch (status) {
@@ -1165,58 +1589,109 @@
         });
       }
 
+      function updatePagination(totalItems) {
+        const paginationEl = document.getElementById("pagination");
+        const pageInfo = document.getElementById("pageInfo");
+        const prevBtn = document.getElementById("prevPageBtn");
+        const nextBtn = document.getElementById("nextPageBtn");
+        if (!paginationEl || !pageInfo || !prevBtn || !nextBtn) return;
+
+        if (!totalItems) {
+          paginationEl.style.display = "none";
+          currentPage = 1;
+          pageInfo.textContent = "0 / 0";
+          prevBtn.disabled = true;
+          nextBtn.disabled = true;
+          return;
+        }
+
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        paginationEl.style.display = "flex";
+        pageInfo.textContent = `${currentPage} / ${totalPages}`;
+        prevBtn.disabled = currentPage === 1;
+        nextBtn.disabled = currentPage === totalPages;
+      }
+
       function renderTable() {
         const tbody = document.getElementById("propTableBody");
         const empty = document.getElementById("propEmpty");
         tbody.innerHTML = "";
-        const data = sortData(applyFilters());
-        if (!data.length) {
+        const allData = sortData(applyFilters());
+        updatePagination(allData.length);
+        if (!allData.length) {
           empty.style.display = "block";
           return;
         }
         empty.style.display = "none";
-        data.forEach((p) => {
+        const start = (currentPage - 1) * pageSize;
+        const pageData = allData.slice(start, start + pageSize);
+        pageData.forEach((p) => {
           const tr = document.createElement("tr");
           tr.style.cursor = "pointer";
+          const thumbUrl =
+            "https://picsum.photos/seed/" +
+            encodeURIComponent(p.id || "property") +
+            "/120/80";
           tr.innerHTML = `
+            <td>
+              <img
+                src="${thumbUrl}"
+                alt="${p.title}"
+                style="width: 72px; height: 54px; object-fit: cover; border-radius: 6px; border: 1px solid #e2d6c8;"
+              />
+            </td>
             <td>
               <div class="prop-title">${p.title}</div>
               <div class="prop-meta">${p.id} · ${p.location}</div>
             </td>
             <td><span class="type-pill">${p.type}</span></td>
-            <td>${p.agent}</td>
-            <td>${formatPrice(p.price)}</td>
-            <td>${p.listingDate}</td>
-            <td>${p.durationDays}</td>
+            <td>${p.location}</td>
             <td><span class="status-pill ${statusClass(p.status)}">${p.status}</span></td>
+            <td>${formatPrice(p.price)}</td>
+            <td>${formatPrice(p.rentalPrice)}</td>
+            <td>On platform</td>
           `;
           tr.addEventListener("click", () => {
-            selectedPropId = p.id;
-            renderDetail();
+            const params = new URLSearchParams();
+            if (p.groupKey) params.set("group", p.groupKey);
+            if (p.id) params.set("id", p.id);
+            const query = params.toString();
+            window.location.href =
+              "property-detail-view.html" + (query ? "?" + query : "");
           });
           tbody.appendChild(tr);
         });
       }
 
-      function renderDetail() {
-        const div = document.getElementById("detailContainer");
-        const p = properties.find((x) => x.id === selectedPropId);
-        if (!p) {
-          div.textContent =
-            "Select a property on the left to see oversight details.";
+      function renderGrid() {
+        const grid = document.getElementById("propGrid");
+        const empty = document.getElementById("propGridEmpty");
+        if (!grid) return;
+        grid.innerHTML = "";
+        const allData = sortData(applyFilters());
+        updatePagination(allData.length);
+        if (!allData.length) {
+          if (empty) empty.style.display = "block";
           return;
         }
-        const heroUrl =
-          "https://picsum.photos/seed/" +
-          encodeURIComponent(p.id || "property") +
-          "/800/600";
-        const locParts = (p.location || "").split("·");
-        const locMain = locParts[0] ? locParts[0].trim() : "";
-        const locSub = locParts[1] ? locParts[1].trim() : "";
-        const agentInitial = (p.agent || "?").charAt(0).toUpperCase();
-
-        div.innerHTML = `
-          <div class="property-card">
+        if (empty) empty.style.display = "none";
+        const start = (currentPage - 1) * pageSize;
+        const pageData = allData.slice(start, start + pageSize);
+        pageData.forEach((p) => {
+          const card = document.createElement("div");
+          card.className = "property-card";
+          const heroUrl =
+            "https://picsum.photos/seed/" +
+            encodeURIComponent(p.id || "property") +
+            "/800/600";
+          const locParts = (p.location || "").split("·");
+          const locMain = locParts[0] ? locParts[0].trim() : "";
+          const locSub = locParts[1] ? locParts[1].trim() : "";
+          const agentInitial = (p.agent || "?").charAt(0).toUpperCase();
+          card.innerHTML = `
             <div class="property-hero">
               <img src="${heroUrl}" alt="${p.title}" />
               <div class="property-hero-overlay"></div>
@@ -1224,30 +1699,6 @@
               <div class="property-agent">
                 <div class="property-agent-av">${agentInitial}</div>
                 <span class="property-agent-name">${p.agent}</span>
-              </div>
-
-              <div class="property-actions">
-                <button class="property-btn-compare" type="button">
-                  Compare
-                </button>
-                <button
-                  class="property-btn-wish"
-                  type="button"
-                  onclick="this.classList.toggle('liked')"
-                >
-                  <svg viewBox="0 0 20 20">
-                    <path d="M10 17s-7-4.1-7-8.8A4.9 4.9 0 0110 3.5a4.9 4.9 0 017 4.7C17 12.9 10 17 10 17z" />
-                  </svg>
-                </button>
-              </div>
-
-              <button class="property-arrow property-prev" type="button">‹</button>
-              <button class="property-arrow property-next" type="button">›</button>
-
-              <div class="property-dots">
-                <div class="property-dot active"></div>
-                <div class="property-dot"></div>
-                <div class="property-dot"></div>
               </div>
 
               <div class="property-info-overlay">
@@ -1274,68 +1725,36 @@
                 <span class="property-spec">🚉 ${p.station}</span>
               </div>
               <div class="property-desc">
-                ID: ${p.id} · Project: ${p.project || "—"}. This is a read-only
-                admin view for oversight only; content changes must go through
-                the Property Detail Editing screen or agent workflow.
+                ID: ${p.id} · Project: ${p.project || "—"}
               </div>
             </div>
-          </div>
-        `;
+          `;
+          card.addEventListener("click", () => {
+            const params = new URLSearchParams();
+            if (p.groupKey) params.set("group", p.groupKey);
+            if (p.id) params.set("id", p.id);
+            const query = params.toString();
+            window.location.href =
+              "property-detail-view.html" + (query ? "?" + query : "");
+          });
+          grid.appendChild(card);
+        });
       }
 
-      function exportCsv() {
-        const data = sortData(applyFilters());
-        if (!data.length) {
-          alert("There are no properties to export.");
-          return;
+      function setViewMode(view) {
+        currentViewMode = view === "grid" ? "grid" : "table";
+        const tableView = document.getElementById("tableView");
+        const gridView = document.getElementById("gridView");
+        if (!tableView || !gridView) return;
+        if (currentViewMode === "table") {
+          tableView.style.display = "block";
+          gridView.style.display = "none";
+          renderTable();
+        } else {
+          tableView.style.display = "none";
+          gridView.style.display = "block";
+          renderGrid();
         }
-        const header = [
-          "PropertyId",
-          "Title",
-          "Type",
-          "Agent",
-          "Location",
-          "Price",
-          "ListingDate",
-          "DurationDays",
-          "Status",
-          "Project",
-          "Size",
-          "FloorPlan",
-          "Station",
-        ];
-        const rows = data.map((p) => [
-          p.id,
-          p.title,
-          p.type,
-          p.agent,
-          p.location,
-          p.price,
-          p.listingDate,
-          p.durationDays,
-          p.status,
-          p.project,
-          p.size,
-          p.floorPlan,
-          p.station,
-        ]);
-        const csv =
-          header.join(",") +
-          "\n" +
-          rows
-            .map((r) =>
-              r
-                .map((v) => `"${String(v || "").replace(/"/g, '""')}"`)
-                .join(","),
-            )
-            .join("\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "yuushi_property_oversight.csv";
-        a.click();
-        URL.revokeObjectURL(url);
       }
 
       function updateRegionCountPill() {
@@ -1364,7 +1783,8 @@
         filters.regions = regionTokens.filter(Boolean);
         filters.stations = stationTokens.filter(Boolean);
         updateRegionCountPill();
-        renderTable();
+        if (currentViewMode === "grid") renderGrid();
+        else renderTable();
       }
 
       function clearRegionPanelSelection() {
@@ -1433,32 +1853,60 @@
 
       document.addEventListener("DOMContentLoaded", () => {
         initAgentFilter();
-        renderTable();
-        renderDetail();
+        setViewMode("table");
+
+        // Set toolbar badges for unresolved items
+        const repBadge = document.getElementById("pendingReportsCount");
+        if (repBadge) {
+          if (pendingReportCount > 0) {
+            repBadge.textContent = String(pendingReportCount);
+            repBadge.style.display = "inline-flex";
+          } else {
+            repBadge.style.display = "none";
+          }
+        }
+
+        const apprBadge = document.getElementById("pendingApprovalsCount");
+        if (apprBadge) {
+          if (pendingApprovalCount > 0) {
+            apprBadge.textContent = String(pendingApprovalCount);
+            apprBadge.style.display = "inline-flex";
+          } else {
+            apprBadge.style.display = "none";
+          }
+        }
 
         document
           .getElementById("searchInput")
           .addEventListener("input", (e) => {
             filters.search = e.target.value;
-            renderTable();
+            currentPage = 1;
+            if (currentViewMode === "grid") renderGrid();
+            else renderTable();
           });
         document
           .getElementById("typeFilter")
           .addEventListener("change", (e) => {
             filters.type = e.target.value;
-            renderTable();
+            currentPage = 1;
+            if (currentViewMode === "grid") renderGrid();
+            else renderTable();
           });
         document
           .getElementById("statusFilter")
           .addEventListener("change", (e) => {
             filters.status = e.target.value;
-            renderTable();
+            currentPage = 1;
+            if (currentViewMode === "grid") renderGrid();
+            else renderTable();
           });
         document
           .getElementById("agentFilter")
           .addEventListener("change", (e) => {
             filters.agent = e.target.value;
-            renderTable();
+            currentPage = 1;
+            if (currentViewMode === "grid") renderGrid();
+            else renderTable();
           });
         document
           .getElementById("clearFilterBtn")
@@ -1480,12 +1928,10 @@
             const sortSel = document.getElementById("sortSelect");
             if (sortSel) sortSel.value = "listingDate_desc";
             sortState = { field: "listingDate", direction: "desc" };
-            renderTable();
+            currentPage = 1;
+            if (currentViewMode === "grid") renderGrid();
+            else renderTable();
           });
-        document
-          .getElementById("exportBtn")
-          .addEventListener("click", exportCsv);
-
         initRegionPanel();
 
         const sortSelect = document.getElementById("sortSelect");
@@ -1495,7 +1941,9 @@
             const [field, direction] = value.split("_");
             if (field && direction) {
               sortState = { field, direction };
-              renderTable();
+              currentPage = 1;
+              if (currentViewMode === "grid") renderGrid();
+              else renderTable();
             }
           });
         }
@@ -1506,6 +1954,8 @@
               .querySelectorAll(".view-btn")
               .forEach((b) => b.classList.remove("active"));
             btn.classList.add("active");
+            const view = btn.getAttribute("data-view") || "table";
+            setViewMode(view);
           });
         });
 
@@ -1519,9 +1969,26 @@
               sortState.field = field;
               sortState.direction = "asc";
             }
-            renderTable();
+            currentPage = 1;
+            if (currentViewMode === "grid") renderGrid();
+            else renderTable();
           });
         });
+
+        const prevPageBtn = document.getElementById("prevPageBtn");
+        const nextPageBtn = document.getElementById("nextPageBtn");
+        if (prevPageBtn && nextPageBtn) {
+          prevPageBtn.addEventListener("click", () => {
+            if (currentPage > 1) currentPage -= 1;
+            if (currentViewMode === "grid") renderGrid();
+            else renderTable();
+          });
+          nextPageBtn.addEventListener("click", () => {
+            currentPage += 1;
+            if (currentViewMode === "grid") renderGrid();
+            else renderTable();
+          });
+        }
       });
     </script>
   </body>

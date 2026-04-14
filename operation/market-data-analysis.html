@@ -283,23 +283,18 @@
   <body>
     <div>
       <h1>Market Data Analysis</h1>
-      <p class="page-subtitle">
-        Phân tích dữ liệu thị trường tổng hợp: giá, volume giao dịch, nhu cầu
-        theo khu vực, thời gian đăng tin, hành vi buyer/seller. Không lộ thông
-        tin cá nhân cấp listing.
-      </p>
     </div>
 
     <div class="layout">
       <section class="card">
         <div class="card-header">
           <div>
-            <div class="card-title">Bộ lọc & KPI thị trường</div>
-            <div class="card-subtitle">
-              Chọn khu vực, loại bất động sản và kỳ phân tích.
-            </div>
+            <div class="card-title">Filters & market KPI</div>
           </div>
           <div class="toolbar-right">
+            <button id="shortcutTopAreas" class="btn btn-ghost" type="button">
+              TOP10 areas (demo)
+            </button>
             <button id="exportMarketCsv" class="btn btn-ghost" type="button">
               Export CSV
             </button>
@@ -308,17 +303,17 @@
 
         <div class="filters">
           <div class="field-group">
-            <label class="field-label" for="periodFilter">Kỳ phân tích</label>
+            <label class="field-label" for="periodFilter">Period</label>
             <select id="periodFilter">
-              <option value="3m">3 tháng</option>
-              <option value="6m">6 tháng</option>
-              <option value="12m">12 tháng</option>
+              <option value="3m">Last 3 months</option>
+              <option value="6m">Last 6 months</option>
+              <option value="12m">Last 12 months</option>
             </select>
           </div>
           <div class="field-group">
-            <label class="field-label" for="regionFilter">Khu vực</label>
+            <label class="field-label" for="regionFilter">Region</label>
             <select id="regionFilter">
-              <option value="">Toàn quốc (JP)</option>
+              <option value="">All Japan</option>
               <option value="tokyo">Tokyo</option>
               <option value="osaka">Osaka</option>
               <option value="kyoto">Kyoto</option>
@@ -326,20 +321,20 @@
             </select>
           </div>
           <div class="field-group">
-            <label class="field-label" for="typeFilter">Loại BĐS</label>
+            <label class="field-label" for="typeFilter">Property type</label>
             <select id="typeFilter">
-              <option value="">Tất cả</option>
+              <option value="">All</option>
               <option value="apartment">Apartment</option>
               <option value="house">House</option>
               <option value="land">Land</option>
             </select>
           </div>
           <div class="field-group" style="flex: 1 1 220px">
-            <label class="field-label" for="searchMarket">Tìm segment</label>
+            <label class="field-label" for="searchMarket">Search segment</label>
             <input
               id="searchMarket"
               type="text"
-              placeholder="VD: Tokyo 23 wards family buyer..."
+              placeholder="e.g. Tokyo 23 wards family buyer..."
             />
           </div>
         </div>
@@ -351,10 +346,11 @@
             <thead>
               <tr>
                 <th>Segment</th>
-                <th>Giá TB (JPY)</th>
-                <th>Volume GD</th>
+                <th>Median price (JPY)</th>
+                <th>Transactions</th>
+                <th>Traffic sources (anon)</th>
                 <th>Days-on-market</th>
-                <th>Độ nóng cầu</th>
+                <th>Demand heat</th>
               </tr>
             </thead>
             <tbody id="marketTbody"></tbody>
@@ -363,43 +359,54 @@
       </section>
 
       <section class="card">
-        <div id="marketEmpty">
-          <div class="card-title">Chi tiết segment thị trường</div>
-          <p class="card-subtitle">
-            Chọn một segment để xem breakdown: xu hướng giá, volume giao dịch và
-            hành vi buyer/seller ở mức aggregate. Không chứa dữ liệu từng
-            listing hay từng khách hàng.
-          </p>
+        <div class="card-header" style="margin-bottom: 8px">
+          <div class="card-title">Detail analysis</div>
+          <div class="toolbar-right">
+            <button id="tabSegmentDetail" class="btn btn-ghost" type="button">
+              Segment
+            </button>
+            <button id="tabListingDetail" class="btn btn-ghost" type="button">
+              Listing
+            </button>
+            <button id="tabUserDetail" class="btn btn-ghost" type="button">
+              End user
+            </button>
+          </div>
         </div>
-        <div id="marketDetail" style="display: none">
-          <div class="detail-section-title">Thông tin segment</div>
+
+        <div id="marketEmpty">
+          <p class="card-subtitle">Select a segment on the left.</p>
+        </div>
+
+        <div id="segmentDetail" style="display: none">
+          <div class="detail-section-title">Segment info</div>
           <div class="detail-grid">
             <div>
               <div class="detail-label">Segment</div>
               <div class="detail-value" id="dSegment"></div>
             </div>
             <div>
-              <div class="detail-label">Khu vực</div>
+              <div class="detail-label">Region</div>
               <div class="detail-value" id="dRegion"></div>
             </div>
             <div>
-              <div class="detail-label">Loại BĐS</div>
+              <div class="detail-label">Property type</div>
               <div class="detail-value" id="dType"></div>
             </div>
             <div>
-              <div class="detail-label">Kỳ phân tích</div>
+              <div class="detail-label">Period</div>
               <div class="detail-value" id="dPeriod"></div>
             </div>
           </div>
 
-          <div class="detail-section-title">Giá & volume</div>
+          <div class="detail-section-title">Price & volume</div>
           <div class="detail-grid">
             <div>
-              <div class="detail-label">Giá trung vị (demo)</div>
+              <div class="detail-label">Median price (demo)</div>
               <div class="detail-value" id="dPrice"></div>
             </div>
             <div>
-              <div class="detail-label">Số giao dịch</div>
+              <div class="detail-label">Transactions</div>
               <div class="detail-value" id="dVolume"></div>
             </div>
             <div>
@@ -407,13 +414,130 @@
               <div class="detail-value" id="dDom"></div>
             </div>
             <div>
-              <div class="detail-label">Độ nóng cầu</div>
+              <div class="detail-label">Demand heat</div>
               <div class="detail-value" id="dHeat"></div>
+            </div>
+            <div>
+              <div class="detail-label">Traffic sources (anonymous)</div>
+              <div class="detail-value" id="dTraffic"></div>
             </div>
           </div>
 
-          <div class="detail-section-title">Tóm tắt hành vi (demo)</div>
+          <div class="detail-section-title">Behavior summary (demo)</div>
           <div class="preview-box" id="marketSummary"></div>
+        </div>
+
+        <div id="listingDetail" style="display: none">
+          <div class="detail-section-title">Listing cohort (demo)</div>
+          <div style="overflow: auto; max-height: 210px">
+            <table>
+              <thead>
+                <tr>
+                  <th>
+                    <input
+                      id="listingSelectAll"
+                      type="checkbox"
+                      aria-label="Select all listings"
+                    />
+                  </th>
+                  <th data-listing-sort="listingDate">Listing date</th>
+                  <th data-listing-sort="periodDays">Period (days)</th>
+                  <th data-listing-sort="lastPrice">Listing price</th>
+                  <th>Price trend</th>
+                  <th data-listing-sort="dom">DOM</th>
+                  <th>Property details</th>
+                  <th data-listing-sort="responseTimeHours">Resp. time</th>
+                  <th data-listing-sort="views">Views</th>
+                  <th data-listing-sort="saves">Saves</th>
+                  <th data-listing-sort="inquiries">Inquiry</th>
+                  <th data-listing-sort="timeToTransactionDays">Time‑to‑TX</th>
+                </tr>
+              </thead>
+              <tbody id="listingTbody"></tbody>
+            </table>
+          </div>
+          <div
+            style="margin-top: 6px; display: flex; justify-content: flex-end"
+          >
+            <button id="exportListingCsv" class="btn btn-ghost" type="button">
+              Export listing CSV
+            </button>
+          </div>
+        </div>
+
+        <div id="userDetail" style="display: none">
+          <div class="detail-section-title">End user funnel (demo)</div>
+          <div class="filters" style="margin-top: 4px">
+            <div class="field-group">
+              <label class="field-label" for="userNationalityFilter"
+                >Nationality</label
+              >
+              <select id="userNationalityFilter">
+                <option value="">All</option>
+                <option value="JP">JP</option>
+                <option value="VN">VN</option>
+                <option value="SG">SG</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="userRoleFilter">Role</label>
+              <select id="userRoleFilter">
+                <option value="">Buyer + Seller</option>
+                <option value="buyer">Buyer</option>
+                <option value="seller">Seller</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="userLangFilter">Ngôn ngữ</label>
+              <select id="userLangFilter">
+                <option value="">Tất cả</option>
+                <option value="ja">Japanese</option>
+                <option value="vi">Vietnamese</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="overflow: auto; max-height: 190px">
+            <table>
+              <thead>
+                <tr>
+                  <th>
+                    <input
+                      id="userSelectAll"
+                      type="checkbox"
+                      aria-label="Select all cohorts"
+                    />
+                  </th>
+                  <th data-user-sort="nationality">Quốc tịch</th>
+                  <th data-user-sort="ageGroup">Age</th>
+                  <th data-user-sort="gender">Gender</th>
+                  <th data-user-sort="language">Ngôn ngữ</th>
+                  <th data-user-sort="role">Role</th>
+                  <th data-user-sort="impressions">IMP</th>
+                  <th data-user-sort="clicks">CL</th>
+                  <th data-user-sort="ctr">CTR</th>
+                  <th data-user-sort="conversions">CV</th>
+                  <th data-user-sort="cvr">CVR</th>
+                  <th data-user-sort="avgSessionMinutes">Sess. (m)</th>
+                  <th data-user-sort="avgPropertyViews">Prop/view</th>
+                </tr>
+              </thead>
+              <tbody id="userTbody"></tbody>
+            </table>
+          </div>
+          <div
+            style="
+              margin-top: 6px;
+              display: flex;
+              justify-content: space-between;
+            "
+          >
+            <div class="card-subtitle" id="userSummary"></div>
+            <button id="exportUserCsv" class="btn btn-ghost" type="button">
+              Export user CSV
+            </button>
+          </div>
         </div>
       </section>
     </div>
@@ -427,6 +551,7 @@
           regionLabel: "Tokyo 23 wards",
           type: "apartment",
           period: "3m",
+          trafficSource: "Google SEO, Email newsletter, Referral agent",
           medianPrice: 78000000,
           transactions: 180,
           dom: 32,
@@ -439,6 +564,7 @@
           regionLabel: "Osaka city",
           type: "apartment",
           period: "3m",
+          trafficSource: "Performance ads, Google, Direct app install",
           medianPrice: 16500000,
           transactions: 240,
           dom: 21,
@@ -451,6 +577,7 @@
           regionLabel: "Kyoto city",
           type: "house",
           period: "3m",
+          trafficSource: "Organic search, Local portals",
           medianPrice: 52000000,
           transactions: 74,
           dom: 48,
@@ -463,6 +590,7 @@
           regionLabel: "Hokkaido coastal",
           type: "house",
           period: "3m",
+          trafficSource: "Overseas campaign, Social, Referral",
           medianPrice: 39000000,
           transactions: 35,
           dom: 67,
@@ -471,6 +599,158 @@
       ];
 
       let selectedId = null;
+      let activeDetailTab = "segment"; // segment | listing | user
+
+      const listings = [
+        {
+          id: "LST-001",
+          segmentId: "SEG-TYO-FAM",
+          listingDate: "2026-01-12",
+          periodDays: 45,
+          lastPrice: 78000000,
+          priceHistory: [80000000, 79000000, 78000000],
+          dom: 38,
+          propertyType: "Apartment",
+          floorPlan: "3LDK",
+          addressShort: "Setagaya-ku (ẩn)",
+          station: "Sangenjaya",
+          stationMinutes: 8,
+          buildingAgeYears: 12,
+          areaSqm: 72,
+          responseTimeHours: 3.5,
+          views: 860,
+          saves: 120,
+          inquiries: 24,
+          timeToTransactionDays: 32,
+        },
+        {
+          id: "LST-002",
+          segmentId: "SEG-OSK-INV",
+          listingDate: "2026-02-03",
+          periodDays: 30,
+          lastPrice: 16800000,
+          priceHistory: [17000000, 16800000],
+          dom: 19,
+          propertyType: "Apartment",
+          floorPlan: "1K",
+          addressShort: "Naniwa-ku (ẩn)",
+          station: "Namba",
+          stationMinutes: 6,
+          buildingAgeYears: 8,
+          areaSqm: 24,
+          responseTimeHours: 1.2,
+          views: 1040,
+          saves: 210,
+          inquiries: 40,
+          timeToTransactionDays: 18,
+        },
+        {
+          id: "LST-003",
+          segmentId: "SEG-KYT-HOUSE",
+          listingDate: "2025-12-20",
+          periodDays: 60,
+          lastPrice: 51000000,
+          priceHistory: [52500000, 52000000, 51000000],
+          dom: 55,
+          propertyType: "House",
+          floorPlan: "4LDK",
+          addressShort: "Ukyo-ku (ẩn)",
+          station: "Kitano",
+          stationMinutes: 15,
+          buildingAgeYears: 25,
+          areaSqm: 110,
+          responseTimeHours: 7.8,
+          views: 420,
+          saves: 60,
+          inquiries: 10,
+          timeToTransactionDays: 49,
+        },
+        {
+          id: "LST-004",
+          segmentId: "SEG-HKD-RESORT",
+          listingDate: "2026-01-05",
+          periodDays: 90,
+          lastPrice: 39500000,
+          priceHistory: [40000000, 39500000],
+          dom: 80,
+          propertyType: "House",
+          floorPlan: "3LDK",
+          addressShort: "Niseko (ẩn)",
+          station: "Kutchan",
+          stationMinutes: 20,
+          buildingAgeYears: 5,
+          areaSqm: 95,
+          responseTimeHours: 5.2,
+          views: 510,
+          saves: 90,
+          inquiries: 12,
+          timeToTransactionDays: 70,
+        },
+      ];
+
+      const userCohorts = [
+        {
+          id: "C-JP-25-34-M-B",
+          nationality: "JP",
+          ageGroup: "25-34",
+          gender: "Male",
+          language: "ja",
+          role: "buyer",
+          impressions: 120000,
+          clicks: 3200,
+          conversions: 180,
+          avgSessionMinutes: 5.4,
+          avgPropertyViews: 7.1,
+        },
+        {
+          id: "C-JP-35-44-F-S",
+          nationality: "JP",
+          ageGroup: "35-44",
+          gender: "Female",
+          language: "ja",
+          role: "seller",
+          impressions: 60000,
+          clicks: 1400,
+          conversions: 90,
+          avgSessionMinutes: 4.8,
+          avgPropertyViews: 5.6,
+        },
+        {
+          id: "C-VN-25-34-M-B",
+          nationality: "VN",
+          ageGroup: "25-34",
+          gender: "Male",
+          language: "vi",
+          role: "buyer",
+          impressions: 30000,
+          clicks: 900,
+          conversions: 70,
+          avgSessionMinutes: 6.2,
+          avgPropertyViews: 8.3,
+        },
+        {
+          id: "C-SG-35-44-F-B",
+          nationality: "SG",
+          ageGroup: "35-44",
+          gender: "Female",
+          language: "en",
+          role: "buyer",
+          impressions: 22000,
+          clicks: 640,
+          conversions: 40,
+          avgSessionMinutes: 5.9,
+          avgPropertyViews: 6.8,
+        },
+      ].map((c) => ({
+        ...c,
+        ctr: c.impressions ? (c.clicks / c.impressions) * 100 : 0,
+        cvr: c.clicks ? (c.conversions / c.clicks) * 100 : 0,
+      }));
+
+      let listingSort = { field: "listingDate", dir: "desc" };
+      let userSort = { field: "impressions", dir: "desc" };
+      const selectedListingIds = new Set();
+      const selectedUserIds = new Set();
 
       const els = {
         periodFilter: document.getElementById("periodFilter"),
@@ -480,8 +760,24 @@
         kpiGrid: document.getElementById("kpiGrid"),
         marketTbody: document.getElementById("marketTbody"),
         marketEmpty: document.getElementById("marketEmpty"),
-        marketDetail: document.getElementById("marketDetail"),
+        segmentDetail: document.getElementById("segmentDetail"),
+        listingDetail: document.getElementById("listingDetail"),
+        userDetail: document.getElementById("userDetail"),
         exportMarketCsv: document.getElementById("exportMarketCsv"),
+        exportListingCsv: document.getElementById("exportListingCsv"),
+        exportUserCsv: document.getElementById("exportUserCsv"),
+        tabSegmentDetail: document.getElementById("tabSegmentDetail"),
+        tabListingDetail: document.getElementById("tabListingDetail"),
+        tabUserDetail: document.getElementById("tabUserDetail"),
+        listingTbody: document.getElementById("listingTbody"),
+        listingSelectAll: document.getElementById("listingSelectAll"),
+        userTbody: document.getElementById("userTbody"),
+        userSelectAll: document.getElementById("userSelectAll"),
+        userSummary: document.getElementById("userSummary"),
+        userNationalityFilter: document.getElementById("userNationalityFilter"),
+        userRoleFilter: document.getElementById("userRoleFilter"),
+        userLangFilter: document.getElementById("userLangFilter"),
+        shortcutTopAreas: document.getElementById("shortcutTopAreas"),
         dSegment: document.getElementById("dSegment"),
         dRegion: document.getElementById("dRegion"),
         dType: document.getElementById("dType"),
@@ -490,6 +786,7 @@
         dVolume: document.getElementById("dVolume"),
         dDom: document.getElementById("dDom"),
         dHeat: document.getElementById("dHeat"),
+        dTraffic: document.getElementById("dTraffic"),
         marketSummary: document.getElementById("marketSummary"),
       };
 
@@ -524,9 +821,9 @@
       }
 
       function periodLabel(p) {
-        if (p === "3m") return "3 tháng gần nhất";
-        if (p === "6m") return "6 tháng";
-        return "12 tháng";
+        if (p === "3m") return "Last 3 months";
+        if (p === "6m") return "Last 6 months";
+        return "Last 12 months";
       }
 
       function renderKpis(list) {
@@ -558,31 +855,23 @@
         };
         els.kpiGrid.appendChild(
           mk(
-            "Giao dịch (demo)",
+            "Transactions (demo)",
             totalTrans.toLocaleString("ja-JP"),
-            "Tổng số giao dịch trong các segment filter.",
+            "Total transactions in filtered segments.",
           ),
         );
         els.kpiGrid.appendChild(
           mk(
-            "Giá TB (demo)",
+            "Median price (demo)",
             avgPrice.toLocaleString("ja-JP") + " JPY",
-            "Trung bình giá trung vị giữa các segment.",
+            "Average of segment median prices.",
           ),
         );
         els.kpiGrid.appendChild(
-          mk(
-            "Days‑on‑market TB",
-            avgDom + " ngày",
-            "Thời gian đăng tin trung bình.",
-          ),
+          mk("Days‑on‑market TB", avgDom + " ngày", "Average days on market."),
         );
         els.kpiGrid.appendChild(
-          mk(
-            "Số segment",
-            list.length.toString(),
-            "Số nhóm thị trường trong filter.",
-          ),
+          mk("Segments", list.length.toString(), "Number of market segments."),
         );
       }
 
@@ -603,6 +892,9 @@
           const tdVol = document.createElement("td");
           tdVol.textContent = s.transactions.toLocaleString("ja-JP");
 
+          const tdTraffic = document.createElement("td");
+          tdTraffic.textContent = s.trafficSource || "-";
+
           const tdDom = document.createElement("td");
           tdDom.textContent = s.dom + " ngày";
 
@@ -612,6 +904,7 @@
           tr.appendChild(tdSeg);
           tr.appendChild(tdPrice);
           tr.appendChild(tdVol);
+          tr.appendChild(tdTraffic);
           tr.appendChild(tdDom);
           tr.appendChild(tdHeat);
 
@@ -625,7 +918,7 @@
         if (!s) return;
         selectedId = id;
         els.marketEmpty.style.display = "none";
-        els.marketDetail.style.display = "";
+        showDetailTab(activeDetailTab);
 
         els.dSegment.textContent = s.label;
         els.dRegion.textContent = s.regionLabel;
@@ -646,30 +939,29 @@
             : s.heat === "stable"
               ? "Stable"
               : "Cool";
+        els.dTraffic.textContent = s.trafficSource || "-";
 
         const lines = [];
         lines.push(
-          `${s.label} trong ${periodLabel(s.period)} có median price khoảng ${s.medianPrice.toLocaleString("ja-JP")} JPY, với ${s.transactions.toLocaleString("ja-JP")} giao dịch và thời gian đăng tin TB ${s.dom} ngày (demo).`,
+          `${s.label} in ${periodLabel(s.period)} has a median price around ${s.medianPrice.toLocaleString("ja-JP")} JPY, with ${s.transactions.toLocaleString("ja-JP")} transactions and average days on market of ${s.dom} days (demo).`,
         );
         if (s.heat === "hot") {
-          lines.push(
-            "Nhu cầu được đánh giá là HOT: volume cao, days‑on‑market thấp so với mặt bằng chung.",
-          );
+          lines.push("Demand is HOT: high volume and low days on market.");
         } else if (s.heat === "stable") {
-          lines.push(
-            "Nhu cầu STABLE: giá và volume ở mức ổn định, không có biến động cực đoan.",
-          );
+          lines.push("Demand is STABLE: prices and volume are steady.");
         } else {
           lines.push(
-            "Nhu cầu COOL: volume thấp hơn, thời gian đăng tin dài hơn; phù hợp chiến lược dài hạn / niche.",
+            "Demand is COOL: lower volume and longer days on market; better for long-term or niche strategy.",
           );
         }
         lines.push(
-          "Tất cả số liệu là aggregate, không map tới từng listing hay từng khách cụ thể.",
+          "All values are aggregate and not mapped to specific listings or users.",
         );
         els.marketSummary.textContent = lines.join("\n");
 
         renderTable();
+        renderListingTable();
+        renderUserTable();
       }
 
       function exportCsv() {
@@ -680,6 +972,7 @@
           "region",
           "type",
           "period",
+          "trafficSourceAggregate",
           "medianPrice",
           "transactions",
           "daysOnMarket",
@@ -691,6 +984,7 @@
           s.region,
           s.type,
           s.period,
+          s.trafficSource || "",
           s.medianPrice,
           s.transactions,
           s.dom,
@@ -721,12 +1015,370 @@
         URL.revokeObjectURL(url);
       }
 
+      function filteredListings() {
+        if (!selectedId) return [];
+        return listings.filter((l) => l.segmentId === selectedId);
+      }
+
+      function renderListingTable() {
+        const base = filteredListings();
+        const list = [...base].sort((a, b) => {
+          const f = listingSort.field;
+          const dir = listingSort.dir === "asc" ? 1 : -1;
+          let va = a[f];
+          let vb = b[f];
+          if (typeof va === "string" && typeof vb === "string") {
+            return va.localeCompare(vb) * dir;
+          }
+          return (va - vb) * dir;
+        });
+        els.listingTbody.innerHTML = "";
+        list.forEach((l) => {
+          const tr = document.createElement("tr");
+
+          const tdSel = document.createElement("td");
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.checked = selectedListingIds.has(l.id);
+          cb.addEventListener("change", () => {
+            if (cb.checked) selectedListingIds.add(l.id);
+            else selectedListingIds.delete(l.id);
+          });
+          tdSel.appendChild(cb);
+
+          const tdDate = document.createElement("td");
+          tdDate.textContent = l.listingDate;
+
+          const tdPeriod = document.createElement("td");
+          tdPeriod.textContent = l.periodDays + " ngày";
+
+          const tdPrice = document.createElement("td");
+          tdPrice.textContent = l.lastPrice.toLocaleString("ja-JP");
+
+          const tdTrend = document.createElement("td");
+          const max = Math.max(...l.priceHistory);
+          const min = Math.min(...l.priceHistory);
+          const wrap = document.createElement("div");
+          wrap.style.display = "flex";
+          wrap.style.gap = "2px";
+          l.priceHistory.forEach((p) => {
+            const bar = document.createElement("div");
+            bar.style.height = "12px";
+            const ratio = max === min ? 0.6 : (p - min) / (max - min);
+            bar.style.width = 18 + 22 * ratio + "px";
+            bar.style.background = "#c26b41";
+            bar.style.borderRadius = "999px";
+            wrap.appendChild(bar);
+          });
+          tdTrend.appendChild(wrap);
+
+          const tdDom = document.createElement("td");
+          tdDom.textContent = l.dom + " ngày";
+
+          const tdInfo = document.createElement("td");
+          tdInfo.textContent = `${l.propertyType} ${l.floorPlan}, ${l.addressShort}, ${l.station} ~${l.stationMinutes}m, ${l.buildingAgeYears}y, ${l.areaSqm}m²`;
+
+          const tdResp = document.createElement("td");
+          tdResp.textContent = l.responseTimeHours.toFixed(1) + " h";
+
+          const tdViews = document.createElement("td");
+          tdViews.textContent = l.views.toLocaleString("ja-JP");
+
+          const tdSaves = document.createElement("td");
+          tdSaves.textContent = l.saves.toLocaleString("ja-JP");
+
+          const tdInq = document.createElement("td");
+          tdInq.textContent = l.inquiries.toLocaleString("ja-JP");
+
+          const tdTtt = document.createElement("td");
+          tdTtt.textContent = l.timeToTransactionDays + " ngày";
+
+          tr.appendChild(tdSel);
+          tr.appendChild(tdDate);
+          tr.appendChild(tdPeriod);
+          tr.appendChild(tdPrice);
+          tr.appendChild(tdTrend);
+          tr.appendChild(tdDom);
+          tr.appendChild(tdInfo);
+          tr.appendChild(tdResp);
+          tr.appendChild(tdViews);
+          tr.appendChild(tdSaves);
+          tr.appendChild(tdInq);
+          tr.appendChild(tdTtt);
+
+          els.listingTbody.appendChild(tr);
+        });
+      }
+
+      function filteredUserCohorts() {
+        const nat = els.userNationalityFilter.value;
+        const role = els.userRoleFilter.value;
+        const lang = els.userLangFilter.value;
+        return userCohorts.filter((c) => {
+          if (nat && c.nationality !== nat) return false;
+          if (role && c.role !== role) return false;
+          if (lang && c.language !== lang) return false;
+          return true;
+        });
+      }
+
+      function renderUserTable() {
+        const base = filteredUserCohorts();
+        const list = [...base].sort((a, b) => {
+          const f = userSort.field;
+          const dir = userSort.dir === "asc" ? 1 : -1;
+          let va = a[f];
+          let vb = b[f];
+          if (typeof va === "string" && typeof vb === "string") {
+            return va.localeCompare(vb) * dir;
+          }
+          return (va - vb) * dir;
+        });
+        els.userTbody.innerHTML = "";
+        let buyers = 0;
+        let sellers = 0;
+        let totalConv = 0;
+
+        list.forEach((c) => {
+          const tr = document.createElement("tr");
+
+          const tdSel = document.createElement("td");
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.checked = selectedUserIds.has(c.id);
+          cb.addEventListener("change", () => {
+            if (cb.checked) selectedUserIds.add(c.id);
+            else selectedUserIds.delete(c.id);
+          });
+          tdSel.appendChild(cb);
+
+          const mk = (text) => {
+            const td = document.createElement("td");
+            td.textContent = text;
+            return td;
+          };
+
+          tr.appendChild(tdSel);
+          tr.appendChild(mk(c.nationality));
+          tr.appendChild(mk(c.ageGroup));
+          tr.appendChild(mk(c.gender));
+          tr.appendChild(mk(c.language));
+          tr.appendChild(mk(c.role));
+          tr.appendChild(mk(c.impressions.toLocaleString("ja-JP")));
+          tr.appendChild(mk(c.clicks.toLocaleString("ja-JP")));
+          tr.appendChild(mk(c.ctr.toFixed(1) + "%"));
+          tr.appendChild(mk(c.conversions.toLocaleString("ja-JP")));
+          tr.appendChild(mk(c.cvr.toFixed(1) + "%"));
+          tr.appendChild(mk(c.avgSessionMinutes.toFixed(1)));
+          tr.appendChild(mk(c.avgPropertyViews.toFixed(1)));
+
+          els.userTbody.appendChild(tr);
+
+          if (c.role === "buyer") buyers += c.conversions;
+          if (c.role === "seller") sellers += c.conversions;
+          totalConv += c.conversions;
+        });
+
+        if (!list.length) {
+          els.userSummary.textContent =
+            "Không có cohort nào trong filter hiện tại.";
+        } else {
+          els.userSummary.textContent = `CV (demo) buyer: ${buyers}, seller: ${sellers}, tổng CV ${totalConv}.`;
+        }
+      }
+
+      function exportListingCsv() {
+        const base = filteredListings();
+        const list = base.filter((l) =>
+          selectedListingIds.size ? selectedListingIds.has(l.id) : true,
+        );
+        const header = [
+          "listingId",
+          "segmentId",
+          "listingDate",
+          "periodDays",
+          "lastPrice",
+          "priceHistory",
+          "dom",
+          "propertyType",
+          "floorPlan",
+          "addressShort",
+          "station",
+          "stationMinutes",
+          "buildingAgeYears",
+          "areaSqm",
+          "responseTimeHours",
+          "views",
+          "saves",
+          "inquiries",
+          "timeToTransactionDays",
+        ];
+        const rows = list.map((l) => [
+          l.id,
+          l.segmentId,
+          l.listingDate,
+          l.periodDays,
+          l.lastPrice,
+          l.priceHistory.join(" > "),
+          l.dom,
+          l.propertyType,
+          l.floorPlan,
+          l.addressShort,
+          l.station,
+          l.stationMinutes,
+          l.buildingAgeYears,
+          l.areaSqm,
+          l.responseTimeHours,
+          l.views,
+          l.saves,
+          l.inquiries,
+          l.timeToTransactionDays,
+        ]);
+
+        exportGenericCsv(header, rows, "yuushi_listing_analytics_demo.csv");
+      }
+
+      function exportUserCsv() {
+        const base = filteredUserCohorts();
+        const list = base.filter((c) =>
+          selectedUserIds.size ? selectedUserIds.has(c.id) : true,
+        );
+        const header = [
+          "cohortId",
+          "nationality",
+          "ageGroup",
+          "gender",
+          "language",
+          "role",
+          "impressions",
+          "clicks",
+          "ctr",
+          "conversions",
+          "cvr",
+          "avgSessionMinutes",
+          "avgPropertyViews",
+        ];
+        const rows = list.map((c) => [
+          c.id,
+          c.nationality,
+          c.ageGroup,
+          c.gender,
+          c.language,
+          c.role,
+          c.impressions,
+          c.clicks,
+          c.ctr.toFixed(2),
+          c.conversions,
+          c.cvr.toFixed(2),
+          c.avgSessionMinutes,
+          c.avgPropertyViews,
+        ]);
+
+        exportGenericCsv(header, rows, "yuushi_user_funnel_demo.csv");
+      }
+
+      function exportGenericCsv(header, rows, filename) {
+        const escapeCsv = (value) => {
+          if (value == null) return "";
+          const str = String(value);
+          if (/[",\n]/.test(str)) {
+            return '"' + str.replace(/"/g, '""') + '"';
+          }
+          return str;
+        };
+        const csv = [header, ...rows]
+          .map((row) => row.map(escapeCsv).join(","))
+          .join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function showDetailTab(tab) {
+        activeDetailTab = tab;
+        els.segmentDetail.style.display = tab === "segment" ? "" : "none";
+        els.listingDetail.style.display = tab === "listing" ? "" : "none";
+        els.userDetail.style.display = tab === "user" ? "" : "none";
+      }
+
+      function applyShortcutTopAreas() {
+        els.periodFilter.value = "3m";
+        els.regionFilter.value = "";
+        els.typeFilter.value = "";
+        renderTable();
+        activeDetailTab = "segment";
+        if (segments.length) {
+          selectSegment(segments[0].id);
+        }
+      }
+
       function init() {
         els.periodFilter.addEventListener("change", renderTable);
         els.regionFilter.addEventListener("change", renderTable);
         els.typeFilter.addEventListener("change", renderTable);
         els.searchMarket.addEventListener("input", renderTable);
         els.exportMarketCsv.addEventListener("click", exportCsv);
+        els.exportListingCsv.addEventListener("click", exportListingCsv);
+        els.exportUserCsv.addEventListener("click", exportUserCsv);
+        els.tabSegmentDetail.addEventListener("click", () => {
+          showDetailTab("segment");
+        });
+        els.tabListingDetail.addEventListener("click", () => {
+          showDetailTab("listing");
+          renderListingTable();
+        });
+        els.tabUserDetail.addEventListener("click", () => {
+          showDetailTab("user");
+          renderUserTable();
+        });
+        els.listingSelectAll.addEventListener("change", () => {
+          selectedListingIds.clear();
+          if (els.listingSelectAll.checked) {
+            filteredListings().forEach((l) => selectedListingIds.add(l.id));
+          }
+          renderListingTable();
+        });
+        els.userSelectAll.addEventListener("change", () => {
+          selectedUserIds.clear();
+          if (els.userSelectAll.checked) {
+            filteredUserCohorts().forEach((c) => selectedUserIds.add(c.id));
+          }
+          renderUserTable();
+        });
+        document.querySelectorAll("th[data-listing-sort]").forEach((th) => {
+          th.style.cursor = "pointer";
+          th.addEventListener("click", () => {
+            const field = th.getAttribute("data-listing-sort");
+            if (listingSort.field === field) {
+              listingSort.dir = listingSort.dir === "asc" ? "desc" : "asc";
+            } else {
+              listingSort = { field, dir: "asc" };
+            }
+            renderListingTable();
+          });
+        });
+        document.querySelectorAll("th[data-user-sort]").forEach((th) => {
+          th.style.cursor = "pointer";
+          th.addEventListener("click", () => {
+            const field = th.getAttribute("data-user-sort");
+            if (userSort.field === field) {
+              userSort.dir = userSort.dir === "asc" ? "desc" : "asc";
+            } else {
+              userSort = { field, dir: "asc" };
+            }
+            renderUserTable();
+          });
+        });
+        els.userNationalityFilter.addEventListener("change", renderUserTable);
+        els.userRoleFilter.addEventListener("change", renderUserTable);
+        els.userLangFilter.addEventListener("change", renderUserTable);
+        els.shortcutTopAreas.addEventListener("click", applyShortcutTopAreas);
         renderTable();
       }
 

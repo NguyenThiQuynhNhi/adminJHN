@@ -1,0 +1,1573 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Agent Management</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background: #f5f3ef;
+        color: #2a2118;
+      }
+
+      .page {
+        padding: 24px 32px 32px;
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+      }
+
+      .page-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .page-subtitle {
+        font-size: 13px;
+        color: #7c6a55;
+        max-width: 640px;
+      }
+
+      .pill {
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #efe3cf;
+        color: #7b623f;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2.4fr);
+        gap: 18px;
+      }
+
+      .card {
+        background: #fffaf2;
+        border-radius: 10px;
+        border: 1px solid #eadccd;
+        padding: 16px 18px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: #7c6a55;
+      }
+
+      .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      .metric-card {
+        background: #fffaf2;
+        border-radius: 10px;
+        border: 1px solid #eadccd;
+        padding: 10px 12px;
+      }
+
+      .metric-label {
+        font-size: 11px;
+        color: #7c6a55;
+        margin-bottom: 4px;
+      }
+
+      .metric-value {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 2px;
+      }
+
+      .metric-sub {
+        font-size: 11px;
+        color: #97846c;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .filters select,
+      .filters input[type="text"] {
+        border-radius: 999px;
+        border: 1px solid #ddcdb9;
+        padding: 6px 10px;
+        font-size: 12px;
+        background: #fdf8f0;
+        min-width: 130px;
+      }
+
+      .filters input[type="text"] {
+        flex: 1;
+        min-width: 200px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f1e4d4;
+      }
+
+      th,
+      td {
+        padding: 8px 6px;
+        text-align: left;
+        border-bottom: 1px solid #efe2d3;
+      }
+
+      th {
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        color: #7b623f;
+      }
+
+      tbody tr:hover td {
+        background: #f8efe3;
+      }
+
+      .row-selected td {
+        background: #f8efe3;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 600;
+      }
+
+      .status-badge-top {
+        background: #fbe4c3;
+        color: #91521b;
+      }
+
+      .status-badge-premium {
+        background: #e0f6df;
+        color: #266734;
+      }
+
+      .status-badge-none {
+        background: #f1e4d4;
+        color: #7b623f;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: none;
+        padding: 4px 10px;
+        font-size: 11px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .btn-ghost {
+        background: #f7efe4;
+        color: #6a5641;
+        border: 1px solid #ddcdb9;
+      }
+
+      .btn-primary {
+        background: #3a6b3c;
+        color: #fff;
+      }
+
+      .btn-sm {
+        padding: 3px 8px;
+        font-size: 10px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 6px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #efe3cf;
+        font-size: 10px;
+        margin: 0 4px 4px 0;
+      }
+
+      .badge-soft {
+        font-size: 11px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #f1e4d4;
+        color: #7b623f;
+      }
+
+      .detail-section {
+        margin-bottom: 12px;
+      }
+
+      .detail-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 14px;
+      }
+
+      .field-label {
+        font-size: 11px;
+        color: #7c6a55;
+        margin-bottom: 2px;
+      }
+
+      .field-value {
+        font-size: 13px;
+        font-weight: 500;
+      }
+
+      .field-value.muted {
+        font-weight: 400;
+        color: #7c6a55;
+      }
+
+      .logo-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+
+      .logo-box {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #c9a574, #8c6845);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fffaf2;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .logo-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 12px;
+      }
+
+      .empty-state {
+        font-size: 12px;
+        color: #7c6a55;
+        text-align: center;
+        padding: 14px 0;
+      }
+
+      .listing-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 11px;
+        margin-top: 4px;
+      }
+
+      .listing-table th,
+      .listing-table td {
+        padding: 4px 6px;
+        border-bottom: 1px solid #efe2d3;
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .detail-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Agent Management</div>
+        </div>
+      </div>
+
+      <div id="listView">
+        <div class="metrics-grid" id="metricSummary"></div>
+
+        <div class="card">
+          <div class="filters">
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="Search by agency, representative, city"
+            />
+            <select id="badgeFilter">
+              <option value="">All badges</option>
+              <option value="TOP Agent">TOP Agent</option>
+              <option value="Premium Agent">Premium Agent</option>
+              <option value="None">No badge</option>
+            </select>
+            <select id="cityFilter">
+              <option value="">All cities / areas</option>
+              <option value="Shinjuku">Shinjuku</option>
+              <option value="Shibuya">Shibuya</option>
+              <option value="Meguro">Meguro</option>
+              <option value="Sapporo">Sapporo</option>
+              <option value="Niseko">Niseko</option>
+              <option value="Nagoya">Nagoya</option>
+              <option value="Toyota">Toyota</option>
+            </select>
+            <select id="ratingFilter">
+              <option value="">Rating: all</option>
+              <option value="4">Rating ≥ 4.0</option>
+              <option value="4.5">Rating ≥ 4.5</option>
+            </select>
+            <select id="planFilter">
+              <option value="">All plans</option>
+              <option value="Basic Agent">Basic Agent</option>
+              <option value="Standard Agent">Standard Agent</option>
+              <option value="Premium Agent">Premium Agent</option>
+            </select>
+            <select id="subscriptionStatusFilter">
+              <option value="">Subscription: all</option>
+              <option value="Active">Active only</option>
+            </select>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Agency</th>
+                <th>Primary city</th>
+                <th>Established date</th>
+                <th>Head office address</th>
+                <th>Badge</th>
+                <th>Rating</th>
+                <th>Reviews</th>
+                <th>Sales (12m)</th>
+                <th>Active listings</th>
+                <th>Members</th>
+                <th>Plan</th>
+              </tr>
+            </thead>
+            <tbody id="agencyTableBody"></tbody>
+          </table>
+          <div class="empty-state" id="agencyEmpty" style="display: none">
+            No agencies match current filters.
+          </div>
+        </div>
+      </div>
+
+      <div id="detailView" style="display: none">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Agency profile &amp; operations</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px">
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                id="saveLeadAgentBtn"
+              >
+                ★ Save as lead
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                id="unsaveLeadAgentBtn"
+              >
+                ✕ Unsave lead
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                id="backToListBtn"
+              >
+                ← Back to agency list
+              </button>
+              <span class="badge-soft" id="selectionStatus"
+                >No agency selected</span
+              >
+            </div>
+          </div>
+
+          <div id="detailPanel">
+            <div class="detail-section">
+              <div class="detail-title">1. Agency (Thông tin chính)</div>
+              <div class="logo-wrapper">
+                <div class="logo-box" id="agencyLogoBox">AG</div>
+                <div>
+                  <div class="field-label">Agency name</div>
+                  <div class="field-value" id="detailAgencyName">–</div>
+                  <div class="field-label" style="margin-top: 4px">
+                    Established date
+                  </div>
+                  <div class="field-value muted" id="detailEstablished">–</div>
+                </div>
+              </div>
+              <div class="field-label">Agency description</div>
+              <div class="field-value muted" id="detailDescription">
+                Select an agency from the left to view full profile.
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">2. Rating &amp; performance</div>
+              <div class="detail-grid">
+                <div>
+                  <div class="field-label">Average rating</div>
+                  <div class="field-value" id="detailAvgRating">–</div>
+                </div>
+                <div>
+                  <div class="field-label">Total reviews</div>
+                  <div class="field-value" id="detailTotalReviews">–</div>
+                </div>
+                <div>
+                  <div class="field-label">Sales (last 12 months)</div>
+                  <div class="field-value" id="detailSales12m">–</div>
+                </div>
+                <div>
+                  <div class="field-label">Total historical sales</div>
+                  <div class="field-value" id="detailTotalSales">–</div>
+                </div>
+                <div>
+                  <div class="field-label">Number of active listings</div>
+                  <div class="field-value" id="detailActiveListings">–</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">3. Operational info</div>
+              <div class="detail-grid">
+                <div>
+                  <div class="field-label">Business hours</div>
+                  <div class="field-value muted" id="detailBusinessHours">
+                    –
+                  </div>
+                </div>
+                <div>
+                  <div class="field-label">Regular holidays</div>
+                  <div class="field-value muted" id="detailHolidays">–</div>
+                </div>
+                <div>
+                  <div class="field-label">Usual response time</div>
+                  <div class="field-value muted" id="detailResponseTime">–</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">4. Badge (TOP / Premium)</div>
+              <div class="detail-grid" style="align-items: center">
+                <div>
+                  <div class="field-label">Current badge</div>
+                  <div class="field-value" id="detailBadge">No badge</div>
+                </div>
+                <div>
+                  <div class="field-label">Assign / remove badge (Admin)</div>
+                  <div class="actions">
+                    <select id="badgeSelect" style="font-size: 11px">
+                      <option value="TOP Agent">TOP Agent</option>
+                      <option value="Premium Agent">Premium Agent</option>
+                    </select>
+                    <button
+                      type="button"
+                      class="btn btn-primary btn-sm"
+                      id="assignBadgeBtn"
+                    >
+                      Assign badge
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-sm"
+                      id="removeBadgeBtn"
+                    >
+                      Remove badge
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">5. Specialties (Services)</div>
+              <div id="specialtiesContainer" class="field-value muted">–</div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">6. Service areas (Cities)</div>
+              <div class="field-label">Max 15 cities per agency</div>
+              <div id="serviceAreasContainer" class="field-value muted">–</div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">7. Company profile (Pháp lý)</div>
+              <div class="detail-grid">
+                <div>
+                  <div class="field-label">Representative name</div>
+                  <div class="field-value muted" id="detailRepName">–</div>
+                </div>
+                <div>
+                  <div class="field-label">License number</div>
+                  <div class="field-value muted" id="detailLicense">–</div>
+                </div>
+                <div>
+                  <div class="field-label">Head office address</div>
+                  <div class="field-value muted" id="detailHeadOffice">–</div>
+                </div>
+                <div>
+                  <div class="field-label">Real estate association</div>
+                  <div class="field-value muted" id="detailAssociation">–</div>
+                </div>
+                <div>
+                  <div class="field-label">Guaranty association</div>
+                  <div class="field-value muted" id="detailGuaranty">–</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">8. Branches</div>
+              <div class="field-label">Branch list</div>
+              <div id="branchesContainer" class="field-value muted">–</div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">9. Languages</div>
+              <div class="field-label">Supported languages (max 5)</div>
+              <div id="languagesContainer" class="field-value muted">–</div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">10. Website</div>
+              <div class="field-value" id="detailWebsite">–</div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">11. Team members</div>
+              <div class="field-label">Total members count</div>
+              <div class="field-value" id="detailMembers">–</div>
+              <table class="listing-table" style="margin-top: 4px">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Phone</th>
+                    <th>Role</th>
+                  </tr>
+                </thead>
+                <tbody id="membersTableBody"></tbody>
+              </table>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">12. Properties (Listing list)</div>
+              <table class="listing-table">
+                <thead>
+                  <tr>
+                    <th>Property title</th>
+                    <th>Location</th>
+                    <th>Price display</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Bedrooms</th>
+                    <th>Floor area</th>
+                    <th>Year built</th>
+                    <th>Days on platform</th>
+                  </tr>
+                </thead>
+                <tbody id="propertyTableBody"></tbody>
+              </table>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-title">
+                13. Ad performance &amp; subscription history
+              </div>
+              <div class="detail-grid">
+                <div>
+                  <div class="field-label">Subscription plan</div>
+                  <div class="field-value muted" id="detailPlan">–</div>
+                </div>
+                <div>
+                  <div class="field-label">Subscription status</div>
+                  <div class="field-value muted" id="detailPlanStatus">–</div>
+                </div>
+                <div>
+                  <div class="field-label">Subscription since</div>
+                  <div class="field-value muted" id="detailPlanSince">–</div>
+                </div>
+              </div>
+              <div class="detail-grid" style="margin-top: 6px">
+                <div>
+                  <div class="field-label">Total reports</div>
+                  <div class="field-value" id="detailReportsTotal">–</div>
+                </div>
+                <div>
+                  <div class="field-label">Reports deleted</div>
+                  <div class="field-value" id="detailReportsDeleted">–</div>
+                </div>
+                <div>
+                  <div class="field-label">Reports edited</div>
+                  <div class="field-value" id="detailReportsEdited">–</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const agents = [
+        {
+          id: 1,
+          agencyName: "Sakura Realty Co.",
+          agencyInitials: "SR",
+          logoUrl: "",
+          description:
+            "Mid-size agency based in Tokyo, chuyên phân khúc căn hộ trung - cao cấp và investment units.",
+          establishedDate: "2010-03-15",
+          averageRating: 4.7,
+          totalReviews: 132,
+          salesLast12Months: 86,
+          totalHistoricalSales: 640,
+          activeListings: 112,
+          businessHours: "Mon-Fri, 9:30 - 18:30",
+          regularHolidays: "Sat afternoon, Sunday, national holidays",
+          usualResponseTime: "Within 2 business hours",
+          badge: "TOP Agent",
+          specialties: [
+            "Residential sales",
+            "Investment condos",
+            "Relocation support",
+          ],
+          serviceAreas: [
+            "Shinjuku",
+            "Shibuya",
+            "Meguro",
+            "Setagaya",
+            "Kichijoji",
+          ],
+          representativeName: "Yamada Taro",
+          licenseNumber: "Tokyo(3) 12345",
+          headOfficeAddress:
+            "8F, Shinjuku Center Building, 1-1-4 Nishi-Shinjuku, Tokyo",
+          realEstateAssociation: "All Japan Real Estate Association",
+          guarantyAssociation: "Japan Real Estate Guarantee Association",
+          branches: [
+            {
+              name: "Shinjuku Main Branch",
+              address:
+                "8F, Shinjuku Center Building, 1-1-4 Nishi-Shinjuku, Tokyo",
+            },
+            {
+              name: "Kichijoji Branch",
+              address: "2-4-10 Kichijoji Honcho, Musashino-shi, Tokyo",
+            },
+          ],
+          languages: ["Japanese", "English", "Chinese"],
+          websiteUrl: "https://www.sakura-realty.jp",
+          totalMembersCount: 24,
+          listingStats: [
+            { type: "Buy", status: "Current", count: 78 },
+            { type: "Buy", status: "Sold", count: 410 },
+            { type: "Rent", status: "Current", count: 34 },
+            { type: "Rent", status: "Rented", count: 230 },
+          ],
+          propertyList: [
+            {
+              title: "2LDK condo near Shinjuku Gyoen",
+              location: "Shinjuku, Tokyo",
+              priceDisplay: "¥98,000,000",
+              type: "Buy",
+              status: "Current",
+              bedrooms: 2,
+              floorArea: "58 m²",
+              yearBuilt: 2012,
+              daysOnPlatform: 34,
+            },
+            {
+              title: "1LDK investment unit in Shibuya",
+              location: "Shibuya, Tokyo",
+              priceDisplay: "¥72,000,000",
+              type: "Buy",
+              status: "Current",
+              bedrooms: 1,
+              floorArea: "43 m²",
+              yearBuilt: 2015,
+              daysOnPlatform: 21,
+            },
+            {
+              title: "Studio rental near Meguro station",
+              location: "Meguro, Tokyo",
+              priceDisplay: "¥145,000 / month",
+              type: "Rent",
+              status: "Current",
+              bedrooms: 0,
+              floorArea: "27 m²",
+              yearBuilt: 2008,
+              daysOnPlatform: 12,
+            },
+          ],
+          teamMembers: [
+            {
+              name: "Yamada Taro",
+              role: "Representative director",
+              age: 45,
+              phone: "+81-3-1234-5678",
+            },
+            {
+              name: "Sato Mika",
+              role: "Senior agent",
+              age: 37,
+              phone: "+81-90-2345-6789",
+            },
+            {
+              name: "Kobayashi Ken",
+              role: "Leasing specialist",
+              age: 32,
+              phone: "+81-80-3456-7890",
+            },
+          ],
+          subscriptionPlan: "Premium Agent",
+          subscriptionStatus: "Active",
+          subscriptionSince: "2023-01-01",
+          adReportsTotal: 220,
+          adReportsDeleted: 14,
+          adReportsEdited: 46,
+        },
+        {
+          id: 2,
+          agencyName: "Hokkaido Homes",
+          agencyInitials: "HH",
+          logoUrl: "",
+          description:
+            "Boutique agency tại Sapporo, tập trung nhà đất cho thuê mùa dài và seasonal rentals.",
+          establishedDate: "2016-07-01",
+          averageRating: 4.3,
+          totalReviews: 58,
+          salesLast12Months: 32,
+          totalHistoricalSales: 180,
+          activeListings: 54,
+          businessHours: "Mon-Sat, 10:00 - 19:00",
+          regularHolidays: "Wednesday",
+          usualResponseTime: "Same-day response",
+          badge: "Premium Agent",
+          specialties: [
+            "Holiday rentals",
+            "Snow resort properties",
+            "Property management",
+          ],
+          serviceAreas: ["Sapporo", "Otaru", "Niseko", "Asahikawa"],
+          representativeName: "Suzuki Hanako",
+          licenseNumber: "Hokkaido(1) 67890",
+          headOfficeAddress: "3-2-1 Kita, Chuo-ku, Sapporo-shi, Hokkaido",
+          realEstateAssociation: "Hokkaido Real Estate Association",
+          guarantyAssociation: "Hokkaido Guarantee Association",
+          branches: [
+            {
+              name: "Sapporo Head Office",
+              address: "3-2-1 Kita, Chuo-ku, Sapporo-shi, Hokkaido",
+            },
+          ],
+          languages: ["Japanese", "English"],
+          websiteUrl: "https://www.hokkaidohomes.jp",
+          totalMembersCount: 12,
+          listingStats: [
+            { type: "Buy", status: "Current", count: 18 },
+            { type: "Buy", status: "Sold", count: 60 },
+            { type: "Rent", status: "Current", count: 36 },
+            { type: "Rent", status: "Rented", count: 90 },
+          ],
+          propertyList: [
+            {
+              title: "Ski resort chalet near Niseko",
+              location: "Niseko, Hokkaido",
+              priceDisplay: "¥150,000 / month",
+              type: "Rent",
+              status: "Current",
+              bedrooms: 4,
+              floorArea: "120 m²",
+              yearBuilt: 2010,
+              daysOnPlatform: 45,
+            },
+            {
+              title: "3LDK house in central Sapporo",
+              location: "Chuo-ku, Sapporo",
+              priceDisplay: "¥52,000,000",
+              type: "Buy",
+              status: "Current",
+              bedrooms: 3,
+              floorArea: "95 m²",
+              yearBuilt: 2014,
+              daysOnPlatform: 30,
+            },
+            {
+              title: "1K apartment near Otaru canal",
+              location: "Otaru, Hokkaido",
+              priceDisplay: "¥68,000 / month",
+              type: "Rent",
+              status: "Rented",
+              bedrooms: 1,
+              floorArea: "30 m²",
+              yearBuilt: 2005,
+              daysOnPlatform: 75,
+            },
+          ],
+          teamMembers: [
+            {
+              name: "Suzuki Hanako",
+              role: "Founder",
+              age: 38,
+              phone: "+81-11-123-4567",
+            },
+            {
+              name: "Tanaka Kenta",
+              role: "Sales agent",
+              age: 34,
+              phone: "+81-90-1111-2222",
+            },
+          ],
+          subscriptionPlan: "Standard Agent",
+          subscriptionStatus: "Active",
+          subscriptionSince: "2024-04-10",
+          adReportsTotal: 96,
+          adReportsDeleted: 5,
+          adReportsEdited: 18,
+        },
+        {
+          id: 3,
+          agencyName: "Nagoya Estate",
+          agencyInitials: "NE",
+          logoUrl: "",
+          description:
+            "Agency tại Nagoya, tập trung nhà phố và đất đầu tư khu vực Chubu.",
+          establishedDate: "2012-11-20",
+          averageRating: 4.0,
+          totalReviews: 41,
+          salesLast12Months: 24,
+          totalHistoricalSales: 230,
+          activeListings: 39,
+          businessHours: "Mon-Fri, 9:00 - 18:00",
+          regularHolidays: "Sat, Sun",
+          usualResponseTime: "Within 1 business day",
+          badge: null,
+          specialties: ["Land sales", "Residential houses"],
+          serviceAreas: ["Nagoya", "Toyota", "Okazaki"],
+          representativeName: "Ito Shin",
+          licenseNumber: "Aichi(2) 34567",
+          headOfficeAddress: "1-2-3 Sakae, Naka-ku, Nagoya-shi, Aichi",
+          realEstateAssociation: "Aichi Real Estate Association",
+          guarantyAssociation: "Chubu Real Estate Guarantee",
+          branches: [],
+          languages: ["Japanese"],
+          websiteUrl: "https://www.nagoyaestate.jp",
+          totalMembersCount: 9,
+          listingStats: [
+            { type: "Buy", status: "Current", count: 28 },
+            { type: "Buy", status: "Sold", count: 150 },
+            { type: "Rent", status: "Current", count: 11 },
+            { type: "Rent", status: "Rented", count: 60 },
+          ],
+          propertyList: [
+            {
+              title: "Land plot near Nagoya station",
+              location: "Nakamura-ku, Nagoya",
+              priceDisplay: "¥85,000,000",
+              type: "Buy",
+              status: "Current",
+              bedrooms: 0,
+              floorArea: "165 m²",
+              yearBuilt: 0,
+              daysOnPlatform: 52,
+            },
+            {
+              title: "3-story house in Toyota city",
+              location: "Toyota, Aichi",
+              priceDisplay: "¥63,000,000",
+              type: "Buy",
+              status: "Sold",
+              bedrooms: 4,
+              floorArea: "110 m²",
+              yearBuilt: 2011,
+              daysOnPlatform: 90,
+            },
+          ],
+          teamMembers: [
+            {
+              name: "Ito Shin",
+              role: "Managing director",
+              age: 48,
+              phone: "+81-52-987-6543",
+            },
+            {
+              name: "Kato Airi",
+              role: "Sales agent",
+              age: 31,
+              phone: "+81-90-3333-4444",
+            },
+            {
+              name: "Fujita Ryo",
+              role: "Leasing agent",
+              age: 29,
+              phone: "+81-80-5555-6666",
+            },
+          ],
+          subscriptionPlan: "Basic Agent",
+          subscriptionStatus: "Active",
+          subscriptionSince: "2022-09-01",
+          adReportsTotal: 54,
+          adReportsDeleted: 2,
+          adReportsEdited: 9,
+        },
+      ];
+
+      let selectedId = null;
+
+      function computeMetrics() {
+        const totalAgents = agents.length;
+        const topCount = agents.filter((a) => a.badge === "TOP Agent").length;
+        const premiumCount = agents.filter(
+          (a) => a.badge === "Premium Agent",
+        ).length;
+        return { totalAgents, topCount, premiumCount };
+      }
+
+      function renderMetrics() {
+        const wrap = document.getElementById("metricSummary");
+        const { totalAgents, topCount, premiumCount } = computeMetrics();
+        wrap.innerHTML = "";
+        const items = [
+          {
+            label: "Total agencies",
+            value: totalAgents,
+            sub: "Số agency đang manage trong hệ thống",
+          },
+          {
+            label: "TOP Agents",
+            value: topCount,
+            sub: "Số agency gắn badge TOP Agent",
+          },
+          {
+            label: "Premium Agents",
+            value: premiumCount,
+            sub: "Số agency gắn badge Premium Agent",
+          },
+        ];
+        items.forEach((m) => {
+          const div = document.createElement("div");
+          div.className = "metric-card";
+          div.innerHTML = `
+            <div class="metric-label">${m.label}</div>
+            <div class="metric-value">${m.value}</div>
+            <div class="metric-sub">${m.sub}</div>
+          `;
+          wrap.appendChild(div);
+        });
+      }
+
+      function badgeClass(badge) {
+        if (badge === "TOP Agent") return "status-badge-top";
+        if (badge === "Premium Agent") return "status-badge-premium";
+        return "status-badge-none";
+      }
+
+      function badgeLabel(badge) {
+        if (!badge) return "No badge";
+        return badge;
+      }
+
+      function applyFilters(list) {
+        const keyword = document
+          .getElementById("searchInput")
+          .value.toLowerCase();
+        const badgeFilter = document.getElementById("badgeFilter").value;
+        const cityFilter = document.getElementById("cityFilter")
+          ? document.getElementById("cityFilter").value
+          : "";
+        const ratingFilter = document.getElementById("ratingFilter")
+          ? document.getElementById("ratingFilter").value
+          : "";
+        const planFilter = document.getElementById("planFilter")
+          ? document.getElementById("planFilter").value
+          : "";
+        const subscriptionStatusFilter = document.getElementById(
+          "subscriptionStatusFilter",
+        )
+          ? document.getElementById("subscriptionStatusFilter").value
+          : "";
+
+        return list.filter((a) => {
+          if (keyword) {
+            const text = `${a.agencyName} ${a.representativeName || ""} ${(
+              a.serviceAreas || []
+            ).join(" ")}`.toLowerCase();
+            if (!text.includes(keyword)) return false;
+          }
+          if (badgeFilter === "TOP Agent" && a.badge !== "TOP Agent")
+            return false;
+          if (badgeFilter === "Premium Agent" && a.badge !== "Premium Agent")
+            return false;
+          if (badgeFilter === "None" && a.badge) return false;
+
+          if (cityFilter) {
+            const areas = (a.serviceAreas || []).map((c) => c.toLowerCase());
+            if (!areas.some((c) => c.includes(cityFilter.toLowerCase()))) {
+              return false;
+            }
+          }
+
+          if (ratingFilter) {
+            const minRating = parseFloat(ratingFilter);
+            if (!Number.isNaN(minRating) && a.averageRating < minRating) {
+              return false;
+            }
+          }
+
+          if (planFilter && a.subscriptionPlan !== planFilter) {
+            return false;
+          }
+
+          if (
+            subscriptionStatusFilter &&
+            a.subscriptionStatus !== subscriptionStatusFilter
+          ) {
+            return false;
+          }
+          return true;
+        });
+      }
+
+      function renderAgencyTable() {
+        const body = document.getElementById("agencyTableBody");
+        const empty = document.getElementById("agencyEmpty");
+        body.innerHTML = "";
+        const filtered = applyFilters(agents);
+        if (!filtered.length) {
+          empty.style.display = "block";
+          return;
+        }
+        empty.style.display = "none";
+
+        filtered.forEach((a) => {
+          const tr = document.createElement("tr");
+          if (a.id === selectedId) {
+            tr.classList.add("row-selected");
+          }
+          tr.innerHTML = `
+            <td>
+              <div style="font-weight:600;">${a.agencyName}</div>
+              <div style="font-size:10px;color:#7c6a55;">${
+                a.representativeName || ""
+              }</div>
+            </td>
+            <td>${
+              a.serviceAreas && a.serviceAreas.length ? a.serviceAreas[0] : "-"
+            }</td>
+            <td>${a.establishedDate || "-"}</td>
+            <td>${a.headOfficeAddress || "-"}</td>
+            <td>
+              <span class="status-pill ${badgeClass(a.badge)}">${badgeLabel(
+                a.badge,
+              )}</span>
+            </td>
+            <td>${a.averageRating.toFixed(1)}★</td>
+            <td>${a.totalReviews}</td>
+            <td>${a.salesLast12Months}</td>
+            <td>${a.activeListings}</td>
+            <td>${a.totalMembersCount ?? "-"}</td>
+            <td>${a.subscriptionPlan || "-"}</td>
+          `;
+          tr.addEventListener("click", () => openDetail(a.id));
+          body.appendChild(tr);
+        });
+      }
+
+      function renderChips(list, containerId) {
+        const container = document.getElementById(containerId);
+        if (!list || !list.length) {
+          container.textContent = "–";
+          return;
+        }
+        container.innerHTML = list
+          .map((item) => `<span class="tag">${item}</span>`)
+          .join(" ");
+      }
+
+      function renderBranches(branches) {
+        const container = document.getElementById("branchesContainer");
+        if (!branches || !branches.length) {
+          container.textContent = "No branches registered.";
+          return;
+        }
+        container.innerHTML = branches
+          .map(
+            (b) =>
+              `<div class="field-value muted">• ${b.name} – ${b.address}</div>`,
+          )
+          .join("");
+      }
+
+      function renderMembers(members) {
+        const body = document.getElementById("membersTableBody");
+        body.innerHTML = "";
+        if (!members || !members.length) {
+          const tr = document.createElement("tr");
+          tr.innerHTML =
+            '<td colspan="4" style="font-size:11px;color:#7c6a55;">No team member details available.</td>';
+          body.appendChild(tr);
+          return;
+        }
+        members.forEach((m) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${m.name}</td>
+            <td>${m.age ?? "-"}</td>
+            <td>${m.phone || "-"}</td>
+            <td>${m.role || "-"}</td>
+          `;
+          body.appendChild(tr);
+        });
+      }
+
+      function renderPropertyList(properties) {
+        const body = document.getElementById("propertyTableBody");
+        body.innerHTML = "";
+        if (!properties || !properties.length) {
+          const tr = document.createElement("tr");
+          tr.innerHTML =
+            '<td colspan="9" style="font-size:11px;color:#7c6a55;">No properties configured for this agency.</td>';
+          body.appendChild(tr);
+          return;
+        }
+        properties.forEach((p) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${p.title}</td>
+            <td>${p.location}</td>
+            <td>${p.priceDisplay}</td>
+            <td>${p.type}</td>
+            <td>${p.status}</td>
+            <td>${p.bedrooms ?? "-"}</td>
+            <td>${p.floorArea || "-"}</td>
+            <td>${p.yearBuilt || "-"}</td>
+            <td>${p.daysOnPlatform ?? "-"}</td>
+          `;
+          body.appendChild(tr);
+        });
+      }
+
+      function openDetail(id) {
+        const listView = document.getElementById("listView");
+        const detailView = document.getElementById("detailView");
+        if (listView && detailView) {
+          listView.style.display = "none";
+          detailView.style.display = "block";
+        }
+        selectAgency(id);
+      }
+
+      function selectAgency(id) {
+        selectedId = id;
+        const a = agents.find((x) => x.id === id);
+        const statusChip = document.getElementById("selectionStatus");
+        if (!a) {
+          statusChip.textContent = "No agency selected";
+          document.getElementById("detailAgencyName").textContent = "–";
+          document.getElementById("detailEstablished").textContent = "–";
+          document.getElementById("detailDescription").textContent =
+            "Select an agency from the left to view full profile.";
+          document.getElementById("detailAvgRating").textContent = "–";
+          document.getElementById("detailTotalReviews").textContent = "–";
+          document.getElementById("detailSales12m").textContent = "–";
+          document.getElementById("detailTotalSales").textContent = "–";
+          document.getElementById("detailActiveListings").textContent = "–";
+          document.getElementById("detailBusinessHours").textContent = "–";
+          document.getElementById("detailHolidays").textContent = "–";
+          document.getElementById("detailResponseTime").textContent = "–";
+          document.getElementById("detailBadge").textContent = "No badge";
+          renderChips([], "specialtiesContainer");
+          renderChips([], "serviceAreasContainer");
+          renderBranches([]);
+          renderChips([], "languagesContainer");
+          document.getElementById("detailRepName").textContent = "–";
+          document.getElementById("detailLicense").textContent = "–";
+          document.getElementById("detailHeadOffice").textContent = "–";
+          document.getElementById("detailAssociation").textContent = "–";
+          document.getElementById("detailGuaranty").textContent = "–";
+          document.getElementById("detailWebsite").textContent = "–";
+          document.getElementById("detailMembers").textContent = "–";
+          renderMembers([]);
+          renderPropertyList([]);
+          document.getElementById("detailPlan").textContent = "–";
+          document.getElementById("detailPlanStatus").textContent = "–";
+          document.getElementById("detailPlanSince").textContent = "–";
+          document.getElementById("detailReportsTotal").textContent = "–";
+          document.getElementById("detailReportsDeleted").textContent = "–";
+          document.getElementById("detailReportsEdited").textContent = "–";
+          renderAgencyTable();
+          return;
+        }
+
+        statusChip.textContent = `${a.agencyName}`;
+        document.getElementById("detailAgencyName").textContent = a.agencyName;
+        document.getElementById("detailEstablished").textContent =
+          a.establishedDate || "–";
+        document.getElementById("detailDescription").textContent =
+          a.description || "–";
+        document.getElementById("detailAvgRating").textContent =
+          `${a.averageRating.toFixed(1)}★`;
+        document.getElementById("detailTotalReviews").textContent =
+          a.totalReviews;
+        document.getElementById("detailSales12m").textContent =
+          a.salesLast12Months;
+        document.getElementById("detailTotalSales").textContent =
+          a.totalHistoricalSales;
+        document.getElementById("detailActiveListings").textContent =
+          a.activeListings;
+        document.getElementById("detailBusinessHours").textContent =
+          a.businessHours || "–";
+        document.getElementById("detailHolidays").textContent =
+          a.regularHolidays || "–";
+        document.getElementById("detailResponseTime").textContent =
+          a.usualResponseTime || "–";
+
+        const badgeEl = document.getElementById("detailBadge");
+        badgeEl.textContent = badgeLabel(a.badge);
+        badgeEl.className = `field-value status-pill ${badgeClass(a.badge)}`;
+        const badgeSelect = document.getElementById("badgeSelect");
+        if (badgeSelect) {
+          badgeSelect.value = a.badge || "TOP Agent";
+        }
+
+        renderChips(a.specialties || [], "specialtiesContainer");
+        renderChips(a.serviceAreas || [], "serviceAreasContainer");
+        renderBranches(a.branches || []);
+        renderChips(a.languages || [], "languagesContainer");
+
+        document.getElementById("detailRepName").textContent =
+          a.representativeName || "–";
+        document.getElementById("detailLicense").textContent =
+          a.licenseNumber || "–";
+        document.getElementById("detailHeadOffice").textContent =
+          a.headOfficeAddress || "–";
+        document.getElementById("detailAssociation").textContent =
+          a.realEstateAssociation || "–";
+        document.getElementById("detailGuaranty").textContent =
+          a.guarantyAssociation || "–";
+
+        const websiteEl = document.getElementById("detailWebsite");
+        if (a.websiteUrl) {
+          websiteEl.innerHTML = `<a href="${a.websiteUrl}" target="_blank" rel="noreferrer" style="color:#2f5aa8;text-decoration:underline;">${a.websiteUrl}</a>`;
+        } else {
+          websiteEl.textContent = "–";
+        }
+
+        document.getElementById("detailMembers").textContent =
+          a.totalMembersCount ?? "–";
+        renderMembers(a.teamMembers || []);
+        renderPropertyList(a.propertyList || []);
+
+        document.getElementById("detailPlan").textContent =
+          a.subscriptionPlan || "–";
+        document.getElementById("detailPlanStatus").textContent =
+          a.subscriptionStatus || "–";
+        document.getElementById("detailPlanSince").textContent =
+          a.subscriptionSince || "–";
+        document.getElementById("detailReportsTotal").textContent =
+          a.adReportsTotal ?? "–";
+        document.getElementById("detailReportsDeleted").textContent =
+          a.adReportsDeleted ?? "–";
+        document.getElementById("detailReportsEdited").textContent =
+          a.adReportsEdited ?? "–";
+
+        const logoBox = document.getElementById("agencyLogoBox");
+        if (logoBox) {
+          logoBox.textContent = a.agencyInitials || "AG";
+        }
+
+        renderAgencyTable();
+      }
+
+      function assignBadge() {
+        if (!selectedId) {
+          alert("Select an agency first.");
+          return;
+        }
+        const a = agents.find((x) => x.id === selectedId);
+        if (!a) return;
+        const badgeSelect = document.getElementById("badgeSelect");
+        if (!badgeSelect) return;
+        const value = badgeSelect.value;
+        a.badge = value;
+        selectAgency(a.id);
+        renderMetrics();
+        alert(
+          `Assigned badge "${value}" to ${a.agencyName}. (Demo only, no external sync)`,
+        );
+      }
+
+      function removeBadge() {
+        if (!selectedId) {
+          alert("Select an agency first.");
+          return;
+        }
+        const a = agents.find((x) => x.id === selectedId);
+        if (!a) return;
+        if (!a.badge) {
+          alert("This agency has no badge.");
+          return;
+        }
+        a.badge = null;
+        selectAgency(a.id);
+        renderMetrics();
+        alert(
+          `Removed badge from ${a.agencyName}. (Demo only, no external sync)`,
+        );
+      }
+
+      const LEAD_STORAGE_KEY = "yuushiAdminLeads";
+
+      function getStoredLeads() {
+        try {
+          const raw = window.localStorage.getItem(LEAD_STORAGE_KEY);
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+          console.error("Failed to read leads from storage", e);
+          return [];
+        }
+      }
+
+      function saveStoredLeads(list) {
+        try {
+          window.localStorage.setItem(LEAD_STORAGE_KEY, JSON.stringify(list));
+        } catch (e) {
+          console.error("Failed to write leads to storage", e);
+          alert(
+            "Unable to save lead in this browser (localStorage blocked). Demo only.",
+          );
+        }
+      }
+
+      function upsertLead(lead) {
+        const list = getStoredLeads();
+        const keyId = String(lead.id);
+        const idx = list.findIndex(
+          (l) =>
+            l && l.entityType === lead.entityType && String(l.id) === keyId,
+        );
+        const now = new Date().toISOString().slice(0, 10);
+        if (idx >= 0) {
+          list[idx] = { ...list[idx], ...lead, updatedDate: now };
+        } else {
+          list.push({ ...lead, createdDate: lead.createdDate || now });
+        }
+        saveStoredLeads(list);
+      }
+
+      function isLead(entityType, id) {
+        const all = getStoredLeads();
+        const keyId = String(id);
+        return all.some(
+          (l) => l && l.entityType === entityType && String(l.id) === keyId,
+        );
+      }
+
+      function updateLeadButtonsForAgent() {
+        const saveBtn = document.getElementById("saveLeadAgentBtn");
+        const unsaveBtn = document.getElementById("unsaveLeadAgentBtn");
+        if (!saveBtn || !unsaveBtn) return;
+        if (!selectedId) {
+          saveBtn.style.display = "inline-flex";
+          unsaveBtn.style.display = "none";
+          return;
+        }
+        if (isLead("agent", selectedId)) {
+          saveBtn.style.display = "none";
+          unsaveBtn.style.display = "inline-flex";
+        } else {
+          saveBtn.style.display = "inline-flex";
+          unsaveBtn.style.display = "none";
+        }
+      }
+
+      function removeLead(entityType, id) {
+        const all = getStoredLeads();
+        const keyId = String(id);
+        const filtered = all.filter(
+          (l) => !(l && l.entityType === entityType && String(l.id) === keyId),
+        );
+        saveStoredLeads(filtered);
+      }
+
+      function saveLeadFromAgent() {
+        if (!selectedId) {
+          alert("Select an agency first to save as lead.");
+          return;
+        }
+        const a = agents.find((x) => x.id === selectedId);
+        if (!a) {
+          alert("Selected agency not found in current dataset.");
+          return;
+        }
+
+        const primaryCity =
+          (a.serviceAreas && a.serviceAreas.length ? a.serviceAreas[0] : "") ||
+          "";
+
+        const lead = {
+          id: a.id,
+          entityType: "agent",
+          name: a.agencyName || "",
+          contactName: a.representativeName || "",
+          primaryCity,
+          badge: a.badge || "No badge",
+          subscriptionPlan: a.subscriptionPlan || "",
+          subscriptionStatus: a.subscriptionStatus || "",
+          salesLast12Months: a.salesLast12Months ?? null,
+          activeListings: a.activeListings ?? null,
+          leadStatus: "New",
+          source: "Agent Management",
+        };
+
+        upsertLead(lead);
+        alert(
+          "Saved agency as lead for admin overview (demo only, stored in browser localStorage).",
+        );
+        updateLeadButtonsForAgent();
+      }
+
+      function unsaveLeadFromAgent() {
+        if (!selectedId) {
+          alert("Select an agency first to unsave lead.");
+          return;
+        }
+        removeLead("agent", selectedId);
+        alert("Lead removed from admin overview (demo only).");
+        updateLeadButtonsForAgent();
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderMetrics();
+        renderAgencyTable();
+        selectAgency(null);
+
+        [
+          "searchInput",
+          "badgeFilter",
+          "cityFilter",
+          "ratingFilter",
+          "planFilter",
+          "subscriptionStatusFilter",
+        ].forEach((id) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.addEventListener("input", renderAgencyTable);
+          el.addEventListener("change", renderAgencyTable);
+        });
+
+        const backBtn = document.getElementById("backToListBtn");
+        if (backBtn) {
+          backBtn.addEventListener("click", () => {
+            const listView = document.getElementById("listView");
+            const detailView = document.getElementById("detailView");
+            if (listView && detailView) {
+              detailView.style.display = "none";
+              listView.style.display = "block";
+            }
+            selectedId = null;
+            selectAgency(null);
+          });
+        }
+
+        const assignBtn = document.getElementById("assignBadgeBtn");
+        if (assignBtn) {
+          assignBtn.addEventListener("click", assignBadge);
+        }
+        const removeBtn = document.getElementById("removeBadgeBtn");
+        if (removeBtn) {
+          removeBtn.addEventListener("click", removeBadge);
+        }
+
+        const saveLeadBtn = document.getElementById("saveLeadAgentBtn");
+        if (saveLeadBtn) {
+          saveLeadBtn.addEventListener("click", saveLeadFromAgent);
+        }
+
+        const unsaveLeadBtn = document.getElementById("unsaveLeadAgentBtn");
+        if (unsaveLeadBtn) {
+          unsaveLeadBtn.addEventListener("click", unsaveLeadFromAgent);
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const from = params.get("from");
+        const leadId = params.get("leadId");
+        if (from === "leads" && leadId) {
+          const match = agents.find((a) => String(a.id) === String(leadId));
+          if (match) {
+            openDetail(match.id);
+          }
+        }
+
+        // Khởi tạo state nút Save/Unsave
+        updateLeadButtonsForAgent();
+      });
+    </script>
+  </body>
+</html>

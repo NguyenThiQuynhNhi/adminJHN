@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - External Service Integrations</title>
+    <style>
+      :root {
+        --bg-body: #f5f3ef;
+        --bg-card: #fffaf2;
+        --border-subtle: #eadccd;
+        --accent: #c26b41;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+        --badge-green: #2f855a;
+        --badge-gray: #4a5568;
+        --badge-orange: #b7791f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px 24px 32px;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        letter-spacing: 0.02em;
+      }
+
+      .page-subtitle {
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 1.5fr 1.5fr;
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .card {
+        background-color: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        padding: 14px 16px 16px;
+        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .toolbar-right {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 11px;
+        font-size: 11px;
+        background-color: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+        color: var(--text-main);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #c26b41, #a55232);
+        border-color: #a55232;
+        color: #fffaf3;
+      }
+
+      .btn-ghost {
+        background: transparent;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 140px;
+      }
+
+      .field-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+
+      select,
+      input[type="text"] {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      select:focus,
+      input[type="text"]:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f7efe6;
+      }
+
+      th,
+      td {
+        padding: 7px 8px;
+        text-align: left;
+        border-bottom: 1px solid #efe0d4;
+      }
+
+      th {
+        font-weight: 500;
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      tbody tr {
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+
+      tbody tr:hover {
+        background-color: #f8f1ea;
+      }
+
+      tbody tr.selected-row {
+        background-color: #f1e3d5;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 500;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+
+      .badge-active {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+
+      .badge-disabled {
+        background: #edf2f7;
+        color: var(--badge-gray);
+        border-color: #cbd5e0;
+      }
+
+      .badge-warning {
+        background: #fffaf0;
+        color: var(--badge-orange);
+        border-color: #fbd38d;
+      }
+
+      .detail-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+        margin-bottom: 8px;
+      }
+
+      .detail-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .detail-value {
+        font-size: 12px;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 70px;
+        border-radius: 10px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 8px;
+        font-size: 12px;
+        resize: vertical;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      .preview-box {
+        border-radius: 10px;
+        border: 1px dashed #deccba;
+        padding: 8px 9px;
+        background: #fffaf1;
+        font-size: 12px;
+        color: var(--text-main);
+        white-space: pre-line;
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>External Service Integrations</h1>
+    </div>
+
+    <div class="layout">
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Integration list</div>
+          </div>
+        </div>
+
+        <div class="filters">
+          <div class="field-group">
+            <label class="field-label" for="typeFilter">Service type</label>
+            <select id="typeFilter">
+              <option value="">All</option>
+              <option value="payment">Payment gateway</option>
+              <option value="map">Map / Geocoding</option>
+              <option value="crm">CRM</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="statusFilter">Status</label>
+            <select id="statusFilter">
+              <option value="">All</option>
+              <option value="active">Active</option>
+              <option value="disabled">Disabled</option>
+              <option value="warning">Warning</option>
+            </select>
+          </div>
+          <div class="field-group" style="flex: 1 1 220px">
+            <label class="field-label" for="searchIntegration"
+              >Search integration</label
+            >
+            <input
+              id="searchIntegration"
+              type="text"
+              placeholder="e.g. Stripe JP, Google Maps, HubSpot..."
+            />
+          </div>
+        </div>
+
+        <div style="overflow: auto; max-height: 280px">
+          <table>
+            <thead>
+              <tr>
+                <th>Integration name</th>
+                <th>Type</th>
+                <th>Environment</th>
+                <th>Endpoint (demo)</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="integrationTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div id="integrationEmpty">
+          <div class="card-title">Integration details</div>
+        </div>
+        <div id="integrationDetail" style="display: none">
+          <div class="detail-section-title">General information</div>
+          <div class="detail-grid">
+            <div>
+              <div class="detail-label">Integration name</div>
+              <div class="detail-value" id="dName"></div>
+            </div>
+            <div>
+              <div class="detail-label">Service type</div>
+              <div class="detail-value" id="dType"></div>
+            </div>
+            <div>
+              <div class="detail-label">Environment</div>
+              <div class="detail-value" id="dEnv"></div>
+            </div>
+            <div>
+              <div class="detail-label">Status</div>
+              <div class="detail-value" id="dStatus"></div>
+            </div>
+          </div>
+
+          <div class="detail-section-title">Endpoint & secret (masked)</div>
+          <div class="detail-grid">
+            <div>
+              <div class="detail-label">Base URL (demo)</div>
+              <div class="detail-value" id="dEndpoint"></div>
+            </div>
+            <div>
+              <div class="detail-label">API key / token (masked)</div>
+              <div class="detail-value" id="dSecret"></div>
+            </div>
+          </div>
+
+          <div class="detail-section-title">Configuration notes</div>
+          <textarea id="dNotes"></textarea>
+
+          <div
+            style="display: flex; justify-content: flex-end; margin-top: 6px"
+          >
+            <button id="btnSave" class="btn btn-primary" type="button">
+              Save metadata (demo)
+            </button>
+          </div>
+
+          <div class="detail-section-title">Integration summary (demo)</div>
+          <div class="preview-box" id="integrationSummary"></div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const integrations = [
+        {
+          id: "INT-PAY-STRIPE-JP",
+          name: "Stripe Payments JP",
+          type: "payment",
+          env: "Production",
+          endpoint: "https://api.stripe.com",
+          status: "active",
+          secretMasked: "sk_live_****************jp",
+          notes:
+            "Primary gateway for JPY card payments. Webhooks are configured in a different system setting.",
+        },
+        {
+          id: "INT-MAP-GOOGLE",
+          name: "Google Maps Platform",
+          type: "map",
+          env: "Production",
+          endpoint: "https://maps.googleapis.com",
+          status: "warning",
+          secretMasked: "AIzaSy********maps",
+          notes:
+            "Used for map, geocoding and place search. Requires quota monitoring.",
+        },
+        {
+          id: "INT-CRM-HUBSPOT",
+          name: "HubSpot CRM",
+          type: "crm",
+          env: "Sandbox",
+          endpoint: "https://api.hubapi.com",
+          status: "disabled",
+          secretMasked: "pat_live_********crm",
+          notes: "Test CRM connection for a subset of pilot partners.",
+        },
+      ];
+
+      let selectedId = null;
+
+      const els = {
+        typeFilter: document.getElementById("typeFilter"),
+        statusFilter: document.getElementById("statusFilter"),
+        searchIntegration: document.getElementById("searchIntegration"),
+        integrationTbody: document.getElementById("integrationTbody"),
+        integrationEmpty: document.getElementById("integrationEmpty"),
+        integrationDetail: document.getElementById("integrationDetail"),
+        dName: document.getElementById("dName"),
+        dType: document.getElementById("dType"),
+        dEnv: document.getElementById("dEnv"),
+        dStatus: document.getElementById("dStatus"),
+        dEndpoint: document.getElementById("dEndpoint"),
+        dSecret: document.getElementById("dSecret"),
+        dNotes: document.getElementById("dNotes"),
+        integrationSummary: document.getElementById("integrationSummary"),
+        btnSave: document.getElementById("btnSave"),
+      };
+
+      function statusBadge(status) {
+        const span = document.createElement("span");
+        span.classList.add("badge");
+        if (status === "active") {
+          span.classList.add("badge-active");
+          span.textContent = "Active";
+        } else if (status === "disabled") {
+          span.classList.add("badge-disabled");
+          span.textContent = "Disabled";
+        } else {
+          span.classList.add("badge-warning");
+          span.textContent = "Warning";
+        }
+        return span;
+      }
+
+      function typeLabel(t) {
+        if (t === "payment") return "Payment gateway";
+        if (t === "map") return "Map / Geocoding";
+        return "CRM";
+      }
+
+      function applyFilters() {
+        const t = els.typeFilter.value;
+        const s = els.statusFilter.value;
+        const q = els.searchIntegration.value.trim().toLowerCase();
+        return integrations.filter((i) => {
+          if (t && i.type !== t) return false;
+          if (s && i.status !== s) return false;
+          if (!q) return true;
+          const text = (i.id + " " + i.name).toLowerCase();
+          return text.includes(q);
+        });
+      }
+
+      function renderTable() {
+        const list = applyFilters();
+        els.integrationTbody.innerHTML = "";
+        list.forEach((i) => {
+          const tr = document.createElement("tr");
+          if (i.id === selectedId) tr.classList.add("selected-row");
+
+          const tdName = document.createElement("td");
+          tdName.textContent = i.name;
+
+          const tdType = document.createElement("td");
+          tdType.textContent = typeLabel(i.type);
+
+          const tdEnv = document.createElement("td");
+          tdEnv.textContent = i.env;
+
+          const tdEndpoint = document.createElement("td");
+          tdEndpoint.textContent = i.endpoint;
+
+          const tdStatus = document.createElement("td");
+          tdStatus.appendChild(statusBadge(i.status));
+
+          tr.appendChild(tdName);
+          tr.appendChild(tdType);
+          tr.appendChild(tdEnv);
+          tr.appendChild(tdEndpoint);
+          tr.appendChild(tdStatus);
+
+          tr.addEventListener("click", () => selectIntegration(i.id));
+          els.integrationTbody.appendChild(tr);
+        });
+      }
+
+      function selectIntegration(id) {
+        const i = integrations.find((x) => x.id === id);
+        if (!i) return;
+        selectedId = id;
+        els.integrationEmpty.style.display = "none";
+        els.integrationDetail.style.display = "";
+
+        els.dName.textContent = i.name;
+        els.dType.textContent = typeLabel(i.type);
+        els.dEnv.textContent = i.env;
+        els.dStatus.textContent =
+          i.status === "active"
+            ? "Active"
+            : i.status === "disabled"
+              ? "Disabled"
+              : "Warning";
+        els.dEndpoint.textContent = i.endpoint;
+        els.dSecret.textContent = i.secretMasked;
+        els.dNotes.value = i.notes;
+
+        renderSummary(i);
+        renderTable();
+      }
+
+      function renderSummary(i) {
+        const lines = [];
+        lines.push(
+          `Integration: ${i.name} (${typeLabel(i.type)}), environment: ${i.env}.`,
+        );
+        lines.push(
+          `Endpoint: ${i.endpoint}. Secret shown as masked: ${i.secretMasked}.`,
+        );
+        lines.push(
+          `Status: ${
+            i.status === "active"
+              ? "Active"
+              : i.status === "disabled"
+                ? "Disabled"
+                : "Warning"
+          }.`,
+        );
+        lines.push(
+          "This admin screen only allows viewing/editing metadata and descriptions. Updating real secrets must go through the vault and is fully recorded in Audit Logs.",
+        );
+        els.integrationSummary.textContent = lines.join("\n");
+      }
+
+      function saveMetadata() {
+        if (!selectedId) return;
+        const i = integrations.find((x) => x.id === selectedId);
+        if (!i) return;
+        i.notes = els.dNotes.value;
+        renderSummary(i);
+        alert(
+          "Saved integration metadata notes (demo). In production this would log the change and sync to backend.",
+        );
+      }
+
+      function init() {
+        els.typeFilter.addEventListener("change", renderTable);
+        els.statusFilter.addEventListener("change", renderTable);
+        els.searchIntegration.addEventListener("input", renderTable);
+        els.btnSave.addEventListener("click", saveMetadata);
+        renderTable();
+      }
+
+      init();
+    </script>
+  </body>
+</html>

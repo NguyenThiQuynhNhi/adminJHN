@@ -1,0 +1,1528 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Blog / Article Management</title>
+    <style>
+      :root {
+        --bg-body: #f5f3ef;
+        --bg-card: #fffaf2;
+        --border-subtle: #eadccd;
+        --accent: #c26b41;
+        --accent-soft: #f3d7c6;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+        --badge-green: #2f855a;
+        --badge-red: #c53030;
+        --badge-gray: #4a5568;
+        --badge-blue: #2b6cb0;
+        --badge-orange: #b7791f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px 24px 32px;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        letter-spacing: 0.02em;
+      }
+
+      .page-subtitle {
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 7fr) minmax(0, 6fr);
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .card {
+        background-color: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        padding: 14px 16px 16px;
+        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .toolbar-right {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 11px;
+        font-size: 11px;
+        background-color: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+        color: var(--text-main);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #c26b41, #a55232);
+        border-color: #a55232;
+        color: #fffaf3;
+      }
+
+      .btn-ghost {
+        background: transparent;
+      }
+
+      .btn-danger {
+        border-color: var(--badge-red);
+        color: var(--badge-red);
+      }
+
+      .btn:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 120px;
+      }
+
+      .field-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+
+      input[type="text"],
+      select {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      input[type="text"]:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f7efe6;
+      }
+
+      th,
+      td {
+        padding: 7px 8px;
+        text-align: left;
+        border-bottom: 1px solid #efe0d4;
+      }
+
+      th {
+        font-weight: 500;
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      tbody tr {
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+
+      tbody tr:hover {
+        background-color: #f8f1ea;
+      }
+
+      tbody tr.selected-row {
+        background-color: #f1e3d5;
+      }
+
+      .article-title {
+        font-weight: 600;
+      }
+
+      .article-meta-line {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 500;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+
+      .badge-status-published {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+
+      .badge-status-draft {
+        background: #fff6e0;
+        color: var(--badge-orange);
+        border-color: #fbd38d;
+      }
+
+      .badge-status-scheduled {
+        background: #ebf8ff;
+        color: var(--badge-blue);
+        border-color: #bee3f8;
+      }
+
+      .badge-status-archived {
+        background: #f7f7f8;
+        color: var(--badge-gray);
+        border-color: #d2d6dc;
+      }
+
+      .badge-type {
+        background: #f0e3d7;
+        color: #744210;
+        border-color: #e2c6a8;
+      }
+
+      .badge-locale {
+        background: #fef3c7;
+        color: #92400e;
+        border-color: #fcd34d;
+      }
+
+      .badge-flag {
+        background: #fff5f5;
+        color: var(--badge-red);
+        border-color: #fed7d7;
+      }
+
+      .tag-chip {
+        display: inline-flex;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        background: #f4efe9;
+        color: #5b4633;
+        margin-right: 4px;
+      }
+
+      .detail-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .detail-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .detail-title-block h2 {
+        margin: 0 0 4px;
+        font-size: 16px;
+      }
+
+      .detail-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .detail-meta span + span::before {
+        content: "· ";
+        margin: 0 2px;
+      }
+
+      .detail-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+        margin-bottom: 4px;
+      }
+
+      .detail-field-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .detail-input,
+      .detail-select,
+      textarea {
+        width: 100%;
+        border-radius: 9px;
+        border: 1px solid var(--border-subtle);
+        padding: 5px 8px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      .detail-input:focus,
+      .detail-select:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+
+      .detail-input[readonly] {
+        background: #f9f5f0;
+        color: var(--text-muted);
+      }
+
+      textarea {
+        min-height: 70px;
+        resize: vertical;
+        font-family: inherit;
+      }
+
+      .hint-text {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .preview-box {
+        border-radius: 10px;
+        border: 1px dashed #deccba;
+        padding: 8px 9px;
+        background: #fffaf1;
+        font-size: 12px;
+        color: var(--text-main);
+        max-height: 120px;
+        overflow: auto;
+      }
+
+      .footer-note {
+        margin-top: 4px;
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .cms-shell {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .cms-layout {
+        margin-top: 6px;
+      }
+
+      .cms-pane-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .cms-pane-desc {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 10px;
+        max-width: 720px;
+      }
+
+      .settings-card {
+        background-color: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        padding: 14px 16px 16px;
+        box-shadow: 0 6px 18px rgba(115, 72, 39, 0.08);
+      }
+
+      .settings-card-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 6px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .cms-subnav {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 6px 0 10px;
+      }
+
+      .cms-subtab,
+      .cms-subtab-sm {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        background: #f7efe4;
+        padding: 4px 10px;
+        font-size: 11px;
+        cursor: pointer;
+        color: var(--text-muted);
+      }
+
+      .cms-subtab.active,
+      .cms-subtab-sm.active {
+        background: #3a6b3c;
+        color: #fff;
+        border-color: #3a6b3c;
+      }
+
+      .cms-filter-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .cms-filter-input {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        min-width: 180px;
+      }
+
+      .cms-inline-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .cms-hint {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 4px;
+      }
+
+      .insights-subpane,
+      .insights-articles-pane,
+      .insights-news-pane {
+        display: none;
+      }
+
+      .insights-subpane.active,
+      .insights-articles-pane.active,
+      .insights-news-pane.active {
+        display: block;
+      }
+
+      /* Modal for blog/content structure editor (adapted to current style) */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 999;
+      }
+
+      .modal-backdrop.open {
+        display: flex;
+      }
+
+      .modal-shell {
+        width: 880px;
+        max-width: 95%;
+        max-height: 90vh;
+        background: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        box-shadow: 0 18px 45px rgba(115, 72, 39, 0.45);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .modal-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: #fffaf6;
+      }
+
+      .modal-header-main {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .modal-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-main);
+      }
+
+      .modal-subtitle {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .modal-close-btn {
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 18px;
+        line-height: 1;
+        color: var(--text-muted);
+      }
+
+      .modal-body {
+        padding: 12px 16px 10px;
+        overflow: auto;
+        font-size: 12px;
+        background: #fffaf2;
+      }
+
+      .modal-footer {
+        padding: 10px 16px 12px;
+        border-top: 1px solid var(--border-subtle);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        background: #f7efe6;
+      }
+
+      .modal-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 16px;
+      }
+
+      .modal-field-row {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .modal-field-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-weight: 500;
+      }
+
+      .modal-field-hint {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .field-row {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        margin-bottom: 8px;
+      }
+
+      .field-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        min-width: 140px;
+      }
+
+      .field-value {
+        flex: 1;
+        font-size: 12px;
+      }
+
+      .filter-select {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+
+      .badge-success {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+
+      .badge-warning {
+        background: #fff6e0;
+        color: var(--badge-orange);
+        border-color: #fbd38d;
+      }
+
+      .badge-info {
+        background: #ebf8ff;
+        color: var(--badge-blue);
+        border-color: #bee3f8;
+      }
+
+      .badge-gray {
+        background: #f7f7f8;
+        color: var(--badge-gray);
+        border-color: #d2d6dc;
+      }
+
+      .btn-secondary {
+        background: #f7efe4;
+        color: var(--text-main);
+        border: 1px solid var(--border-subtle);
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="cms-shell">
+      <div class="cms-layout">
+        <section class="card">
+          <div id="cms-pane-insights" class="setting-pane active">
+            <h2 class="cms-pane-title">Insights Management</h2>
+            <p class="cms-pane-desc">
+              Core content library for Area Guides, Articles, News, and FAQs.
+              These datasets feed homepage sections and other views; layout and
+              placement are controlled elsewhere.
+            </p>
+
+            <div class="settings-card">
+              <div class="settings-card-title">
+                Insights library
+                <span class="badge badge-gray">Core content store</span>
+              </div>
+
+              <div class="cms-subnav">
+                <button
+                  class="cms-subtab active"
+                  onclick="switchInsightsSubTab('guides', this)"
+                  type="button"
+                >
+                  Area guides
+                </button>
+                <button
+                  class="cms-subtab"
+                  onclick="switchInsightsSubTab('articles', this)"
+                  type="button"
+                >
+                  Articles
+                </button>
+                <button
+                  class="cms-subtab"
+                  onclick="switchInsightsSubTab('news', this)"
+                  type="button"
+                >
+                  News
+                </button>
+                <button
+                  class="cms-subtab"
+                  onclick="switchInsightsSubTab('faqs', this)"
+                  type="button"
+                >
+                  FAQs
+                </button>
+              </div>
+
+              <!-- Area guides subpane -->
+              <div id="insights-sub-guides" class="insights-subpane active">
+                <div class="cms-filter-bar">
+                  <input
+                    type="text"
+                    class="cms-filter-input"
+                    placeholder="Search guides by area or keyword"
+                  />
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Title</th>
+                        <th>Region</th>
+                        <th>Status</th>
+                        <th>Author</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Tokyo area guide — Yamanote line</td>
+                        <td>Tokyo</td>
+                        <td>
+                          <span class="badge badge-success">Published</span>
+                        </td>
+                        <td>Admin Tanaka</td>
+                        <td>
+                          <button class="btn btn-ghost" type="button">
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div style="margin-top: 10px" class="cms-inline-actions">
+                  <button
+                    class="btn btn-primary"
+                    type="button"
+                    onclick="openBlogEditor('guide')"
+                  >
+                    New area guide
+                  </button>
+                </div>
+              </div>
+
+              <!-- Articles subpane -->
+              <div id="insights-sub-articles" class="insights-subpane">
+                <div class="cms-subnav">
+                  <button
+                    class="cms-subtab-sm active"
+                    type="button"
+                    onclick="switchArticlesCategory('guides', this)"
+                  >
+                    Guides
+                  </button>
+                  <button
+                    class="cms-subtab-sm"
+                    type="button"
+                    onclick="switchArticlesCategory('blog', this)"
+                  >
+                    Blog
+                  </button>
+                  <button
+                    class="cms-subtab-sm"
+                    type="button"
+                    onclick="switchArticlesCategory('analysis', this)"
+                  >
+                    Market analysis
+                  </button>
+                </div>
+
+                <div
+                  id="articles-cat-guides"
+                  class="insights-articles-pane active"
+                >
+                  <div class="cms-filter-bar">
+                    <input
+                      type="text"
+                      class="cms-filter-input"
+                      placeholder="Search guide articles"
+                    />
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Title</th>
+                          <th>Status</th>
+                          <th>Author</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Guide: reading floor plans</td>
+                          <td>
+                            <span class="badge badge-success">Published</span>
+                          </td>
+                          <td>Editor Sato</td>
+                          <td>
+                            <button class="btn btn-ghost" type="button">
+                              Edit
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div style="margin-top: 10px" class="cms-inline-actions">
+                    <button
+                      class="btn btn-primary"
+                      type="button"
+                      onclick="openBlogEditor('article')"
+                    >
+                      New article
+                    </button>
+                  </div>
+                </div>
+
+                <div id="articles-cat-blog" class="insights-articles-pane">
+                  <div class="cms-filter-bar">
+                    <input
+                      type="text"
+                      class="cms-filter-input"
+                      placeholder="Search blog posts"
+                    />
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Title</th>
+                          <th>Status</th>
+                          <th>Author</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Platform tips for new agents</td>
+                          <td>
+                            <span class="badge badge-warning">In Review</span>
+                          </td>
+                          <td>Content Team</td>
+                          <td>
+                            <button class="btn btn-ghost" type="button">
+                              Edit
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div style="margin-top: 10px" class="cms-inline-actions">
+                    <button
+                      class="btn btn-primary"
+                      type="button"
+                      onclick="openBlogEditor('article')"
+                    >
+                      New article
+                    </button>
+                  </div>
+                </div>
+
+                <div id="articles-cat-analysis" class="insights-articles-pane">
+                  <div class="cms-filter-bar">
+                    <input
+                      type="text"
+                      class="cms-filter-input"
+                      placeholder="Search market analysis"
+                    />
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Title</th>
+                          <th>Status</th>
+                          <th>Author</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Market insights — Q1 rental trends</td>
+                          <td>
+                            <span class="badge badge-warning">In Review</span>
+                          </td>
+                          <td>Editor Sato</td>
+                          <td>
+                            <button class="btn btn-ghost" type="button">
+                              Edit
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div style="margin-top: 10px" class="cms-inline-actions">
+                    <button
+                      class="btn btn-primary"
+                      type="button"
+                      onclick="openBlogEditor('article')"
+                    >
+                      New article
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- News subpane -->
+              <div id="insights-sub-news" class="insights-subpane">
+                <div class="cms-subnav">
+                  <button
+                    class="cms-subtab-sm active"
+                    type="button"
+                    onclick="switchNewsCategory('japan', this)"
+                  >
+                    Japan
+                  </button>
+                  <button
+                    class="cms-subtab-sm"
+                    type="button"
+                    onclick="switchNewsCategory('realestate', this)"
+                  >
+                    Real estate
+                  </button>
+                  <button
+                    class="cms-subtab-sm"
+                    type="button"
+                    onclick="switchNewsCategory('investment', this)"
+                  >
+                    Investment
+                  </button>
+                </div>
+
+                <div id="news-cat-japan" class="insights-news-pane active">
+                  <div class="cms-filter-bar">
+                    <input
+                      type="text"
+                      class="cms-filter-input"
+                      placeholder="Search Japan news"
+                    />
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Title</th>
+                          <th>Status</th>
+                          <th>Author</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Platform maintenance announcement</td>
+                          <td>
+                            <span class="badge badge-success">Published</span>
+                          </td>
+                          <td>System</td>
+                          <td>
+                            <button class="btn btn-ghost" type="button">
+                              Edit
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div style="margin-top: 10px" class="cms-inline-actions">
+                    <button
+                      class="btn btn-primary"
+                      type="button"
+                      onclick="openBlogEditor('news')"
+                    >
+                      New news item
+                    </button>
+                  </div>
+                </div>
+
+                <div id="news-cat-realestate" class="insights-news-pane">
+                  <div class="cms-filter-bar">
+                    <input
+                      type="text"
+                      class="cms-filter-input"
+                      placeholder="Search real estate news"
+                    />
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Title</th>
+                          <th>Status</th>
+                          <th>Author</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>New lending rules impact investment</td>
+                          <td>
+                            <span class="badge badge-success">Published</span>
+                          </td>
+                          <td>Research Team</td>
+                          <td>
+                            <button class="btn btn-ghost" type="button">
+                              Edit
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div style="margin-top: 10px" class="cms-inline-actions">
+                    <button
+                      class="btn btn-primary"
+                      type="button"
+                      onclick="openBlogEditor('news')"
+                    >
+                      New news item
+                    </button>
+                  </div>
+                </div>
+
+                <div id="news-cat-investment" class="insights-news-pane">
+                  <div class="cms-filter-bar">
+                    <input
+                      type="text"
+                      class="cms-filter-input"
+                      placeholder="Search investment news"
+                    />
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Title</th>
+                          <th>Status</th>
+                          <th>Author</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Tax basics for investors</td>
+                          <td>
+                            <span class="badge badge-success">Published</span>
+                          </td>
+                          <td>Tax Advisor</td>
+                          <td>
+                            <button class="btn btn-ghost" type="button">
+                              Edit
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div style="margin-top: 10px" class="cms-inline-actions">
+                    <button
+                      class="btn btn-primary"
+                      type="button"
+                      onclick="openBlogEditor('news')"
+                    >
+                      New news item
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- FAQs subpane -->
+              <div id="insights-sub-faqs" class="insights-subpane">
+                <div class="cms-filter-bar">
+                  <input
+                    type="text"
+                    class="cms-filter-input"
+                    placeholder="Search FAQ question or keyword"
+                  />
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Question</th>
+                        <th>Status</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>How do I book a viewing?</td>
+                        <td>
+                          <span class="badge badge-success">Published</span>
+                        </td>
+                        <td>
+                          <button class="btn btn-ghost" type="button">
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>How are yields calculated?</td>
+                        <td>
+                          <span class="badge badge-success">Published</span>
+                        </td>
+                        <td>
+                          <button class="btn btn-ghost" type="button">
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div style="margin-top: 10px" class="cms-inline-actions">
+                  <button
+                    class="btn btn-primary"
+                    type="button"
+                    onclick="openFaqEditor()"
+                  >
+                    New FAQ
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- BLOG EDITOR MODAL FOR ARTICLES / NEWS DB STRUCTURE -->
+    <div id="modal-blog-editor" class="modal-backdrop">
+      <div class="modal-shell">
+        <div class="modal-header">
+          <div class="modal-header-main">
+            <div class="modal-title" id="blog-editor-title">
+              Blog editor — Article / News
+            </div>
+            <div class="modal-subtitle">
+              Fields mirror the conceptual DB structure for Articles, News, FAQs
+              and Area Guides. Saving here is a front-end only demo and does not
+              affect any live CMS.
+            </div>
+          </div>
+          <button
+            class="modal-close-btn"
+            type="button"
+            onclick="closeModal('modal-blog-editor')"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-grid">
+            <div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">1. Blog / Content ID</div>
+                <input
+                  type="text"
+                  class="detail-input"
+                  value="AUTO-GENERATED"
+                  disabled
+                />
+                <div class="modal-field-hint">
+                  System-generated unique identifier used across frontends.
+                </div>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">2. Category tag</div>
+                <select class="filter-select" id="blog-category-tag">
+                  <option>Guides</option>
+                  <option>Blog</option>
+                  <option>Market Analysis</option>
+                  <option>Japan</option>
+                  <option>Real Estate</option>
+                  <option>Investment</option>
+                </select>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">3. Transaction type</div>
+                <select class="filter-select">
+                  <option>None</option>
+                  <option>SellerGuide</option>
+                  <option>BuyerGuide</option>
+                  <option>Renter Guide</option>
+                </select>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">4. Thumbnail asset</div>
+                <input type="file" class="detail-input" />
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">
+                  5. Property prefecture scope
+                </div>
+                <select class="filter-select">
+                  <option>None</option>
+                  <option>All Prefectures</option>
+                  <option>Specific Prefecture</option>
+                </select>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">6. Property type scope</div>
+                <select class="filter-select">
+                  <option>None</option>
+                  <option>All Types</option>
+                  <option>Specific Type</option>
+                </select>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">7. Author (optional)</div>
+                <input
+                  type="text"
+                  class="detail-input"
+                  placeholder="Name of content creator or team"
+                />
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">8. Title</div>
+                <input
+                  type="text"
+                  class="detail-input"
+                  placeholder="Headline shown in cards and listings"
+                />
+              </div>
+            </div>
+            <div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">9. Display status</div>
+                <select class="filter-select">
+                  <option>Active (Visible)</option>
+                  <option>Inactive (Draft/Hidden)</option>
+                </select>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">10. Upload / publish date</div>
+                <input
+                  type="text"
+                  class="detail-input"
+                  value="Set on publish — read only in admin"
+                  disabled
+                />
+              </div>
+              <div class="modal-field-row" style="flex-direction: column">
+                <div class="modal-field-label">
+                  11. Content body (rich text)
+                </div>
+                <textarea
+                  rows="7"
+                  class="detail-input"
+                  style="resize: vertical"
+                  placeholder="Headings, paragraphs, quotes, images, embedded video URLs..."
+                ></textarea>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">12. Video status</div>
+                <span class="badge badge-info">Auto-detected</span>
+                <div class="modal-field-hint">
+                  System scans the content; if a video embed is found it marks
+                  the record with a "Video" badge for UI purposes.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            type="button"
+            onclick="closeModal('modal-blog-editor')"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            type="button"
+            onclick="
+              alert('Save blog (mock).');
+              closeModal('modal-blog-editor');
+            "
+          >
+            Save blog
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AREA GUIDE EDITOR MODAL (PREFECTURE / CITY / AREA + BODY) -->
+    <div id="modal-area-guide" class="modal-backdrop">
+      <div class="modal-shell">
+        <div class="modal-header">
+          <div class="modal-header-main">
+            <div class="modal-title">Area guide editor</div>
+            <div class="modal-subtitle">
+              Create a localized area article by choosing prefecture, city and
+              area, then writing the guide body.
+            </div>
+          </div>
+          <button
+            class="modal-close-btn"
+            type="button"
+            onclick="closeModal('modal-area-guide')"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-grid">
+            <div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">1. Prefecture</div>
+                <select class="filter-select">
+                  <option>Select prefecture</option>
+                  <option>Tokyo</option>
+                  <option>Osaka</option>
+                  <option>Fukuoka</option>
+                </select>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">2. City</div>
+                <select class="filter-select">
+                  <option>Select city</option>
+                  <option>Shibuya</option>
+                  <option>Shinjuku</option>
+                  <option>Chiyoda</option>
+                </select>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">3. Area / neighbourhood</div>
+                <input
+                  type="text"
+                  class="detail-input"
+                  placeholder="e.g. Yamanote line, riverside zone"
+                />
+              </div>
+            </div>
+            <div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">4. Article title</div>
+                <input
+                  type="text"
+                  class="detail-input"
+                  placeholder="Title shown in cards and listings"
+                />
+              </div>
+              <div class="modal-field-row" style="flex-direction: column">
+                <div class="modal-field-label">5. Area guide body</div>
+                <textarea
+                  rows="7"
+                  class="detail-input"
+                  style="resize: vertical"
+                  placeholder="Describe transport, lifestyle, pricing, tips for this area..."
+                ></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            type="button"
+            onclick="closeModal('modal-area-guide')"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            type="button"
+            onclick="
+              alert('Save area guide (mock).');
+              closeModal('modal-area-guide');
+            "
+          >
+            Save area guide
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FAQ EDITOR MODAL (QUESTION + ANSWER) -->
+    <div id="modal-faq-editor" class="modal-backdrop">
+      <div class="modal-shell">
+        <div class="modal-header">
+          <div class="modal-header-main">
+            <div class="modal-title">FAQ editor — Shared FAQ store</div>
+            <div class="modal-subtitle">
+              Model for FAQs consists of a question and an answer body used in
+              help pages and support widgets.
+            </div>
+          </div>
+          <button
+            class="modal-close-btn"
+            type="button"
+            onclick="closeModal('modal-faq-editor')"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-grid">
+            <div class="modal-field-row" style="grid-column: 1 / -1">
+              <div class="modal-field-label">FAQ question</div>
+              <input
+                type="text"
+                class="detail-input"
+                placeholder="Short, clear customer question"
+              />
+            </div>
+            <div
+              class="modal-field-row"
+              style="grid-column: 1 / -1; flex-direction: column"
+            >
+              <div class="modal-field-label">FAQ answer</div>
+              <textarea
+                rows="7"
+                class="detail-input"
+                style="resize: vertical"
+                placeholder="Step-by-step explanation, requirements, links to more details..."
+              ></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            type="button"
+            onclick="closeModal('modal-faq-editor')"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            type="button"
+            onclick="
+              alert('Save FAQ (mock).');
+              closeModal('modal-faq-editor');
+            "
+          >
+            Save FAQ
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function switchInsightsSubTab(key, el) {
+        const subTabs = document.querySelectorAll(
+          "#cms-pane-insights .cms-subnav > .cms-subtab",
+        );
+        subTabs.forEach((t) => t.classList.remove("active"));
+        if (el) el.classList.add("active");
+
+        const subPanes = document.querySelectorAll(
+          "#cms-pane-insights .insights-subpane",
+        );
+        subPanes.forEach((p) => p.classList.remove("active"));
+        const target = document.getElementById("insights-sub-" + key);
+        if (target) target.classList.add("active");
+      }
+
+      function switchArticlesCategory(key, el) {
+        const tabs = document.querySelectorAll(
+          "#insights-sub-articles .cms-subtab-sm",
+        );
+        tabs.forEach((t) => t.classList.remove("active"));
+        if (el) el.classList.add("active");
+
+        const panes = document.querySelectorAll(".insights-articles-pane");
+        panes.forEach((p) => p.classList.remove("active"));
+        const target = document.getElementById("articles-cat-" + key);
+        if (target) target.classList.add("active");
+      }
+
+      function switchNewsCategory(key, el) {
+        const tabs = document.querySelectorAll(
+          "#insights-sub-news .cms-subtab-sm",
+        );
+        tabs.forEach((t) => t.classList.remove("active"));
+        if (el) el.classList.add("active");
+
+        const panes = document.querySelectorAll(".insights-news-pane");
+        panes.forEach((p) => p.classList.remove("active"));
+        const target = document.getElementById("news-cat-" + key);
+        if (target) target.classList.add("active");
+      }
+
+      function openModal(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.add("open");
+      }
+
+      function closeModal(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove("open");
+      }
+
+      function openBlogEditor(type) {
+        const titleEl = document.getElementById("blog-editor-title");
+        if (titleEl) {
+          if (type === "news") {
+            titleEl.textContent = "Blog editor — News";
+          } else if (type === "article") {
+            titleEl.textContent = "Blog editor — Article";
+          } else if (type === "guide") {
+            titleEl.textContent = "Area guide editor";
+          } else {
+            titleEl.textContent = "Blog editor — Article / News";
+          }
+        }
+        openModal("modal-blog-editor");
+      }
+
+      function openAreaGuideEditor() {
+        openModal("modal-area-guide");
+      }
+
+      function openFaqEditor() {
+        openModal("modal-faq-editor");
+      }
+    </script>
+  </body>
+</html>

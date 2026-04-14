@@ -1,0 +1,1232 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Property Report Management</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background: #f5f3ef;
+        color: #2a2118;
+      }
+
+      .page {
+        padding: 24px 32px 32px;
+      }
+
+      .page-header {
+        margin-bottom: 18px;
+      }
+
+      .page-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .page-subtitle {
+        font-size: 13px;
+        color: #7c6a55;
+        max-width: 720px;
+      }
+
+      .pill {
+        margin-top: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #efe3cf;
+        color: #7b623f;
+        display: inline-block;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.1fr);
+        gap: 18px;
+      }
+
+      .card {
+        background: #fffaf2;
+        border-radius: 10px;
+        border: 1px solid #eadccd;
+        padding: 16px 18px 18px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      }
+
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .filters input,
+      .filters select {
+        border-radius: 999px;
+        border: 1px solid #ddcdb9;
+        padding: 7px 12px;
+        font-size: 12px;
+        background: #fdf8f0;
+      }
+
+      .filters input[type="date"] {
+        padding-right: 10px;
+      }
+
+      .select-wrapper {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .select-wrapper select {
+        padding-right: 26px;
+      }
+
+      .select-wrapper::after {
+        content: "\25be";
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 9px;
+        color: #7c6a55;
+        pointer-events: none;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: none;
+        padding: 7px 14px;
+        font-size: 12px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .btn-primary {
+        background: #3a6b3c;
+        color: #fff;
+      }
+
+      .btn-secondary {
+        background: #f7efe4;
+        color: #6a5641;
+        border: 1px solid #ddcdb9;
+      }
+
+      .reset-icon {
+        width: 32px;
+        height: 32px;
+        border: 1px solid #ddcdb9;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #7c6a55;
+        background: #fffaf2;
+        cursor: pointer;
+        font-size: 13px;
+      }
+
+      .reset-icon:hover {
+        border-color: #ad986e;
+        color: #ad986e;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f1e4d4;
+      }
+
+      th,
+      td {
+        padding: 8px 6px;
+        border-bottom: 1px solid #efe2d3;
+        text-align: left;
+      }
+
+      th {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        color: #7b623f;
+      }
+
+      tbody tr {
+        cursor: pointer;
+      }
+
+      tbody tr:hover {
+        background: #f8eee0;
+      }
+
+      tbody tr.selected {
+        background: #ede1cf;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 11px;
+      }
+
+      .status-pending {
+        background: #fff2cc;
+        color: #7b5b12;
+      }
+
+      .status-reviewing {
+        background: #e0ecff;
+        color: #264f96;
+      }
+
+      .status-resolved {
+        background: #e3f5e5;
+        color: #216234;
+      }
+
+      .status-rejected {
+        background: #f9e0dd;
+        color: #a13f3a;
+      }
+
+      .type-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 11px;
+        background: #efe3cf;
+        color: #7b623f;
+      }
+
+      .empty-state {
+        text-align: center;
+        font-size: 12px;
+        color: #7c6a55;
+        padding: 14px 0;
+      }
+
+      .detail-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .detail-title {
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .detail-meta {
+        font-size: 11px;
+        color: #7c6a55;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 16px;
+        margin-top: 10px;
+      }
+
+      .detail-block-title {
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 10px;
+        margin-bottom: 4px;
+        color: #4f3c2b;
+      }
+
+      .detail-label {
+        font-size: 11px;
+        color: #7c6a55;
+        margin-bottom: 2px;
+      }
+
+      .detail-value {
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+
+      .detail-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .btn-soft {
+        border-radius: 999px;
+        border: 1px solid #ddcdb9;
+        padding: 6px 11px;
+        font-size: 12px;
+        cursor: pointer;
+        background: #f7efe4;
+        color: #6a5641;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .btn-soft-primary {
+        background: #ad986e;
+        border-color: #ad986e;
+        color: #fffaf2;
+      }
+
+      .btn-soft-danger {
+        background: #f9e0dd;
+        border-color: #e4a89f;
+        color: #9b332c;
+      }
+
+      .attachments-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 4px;
+      }
+
+      .attachment-pill {
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: #f5ede0;
+        font-size: 11px;
+        color: #6a5641;
+        border: 1px solid #ddcdb9;
+      }
+
+      .audit-log {
+        margin-top: 8px;
+        max-height: 150px;
+        overflow-y: auto;
+        border-radius: 8px;
+        background: #fffdf8;
+        border: 1px dashed #e1d5c5;
+        padding: 8px 10px;
+        font-size: 11px;
+      }
+
+      .audit-item {
+        margin-bottom: 4px;
+      }
+
+      .audit-item span.time {
+        color: #8b6f47;
+      }
+
+      .badge-status-inline {
+        font-size: 11px;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: #efe3cf;
+        color: #7b623f;
+        margin-left: 6px;
+      }
+
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 10, 5, 0.35);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 40;
+      }
+
+      .modal {
+        width: 380px;
+        max-width: calc(100% - 32px);
+        background: #fffaf2;
+        border-radius: 12px;
+        border: 1px solid #eadccd;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+        padding: 16px 18px 14px;
+      }
+
+      .modal-title {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .modal-subtitle {
+        font-size: 12px;
+        color: #7c6a55;
+        margin-bottom: 10px;
+      }
+
+      .modal-body {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .modal-body label {
+        font-size: 12px;
+        font-weight: 500;
+        color: #4f3c2b;
+      }
+
+      .modal-body select,
+      .modal-body textarea {
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #ddcdb9;
+        padding: 7px 9px;
+        font-size: 12px;
+        background: #fffdf7;
+      }
+
+      .modal-body textarea {
+        min-height: 70px;
+        resize: vertical;
+      }
+
+      .modal-footer {
+        margin-top: 10px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: #4f3c2b;
+        margin-top: 4px;
+      }
+
+      .checkbox-row input[type="checkbox"] {
+        accent-color: #ad986e;
+      }
+
+      .toast {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        background: #1b4332;
+        color: #ecfdf5;
+        padding: 9px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        opacity: 0;
+        transform: translateY(10px);
+        pointer-events: none;
+        transition: all 0.2s ease;
+        z-index: 50;
+      }
+
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      @media (max-width: 1024px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="page-header">
+        <div style="margin-bottom: 8px">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            onclick="window.location.href = 'property-list-oversight.html'"
+          >
+            ← Back to Property List
+          </button>
+        </div>
+        <div class="page-title">Property Report Management</div>
+        <div class="page-subtitle">
+          Manage reports submitted by end users and agent companies. Reports are
+          review triggers only: issues must be resolved in the Property module,
+          then finalized here.
+        </div>
+      </div>
+
+      <div class="layout">
+        <!-- LIST SIDE -->
+        <div class="card">
+          <div class="toolbar">
+            <div class="page">
+              <div class="page-header">
+                <div style="margin-bottom: 8px">
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="window.location.href = 'property-list-oversight.html'"
+                  >
+            
+                  </button>
+                </div>
+                <div class="page-title">Property Report Management</div>
+              </div>
+                  <option value="unauthorized_listing">
+                    Unauthorized listing
+                  </option>
+                  <option value="unauthorized_images">
+                    Unauthorized images
+                  </option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="select-wrapper">
+                <select id="filterReporterType">
+                  <option value="">Reporter: All</option>
+                  <option value="individual">Individual</option>
+                  <option value="company">Company</option>
+                </select>
+              </div>
+              <input
+                type="text"
+                id="filterPropertyId"
+                placeholder="Property name"
+              />
+              <input type="date" id="filterDateFrom" />
+              <input type="date" id="filterDateTo" />
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px">
+              <button class="btn-secondary btn" onclick="applyFilters()">
+                Apply
+              </button>
+              <div
+                class="reset-icon"
+                onclick="resetFilters()"
+                title="Reset filters"
+              >
+                &#x21bb;
+              </div>
+            </div>
+          </div>
+
+          <div style="overflow-x: auto; max-height: 520px">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Property</th>
+                  <th>Property type</th>
+                  <th>Reason</th>
+                  <th>Reporter</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="reportTableBody">
+                <tr>
+                  <td colspan="7" class="empty-state">No reports available.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- DETAIL SIDE -->
+        <div class="card" id="detailCard">
+          <div class="detail-header-row">
+            <div>
+              <div class="detail-title" id="detailTitle">
+                No report selected
+              </div>
+              <div class="detail-meta" id="detailMeta">
+                Select a report from the list to view details.
+              </div>
+            </div>
+            <div id="detailStatus"></div>
+          </div>
+
+          <div id="detailContent" style="font-size: 13px; color: #3f3225">
+            <!-- Filled by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resolve Modal -->
+    <div class="modal-backdrop" id="resolveModal">
+      <div class="modal">
+        <div class="modal-title">Resolve Report</div>
+        <div class="modal-subtitle">
+          Confirm how this report was handled. Actual actions must be taken in
+          the Property module.
+        </div>
+        <div class="modal-body">
+          <div>
+            <label for="resolveAction">Action taken</label>
+            <select id="resolveAction">
+              <option value="">Select...</option>
+              <option value="suspend_listing">Suspend listing</option>
+              <option value="contacted_agent">Contacted agent</option>
+              <option value="no_issue_found">No issue found</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="checkbox-row">
+            <input type="checkbox" id="resolveNotify" />
+            <label for="resolveNotify">Notify reporter via email</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeResolveModal()">
+            Cancel
+          </button>
+          <button class="btn btn-primary" onclick="confirmResolve()">
+            Confirm resolve
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div class="modal-backdrop" id="rejectModal">
+      <div class="modal">
+        <div class="modal-title">Reject Report</div>
+        <div class="modal-subtitle">
+          Provide a reason why this report is not accepted.
+        </div>
+        <div class="modal-body">
+          <div>
+            <label for="rejectReason">Reject reason</label>
+            <select id="rejectReason">
+              <option value="">Select...</option>
+              <option value="invalid_report">Invalid report</option>
+              <option value="not_enough_evidence">Not enough evidence</option>
+              <option value="duplicate">Duplicate</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeRejectModal()">
+            Cancel
+          </button>
+          <button class="btn btn-soft-danger" onclick="confirmReject()">
+            Confirm reject
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      const currentAdmin = "Admin Tanaka";
+
+      const reports = [
+        {
+          id: "R-2024-0001",
+          propertyId: "P-1001",
+          propertyTitle: "Tiny Home in Shinano Kamiminocchi",
+          propertyOwner: "Grace Miller (GM Agency)",
+          reporterType: "individual",
+          reporterName: "Jack Miller",
+          reporterEmail: "jack.miller@example.com",
+          reporterPhone: "+81-90-1234-5678",
+          reason: "incorrect_information",
+          description:
+            "The floor area listed seems different from what the agent told me.",
+          attachments: [
+            { type: "image", label: "Listing screenshot" },
+            { type: "link", label: "External listing", url: "#" },
+          ],
+          status: "pending",
+          createdAt: "2024-03-10T10:30:00",
+          updatedAt: "2024-03-10T10:30:00",
+          auditLog: [
+            {
+              at: "2024-03-10T10:30:00",
+              by: "System",
+              action: "created",
+              detail: "Report submitted by end user.",
+            },
+          ],
+        },
+        {
+          id: "R-2024-0002",
+          propertyId: "P-1023",
+          propertyTitle: "Family Apartment near Shinjuku",
+          propertyOwner: "Tokyo Realty Co.",
+          reporterType: "company",
+          reporterName: "Tokyo Realty Compliance Team",
+          reporterEmail: "compliance@tokyorealty.jp",
+          reporterPhone: "+81-3-5555-0000",
+          reason: "unauthorized_listing",
+          description:
+            "This listing reuses our exclusive property photos without permission.",
+          attachments: [
+            { type: "image", label: "Original marketing material" },
+          ],
+          status: "reviewing",
+          createdAt: "2024-03-12T09:10:00",
+          updatedAt: "2024-03-13T14:22:00",
+          auditLog: [
+            {
+              at: "2024-03-12T09:10:00",
+              by: "System",
+              action: "created",
+              detail: "Report submitted by company.",
+            },
+            {
+              at: "2024-03-13T14:22:00",
+              by: "Admin Sato",
+              action: "status_changed",
+              detail: "Status changed to reviewing.",
+            },
+          ],
+        },
+        {
+          id: "R-2024-0003",
+          propertyId: "P-1088",
+          propertyTitle: "Loft in Osaka Namba",
+          propertyOwner: "Osaka Homes KK",
+          reporterType: "individual",
+          reporterName: "Emma Wilson",
+          reporterEmail: "emma.wilson@example.com",
+          reporterPhone: "+81-80-5555-8888",
+          reason: "property_sold",
+          description:
+            "The agent said this property is already sold but still shown as available.",
+          attachments: [],
+          status: "resolved",
+          createdAt: "2024-03-08T16:05:00",
+          updatedAt: "2024-03-09T11:40:00",
+          auditLog: [
+            {
+              at: "2024-03-08T16:05:00",
+              by: "System",
+              action: "created",
+              detail: "Report submitted by end user.",
+            },
+            {
+              at: "2024-03-09T11:40:00",
+              by: "Admin Tanaka",
+              action: "resolved",
+              detail: "Listing suspended. Reporter notified.",
+            },
+          ],
+        },
+        {
+          id: "R-2024-0004",
+          propertyId: "P-1102",
+          propertyTitle: "Shared house in Yokohama",
+          propertyOwner: "Haruka Sato (Osaka Homes)",
+          reporterType: "company",
+          reporterName: "Legal Dept, Osaka Homes",
+          reporterEmail: "legal@osakahomes.jp",
+          reporterPhone: "+81-6-9999-2222",
+          reason: "unauthorized_images",
+          description:
+            "Images appear copied from our previous campaign without license.",
+          attachments: [{ type: "link", label: "Evidence folder", url: "#" }],
+          status: "rejected",
+          createdAt: "2024-03-01T11:00:00",
+          updatedAt: "2024-03-02T15:30:00",
+          auditLog: [
+            {
+              at: "2024-03-01T11:00:00",
+              by: "System",
+              action: "created",
+              detail: "Report submitted by company.",
+            },
+            {
+              at: "2024-03-02T15:30:00",
+              by: "Admin Sato",
+              action: "rejected",
+              detail: "Duplicate of existing case.",
+            },
+          ],
+        },
+      ];
+
+      let filteredReports = [...reports];
+      let selectedReportId = null;
+
+      function formatDate(dateStr) {
+        if (!dateStr) return "-";
+        const d = new Date(dateStr);
+        if (Number.isNaN(d.getTime())) return dateStr;
+        return d.toLocaleDateString("en-GB", {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+        });
+      }
+
+      function reasonLabel(reason, reporterType) {
+        const map = {
+          property_sold: "Property sold",
+          incorrect_information: "Incorrect information",
+          privacy_copyright: "Privacy / copyright",
+          unauthorized_listing: "Unauthorized listing",
+          unauthorized_images: "Unauthorized images",
+          other: "Other",
+        };
+        return map[reason] || reason || "-";
+      }
+
+      function statusClass(status) {
+        return (
+          {
+            pending: "status-pending",
+            reviewing: "status-reviewing",
+            resolved: "status-resolved",
+            rejected: "status-rejected",
+          }[status] || ""
+        );
+      }
+
+      function renderTable() {
+        const tbody = document.getElementById("reportTableBody");
+        const totalEl = document.getElementById("totalReportsCount");
+        if (!tbody) return;
+
+        tbody.innerHTML = "";
+
+        if (!filteredReports.length) {
+          tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No reports match current filters.</td></tr>`;
+          if (totalEl) totalEl.textContent = reports.length.toString();
+          return;
+        }
+
+        if (totalEl) totalEl.textContent = reports.length.toString();
+
+        filteredReports.forEach((rep, index) => {
+          const tr = document.createElement("tr");
+          tr.dataset.id = rep.id;
+          if (rep.id === selectedReportId) tr.classList.add("selected");
+
+          tr.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${rep.propertyTitle || rep.propertyId}</td>
+            <td><span class="type-pill">${
+              rep.reporterType === "company"
+                ? "Real Estate Company"
+                : "Individual"
+            }</span></td>
+            <td>${reasonLabel(rep.reason, rep.reporterType)}</td>
+            <td>${
+              rep.reporterType === "company"
+                ? "Real Estate Company"
+                : "Individual"
+            }</td>
+            <td>${formatDate(rep.createdAt)}</td>
+            <td><span class="status-pill ${statusClass(rep.status)}">${
+              rep.status.charAt(0).toUpperCase() + rep.status.slice(1)
+            }</span></td>
+          `;
+
+          tr.addEventListener("click", () => {
+            selectReport(rep.id);
+          });
+
+          tbody.appendChild(tr);
+        });
+      }
+
+      function applyFilters() {
+        const status = document.getElementById("filterStatus").value;
+        const reason = document.getElementById("filterReason").value;
+        const reporterType =
+          document.getElementById("filterReporterType").value;
+        const propertyId = document
+          .getElementById("filterPropertyId")
+          .value.trim()
+          .toLowerCase();
+        const from = document.getElementById("filterDateFrom").value;
+        const to = document.getElementById("filterDateTo").value;
+
+        filteredReports = reports.filter((r) => {
+          if (status && r.status !== status) return false;
+          if (reason && r.reason !== reason) return false;
+          if (reporterType && r.reporterType !== reporterType) return false;
+          if (
+            propertyId &&
+            !r.propertyId.toLowerCase().includes(propertyId) &&
+            !r.propertyTitle.toLowerCase().includes(propertyId)
+          )
+            return false;
+
+          if (from) {
+            const dFrom = new Date(from);
+            const dCreated = new Date(r.createdAt);
+            if (dCreated < dFrom) return false;
+          }
+
+          if (to) {
+            const dTo = new Date(to);
+            const dCreated = new Date(r.createdAt);
+            if (dCreated > dTo) return false;
+          }
+
+          return true;
+        });
+
+        selectedReportId = filteredReports.length
+          ? filteredReports[0].id
+          : null;
+        renderTable();
+        renderDetail();
+      }
+
+      function resetFilters() {
+        document.getElementById("filterStatus").value = "";
+        document.getElementById("filterReason").value = "";
+        document.getElementById("filterReporterType").value = "";
+        document.getElementById("filterPropertyId").value = "";
+        document.getElementById("filterDateFrom").value = "";
+        document.getElementById("filterDateTo").value = "";
+        filteredReports = [...reports];
+        selectedReportId = filteredReports.length
+          ? filteredReports[0].id
+          : null;
+        renderTable();
+        renderDetail();
+      }
+
+      function selectReport(id) {
+        selectedReportId = id;
+        renderTable();
+        renderDetail();
+      }
+
+      function currentReport() {
+        return reports.find((r) => r.id === selectedReportId) || null;
+      }
+
+      function renderDetail() {
+        const rep = currentReport();
+        const titleEl = document.getElementById("detailTitle");
+        const metaEl = document.getElementById("detailMeta");
+        const statusEl = document.getElementById("detailStatus");
+        const contentEl = document.getElementById("detailContent");
+
+        if (!rep) {
+          if (titleEl) titleEl.textContent = "No report selected";
+          if (metaEl)
+            metaEl.textContent =
+              "Select a report from the list to view details.";
+          if (statusEl) statusEl.innerHTML = "";
+          if (contentEl) contentEl.innerHTML = "";
+          return;
+        }
+
+        if (titleEl) titleEl.textContent = `${rep.propertyTitle || "Property"}`;
+        if (metaEl) metaEl.textContent = `${rep.propertyId} • Report ${rep.id}`;
+
+        if (statusEl) {
+          statusEl.innerHTML = `<span class="status-pill ${statusClass(
+            rep.status,
+          )}">${
+            rep.status.charAt(0).toUpperCase() + rep.status.slice(1)
+          }</span>`;
+        }
+
+        const attachmentsHtml =
+          rep.attachments && rep.attachments.length
+            ? `<div class="attachments-list">${rep.attachments
+                .map((a, idx) => {
+                  const label = a.label || `${a.type} ${idx + 1}`;
+                  if (a.url) {
+                    return `<a href="${a.url}" target="_blank" class="attachment-pill">${label}</a>`;
+                  }
+                  return `<span class="attachment-pill">${label}</span>`;
+                })
+                .join("")}</div>`
+            : '<div class="detail-value" style="color:#7c6a55;">No attachments</div>';
+
+        const auditHtml =
+          rep.auditLog && rep.auditLog.length
+            ? rep.auditLog
+                .map(
+                  (l) =>
+                    `<div class="audit-item"><span class="time">${formatDate(
+                      l.at,
+                    )}</span> 
+                      
+                      
+                      — <strong>${l.by}</strong>: ${l.action} (${l.detail})</div>`,
+                )
+                .join("")
+            : '<div class="audit-item" style="color:#7c6a55;">No audit entries.</div>';
+
+        if (contentEl) {
+          contentEl.innerHTML = `
+            <div class="detail-block-title">Property</div>
+            <div class="detail-grid">
+              <div>
+                <div class="detail-label">Property ID</div>
+                <div class="detail-value">${rep.propertyId}</div>
+              </div>
+              <div>
+                <div class="detail-label">Owner</div>
+                <div class="detail-value">${rep.propertyOwner || "-"}</div>
+              </div>
+            </div>
+
+            <div class="detail-block-title">Reporter</div>
+            <div class="detail-grid">
+              <div>
+                <div class="detail-label">Type</div>
+                <div class="detail-value">$${
+                  rep.reporterType === "company" ? "Company" : "Individual"
+                }</div>
+              </div>
+              <div>
+                <div class="detail-label">Name</div>
+                <div class="detail-value">${rep.reporterName}</div>
+              </div>
+              <div>
+                <div class="detail-label">Email</div>
+                <div class="detail-value">${rep.reporterEmail || "-"}</div>
+              </div>
+              <div>
+                <div class="detail-label">Phone</div>
+                <div class="detail-value">${rep.reporterPhone || "-"}</div>
+              </div>
+            </div>
+
+            <div class="detail-block-title">Report content</div>
+            <div class="detail-label">Reason</div>
+            <div class="detail-value">${reasonLabel(
+              rep.reason,
+              rep.reporterType,
+            )}</div>
+            <div class="detail-label">Description</div>
+            <div class="detail-value">${
+              rep.description ||
+              '<span style="color:#7c6a55;">(no description)</span>'
+            }</div>
+            <div class="detail-label">Attachments</div>
+            ${attachmentsHtml}
+
+            <div class="detail-block-title">System</div>
+            <div class="detail-grid">
+              <div>
+                <div class="detail-label">Status</div>
+                <div class="detail-value">${
+                  rep.status.charAt(0).toUpperCase() + rep.status.slice(1)
+                }</div>
+              </div>
+              <div>
+                <div class="detail-label">Created at</div>
+                <div class="detail-value">${formatDate(rep.createdAt)}</div>
+              </div>
+              <div>
+                <div class="detail-label">Last updated</div>
+                <div class="detail-value">${formatDate(rep.updatedAt)}</div>
+              </div>
+            </div>
+
+            <div class="detail-actions">
+              <button class="btn-soft" onclick="goToProperty()">View Property Detail</button>
+              <button class="btn-soft-primary" onclick="openResolveModal()">Resolve</button>
+              <button class="btn-soft-danger" onclick="openRejectModal()">Reject</button>
+            </div>
+
+            <div class="detail-block-title" style="margin-top:14px;">Audit log</div>
+            <div class="audit-log">${auditHtml}</div>
+          `;
+        }
+      }
+
+      function ensureFlowAllowed(targetStatus) {
+        const rep = currentReport();
+        if (!rep) return false;
+        if (targetStatus === "reviewing") {
+          if (rep.status !== "pending") {
+            showToast("Can only mark 'pending' reports as reviewing.");
+            return false;
+          }
+          return true;
+        }
+        if (targetStatus === "resolved" || targetStatus === "rejected") {
+          if (rep.status === targetStatus) {
+            showToast(`Report is already ${targetStatus}.`);
+            return false;
+          }
+          if (rep.status === "pending") {
+            // Auto-move pending reports into reviewing as part of the
+            // resolution flow, and log this review step.
+            rep.status = "reviewing";
+            rep.updatedAt = new Date().toISOString();
+            rep.auditLog.push({
+              at: rep.updatedAt,
+              by: currentAdmin,
+              action: "status_changed",
+              detail: "Status auto-changed to reviewing before resolution.",
+            });
+            renderTable();
+            renderDetail();
+          }
+          return true;
+        }
+        return true;
+      }
+
+      function markReviewing() {
+        if (!ensureFlowAllowed("reviewing")) return;
+        const rep = currentReport();
+        if (!rep) return;
+        rep.status = "reviewing";
+        rep.updatedAt = new Date().toISOString();
+        rep.auditLog.push({
+          at: rep.updatedAt,
+          by: currentAdmin,
+          action: "status_changed",
+          detail: "Status changed to reviewing.",
+        });
+        renderTable();
+        renderDetail();
+        showToast("Report marked as reviewing.");
+      }
+
+      function goToProperty() {
+        const rep = currentReport();
+        if (!rep) return;
+        // Navigation only, actual suspend/delete is done in Property module.
+        const url = `property-detail-view.html?propertyId=${encodeURIComponent(
+          rep.propertyId,
+        )}`;
+        window.open(url, "_blank");
+      }
+
+      function openResolveModal() {
+        if (!ensureFlowAllowed("resolved")) return;
+        const modal = document.getElementById("resolveModal");
+        if (!modal) return;
+        document.getElementById("resolveAction").value = "";
+        document.getElementById("resolveNotify").checked = false;
+        modal.style.display = "flex";
+      }
+
+      function closeResolveModal() {
+        const modal = document.getElementById("resolveModal");
+        if (modal) modal.style.display = "none";
+      }
+
+      function confirmResolve() {
+        const rep = currentReport();
+        if (!rep) return;
+        const action = document.getElementById("resolveAction").value;
+        const notify = document.getElementById("resolveNotify").checked;
+        if (!action) {
+          showToast("Select an action taken before resolving.");
+          return;
+        }
+        rep.status = "resolved";
+        rep.updatedAt = new Date().toISOString();
+        rep.auditLog.push({
+          at: rep.updatedAt,
+          by: currentAdmin,
+          action: "resolved",
+          detail: `${action} | notify=${notify ? "yes" : "no"}`,
+        });
+        closeResolveModal();
+        renderTable();
+        renderDetail();
+        if (notify) {
+          showToast("Report resolved and notification would be sent.");
+        } else {
+          showToast("Report resolved.");
+        }
+      }
+
+      function openRejectModal() {
+        if (!ensureFlowAllowed("rejected")) return;
+        const modal = document.getElementById("rejectModal");
+        if (!modal) return;
+        document.getElementById("rejectReason").value = "";
+        modal.style.display = "flex";
+      }
+
+      function closeRejectModal() {
+        const modal = document.getElementById("rejectModal");
+        if (modal) modal.style.display = "none";
+      }
+
+      function confirmReject() {
+        const rep = currentReport();
+        if (!rep) return;
+        const reason = document.getElementById("rejectReason").value;
+        if (!reason) {
+          showToast("Select a reject reason.");
+          return;
+        }
+        rep.status = "rejected";
+        rep.updatedAt = new Date().toISOString();
+        rep.auditLog.push({
+          at: rep.updatedAt,
+          by: currentAdmin,
+          action: "rejected",
+          detail: `${reason}`,
+        });
+        closeRejectModal();
+        renderTable();
+        renderDetail();
+        showToast("Report rejected.");
+      }
+
+      function showToast(msg) {
+        const el = document.getElementById("toast");
+        if (!el) return;
+        el.textContent = msg;
+        el.classList.add("show");
+        clearTimeout(showToast._timer);
+        showToast._timer = setTimeout(() => {
+          el.classList.remove("show");
+        }, 2600);
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        filteredReports = [...reports];
+        selectedReportId = filteredReports.length
+          ? filteredReports[0].id
+          : null;
+        renderTable();
+        renderDetail();
+      });
+    </script>
+  </body>
+</html>

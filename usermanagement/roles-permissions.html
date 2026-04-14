@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Roles &amp; Permissions</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background: #f5f3ef;
+        color: #2a2118;
+      }
+
+      .page {
+        padding: 24px 32px 32px;
+      }
+
+      .page-header {
+        margin-bottom: 18px;
+      }
+
+      .page-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .page-subtitle {
+        font-size: 13px;
+        color: #7c6a55;
+        max-width: 720px;
+      }
+
+      .pill {
+        margin-top: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #efe3cf;
+        color: #7b623f;
+        display: inline-block;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 2.5fr);
+        gap: 18px;
+      }
+
+      .card {
+        background: #fffaf2;
+        border-radius: 10px;
+        border: 1px solid #eadccd;
+        padding: 16px 18px 18px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      }
+
+      .card-header {
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: #7c6a55;
+      }
+
+      .role-list {
+        max-height: 380px;
+        overflow: auto;
+        margin-top: 6px;
+      }
+
+      .role-item {
+        padding: 8px 9px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        margin-bottom: 6px;
+      }
+
+      .role-item:hover {
+        background: #f6ede0;
+      }
+
+      .role-item.active {
+        border-color: #c49b63;
+        background: #f0e0c9;
+      }
+
+      .role-name {
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .role-meta {
+        font-size: 11px;
+        color: #7c6a55;
+        margin-top: 2px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 10px;
+        background: #efe3cf;
+        color: #7b623f;
+        margin-top: 4px;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: none;
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .btn-primary {
+        background: #3a6b3c;
+        color: #fff;
+      }
+
+      .btn-secondary {
+        background: #f7efe4;
+        color: #6a5641;
+        border: 1px solid #ddcdb9;
+      }
+
+      .btn-sm {
+        padding: 4px 10px;
+        font-size: 11px;
+      }
+
+      .permission-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 6px;
+        font-size: 11px;
+      }
+
+      .permission-table th,
+      .permission-table td {
+        border-bottom: 1px solid #efe2d3;
+        padding: 6px 5px;
+        text-align: left;
+      }
+
+      .permission-table thead {
+        background: #f1e4d4;
+      }
+
+      .perm-scope {
+        font-weight: 600;
+        color: #6b5032;
+      }
+
+      .perm-desc {
+        font-size: 11px;
+        color: #7c6a55;
+        margin-top: 2px;
+      }
+
+      .matrix-cell {
+        text-align: center;
+      }
+
+      .matrix-indicator {
+        display: inline-flex;
+        width: 18px;
+        height: 18px;
+        border-radius: 6px;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        border: 1px solid #c9b79f;
+        background: #fff;
+        cursor: pointer;
+      }
+
+      .matrix-indicator.active {
+        background: #3a6b3c;
+        color: #fff;
+        border-color: #3a6b3c;
+      }
+
+      .assignment-list {
+        margin-top: 6px;
+        max-height: 190px;
+        overflow: auto;
+      }
+
+      .assignment-item {
+        padding: 6px 8px;
+        border-radius: 8px;
+        border: 1px solid #eadccd;
+        margin-bottom: 6px;
+      }
+
+      .assignment-name {
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .assignment-meta {
+        font-size: 11px;
+        color: #7c6a55;
+        margin-top: 2px;
+      }
+
+      .field-row {
+        margin-top: 8px;
+      }
+
+      .field-row label {
+        display: block;
+        font-size: 11px;
+        color: #7c6a55;
+        margin-bottom: 2px;
+      }
+
+      .field-row select {
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #ddcdb9;
+        padding: 5px 7px;
+        font-size: 12px;
+        background: #fdf8f0;
+      }
+
+      .divider-text {
+        font-size: 11px;
+        color: #9a8466;
+        margin-top: 10px;
+      }
+
+      .layout-col-roles {
+        grid-column: 1 / auto;
+      }
+
+      .layout-col-matrix {
+        grid-column: 2 / auto;
+      }
+
+      @media (max-width: 1180px) {
+        .layout {
+          grid-template-columns: minmax(0, 1.4fr) minmax(0, 2.2fr);
+          grid-template-rows: auto;
+          grid-template-areas: "roles matrix";
+        }
+
+        .layout-col-roles {
+          grid-area: roles;
+        }
+
+        .layout-col-matrix {
+          grid-area: matrix;
+        }
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="page-header">
+        <div class="page-title">Roles &amp; Permissions</div>
+      </div>
+
+      <div class="layout">
+        <div class="card layout-col-roles">
+          <div class="card-header">
+            <div class="card-title">Role list</div>
+          </div>
+
+          <div
+            style="
+              display: flex;
+              justify-content: flex-end;
+              align-items: center;
+              margin-bottom: 4px;
+            "
+          >
+            <div style="display: flex; gap: 6px">
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                id="addRoleBtn"
+              >
+                New role
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                id="deleteRoleBtn"
+              >
+                Delete role
+              </button>
+            </div>
+          </div>
+
+          <div class="role-list" id="roleList"></div>
+        </div>
+
+        <div class="card layout-col-matrix">
+          <div class="card-header">
+            <div class="card-title" id="matrixTitle">Permission matrix</div>
+            <div class="card-subtitle" id="matrixSubtitle"></div>
+          </div>
+
+          <div class="field-row">
+            <label for="roleNameInput">Role name</label>
+            <input
+              type="text"
+              id="roleNameInput"
+              style="
+                width: 100%;
+                border-radius: 8px;
+                border: 1px solid #ddcdb9;
+                padding: 5px 7px;
+                font-size: 12px;
+                background: #fdf8f0;
+              "
+            />
+          </div>
+
+          <div
+            style="margin-top: 10px; display: flex; justify-content: flex-end"
+          >
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              id="saveRoleBtn"
+            >
+              Save changes
+            </button>
+          </div>
+
+          <table class="permission-table">
+            <thead>
+              <tr>
+                <th style="width: 40%">Scope</th>
+                <th style="width: 23%">Read</th>
+                <th style="width: 23%">Write</th>
+                <th style="width: 14%">Admin</th>
+              </tr>
+            </thead>
+            <tbody id="permissionBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const permissionScopes = [
+        {
+          id: "users",
+          label: "Users & accounts",
+          desc: "View and manage end user / agent / internal support accounts.",
+        },
+        {
+          id: "leads",
+          label: "Leads & CRM",
+          desc: "Access to lead inbox, routing, assignment and history.",
+        },
+        {
+          id: "properties",
+          label: "Property inventory",
+          desc: "View and curate listings and projects.",
+        },
+        {
+          id: "content",
+          label: "Content & CMS",
+          desc: "Articles, landing pages, static content blocks.",
+        },
+        {
+          id: "support",
+          label: "Messages & support",
+          desc: "Tickets, routing, SLA (never message/call content).",
+        },
+        {
+          id: "billing",
+          label: "Billing & monetisation",
+          desc: "Plans, invoices, payouts configuration.",
+        },
+        {
+          id: "analytics",
+          label: "Operations & analytics",
+          desc: "Funnels, cohorts, platform health dashboards.",
+        },
+        {
+          id: "system",
+          label: "System settings & integrations",
+          desc: "SSO, webhooks, API keys and audit configuration.",
+        },
+      ];
+
+      let roles = [
+        {
+          id: "platform_admin",
+          name: "Platform Admin",
+          type: "Global",
+          description: "Full platform configuration and operations.",
+          permissions: {
+            users: { read: true, write: true, admin: true },
+            leads: { read: true, write: true, admin: true },
+            properties: { read: true, write: true, admin: true },
+            content: { read: true, write: true, admin: true },
+            support: { read: true, write: true, admin: true },
+            billing: { read: true, write: true, admin: true },
+            analytics: { read: true, write: true, admin: true },
+            system: { read: true, write: true, admin: true },
+          },
+        },
+        {
+          id: "support_lead",
+          name: "Support Lead",
+          type: "Support",
+          description: "Head of CS, manages tickets and queues.",
+          permissions: {
+            users: { read: true, write: false, admin: false },
+            leads: { read: true, write: false, admin: false },
+            properties: { read: true, write: false, admin: false },
+            content: { read: true, write: false, admin: false },
+            support: { read: true, write: true, admin: true },
+            billing: { read: false, write: false, admin: false },
+            analytics: { read: true, write: false, admin: false },
+            system: { read: false, write: false, admin: false },
+          },
+        },
+        {
+          id: "content_editor",
+          name: "Content Editor",
+          type: "Content",
+          description: "Create and schedule content.",
+          permissions: {
+            users: { read: true, write: false, admin: false },
+            leads: { read: false, write: false, admin: false },
+            properties: { read: true, write: false, admin: false },
+            content: { read: true, write: true, admin: false },
+            support: { read: false, write: false, admin: false },
+            billing: { read: false, write: false, admin: false },
+            analytics: { read: true, write: false, admin: false },
+            system: { read: false, write: false, admin: false },
+          },
+        },
+        {
+          id: "finance_ops",
+          name: "Finance & Ops",
+          type: "Finance",
+          description: "Manage payouts, invoices and reconciliation.",
+          permissions: {
+            users: { read: true, write: false, admin: false },
+            leads: { read: false, write: false, admin: false },
+            properties: { read: true, write: false, admin: false },
+            content: { read: false, write: false, admin: false },
+            support: { read: true, write: false, admin: false },
+            billing: { read: true, write: true, admin: true },
+            analytics: { read: true, write: false, admin: false },
+            system: { read: false, write: false, admin: false },
+          },
+        },
+      ];
+
+      let selectedRoleId = roles[0].id;
+
+      function getRole(id) {
+        return roles.find((r) => r.id === id);
+      }
+
+      function renderRoles() {
+        const list = document.getElementById("roleList");
+        list.innerHTML = "";
+        roles.forEach((role) => {
+          const div = document.createElement("div");
+          div.className =
+            "role-item" + (role.id === selectedRoleId ? " active" : "");
+          div.innerHTML = `
+            <div class="role-name">${role.name}</div>
+            <div class="role-meta">${role.description}</div>
+          `;
+          div.addEventListener("click", () => {
+            selectedRoleId = role.id;
+            renderRoles();
+            renderMatrix();
+          });
+          list.appendChild(div);
+        });
+      }
+
+      function renderMatrix() {
+        const body = document.getElementById("permissionBody");
+        const role = getRole(selectedRoleId);
+        if (!role) return;
+        document.getElementById("matrixTitle").textContent = `Permission table`;
+        document.getElementById("matrixSubtitle").textContent = "";
+
+        const nameInput = document.getElementById("roleNameInput");
+        if (nameInput) {
+          nameInput.value = role.name;
+        }
+
+        body.innerHTML = "";
+        permissionScopes.forEach((scope) => {
+          const tr = document.createElement("tr");
+          const p = role.permissions[scope.id] || {
+            read: false,
+            write: false,
+            admin: false,
+          };
+          tr.innerHTML = `
+            <td>
+              <div class="perm-scope">${scope.label}</div>
+              <div class="perm-desc">${scope.desc}</div>
+            </td>
+            <td class="matrix-cell">
+              <span class="matrix-indicator ${p.read ? "active" : ""}" data-scope="${scope.id}" data-key="read">R</span>
+            </td>
+            <td class="matrix-cell">
+              <span class="matrix-indicator ${p.write ? "active" : ""}" data-scope="${scope.id}" data-key="write">W</span>
+            </td>
+            <td class="matrix-cell">
+              <span class="matrix-indicator ${p.admin ? "active" : ""}" data-scope="${scope.id}" data-key="admin">A</span>
+            </td>
+          `;
+          body.appendChild(tr);
+        });
+
+        body.querySelectorAll(".matrix-indicator").forEach((el) => {
+          el.addEventListener("click", () => {
+            const scopeId = el.getAttribute("data-scope");
+            const key = el.getAttribute("data-key");
+            const role = getRole(selectedRoleId);
+            if (!role.permissions[scopeId]) {
+              role.permissions[scopeId] = {
+                read: false,
+                write: false,
+                admin: false,
+              };
+            }
+            role.permissions[scopeId][key] = !role.permissions[scopeId][key];
+            if (key === "admin" && role.permissions[scopeId][key]) {
+              role.permissions[scopeId].read = true;
+              role.permissions[scopeId].write = true;
+            }
+            renderMatrix();
+            renderRoles();
+          });
+        });
+      }
+
+      function createRole() {
+        const name = prompt("New role name?", "New role");
+        if (!name) return;
+        const trimmed = name.trim();
+        if (!trimmed) return;
+
+        const baseId = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+        let newId = baseId || "role";
+        let counter = 1;
+        while (roles.some((r) => r.id === newId)) {
+          newId = `${baseId || "role"}_${counter++}`;
+        }
+
+        const emptyPerms = {};
+        permissionScopes.forEach((s) => {
+          emptyPerms[s.id] = { read: false, write: false, admin: false };
+        });
+
+        const newRole = {
+          id: newId,
+          name: trimmed,
+          type: "Custom",
+          description: "Custom role (demo only).",
+          permissions: emptyPerms,
+        };
+        roles.push(newRole);
+        selectedRoleId = newId;
+        renderRoles();
+        renderMatrix();
+      }
+
+      function deleteRole() {
+        if (!selectedRoleId) return;
+        if (roles.length <= 1) {
+          alert("At least one role must remain.");
+          return;
+        }
+        const role = getRole(selectedRoleId);
+        if (
+          !confirm(
+            `Delete role "${role ? role.name : selectedRoleId}"? This is demo only.`,
+          )
+        ) {
+          return;
+        }
+        roles = roles.filter((r) => r.id !== selectedRoleId);
+        selectedRoleId = roles[0] ? roles[0].id : null;
+        renderRoles();
+        renderMatrix();
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderRoles();
+        renderMatrix();
+
+        const nameInput = document.getElementById("roleNameInput");
+        const saveBtn = document.getElementById("saveRoleBtn");
+        if (nameInput && saveBtn) {
+          saveBtn.addEventListener("click", () => {
+            const role = getRole(selectedRoleId);
+            if (!role) return;
+            const value = nameInput.value.trim();
+            if (!value) return;
+            role.name = value;
+            renderRoles();
+            renderMatrix();
+            alert("Role changes saved (demo only, not persisted).");
+          });
+        }
+
+        const addBtn = document.getElementById("addRoleBtn");
+        if (addBtn) {
+          addBtn.addEventListener("click", createRole);
+        }
+        const deleteBtn = document.getElementById("deleteRoleBtn");
+        if (deleteBtn) {
+          deleteBtn.addEventListener("click", deleteRole);
+        }
+      });
+    </script>
+  </body>
+</html>

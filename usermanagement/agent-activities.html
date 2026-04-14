@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Agent Activities</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background: #f5f3ef;
+        color: #2a2118;
+      }
+
+      .page {
+        padding: 24px 32px 32px;
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 18px;
+      }
+
+      .page-title {
+        font-size: 22px;
+        font-weight: 700;
+      }
+
+      .card {
+        background: #fffaf2;
+        border-radius: 10px;
+        border: 1px solid #eadccd;
+        padding: 14px 16px 16px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .card-title {
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .filters input[type="text"],
+      .filters select {
+        border-radius: 999px;
+        border: 1px solid #ddcdb9;
+        padding: 6px 10px;
+        font-size: 12px;
+        background: #fdf8f0;
+      }
+
+      .filters input[type="text"] {
+        flex: 1;
+        min-width: 220px;
+      }
+
+      .filters select {
+        min-width: 160px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f1e4d4;
+      }
+
+      th,
+      td {
+        padding: 8px 6px;
+        text-align: left;
+        border-bottom: 1px solid #efe2d3;
+      }
+
+      th {
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        color: #7b623f;
+      }
+
+      tbody tr:hover td {
+        background: #f8efe3;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: none;
+        padding: 4px 10px;
+        font-size: 11px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .btn-ghost {
+        background: #f7efe4;
+        color: #6a5641;
+        border: 1px solid #ddcdb9;
+      }
+
+      .empty-state {
+        font-size: 12px;
+        color: #7c6a55;
+        text-align: center;
+        padding: 14px 0;
+      }
+
+      @media (max-width: 960px) {
+        .page {
+          padding: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="page-header">
+        <div class="page-title">Agent Activities</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">All agents</div>
+          <button type="button" class="btn btn-ghost" id="exportBtn">
+            Export CSV
+          </button>
+        </div>
+
+        <div class="filters">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search agent name, ID, office"
+          />
+          <select id="officeFilter">
+            <option value="">All offices</option>
+            <option value="Tokyo">Tokyo</option>
+            <option value="Osaka">Osaka</option>
+            <option value="Nagoya">Nagoya</option>
+            <option value="Fukuoka">Fukuoka</option>
+          </select>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Agent</th>
+              <th>Office</th>
+              <th>Viewings</th>
+              <th>Tasks</th>
+              <th>Jobs</th>
+              <th>Calls</th>
+              <th>Emails</th>
+              <th>SMS</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="activityTableBody"></tbody>
+        </table>
+        <div class="empty-state" id="emptyState" style="display: none">
+          No agents match current filters.
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const agents = [
+        {
+          id: "AG-001",
+          name: "Shinjuku Realty Partners",
+          office: "Tokyo",
+          viewings: 32,
+          tasks: 18,
+          jobs: 9,
+          calls: 54,
+          emails: 76,
+          sms: 21,
+        },
+        {
+          id: "AG-002",
+          name: "Osaka Bay Estates",
+          office: "Osaka",
+          viewings: 24,
+          tasks: 12,
+          jobs: 5,
+          calls: 37,
+          emails: 42,
+          sms: 15,
+        },
+        {
+          id: "AG-003",
+          name: "Nagoya Central Housing",
+          office: "Nagoya",
+          viewings: 19,
+          tasks: 10,
+          jobs: 4,
+          calls: 26,
+          emails: 33,
+          sms: 11,
+        },
+        {
+          id: "AG-004",
+          name: "Fukuoka Urban Homes",
+          office: "Fukuoka",
+          viewings: 14,
+          tasks: 7,
+          jobs: 3,
+          calls: 18,
+          emails: 21,
+          sms: 9,
+        },
+      ];
+
+      let filters = {
+        search: "",
+        office: "",
+      };
+
+      function applyFilters() {
+        const search = filters.search.toLowerCase();
+        return agents.filter((a) => {
+          if (
+            search &&
+            !(
+              a.id.toLowerCase().includes(search) ||
+              a.name.toLowerCase().includes(search) ||
+              a.office.toLowerCase().includes(search)
+            )
+          ) {
+            return false;
+          }
+          if (filters.office && a.office !== filters.office) return false;
+          return true;
+        });
+      }
+
+      function renderTable() {
+        const tbody = document.getElementById("activityTableBody");
+        const empty = document.getElementById("emptyState");
+        tbody.innerHTML = "";
+        const data = applyFilters();
+        if (!data.length) {
+          empty.style.display = "block";
+          return;
+        }
+        empty.style.display = "none";
+
+        data.forEach((a) => {
+          const total =
+            a.viewings + a.tasks + a.jobs + a.calls + a.emails + a.sms;
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${a.name} (${a.id})</td>
+            <td>${a.office}</td>
+            <td>${a.viewings.toLocaleString()}</td>
+            <td>${a.tasks.toLocaleString()}</td>
+            <td>${a.jobs.toLocaleString()}</td>
+            <td>${a.calls.toLocaleString()}</td>
+            <td>${a.emails.toLocaleString()}</td>
+            <td>${a.sms.toLocaleString()}</td>
+            <td>${total.toLocaleString()}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function exportCsv() {
+        const rows = [
+          [
+            "Agent ID",
+            "Agent name",
+            "Office",
+            "Viewings",
+            "Tasks",
+            "Jobs",
+            "Calls",
+            "Emails",
+            "SMS",
+            "Total activities",
+          ],
+          ...applyFilters().map((a) => [
+            a.id,
+            a.name,
+            a.office,
+            String(a.viewings),
+            String(a.tasks),
+            String(a.jobs),
+            String(a.calls),
+            String(a.emails),
+            String(a.sms),
+            String(a.viewings + a.tasks + a.jobs + a.calls + a.emails + a.sms),
+          ]),
+        ];
+
+        const csv = rows
+          .map((r) =>
+            r.map((v) => `"${(v || "").replace(/"/g, '""')}"`).join(","),
+          )
+          .join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "agent_activities.csv";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        document
+          .getElementById("searchInput")
+          .addEventListener("input", (e) => {
+            filters.search = e.target.value;
+            renderTable();
+          });
+        document
+          .getElementById("officeFilter")
+          .addEventListener("change", (e) => {
+            filters.office = e.target.value;
+            renderTable();
+          });
+        document
+          .getElementById("exportBtn")
+          .addEventListener("click", exportCsv);
+        renderTable();
+      });
+    </script>
+  </body>
+</html>

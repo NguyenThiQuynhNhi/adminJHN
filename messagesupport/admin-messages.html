@@ -1,0 +1,980 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YUUSHI Admin Chat</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #f5f5f5;
+        --sidebar-bg: #1c1b19;
+        --sidebar-hover: #2a2926;
+        --sidebar-active: #2f2e2b;
+        --chat-bg: #f5f5f5;
+        --bubble-them: #ffffff;
+        --bubble-me: #ad986e;
+        --text-primary: #1c1b19;
+        --text-secondary: #6b685f;
+        --text-muted: #9e9a91;
+        --text-light: #ffffff;
+        --accent: #ad986e;
+        --border: #e2ded6;
+        --online: #4caf7d;
+      }
+
+      body {
+        font-family: "Plus Jakarta Sans", sans-serif;
+        background: var(--bg);
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+      }
+
+      /* SIDEBAR */
+      .sidebar {
+        width: 280px;
+        background: var(--sidebar-bg);
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+
+      .sidebar-head {
+        padding: 20px 18px 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .logo-mark {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #c17d3c, #8b5520);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        color: white;
+      }
+
+      .logo-text {
+        font-size: 15px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: 0.03em;
+      }
+
+      .chat-tabs {
+        display: flex;
+        padding: 0 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .chat-tab {
+        flex: 1;
+        padding: 12px 0;
+        text-align: center;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.6);
+        cursor: pointer;
+      }
+
+      .chat-tab.active {
+        color: white;
+        border-bottom: 3px solid var(--accent);
+      }
+
+      .search-bar {
+        margin: 12px 14px;
+        position: relative;
+      }
+
+      .search-bar input {
+        width: 100%;
+        padding: 9px 14px 9px 36px;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .search-icon {
+        position: absolute;
+        left: 11px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 14px;
+      }
+
+      .convo-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 0;
+      }
+
+      .convo-item {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 10px 14px;
+        cursor: pointer;
+        border-radius: 10px;
+        margin: 2px 8px;
+        transition: background 0.13s;
+      }
+
+      .convo-item:hover {
+        background: var(--sidebar-hover);
+      }
+
+      .convo-item.active {
+        background: var(--sidebar-active);
+      }
+
+      .convo-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+        position: relative;
+      }
+
+      .convo-avatar.online::after {
+        content: "";
+        position: absolute;
+        bottom: 1px;
+        right: 1px;
+        width: 9px;
+        height: 9px;
+        background: var(--online);
+        border-radius: 50%;
+        border: 2px solid var(--sidebar-bg);
+      }
+
+      .convo-details {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .convo-name {
+        font-size: 13.5px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.88);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .convo-preview {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.38);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* CHAT AREA */
+      .chat-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: var(--chat-bg);
+      }
+
+      .chat-header {
+        background: rgba(236, 234, 228, 0.95);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--border);
+        padding: 14px 24px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .header-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #c9a876, #8b6030);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 16px;
+        color: #fff;
+        position: relative;
+      }
+
+      .header-avatar::after {
+        content: "";
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 12px;
+        height: 12px;
+        background: var(--online);
+        border-radius: 50%;
+        border: 2px solid var(--chat-bg);
+      }
+
+      .header-info {
+        flex: 1;
+      }
+
+      .header-name {
+        font-size: 15.5px;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .verified {
+        color: #22c55e;
+        font-size: 16px;
+      }
+
+      .header-sub {
+        font-size: 12.5px;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+
+      .header-actions {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 13px;
+        color: var(--text-secondary);
+      }
+
+      .header-actions span {
+        cursor: pointer;
+        transition: color 0.2s ease;
+      }
+
+      .header-actions span:hover {
+        color: var(--text-primary);
+      }
+
+      .messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .msg-row {
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+      }
+
+      .msg-row.mine {
+        flex-direction: row-reverse;
+      }
+
+      .msg-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        color: #fff;
+      }
+
+      .bubble {
+        max-width: 62%;
+        padding: 11px 15px;
+        border-radius: 16px;
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      .bubble.them {
+        background: var(--bubble-them);
+        color: var(--text-primary);
+        border-bottom-left-radius: 4px;
+      }
+
+      .bubble.mine {
+        background: var(--bubble-me);
+        color: var(--text-light);
+        border-bottom-right-radius: 4px;
+      }
+
+      .composer {
+        padding: 14px 20px;
+        background: rgba(236, 234, 228, 0.95);
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .composer-input {
+        flex: 1;
+        padding: 11px 16px;
+        border-radius: 24px;
+        border: 1.5px solid var(--border);
+        background: white;
+        font-size: 14px;
+        outline: none;
+      }
+
+      .icon-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: #f5f3ef;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+      }
+
+      .send-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: none;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      /* AGENT RIGHT PANEL */
+      .agent-panel {
+        width: 400px;
+        height: 100vh;
+        background: #ffffff;
+        box-shadow: -4px 0 18px rgba(0, 0, 0, 0.06);
+        overflow-y: auto;
+        border-left: 1px solid var(--border);
+        display: none;
+      }
+
+      .agent-header {
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        border-bottom: 1px solid #eee;
+      }
+
+      .agent-avatar {
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+
+      .agent-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .agent-info h2 {
+        font-size: 20px;
+        font-weight: 600;
+        color: #1a1a1a;
+      }
+
+      .agent-info p {
+        font-size: 14px;
+        color: #666;
+        margin-top: 2px;
+      }
+
+      .property-info {
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+      }
+
+      .property-info h1 {
+        font-size: 18px;
+        line-height: 1.3;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      .property-address {
+        font-size: 14px;
+        color: #555;
+        margin-bottom: 16px;
+      }
+
+      .response-time {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #22c55e;
+      }
+
+      .tabs {
+        display: flex;
+        border-bottom: 1px solid #eee;
+      }
+
+      .tab {
+        flex: 1;
+        padding: 14px 0;
+        text-align: center;
+        font-size: 15px;
+        font-weight: 500;
+        color: #666;
+        cursor: pointer;
+      }
+
+      .tab.active {
+        color: #1a1a1a;
+        border-bottom: 3px solid #c17d3c;
+        font-weight: 600;
+      }
+
+      .media-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        padding: 16px;
+      }
+
+      .media-item {
+        aspect-ratio: 1;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .media-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .view-all {
+        padding: 12px 20px;
+        color: #c17d3c;
+        font-weight: 500;
+        text-align: center;
+        cursor: pointer;
+      }
+
+      .properties-section {
+        padding: 20px;
+      }
+
+      .properties-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .buy-rent-tabs {
+        display: flex;
+        background: #f5f5f5;
+        border-radius: 8px;
+        padding: 4px;
+        margin-bottom: 16px;
+      }
+
+      .buy-rent-tab {
+        flex: 1;
+        padding: 10px;
+        text-align: center;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+      }
+
+      .buy-rent-tab.active {
+        background: #c17d3c;
+        color: white;
+      }
+
+      .property-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        margin-bottom: 20px;
+      }
+
+      .property-image {
+        height: 220px;
+        position: relative;
+      }
+
+      .property-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .property-heart {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: white;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        font-size: 18px;
+      }
+
+      .property-content {
+        padding: 16px;
+      }
+
+      .property-agent {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .property-agent img {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+      }
+
+      .property-title {
+        font-size: 15.5px;
+        font-weight: 600;
+        line-height: 1.3;
+        margin-bottom: 8px;
+      }
+
+      .property-price {
+        font-size: 17px;
+        font-weight: 700;
+        color: #c17d3c;
+      }
+
+      .property-location {
+        font-size: 13.5px;
+        color: #666;
+        margin: 6px 0 12px;
+      }
+
+      .property-specs {
+        display: flex;
+        gap: 16px;
+        font-size: 13px;
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-head">
+        <div class="logo-mark">💬</div>
+        <div class="logo-text">YUUSHI</div>
+      </div>
+
+      <!-- Tab -->
+      <div class="chat-tabs">
+        <div
+          class="chat-tab active"
+          data-tab="client"
+          onclick="switchTab(this)"
+        >
+          Client
+        </div>
+        <div class="chat-tab" data-tab="agent" onclick="switchTab(this)">
+          Agent
+        </div>
+      </div>
+
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search messages…" />
+      </div>
+
+      <div class="convo-list" id="convoList"><!-- JS --></div>
+    </div>
+
+    <!-- CHAT AREA -->
+    <div class="chat-area">
+      <div class="chat-header" id="chatHeader"><!-- JS --></div>
+
+      <div class="messages" id="messages">
+        <div class="msg-row">
+          <div
+            class="msg-avatar"
+            style="background: linear-gradient(135deg, #c9a876, #8b6030)"
+          >
+            SYS
+          </div>
+          <div>
+            <div class="bubble them">
+              Message content is not displayed in this admin view. Use the
+              Customer Support Console for aggregate metrics and conversation
+              metadata only.
+            </div>
+            <div
+              style="font-size: 11px; color: var(--text-muted); margin-top: 4px"
+            >
+              Demo preview
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="composer">
+        <button class="icon-btn" type="button" disabled>😊</button>
+        <input
+          class="composer-input"
+          type="text"
+          placeholder="Messaging is disabled in this admin preview."
+          disabled
+        />
+        <button class="icon-btn" type="button" disabled>📎</button>
+        <button class="send-btn" type="button" disabled>➤</button>
+      </div>
+    </div>
+
+    <!-- AGENT RIGHT PANEL (only for agent conversations) -->
+    <div class="agent-panel" id="agentPanel">
+      <!-- Agent Header -->
+      <div class="agent-header">
+        <div class="agent-avatar">
+          <img
+            id="agentAvatarImg"
+            src="https://picsum.photos/id/64/200/200"
+            alt="Agent Avatar"
+          />
+        </div>
+        <div class="agent-info">
+          <h2 id="agentName">Grace Miller</h2>
+          <p class="agent-status" id="agentStatus">● Online | ABC Company</p>
+        </div>
+      </div>
+
+      <!-- Property Info -->
+      <div class="property-info">
+        <h1>Stockdale &amp; Leggo Gladstone Park - GLADSTONE PARK</h1>
+        <p class="property-address">
+          Level 2/326 Keilor Road, NIDDRIE, VIC 3042
+        </p>
+        <div class="response-time">💬 Usual response time: Within 15 min</div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active">Media</div>
+        <div class="tab">Files</div>
+        <div class="tab">Links</div>
+      </div>
+
+      <!-- Media Grid -->
+      <div class="media-grid">
+        <div class="media-item">
+          <img src="https://picsum.photos/id/1015/400/400" alt="" />
+        </div>
+        <div class="media-item">
+          <img src="https://picsum.photos/id/201/400/400" alt="" />
+        </div>
+        <div class="media-item">
+          <img src="https://picsum.photos/id/301/400/400" alt="" />
+        </div>
+        <div class="media-item">
+          <img src="https://picsum.photos/id/401/400/400" alt="" />
+        </div>
+        <div class="media-item">
+          <img src="https://picsum.photos/id/501/400/400" alt="" />
+        </div>
+        <div class="media-item">
+          <img src="https://picsum.photos/id/601/400/400" alt="" />
+        </div>
+      </div>
+
+      <div class="view-all">View all →</div>
+
+      <!-- Agent's Properties -->
+      <div class="properties-section">
+        <div class="properties-header">
+          Agent's Properties
+          <span style="color: #c17d3c; cursor: pointer">View all →</span>
+        </div>
+
+        <div class="buy-rent-tabs">
+          <div class="buy-rent-tab">Buy</div>
+          <div class="buy-rent-tab active">Rent</div>
+        </div>
+
+        <!-- Property Card -->
+        <div class="property-card">
+          <div class="property-image">
+            <img src="https://picsum.photos/id/1015/800/500" alt="Tiny Home" />
+            <div class="property-heart">♡</div>
+          </div>
+          <div class="property-content">
+            <div class="property-agent">
+              <img src="https://picsum.photos/id/64/200/200" alt="" />
+              <span>Jenifer Lopez</span>
+            </div>
+            <div class="property-title">
+              Tiny Home In Shinano<br />
+              Kamiminocchi
+            </div>
+            <div class="property-price">
+              ¥4.000.000
+              <span style="font-size: 13px; color: #666">(monthly)</span>
+            </div>
+            <div class="property-location">Tokyo, Japan</div>
+            <div style="color: #666; font-size: 13.5px">
+              Gross Return: <strong>5,8%</strong>
+            </div>
+
+            <div class="property-specs" style="margin-top: 14px">
+              <span>🏠 Residential</span>
+              <span>🛏️ 6</span>
+              <span>🛁 4</span>
+              <span>🚗 2</span>
+              <span>📏 100 m²</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const clients = [
+        {
+          type: "client",
+          name: "Jack Miller",
+          email: "jack.miller@email.com",
+          avatar: "JM",
+          color: "linear-gradient(135deg, #60a5fa, #3b82f6)",
+          preview: "Hi, I have a question about the contract",
+        },
+        {
+          type: "client",
+          name: "Emma Wilson",
+          email: "emma.wilson@example.com",
+          avatar: "EW",
+          color: "linear-gradient(135deg, #f97373, #ef4444)",
+          preview: "Can we reschedule our viewing?",
+        },
+        {
+          type: "client",
+          name: "Noah Tanaka",
+          email: "noah.tanaka@example.jp",
+          avatar: "NT",
+          color: "linear-gradient(135deg, #34d399, #059669)",
+          preview: "I'd like more details about the lease.",
+        },
+        {
+          type: "client",
+          name: "Sophia Chen",
+          email: "sophia.chen@example.com",
+          avatar: "SC",
+          color: "linear-gradient(135deg, #a855f7, #7c3aed)",
+          preview: "Is the property still available?",
+        },
+      ];
+
+      const agents = [
+        {
+          type: "agent",
+          name: "Grace Miller",
+          company: "ABC Company",
+          email: "grace.miller@email.com",
+          avatar: "GM",
+          color: "linear-gradient(135deg, #c9a876, #8b6030)",
+          preview: "Can't wait for the weekend!",
+          online: true,
+        },
+        {
+          type: "agent",
+          name: "Liam Anderson",
+          company: "Tokyo Realty",
+          email: "liam.anderson@tokyorealty.jp",
+          avatar: "LA",
+          color: "linear-gradient(135deg, #7fb5a8, #3e7a6d)",
+          preview: "I don't know",
+          online: false,
+        },
+        {
+          type: "agent",
+          name: "Haruka Sato",
+          company: "Osaka Homes",
+          email: "haruka.sato@osakahomes.jp",
+          avatar: "HS",
+          color: "linear-gradient(135deg, #fbbf24, #d97706)",
+          preview: "Sent you the updated floor plan.",
+          online: true,
+        },
+        {
+          type: "agent",
+          name: "Oliver Brown",
+          company: "Sydney Realty",
+          email: "oliver.brown@sydneyrealty.au",
+          avatar: "OB",
+          color: "linear-gradient(135deg, #22c55e, #15803d)",
+          preview: "Let's confirm the inspection time.",
+          online: false,
+        },
+      ];
+
+      let currentTab = "client";
+      let currentContact = null;
+
+      function renderConvos(tab) {
+        const list = document.getElementById("convoList");
+        list.innerHTML = "";
+
+        const data = tab === "client" ? clients : agents;
+
+        data.forEach((contact, index) => {
+          const item = document.createElement("div");
+          item.className = `convo-item ${index === 0 ? "active" : ""}`;
+          item.innerHTML = `
+          <div class="convo-avatar ${contact.online ? "online" : ""}" style="background: ${contact.color}">${
+            contact.avatar
+          }</div>
+          <div class="convo-details">
+            <div class="convo-name">${contact.name}</div>
+            <div class="convo-preview">${contact.email || contact.company}</div>
+          </div>
+        `;
+          item.onclick = () => selectContact(contact);
+          list.appendChild(item);
+        });
+
+        if (data.length > 0) selectContact(data[0]);
+      }
+
+      function selectContact(contact) {
+        currentContact = contact;
+
+        const header = document.getElementById("chatHeader");
+        if (contact.type === "client") {
+          header.innerHTML = `
+          <div class="header-avatar" style="background: ${contact.color}">${
+            contact.avatar
+          }</div>
+          <div class="header-info">
+            <div class="header-name">${contact.name}</div>
+            <div class="header-sub">${contact.email}</div>
+          </div>
+          <div class="header-actions">
+            <span>🌐 English</span>
+          </div>
+        `;
+          showAgentPanel(contact, true);
+        } else {
+          header.innerHTML = `
+          <div class="header-avatar ${
+            contact.online ? "online" : ""
+          }" style="background: ${contact.color}">${contact.avatar}</div>
+          <div class="header-info">
+            <div class="header-name">
+              ${contact.name}
+              <span class="verified">✔</span>
+            </div>
+            <div class="header-sub">
+              <span style="color: var(--online);">Online</span>
+              <span style="color: var(--text-muted);"> | </span>
+              ${contact.email || contact.company}
+            </div>
+          </div>
+          <div class="header-actions">
+            <span>🌐 English</span>
+          </div>
+        `;
+          showAgentPanel(contact, false);
+        }
+      }
+
+      function showAgentPanel(contact, isClient) {
+        const panel = document.getElementById("agentPanel");
+        if (!panel) return;
+        panel.style.display = "block";
+
+        const nameEl = document.getElementById("agentName");
+        const statusEl = document.getElementById("agentStatus");
+        // Chỉ cập nhật header theo contact nếu là agent
+        if (contact.type === "agent") {
+          if (nameEl) nameEl.textContent = contact.name;
+          if (statusEl)
+            statusEl.textContent = `${
+              contact.online ? "● Online" : "● Offline"
+            } | ${contact.email || contact.company || ""}`;
+        }
+
+        // Với client: ẩn phần Agent's Properties; với agent: hiển thị
+        const propertiesSection = panel.querySelector(".properties-section");
+        if (propertiesSection) {
+          propertiesSection.style.display = isClient ? "none" : "block";
+        }
+
+        // Với client: ẩn cả block property-info; với agent: hiển thị
+        const propertyInfo = panel.querySelector(".property-info");
+        if (propertyInfo) {
+          propertyInfo.style.display = isClient ? "none" : "block";
+        }
+      }
+
+      function hideAgentPanel() {
+        const panel = document.getElementById("agentPanel");
+        if (!panel) return;
+        panel.style.display = "none";
+      }
+
+      function switchTab(el) {
+        document
+          .querySelectorAll(".chat-tab")
+          .forEach((tab) => tab.classList.remove("active"));
+        el.classList.add("active");
+        currentTab = el.getAttribute("data-tab");
+        renderConvos(currentTab);
+      }
+
+      renderConvos("client");
+    </script>
+  </body>
+</html>
