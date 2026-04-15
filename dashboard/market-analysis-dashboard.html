@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MarketAnalysisDashboard</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f3eee5;
+        color: #2b2118;
+      }
+
+      .page-wrapper {
+        min-height: 100vh;
+        padding: 20px 24px 32px;
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .page-title {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .page-title h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a120b;
+      }
+
+      .page-title span {
+        font-size: 13px;
+        color: #7b6751;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .controls-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .controls label {
+        font-size: 12px;
+        color: #6b5740;
+        margin-right: 4px;
+      }
+
+      .controls select {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #d0c2aa;
+        background: #faf6ee;
+        font-size: 13px;
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+        margin-top: 12px;
+      }
+
+      @media (max-width: 1200px) {
+        .kpi-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 768px) {
+        .kpi-grid {
+          grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+      }
+
+      .kpi-card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 14px 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        border: 1px solid #e2d4bf;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .kpi-label {
+        font-size: 12px;
+        color: #7b6751;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f130c;
+      }
+
+      .kpi-sub {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      .layout-2col {
+        display: grid;
+        grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.3fr);
+        gap: 18px;
+      }
+
+      @media (max-width: 1024px) {
+        .layout-2col {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .section-group {
+        margin-bottom: 22px;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .section-header h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #2b2118;
+      }
+
+      .section-header span {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f6eee1;
+      }
+
+      th,
+      td {
+        padding: 8px 6px;
+        text-align: left;
+        border-bottom: 1px solid #eee0cf;
+      }
+
+      th {
+        font-weight: 600;
+        color: #5b4632;
+      }
+
+      tbody tr:nth-child(even) {
+        background: #fdf8f0;
+      }
+
+      .insights-card {
+        background: #ffffff;
+        border-radius: 10px;
+        border: 1px solid #e2d4bf;
+        padding: 14px 16px;
+      }
+
+      .insight-item {
+        font-size: 12px;
+        color: #5b4632;
+        margin-bottom: 8px;
+      }
+
+      .insight-item strong {
+        display: block;
+        margin-bottom: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-wrapper">
+      <div class="page-header">
+        <div class="page-title">
+          <h1>Market Analysis</h1>
+          <span>
+            Macro-level view of price trends, transaction volume, time to sell
+            and hotness by building age and distance to station.
+          </span>
+        </div>
+        <div class="controls">
+          <div class="controls-group">
+            <label for="maRegion">Region</label>
+            <select id="maRegion">
+              <option value="all">All regions</option>
+              <option value="tokyo">Tokyo</option>
+              <option value="osaka">Osaka</option>
+              <option value="nagoya">Nagoya</option>
+            </select>
+          </div>
+          <div class="controls-group">
+            <label for="maSegment">Segment</label>
+            <select id="maSegment">
+              <option value="all">All segments</option>
+              <option value="apartment">Apartments</option>
+              <option value="house">Houses</option>
+              <option value="investment">Investment properties</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-grid" id="maKpiGrid"></div>
+
+      <div class="layout-2col">
+        <div class="section-group">
+          <div class="section-header">
+            <div>
+              <h2>Market cohorts</h2>
+              <span>
+                Aggregate cohorts by building age and distance to nearest
+                station.
+              </span>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Cohort</th>
+                <th>Avg. price (JPY)</th>
+                <th>Median days on market</th>
+                <th>Transaction volume (last 30d)</th>
+              </tr>
+            </thead>
+            <tbody id="maCohortBody"></tbody>
+          </table>
+        </div>
+
+        <div class="section-group">
+          <div class="section-header">
+            <div>
+              <h2>Insights</h2>
+              <span>
+                Qualitative highlights based on the selected region and segment.
+              </span>
+            </div>
+          </div>
+          <div class="insights-card" id="maInsights"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const cohorts = [
+        {
+          key: "tokyo_apartment",
+          label: "Tokyo · Apartments",
+          data: [
+            {
+              cohort: "0–10 years · &lt;5 min to station",
+              avgPrice: 78000000,
+              daysOnMarket: 21,
+              volume: 140,
+            },
+            {
+              cohort: "11–25 years · 5–10 min to station",
+              avgPrice: 59000000,
+              daysOnMarket: 32,
+              volume: 210,
+            },
+            {
+              cohort: "26+ years · &gt;10 min to station",
+              avgPrice: 41000000,
+              daysOnMarket: 48,
+              volume: 95,
+            },
+          ],
+          insights: [
+            "Newer apartments close to stations move fastest and command a premium.",
+            "Mid-age stock shows balanced liquidity with stable pricing.",
+            "Older stock further from stations requires longer marketing periods.",
+          ],
+        },
+        {
+          key: "tokyo_investment",
+          label: "Tokyo · Investment properties",
+          data: [
+            {
+              cohort: "Yield 3–4% · central wards",
+              avgPrice: 98000000,
+              daysOnMarket: 35,
+              volume: 62,
+            },
+            {
+              cohort: "Yield 4–5% · suburban",
+              avgPrice: 72000000,
+              daysOnMarket: 41,
+              volume: 88,
+            },
+            {
+              cohort: "Yield 5%+ · outer area",
+              avgPrice: 53000000,
+              daysOnMarket: 55,
+              volume: 47,
+            },
+          ],
+          insights: [
+            "Investors still accept lower yields for core central locations.",
+            "Suburban investment stock provides a yield premium with moderate liquidity.",
+            "Highest yields are available in outer areas but with slower turnover.",
+          ],
+        },
+        {
+          key: "osaka_all",
+          label: "Osaka · All segments",
+          data: [
+            {
+              cohort: "0–15 years · &lt;8 min to station",
+              avgPrice: 52000000,
+              daysOnMarket: 29,
+              volume: 130,
+            },
+            {
+              cohort: "16–30 years · 8–15 min to station",
+              avgPrice: 39000000,
+              daysOnMarket: 38,
+              volume: 160,
+            },
+            {
+              cohort: "30+ years · &gt;15 min to station",
+              avgPrice: 28000000,
+              daysOnMarket: 52,
+              volume: 70,
+            },
+          ],
+          insights: [
+            "Osaka shows healthy demand for relatively new stock close to stations.",
+            "Older buildings remain liquid when connectivity is reasonable.",
+            "Remote locations experience longer selling times and require pricing flexibility.",
+          ],
+        },
+      ];
+
+      function pickCohort(region, segment) {
+        if (region === "tokyo" && segment === "apartment") {
+          return cohorts.find((c) => c.key === "tokyo_apartment");
+        }
+        if (region === "tokyo" && segment === "investment") {
+          return cohorts.find((c) => c.key === "tokyo_investment");
+        }
+        if (region === "osaka")
+          return cohorts.find((c) => c.key === "osaka_all");
+        // default
+        return cohorts[0];
+      }
+
+      function renderKpisForCohort(cohort) {
+        const grid = document.getElementById("maKpiGrid");
+        grid.innerHTML = "";
+        const rows = cohort.data;
+        if (!rows || !rows.length) return;
+        const totals = rows.reduce(
+          (acc, r) => {
+            acc.avgPrice += r.avgPrice;
+            acc.days += r.daysOnMarket;
+            acc.volume += r.volume;
+            return acc;
+          },
+          { avgPrice: 0, days: 0, volume: 0 },
+        );
+        const avgPrice = totals.avgPrice / rows.length;
+        const avgDays = totals.days / rows.length;
+
+        const items = [
+          {
+            label: "Average price",
+            value: new Intl.NumberFormat("en-US", {
+              style: "currency",
+              currency: "JPY",
+              maximumFractionDigits: 0,
+            }).format(avgPrice),
+            sub: "Across selected cohorts",
+          },
+          {
+            label: "Average days on market",
+            value: `${Math.round(avgDays)} days`,
+            sub: "Indicative time-to-sell",
+          },
+          {
+            label: "Total transactions (30d)",
+            value: totals.volume.toString(),
+            sub: "Recent volume across cohorts",
+          },
+          {
+            label: "Cohorts tracked",
+            value: rows.length.toString(),
+            sub: cohort.label,
+          },
+        ];
+
+        items.forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "kpi-card";
+          div.innerHTML = `
+            <div class="kpi-label">${item.label}</div>
+            <div class="kpi-value">${item.value}</div>
+            <div class="kpi-sub">${item.sub}</div>
+          `;
+          grid.appendChild(div);
+        });
+      }
+
+      function renderCohortTable(cohort) {
+        const body = document.getElementById("maCohortBody");
+        body.innerHTML = "";
+        cohort.data.forEach((row) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${row.cohort}</td>
+            <td>${new Intl.NumberFormat("en-US", {
+              style: "currency",
+              currency: "JPY",
+              maximumFractionDigits: 0,
+            }).format(row.avgPrice)}</td>
+            <td>${row.daysOnMarket}</td>
+            <td>${row.volume}</td>
+          `;
+          body.appendChild(tr);
+        });
+      }
+
+      function renderInsights(cohort) {
+        const box = document.getElementById("maInsights");
+        box.innerHTML = "";
+        cohort.insights.forEach((line, index) => {
+          const div = document.createElement("div");
+          div.className = "insight-item";
+          div.innerHTML = `
+            <strong>Insight ${index + 1}</strong>
+            <span>${line}</span>
+          `;
+          box.appendChild(div);
+        });
+      }
+
+      function applyMarketFilters() {
+        const region = document.getElementById("maRegion").value;
+        const segment = document.getElementById("maSegment").value;
+        const cohort = pickCohort(region, segment);
+        renderKpisForCohort(cohort);
+        renderCohortTable(cohort);
+        renderInsights(cohort);
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        applyMarketFilters();
+
+        document
+          .getElementById("maRegion")
+          .addEventListener("change", applyMarketFilters);
+        document
+          .getElementById("maSegment")
+          .addEventListener("change", applyMarketFilters);
+      });
+    </script>
+  </body>
+</html>

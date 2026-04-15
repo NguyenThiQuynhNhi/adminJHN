@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ReportManagementDashboard</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f3eee5;
+        color: #2b2118;
+      }
+
+      .page-wrapper {
+        min-height: 100vh;
+        padding: 20px 24px 32px;
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .page-title {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .page-title h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a120b;
+      }
+
+      .page-title span {
+        font-size: 13px;
+        color: #7b6751;
+      }
+
+      .filters {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .filters-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .filters label {
+        font-size: 12px;
+        color: #6b5740;
+        margin-right: 4px;
+      }
+
+      .filters select {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #d0c2aa;
+        background: #faf6ee;
+        font-size: 13px;
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+        margin-top: 12px;
+      }
+
+      @media (max-width: 1200px) {
+        .kpi-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 768px) {
+        .kpi-grid {
+          grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+      }
+
+      .kpi-card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 14px 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        border: 1px solid #e2d4bf;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .kpi-label {
+        font-size: 12px;
+        color: #7b6751;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f130c;
+      }
+
+      .kpi-sub {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      .section-group {
+        margin-bottom: 22px;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .section-header h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #2b2118;
+      }
+
+      .section-header span {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f6eee1;
+      }
+
+      th,
+      td {
+        padding: 8px 6px;
+        text-align: left;
+        border-bottom: 1px solid #eee0cf;
+      }
+
+      th {
+        font-weight: 600;
+        color: #5b4632;
+      }
+
+      tbody tr:nth-child(even) {
+        background: #fdf8f0;
+      }
+
+      .badge-soft {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        background: #ece0cf;
+        color: #5b4632;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .status-open {
+        background: #fde2e1;
+        color: #b03232;
+      }
+
+      .status-in_progress {
+        background: #fff3cd;
+        color: #856404;
+      }
+
+      .status-resolved {
+        background: #e3f5ec;
+        color: #0f7a4a;
+      }
+
+      .btn-export {
+        padding: 6px 12px;
+        background: #c79e4c;
+        color: #fff;
+        border-radius: 6px;
+        border: none;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .btn-export:hover {
+        background: #b5893c;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-wrapper">
+      <div class="page-header">
+        <div class="page-title">
+          <h1>Report Management</h1>
+          <span>
+            System reports about violations raised by customers or agents, and
+            status of complaint handling.
+          </span>
+        </div>
+        <div class="filters">
+          <div class="filters-group">
+            <label for="rmType">Type</label>
+            <select id="rmType">
+              <option value="all">All</option>
+              <option value="listing">Listing</option>
+              <option value="user">User</option>
+              <option value="agent">Agent</option>
+            </select>
+          </div>
+          <div class="filters-group">
+            <label for="rmStatus">Status</label>
+            <select id="rmStatus">
+              <option value="all">All</option>
+              <option value="open">New</option>
+              <option value="in_progress">In progress</option>
+              <option value="resolved">Resolved</option>
+            </select>
+          </div>
+          <div class="filters-group">
+            <label for="rmSeverity">Severity</label>
+            <select id="rmSeverity">
+              <option value="all">All</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-grid" id="rmKpiGrid"></div>
+
+      <div class="section-group">
+        <div class="section-header">
+          <div>
+            <h2>Reported cases</h2>
+            <span>
+              Exportable table of recent report cases. Detailed investigation is
+              handled in moderation tools.
+            </span>
+          </div>
+          <div>
+            <span class="badge-soft" id="rmCountBadge"></span>
+            <button class="btn-export" id="rmExportBtn">Export CSV</button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Type</th>
+              <th>Subject</th>
+              <th>Severity</th>
+              <th>Status</th>
+              <th>Reported by</th>
+              <th>Reported at</th>
+            </tr>
+          </thead>
+          <tbody id="rmTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      const reports = [
+        {
+          id: "RPT-1024",
+          type: "listing",
+          subject: "Incorrect price information",
+          severity: "medium",
+          status: "open",
+          reporter: "End user",
+          reportedAt: "2026-03-21 10:22",
+        },
+        {
+          id: "RPT-1025",
+          type: "agent",
+          subject: "Unresponsive agent",
+          severity: "low",
+          status: "in_progress",
+          reporter: "End user",
+          reportedAt: "2026-03-21 11:07",
+        },
+        {
+          id: "RPT-1026",
+          type: "listing",
+          subject: "Suspicious property photos",
+          severity: "high",
+          status: "open",
+          reporter: "Agent",
+          reportedAt: "2026-03-22 09:15",
+        },
+        {
+          id: "RPT-1027",
+          type: "user",
+          subject: "Abusive language in messages",
+          severity: "high",
+          status: "in_progress",
+          reporter: "Support",
+          reportedAt: "2026-03-22 14:42",
+        },
+        {
+          id: "RPT-1028",
+          type: "agent",
+          subject: "Misleading advertisement copy",
+          severity: "medium",
+          status: "resolved",
+          reporter: "End user",
+          reportedAt: "2026-03-19 16:18",
+        },
+      ];
+
+      function filterReports() {
+        const type = document.getElementById("rmType").value;
+        const status = document.getElementById("rmStatus").value;
+        const severity = document.getElementById("rmSeverity").value;
+        return reports.filter((r) => {
+          if (type !== "all" && r.type !== type) return false;
+          if (status !== "all" && r.status !== status) return false;
+          if (severity !== "all" && r.severity !== severity) return false;
+          return true;
+        });
+      }
+
+      function renderKpis() {
+        const grid = document.getElementById("rmKpiGrid");
+        grid.innerHTML = "";
+        const all = reports;
+        const open = all.filter((r) => r.status === "open");
+        const inProgress = all.filter((r) => r.status === "in_progress");
+        const resolved = all.filter((r) => r.status === "resolved");
+        const high = all.filter((r) => r.severity === "high");
+
+        const items = [
+          {
+            label: "Total reports",
+            value: all.length,
+            sub: "All severities and types",
+          },
+          {
+            label: "Open",
+            value: open.length,
+            sub: "New cases awaiting triage",
+          },
+          {
+            label: "In progress",
+            value: inProgress.length,
+            sub: "Cases under investigation",
+          },
+          {
+            label: "High severity",
+            value: high.length,
+            sub: "Needs priority handling",
+          },
+        ];
+
+        items.forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "kpi-card";
+          div.innerHTML = `
+            <div class="kpi-label">${item.label}</div>
+            <div class="kpi-value">${item.value}</div>
+            <div class="kpi-sub">${item.sub}</div>
+          `;
+          grid.appendChild(div);
+        });
+      }
+
+      function renderTable() {
+        const body = document.getElementById("rmTableBody");
+        const badge = document.getElementById("rmCountBadge");
+        body.innerHTML = "";
+        const filtered = filterReports();
+        badge.textContent = `${filtered.length} cases shown`;
+        filtered.forEach((r) => {
+          const tr = document.createElement("tr");
+          const statusClass =
+            r.status === "open"
+              ? "status-open"
+              : r.status === "in_progress"
+                ? "status-in_progress"
+                : "status-resolved";
+          const statusLabel =
+            r.status === "open"
+              ? "New"
+              : r.status === "in_progress"
+                ? "In progress"
+                : "Resolved";
+          tr.innerHTML = `
+            <td>${r.id}</td>
+            <td>${r.type}</td>
+            <td>${r.subject}</td>
+            <td>${r.severity}</td>
+            <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
+            <td>${r.reporter}</td>
+            <td>${r.reportedAt}</td>
+          `;
+          body.appendChild(tr);
+        });
+      }
+
+      function exportCsv() {
+        const filtered = filterReports();
+        if (!filtered.length) {
+          alert("No report data to export for current filters.");
+          return;
+        }
+        const header = [
+          "ID",
+          "Type",
+          "Subject",
+          "Severity",
+          "Status",
+          "ReportedBy",
+          "ReportedAt",
+        ];
+        const rows = filtered.map((r) => [
+          r.id,
+          r.type,
+          r.subject,
+          r.severity,
+          r.status,
+          r.reporter,
+          r.reportedAt,
+        ]);
+        const all = [header, ...rows].map((row) => row.join(",")).join("\n");
+        const blob = new Blob([all], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "report-management-demo.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderKpis();
+        renderTable();
+
+        ["rmType", "rmStatus", "rmSeverity"].forEach((id) => {
+          document.getElementById(id).addEventListener("change", renderTable);
+        });
+
+        document
+          .getElementById("rmExportBtn")
+          .addEventListener("click", exportCsv);
+      });
+    </script>
+  </body>
+</html>

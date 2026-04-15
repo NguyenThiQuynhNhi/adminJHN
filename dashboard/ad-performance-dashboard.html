@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AdPerformanceDashboard</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f3eee5;
+        color: #2b2118;
+      }
+
+      .page-wrapper {
+        min-height: 100vh;
+        padding: 20px 24px 32px;
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .page-title {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .page-title h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a120b;
+      }
+
+      .page-title span {
+        font-size: 13px;
+        color: #7b6751;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .controls-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .controls label {
+        font-size: 12px;
+        color: #6b5740;
+        margin-right: 4px;
+      }
+
+      .controls select {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #d0c2aa;
+        background: #faf6ee;
+        font-size: 13px;
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+        margin-top: 12px;
+      }
+
+      @media (max-width: 1400px) {
+        .kpi-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 900px) {
+        .kpi-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 640px) {
+        .kpi-grid {
+          grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+      }
+
+      .kpi-card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 14px 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        border: 1px solid #e2d4bf;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .kpi-label {
+        font-size: 12px;
+        color: #7b6751;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f130c;
+      }
+
+      .kpi-sub {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      .section-group {
+        margin-bottom: 22px;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .section-header h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #2b2118;
+      }
+
+      .section-header span {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f6eee1;
+      }
+
+      th,
+      td {
+        padding: 8px 6px;
+        text-align: left;
+        border-bottom: 1px solid #eee0cf;
+      }
+
+      th {
+        font-weight: 600;
+        color: #5b4632;
+      }
+
+      tbody tr:nth-child(even) {
+        background: #fdf8f0;
+      }
+
+      .btn-export {
+        padding: 6px 12px;
+        background: #c79e4c;
+        color: #fff;
+        border-radius: 6px;
+        border: none;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .btn-export:hover {
+        background: #b5893c;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-wrapper">
+      <div class="page-header">
+        <div class="page-title">
+          <h1>Ad Performance</h1>
+          <span>
+            Banner and property ad performance with IMP, CL, CTR, CV and CVR by
+            format and placement.
+          </span>
+        </div>
+        <div class="controls">
+          <div class="controls-group">
+            <label for="apTimeRange">Time</label>
+            <select id="apTimeRange">
+              <option value="7d">Last 7 days</option>
+              <option value="30d" selected>Last 30 days</option>
+              <option value="90d">Last 90 days</option>
+            </select>
+          </div>
+          <div class="controls-group">
+            <label for="apPlacement">Placement</label>
+            <select id="apPlacement">
+              <option value="all">All placements</option>
+              <option value="homepage">Homepage</option>
+              <option value="search_results">Search results</option>
+              <option value="property_detail">Property detail</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-grid" id="apKpiGrid"></div>
+
+      <div class="section-group">
+        <div class="section-header">
+          <div>
+            <h2>Ad breakdown by format</h2>
+            <span>
+              Aggregated performance metrics by ad format and placement (demo
+              data only).
+            </span>
+          </div>
+          <button class="btn-export" id="apExportBtn">Export CSV</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Format</th>
+              <th>Placement</th>
+              <th>IMP</th>
+              <th>CL</th>
+              <th>CTR</th>
+              <th>CV</th>
+              <th>CVR</th>
+            </tr>
+          </thead>
+          <tbody id="apTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      const adRows = [
+        {
+          format: "Property sponsored tile",
+          placement: "homepage",
+          imps: 280000,
+          clicks: 9200,
+          conversions: 320,
+        },
+        {
+          format: "Property sponsored tile",
+          placement: "search_results",
+          imps: 350000,
+          clicks: 14500,
+          conversions: 510,
+        },
+        {
+          format: "Property sponsored tile",
+          placement: "property_detail",
+          imps: 90000,
+          clicks: 4300,
+          conversions: 190,
+        },
+        {
+          format: "Banner - top",
+          placement: "homepage",
+          imps: 420000,
+          clicks: 6800,
+          conversions: 110,
+        },
+        {
+          format: "Banner - sidebar",
+          placement: "property_detail",
+          imps: 210000,
+          clicks: 4700,
+          conversions: 140,
+        },
+        {
+          format: "Native content block",
+          placement: "search_results",
+          imps: 160000,
+          clicks: 6900,
+          conversions: 260,
+        },
+      ];
+
+      function asPercent(numerator, denominator) {
+        if (!denominator) return 0;
+        return (numerator / denominator) * 100;
+      }
+
+      function formatPercent(value) {
+        if (!value) return "0.0%";
+        return `${value.toFixed(1)}%`;
+      }
+
+      function buildFilteredRows() {
+        const placement = document.getElementById("apPlacement").value;
+        if (placement === "all") return adRows;
+        return adRows.filter(
+          (r) => r.placement === placement.replace("_", " "),
+        );
+      }
+
+      function renderKpis() {
+        const grid = document.getElementById("apKpiGrid");
+        grid.innerHTML = "";
+        const rows = buildFilteredRows();
+        const totals = rows.reduce(
+          (acc, r) => {
+            acc.imps += r.imps;
+            acc.clicks += r.clicks;
+            acc.conversions += r.conversions;
+            return acc;
+          },
+          { imps: 0, clicks: 0, conversions: 0 },
+        );
+        const ctr = asPercent(totals.clicks, totals.imps);
+        const cvr = asPercent(totals.conversions, totals.clicks);
+
+        const items = [
+          {
+            label: "Impressions (IMP)",
+            value: totals.imps.toLocaleString("en-US"),
+            sub: "All impressions for selected placements",
+          },
+          {
+            label: "Clicks (CL)",
+            value: totals.clicks.toLocaleString("en-US"),
+            sub: `Overall CTR: ${formatPercent(ctr)}`,
+          },
+          {
+            label: "Conversions (CV)",
+            value: totals.conversions.toLocaleString("en-US"),
+            sub: `Overall CVR: ${formatPercent(cvr)}`,
+          },
+          {
+            label: "Average CTR",
+            value: formatPercent(ctr),
+            sub: "Click-through rate vs impressions",
+          },
+          {
+            label: "Average CVR",
+            value: formatPercent(cvr),
+            sub: "Conversion rate vs clicks",
+          },
+        ];
+
+        items.forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "kpi-card";
+          div.innerHTML = `
+            <div class="kpi-label">${item.label}</div>
+            <div class="kpi-value">${item.value}</div>
+            <div class="kpi-sub">${item.sub}</div>
+          `;
+          grid.appendChild(div);
+        });
+      }
+
+      function renderTable() {
+        const body = document.getElementById("apTableBody");
+        body.innerHTML = "";
+        const rows = buildFilteredRows();
+        rows.forEach((r) => {
+          const ctr = asPercent(r.clicks, r.imps);
+          const cvr = asPercent(r.conversions, r.clicks);
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${r.format}</td>
+            <td>${r.placement.replace("_", " ")}</td>
+            <td>${r.imps.toLocaleString("en-US")}</td>
+            <td>${r.clicks.toLocaleString("en-US")}</td>
+            <td>${formatPercent(ctr)}</td>
+            <td>${r.conversions.toLocaleString("en-US")}</td>
+            <td>${formatPercent(cvr)}</td>
+          `;
+          body.appendChild(tr);
+        });
+      }
+
+      function exportCsv() {
+        const rows = buildFilteredRows();
+        if (!rows.length) {
+          alert("No ad performance data to export for current filters.");
+          return;
+        }
+        const header = ["Format", "Placement", "IMP", "CL", "CTR", "CV", "CVR"];
+        const csvRows = rows.map((r) => {
+          const ctr = asPercent(r.clicks, r.imps);
+          const cvr = asPercent(r.conversions, r.clicks);
+          return [
+            r.format,
+            r.placement,
+            r.imps,
+            r.clicks,
+            ctr.toFixed(2),
+            r.conversions,
+            cvr.toFixed(2),
+          ];
+        });
+        const all = [header, ...csvRows].map((row) => row.join(",")).join("\n");
+        const blob = new Blob([all], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "ad-performance-demo.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderKpis();
+        renderTable();
+
+        document
+          .getElementById("apPlacement")
+          .addEventListener("change", () => {
+            renderKpis();
+            renderTable();
+          });
+
+        document
+          .getElementById("apExportBtn")
+          .addEventListener("click", exportCsv);
+      });
+    </script>
+  </body>
+</html>

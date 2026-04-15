@@ -863,6 +863,57 @@
       let currentTab = "client";
       let currentContact = null;
 
+      function maybeInjectContactFromUrl() {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const typeParam = params.get("contactType");
+          const name = params.get("name");
+          if (!typeParam || !name) return null;
+          const email = params.get("email") || "";
+          const company = params.get("company") || "";
+
+          const initials =
+            name
+              .split(/\s+/)
+              .filter(Boolean)
+              .map((part) => part[0])
+              .join("")
+              .slice(0, 2)
+              .toUpperCase() || "?";
+
+          if (typeParam === "client") {
+            clients.unshift({
+              type: "client",
+              name,
+              email,
+              avatar: initials,
+              color: "linear-gradient(135deg, #60a5fa, #3b82f6)",
+              preview: "Selected from admin context.",
+            });
+            return "client";
+          }
+
+          if (typeParam === "agent") {
+            agents.unshift({
+              type: "agent",
+              name,
+              company: company || undefined,
+              email,
+              avatar: initials,
+              color: "linear-gradient(135deg, #c9a876, #8b6030)",
+              preview: "Selected from admin context.",
+              online: true,
+            });
+            return "agent";
+          }
+
+          return null;
+        } catch (e) {
+          console.error("Failed to inject contact from URL", e);
+          return null;
+        }
+      }
+
       function renderConvos(tab) {
         const list = document.getElementById("convoList");
         list.innerHTML = "";
@@ -937,7 +988,7 @@
 
         const nameEl = document.getElementById("agentName");
         const statusEl = document.getElementById("agentStatus");
-        // Chỉ cập nhật header theo contact nếu là agent
+        // Only update the header from contact when the participant is an agent
         if (contact.type === "agent") {
           if (nameEl) nameEl.textContent = contact.name;
           if (statusEl)
@@ -946,13 +997,13 @@
             } | ${contact.email || contact.company || ""}`;
         }
 
-        // Với client: ẩn phần Agent's Properties; với agent: hiển thị
+        // For clients: hide the Agent's Properties section; for agents: show it
         const propertiesSection = panel.querySelector(".properties-section");
         if (propertiesSection) {
           propertiesSection.style.display = isClient ? "none" : "block";
         }
 
-        // Với client: ẩn cả block property-info; với agent: hiển thị
+        // For clients: hide the entire property-info block; for agents: show it
         const propertyInfo = panel.querySelector(".property-info");
         if (propertyInfo) {
           propertyInfo.style.display = isClient ? "none" : "block";
@@ -973,8 +1024,10 @@
         currentTab = el.getAttribute("data-tab");
         renderConvos(currentTab);
       }
-
-      renderConvos("client");
+      const initialTabFromUrl = maybeInjectContactFromUrl();
+      const initialTab = initialTabFromUrl || "client";
+      currentTab = initialTab;
+      renderConvos(initialTab);
     </script>
   </body>
 </html>

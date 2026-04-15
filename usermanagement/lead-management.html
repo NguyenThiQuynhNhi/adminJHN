@@ -1,0 +1,954 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Lead Directory</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background: #f5f3ef;
+        color: #2a2118;
+      }
+      .page {
+        padding: 24px 32px 32px;
+        display: flex;
+        gap: 20px;
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        width: 300px;
+        background: #fffaf2;
+        border-radius: 12px;
+        border: 1px solid #eadccd;
+        padding: 18px;
+        height: fit-content;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+      }
+
+      .main-content {
+        flex: 1;
+        background: #fffaf2;
+        border-radius: 12px;
+        border: 1px solid #eadccd;
+        padding: 20px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+      }
+
+      .card-title {
+        font-size: 17px;
+        font-weight: 600;
+        margin-bottom: 14px;
+        color: #2a2118;
+      }
+
+      .btn {
+        border-radius: 999px;
+        padding: 8px 16px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .btn-primary {
+        background: #3a6b3c;
+        color: white;
+        border: none;
+      }
+      .btn-secondary {
+        background: #f7efe4;
+        color: #6a5641;
+        border: 1px solid #ddcdb9;
+      }
+
+      .new-group input,
+      .new-group select {
+        width: 100%;
+        padding: 9px 12px;
+        margin-bottom: 8px;
+        border-radius: 999px;
+        border: 1px solid #ddcdb9;
+        font-size: 13px;
+        background: #fdf8f0;
+      }
+
+      .group-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 10px 0;
+      }
+      .group-item {
+        padding: 11px 14px;
+        border-radius: 8px;
+        margin-bottom: 4px;
+        cursor: pointer;
+        font-size: 13.5px;
+        transition: all 0.2s;
+      }
+      .group-item:hover {
+        background: #f0e6d8;
+      }
+      .group-item.active {
+        background: #3a6b3c;
+        color: white;
+      }
+
+      .filters-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+        align-items: flex-end;
+      }
+      .filter-item {
+        min-width: 150px;
+      }
+      .filter-item label {
+        display: block;
+        font-size: 11px;
+        margin-bottom: 4px;
+        color: #7c6a55;
+      }
+      .filter-item input,
+      .filter-item select {
+        width: 100%;
+        padding: 7px 10px;
+        border-radius: 999px;
+        border: 1px solid #ddcdb9;
+        font-size: 12px;
+        background: #fdf8f0;
+      }
+      .filter-actions {
+        margin-left: auto;
+      }
+
+      .lead-type-tabs {
+        display: flex;
+        gap: 8px;
+        margin: 8px 0 12px;
+      }
+      .lead-type-tab {
+        flex: 1;
+        border-radius: 999px;
+        padding: 7px 10px;
+        font-size: 13px;
+        border: 1px solid #ddcdb9;
+        background: #fdf8f0;
+        color: #6a5641;
+        cursor: pointer;
+      }
+      .lead-type-tab.active {
+        background: #3a6b3c;
+        color: #ffffff;
+        border-color: #3a6b3c;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      thead {
+        background: #f1e4d4;
+      }
+      th,
+      td {
+        padding: 11px 9px;
+        border-bottom: 1px solid #efe2d3;
+        text-align: left;
+      }
+      .lead-name {
+        font-weight: 500;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        color: #7c6a55;
+        font-size: 14px;
+      }
+
+      .group-count {
+        font-size: 12px;
+        color: #7c6a55;
+        margin-left: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <!-- Sidebar: Groups -->
+      <div class="sidebar">
+        <div class="card-title">Lead Management</div>
+
+        <div class="new-group">
+          <input id="newGroupName" type="text" placeholder="Find Group name" />
+          <div class="lead-type-tabs">
+            <button
+              type="button"
+              class="lead-type-tab active"
+              data-type="end_user"
+            >
+              End User
+            </button>
+            <button type="button" class="lead-type-tab" data-type="agent">
+              Agent
+            </button>
+          </div>
+          <input id="newGroupType" type="hidden" value="end_user" />
+          <button
+            class="btn btn-primary"
+            id="createNewGroupBtn"
+            style="width: 100%"
+          >
+            + Create New Group
+          </button>
+        </div>
+
+        <div style="margin-top: 24px">
+          <div class="card-title" style="font-size: 15px">Existing Groups</div>
+          <ul id="groupList" class="group-list"></ul>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="main-content">
+        <div id="groupHeader" style="margin-bottom: 20px">
+          <h2 id="currentGroupName" style="margin: 0 0 6px 0; font-size: 20px">
+            Select a group to view leads
+          </h2>
+          <p id="groupInfo" style="margin: 0; color: #7c6a55"></p>
+        </div>
+
+        <div id="leadFilters"></div>
+
+        <table id="leadTable">
+          <thead id="tableHeader"></thead>
+          <tbody id="leadBody"></tbody>
+        </table>
+
+        <div id="emptyState" class="empty-state">
+          No leads in this group yet.<br />Please select a group.
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const LEAD_KEY = "yuushiLeads";
+      const GROUP_KEY = "yuushiLeadGroups";
+
+      let currentGroupId = null;
+      let currentLeadType = "end_user";
+
+      // ================== SAMPLE DATA ==================
+      const seedLeads = [
+        // End User - International
+        {
+          id: "U-1001",
+          entityType: "end_user",
+          name: "Nguyen Van Anh",
+          email: "anh.nguyen@email.com",
+          phone: "+84-90-123-4567",
+          buyerStatus: "Investor",
+          location: "Hanoi, Vietnam",
+          status: "Active",
+          lastActive: "2026-04-10",
+          loginCount: 34,
+          avgSessionMinutes: 9.4,
+          savedSearchCount: 5,
+          savedPropertyCount: 18,
+          appraisalFormCount: 1,
+          alerts: ["Unverified phone number"],
+          createdDate: "2026-04-10",
+        },
+        {
+          id: "U-1002",
+          entityType: "end_user",
+          name: "Tran Thi Minh",
+          email: "minh.tran@email.com",
+          phone: "+84-91-234-5678",
+          buyerStatus: "First-time buyer",
+          location: "Ho Chi Minh City, Vietnam",
+          status: "Active",
+          lastActive: "2026-04-12",
+          loginCount: 21,
+          avgSessionMinutes: 14.1,
+          savedSearchCount: 2,
+          savedPropertyCount: 7,
+          appraisalFormCount: 0,
+          alerts: [],
+          createdDate: "2026-04-09",
+        },
+        {
+          id: "U-1003",
+          entityType: "end_user",
+          name: "Lee Ji-hoon",
+          email: "jihoon.lee@email.com",
+          phone: "+82-10-3456-7890",
+          buyerStatus: "Investor",
+          location: "Seoul, South Korea",
+          status: "Suspended",
+          lastActive: "2026-02-01",
+          loginCount: 12,
+          avgSessionMinutes: 5.2,
+          savedSearchCount: 1,
+          savedPropertyCount: 3,
+          appraisalFormCount: 0,
+          alerts: ["Unverified phone number"],
+          createdDate: "2026-04-08",
+        },
+        {
+          id: "U-1004",
+          entityType: "end_user",
+          name: "Chen Wei",
+          email: "wei.chen@email.com",
+          phone: "+65-9123-4567",
+          buyerStatus: "Repeat buyer",
+          location: "Singapore",
+          status: "Active",
+          lastActive: "2026-03-10",
+          loginCount: 3,
+          avgSessionMinutes: 3.1,
+          savedSearchCount: 0,
+          savedPropertyCount: 1,
+          appraisalFormCount: 0,
+          alerts: [],
+          createdDate: "2026-04-11",
+        },
+        {
+          id: "U-1005",
+          entityType: "end_user",
+          name: "Pham Thi Lan",
+          email: "lan.pham@email.com",
+          phone: "+84-97-456-7890",
+          buyerStatus: "Investor",
+          location: "Da Nang, Vietnam",
+          status: "Active",
+          lastActive: "2026-04-13",
+          loginCount: 87,
+          avgSessionMinutes: 18.7,
+          savedSearchCount: 12,
+          savedPropertyCount: 34,
+          appraisalFormCount: 4,
+          alerts: ["Unverified phone number"],
+          createdDate: "2026-04-07",
+        },
+        {
+          id: "U-1006",
+          entityType: "end_user",
+          name: "Sophia Rodriguez",
+          email: "sophia.r@email.com",
+          phone: "+1-415-555-0123",
+          buyerStatus: "First-time buyer",
+          location: "Los Angeles, USA",
+          status: "Active",
+          lastActive: "2026-04-08",
+          loginCount: 19,
+          avgSessionMinutes: 7.9,
+          savedSearchCount: 4,
+          savedPropertyCount: 9,
+          appraisalFormCount: 2,
+          alerts: [],
+          createdDate: "2026-04-06",
+        },
+
+        // Agent - Japan
+        {
+          id: "A-101",
+          entityType: "agent",
+          name: "Sakura Realty Co.",
+          contactName: "Yamada Taro",
+          primaryCity: "Tokyo",
+          badge: "TOP Agent",
+          subscriptionPlan: "Premium Agent",
+          activeListings: 124,
+          establishedDate: "2010-03-15",
+          headOfficeAddress:
+            "8F, Shinjuku Center Building, 1-1-4 Nishi-Shinjuku, Tokyo",
+          averageRating: 4.7,
+          totalReviews: 132,
+          salesLast12Months: 86,
+          totalMembersCount: 24,
+          createdDate: "2026-04-03",
+        },
+        {
+          id: "A-102",
+          entityType: "agent",
+          name: "Tokyo Prime Homes",
+          contactName: "Suzuki Ichiro",
+          primaryCity: "Tokyo",
+          badge: "Premium Agent",
+          subscriptionPlan: "Standard Agent",
+          activeListings: 67,
+          establishedDate: "2015-06-20",
+          headOfficeAddress: "4-2-8 Shibuya, Shibuya-ku, Tokyo",
+          averageRating: 4.4,
+          totalReviews: 84,
+          salesLast12Months: 54,
+          totalMembersCount: 12,
+          createdDate: "2026-04-04",
+        },
+        {
+          id: "A-103",
+          entityType: "agent",
+          name: "Osaka Luxury Properties",
+          contactName: "Tanaka Hiroshi",
+          primaryCity: "Osaka",
+          badge: "TOP Agent",
+          subscriptionPlan: "Premium Agent",
+          activeListings: 98,
+          establishedDate: "2012-09-10",
+          headOfficeAddress: "2-5-14 Umeda, Kita-ku, Osaka",
+          averageRating: 4.6,
+          totalReviews: 96,
+          salesLast12Months: 61,
+          totalMembersCount: 18,
+          createdDate: "2026-04-05",
+        },
+        {
+          id: "A-104",
+          entityType: "agent",
+          name: "Kyoto Dream Homes",
+          contactName: "Sato Aiko",
+          primaryCity: "Kyoto",
+          badge: "Premium Agent",
+          subscriptionPlan: "Standard Agent",
+          activeListings: 45,
+          establishedDate: "2018-01-05",
+          headOfficeAddress: "3-1-7 Kawaramachi, Nakagyo-ku, Kyoto",
+          averageRating: 4.3,
+          totalReviews: 41,
+          salesLast12Months: 29,
+          totalMembersCount: 9,
+          createdDate: "2026-04-02",
+        },
+      ];
+
+      const seedGroups = [
+        {
+          id: "g1",
+          name: "High-Net-Worth Investors",
+          entityType: "end_user",
+          leadIds: ["U-1001", "U-1003", "U-1004"],
+          createdDate: "2026-04-10",
+        },
+        {
+          id: "g2",
+          name: "First-time Buyers Vietnam",
+          entityType: "end_user",
+          leadIds: ["U-1002", "U-1005"],
+          createdDate: "2026-04-09",
+        },
+        {
+          id: "g3",
+          name: "International Buyers",
+          entityType: "end_user",
+          leadIds: ["U-1006"],
+          createdDate: "2026-04-08",
+        },
+        {
+          id: "g4",
+          name: "Top Performing Agents",
+          entityType: "agent",
+          leadIds: ["A-101", "A-103"],
+          createdDate: "2026-04-05",
+        },
+        {
+          id: "g5",
+          name: "Standard Agents Tokyo/Osaka",
+          entityType: "agent",
+          leadIds: ["A-102", "A-104"],
+          createdDate: "2026-04-06",
+        },
+      ];
+
+      function getLeads() {
+        if (!localStorage.getItem(LEAD_KEY)) {
+          localStorage.setItem(LEAD_KEY, JSON.stringify(seedLeads));
+        }
+        return JSON.parse(localStorage.getItem(LEAD_KEY));
+      }
+
+      function getGroups() {
+        if (!localStorage.getItem(GROUP_KEY)) {
+          localStorage.setItem(GROUP_KEY, JSON.stringify(seedGroups));
+        }
+        return JSON.parse(localStorage.getItem(GROUP_KEY));
+      }
+
+      function saveGroups(groups) {
+        localStorage.setItem(GROUP_KEY, JSON.stringify(groups));
+      }
+
+      function renderGroupList() {
+        const ul = document.getElementById("groupList");
+        ul.innerHTML = "";
+        const groups = getGroups();
+
+        const visibleGroups = groups.filter(
+          (g) => g.entityType === currentLeadType,
+        );
+
+        visibleGroups.forEach((group) => {
+          const li = document.createElement("li");
+          li.className = `group-item ${group.id === currentGroupId ? "active" : ""}`;
+          li.innerHTML = `${group.name} <span class="group-count">(${group.leadIds.length})</span>`;
+          li.onclick = () => loadGroup(group.id);
+          ul.appendChild(li);
+        });
+      }
+
+      function loadGroup(groupId) {
+        currentGroupId = groupId;
+        renderGroupList();
+
+        const groups = getGroups();
+        const group = groups.find((g) => g.id === groupId);
+        if (!group) return;
+
+        document.getElementById("currentGroupName").textContent = group.name;
+
+        const allLeads = getLeads();
+        const leadsInGroup = allLeads.filter((l) =>
+          group.leadIds.includes(String(l.id)),
+        );
+
+        currentLeadType = group.entityType;
+        currentLeads = leadsInGroup;
+        renderFilters(currentLeadType);
+        applyFiltersAndRender();
+      }
+
+      function extractCountry(location) {
+        if (!location) return "-";
+        const parts = String(location).split(",");
+        const last = parts[parts.length - 1].trim();
+        return last || String(location).trim();
+      }
+
+      function renderLeadTable(leads, type) {
+        const tbody = document.getElementById("leadBody");
+        const thead = document.getElementById("tableHeader");
+        const empty = document.getElementById("emptyState");
+
+        tbody.innerHTML = "";
+
+        if (leads.length === 0) {
+          empty.style.display = "block";
+          thead.innerHTML = "";
+          return;
+        }
+
+        empty.style.display = "none";
+
+        if (type === "end_user") {
+          // Match the End User Management table structure
+          thead.innerHTML = `
+          <tr>
+            <th>User</th>
+            <th>Buyer status</th>
+            <th>Nation</th>
+            <th>Status</th>
+            <th>Last active</th>
+            <th>Logins</th>
+            <th>Avg session (min)</th>
+            <th>Saved searches</th>
+            <th>Saved properties</th>
+            <th>Appraisals</th>
+            <th>Alerts</th>
+            <th>Chat</th>
+          </tr>
+        `;
+          leads.forEach((l) => {
+            const name = l.name || "-";
+            const email = l.email || "";
+            const buyerStatus = l.buyerStatus || "-";
+            const nation = extractCountry(l.location);
+            const status = l.status || "-";
+            const lastActive = l.lastActive || "-";
+            const loginCount =
+              typeof l.loginCount === "number" ? l.loginCount : "-";
+            const avgSession =
+              typeof l.avgSessionMinutes === "number"
+                ? l.avgSessionMinutes
+                : "-";
+            const savedSearches =
+              typeof l.savedSearchCount === "number" ? l.savedSearchCount : 0;
+            const savedProperties =
+              typeof l.savedPropertyCount === "number"
+                ? l.savedPropertyCount
+                : 0;
+            const appraisals =
+              typeof l.appraisalFormCount === "number"
+                ? l.appraisalFormCount
+                : 0;
+            const alerts = (l.alerts || []).join(" | ") || "-";
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+            <td class="lead-name">${name}<br><small>${email}</small></td>
+            <td>${buyerStatus}</td>
+            <td>${nation}</td>
+            <td>${status}</td>
+            <td>${lastActive}</td>
+            <td>${loginCount}</td>
+            <td>${avgSession}</td>
+            <td>${savedSearches}</td>
+            <td>${savedProperties}</td>
+            <td>${appraisals}</td>
+            <td>${alerts}</td>
+            <td>
+              —
+            </td>
+          `;
+            tbody.appendChild(tr);
+          });
+        } else {
+          // Match the Agent Management table structure
+          thead.innerHTML = `
+          <tr>
+            <th>Agency</th>
+            <th>Primary city</th>
+            <th>Established date</th>
+            <th>Head office address</th>
+            <th>Badge</th>
+            <th>Rating</th>
+            <th>Reviews</th>
+            <th>Sales (12m)</th>
+            <th>Active listings</th>
+            <th>Members</th>
+            <th>Plan</th>
+            <th>Chat</th>
+          </tr>
+        `;
+          leads.forEach((l) => {
+            const agency = l.name || "-";
+            const primaryCity = l.primaryCity || "-";
+            const establishedDate = l.establishedDate || l.createdDate || "-";
+            const headOffice = l.headOfficeAddress || "-";
+            const badge = l.badge || "—";
+            const rating =
+              typeof l.averageRating === "number" ? l.averageRating : "-";
+            const reviews =
+              typeof l.totalReviews === "number" ? l.totalReviews : "-";
+            const sales12m =
+              typeof l.salesLast12Months === "number"
+                ? l.salesLast12Months
+                : "-";
+            const activeListings =
+              typeof l.activeListings === "number" ? l.activeListings : 0;
+            const members =
+              typeof l.totalMembersCount === "number"
+                ? l.totalMembersCount
+                : "-";
+            const plan = l.subscriptionPlan || "-";
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+            <td>${agency}</td>
+            <td>${primaryCity}</td>
+            <td>${establishedDate}</td>
+            <td>${headOffice}</td>
+            <td>${badge}</td>
+            <td>${rating}</td>
+            <td>${reviews}</td>
+            <td>${sales12m}</td>
+            <td>${activeListings}</td>
+            <td>${members}</td>
+            <td>${plan}</td>
+            <td>—</td>
+          `;
+            tbody.appendChild(tr);
+          });
+        }
+      }
+
+      function renderFilters(type) {
+        const container = document.getElementById("leadFilters");
+        if (!container) return;
+
+        if (type === "end_user") {
+          container.innerHTML = `
+            <div class="filters-row">
+              <div class="filter-item">
+                <label for="filterStatus">Status</label>
+                <select id="filterStatus">
+                  <option value="">All</option>
+                  <option value="Active">Active</option>
+                  <option value="Suspended">Suspended</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label for="filterBuyerStatus">Buyer status</label>
+                <select id="filterBuyerStatus">
+                  <option value="">All</option>
+                  <option value="First-time buyer">First-time buyer</option>
+                  <option value="Investor">Investor</option>
+                  <option value="Repeat buyer">Repeat buyer</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label for="filterNation">Nation</label>
+                <input
+                  id="filterNation"
+                  type="text"
+                  placeholder="e.g. Vietnam"
+                />
+              </div>
+              <div class="filter-item">
+                <label for="filterAlerts">Alerts</label>
+                <select id="filterAlerts">
+                  <option value="">All</option>
+                  <option value="has">Has alerts</option>
+                  <option value="none">No alerts</option>
+                </select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-secondary" id="resetFiltersBtn">
+                  Reset
+                </button>
+              </div>
+            </div>
+          `;
+        } else {
+          container.innerHTML = `
+            <div class="filters-row">
+              <div class="filter-item">
+                <label for="filterBadge">Badge</label>
+                <select id="filterBadge">
+                  <option value="">All</option>
+                  <option value="TOP Agent">TOP Agent</option>
+                  <option value="Premium Agent">Premium Agent</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label for="filterPlan">Plan</label>
+                <select id="filterPlan">
+                  <option value="">All</option>
+                  <option value="Premium Agent">Premium Agent</option>
+                  <option value="Standard Agent">Standard Agent</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label for="filterCity">Primary city</label>
+                <input
+                  id="filterCity"
+                  type="text"
+                  placeholder="e.g. Tokyo"
+                />
+              </div>
+              <div class="filter-item">
+                <label for="filterMinRating">Min rating</label>
+                <input
+                  id="filterMinRating"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="5"
+                  placeholder="e.g. 4.5"
+                />
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-secondary" id="resetFiltersBtn">
+                  Reset
+                </button>
+              </div>
+            </div>
+          `;
+        }
+
+        const inputs = container.querySelectorAll("input, select");
+        inputs.forEach((el) => {
+          const eventName = el.tagName === "SELECT" ? "change" : "input";
+          el.addEventListener(eventName, () => {
+            applyFiltersAndRender();
+          });
+        });
+
+        const resetBtn = document.getElementById("resetFiltersBtn");
+        if (resetBtn) {
+          resetBtn.addEventListener("click", () => {
+            inputs.forEach((el) => {
+              if ("value" in el) {
+                el.value = "";
+              }
+            });
+            applyFiltersAndRender();
+          });
+        }
+      }
+
+      let currentLeads = [];
+
+      function applyFiltersAndRender() {
+        let filtered = Array.isArray(currentLeads) ? [...currentLeads] : [];
+
+        if (currentLeadType === "end_user") {
+          const statusEl = document.getElementById("filterStatus");
+          const buyerStatusEl = document.getElementById("filterBuyerStatus");
+          const nationEl = document.getElementById("filterNation");
+          const alertsEl = document.getElementById("filterAlerts");
+
+          const status = statusEl ? statusEl.value : "";
+          const buyerStatus = buyerStatusEl ? buyerStatusEl.value : "";
+          const nation = nationEl ? nationEl.value.trim().toLowerCase() : "";
+          const alerts = alertsEl ? alertsEl.value : "";
+
+          if (status) {
+            filtered = filtered.filter((l) => (l.status || "") === status);
+          }
+          if (buyerStatus) {
+            filtered = filtered.filter(
+              (l) => (l.buyerStatus || "") === buyerStatus,
+            );
+          }
+          if (nation) {
+            filtered = filtered.filter((l) => {
+              const n = extractCountry(l.location).toLowerCase();
+              return n.includes(nation);
+            });
+          }
+          if (alerts === "has") {
+            filtered = filtered.filter(
+              (l) => Array.isArray(l.alerts) && l.alerts.length > 0,
+            );
+          } else if (alerts === "none") {
+            filtered = filtered.filter(
+              (l) => !Array.isArray(l.alerts) || l.alerts.length === 0,
+            );
+          }
+        } else {
+          const badgeEl = document.getElementById("filterBadge");
+          const planEl = document.getElementById("filterPlan");
+          const cityEl = document.getElementById("filterCity");
+          const minRatingEl = document.getElementById("filterMinRating");
+
+          const badge = badgeEl ? badgeEl.value : "";
+          const plan = planEl ? planEl.value : "";
+          const city = cityEl ? cityEl.value.trim().toLowerCase() : "";
+          const minRating = minRatingEl ? parseFloat(minRatingEl.value) : NaN;
+
+          if (badge) {
+            filtered = filtered.filter((l) => (l.badge || "") === badge);
+          }
+          if (plan) {
+            filtered = filtered.filter(
+              (l) => (l.subscriptionPlan || "") === plan,
+            );
+          }
+          if (city) {
+            filtered = filtered.filter((l) => {
+              const c = (l.primaryCity || "").toLowerCase();
+              return c.includes(city);
+            });
+          }
+          if (!isNaN(minRating)) {
+            filtered = filtered.filter((l) => {
+              const r =
+                typeof l.averageRating === "number" ? l.averageRating : 0;
+              return r >= minRating;
+            });
+          }
+        }
+
+        renderLeadTable(filtered, currentLeadType);
+      }
+
+      // Create new group
+      document
+        .getElementById("createNewGroupBtn")
+        .addEventListener("click", () => {
+          const name = document.getElementById("newGroupName").value.trim();
+          const type = document.getElementById("newGroupType").value;
+
+          if (!name) {
+            alert("Please enter a group name!");
+            return;
+          }
+
+          const groups = getGroups();
+          const newGroup = {
+            id: "group_" + Date.now(),
+            name: name,
+            entityType: type,
+            leadIds: [],
+            createdDate: new Date().toISOString().slice(0, 10),
+          };
+
+          groups.push(newGroup);
+          saveGroups(groups);
+
+          document.getElementById("newGroupName").value = "";
+          renderGroupList();
+          loadGroup(newGroup.id);
+
+          alert(`Group "${name}" created successfully!`);
+        });
+
+      // Initialize
+      document.addEventListener("DOMContentLoaded", () => {
+        getLeads();
+        getGroups();
+
+        // Setup lead type tabs
+        const tabs = document.querySelectorAll(".lead-type-tab");
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            const selectedType = tab.getAttribute("data-type");
+            if (!selectedType || selectedType === currentLeadType) return;
+
+            currentLeadType = selectedType;
+
+            // Update active tab
+            tabs.forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+
+            // Sync hidden input used for group creation
+            const hiddenTypeInput = document.getElementById("newGroupType");
+            if (hiddenTypeInput) {
+              hiddenTypeInput.value = currentLeadType;
+            }
+
+            // Reset current group selection when switching type
+            currentGroupId = null;
+            renderGroupList();
+
+            const allGroups = getGroups();
+            const groupsForType = allGroups.filter(
+              (g) => g.entityType === currentLeadType,
+            );
+            if (groupsForType.length > 0) {
+              loadGroup(groupsForType[0].id);
+            } else {
+              document.getElementById("leadBody").innerHTML = "";
+              document.getElementById("tableHeader").innerHTML = "";
+              document.getElementById("emptyState").style.display = "block";
+              document.getElementById("currentGroupName").textContent =
+                "Select a group to view leads";
+              document.getElementById("groupInfo").textContent = "";
+            }
+          });
+        });
+
+        renderGroupList();
+
+        // Auto-load first group for initial type so sample data is visible
+        const allGroups = getGroups();
+        const initialGroups = allGroups.filter(
+          (g) => g.entityType === currentLeadType,
+        );
+        if (initialGroups.length > 0) {
+          loadGroup(initialGroups[0].id);
+        }
+      });
+    </script>
+  </body>
+</html>

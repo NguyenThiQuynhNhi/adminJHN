@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FinancialReportsDashboard</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f3eee5;
+        color: #2b2118;
+      }
+
+      .page-wrapper {
+        min-height: 100vh;
+        padding: 20px 24px 32px;
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .page-title {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .page-title h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a120b;
+      }
+
+      .page-title span {
+        font-size: 13px;
+        color: #7b6751;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .controls-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .controls label {
+        font-size: 12px;
+        color: #6b5740;
+        margin-right: 4px;
+      }
+
+      .controls select,
+      .controls input,
+      .controls button {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #d0c2aa;
+        background: #faf6ee;
+        font-size: 13px;
+      }
+
+      .controls button {
+        cursor: pointer;
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+        margin-top: 16px;
+      }
+
+      @media (max-width: 1200px) {
+        .kpi-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 768px) {
+        .kpi-grid {
+          grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+      }
+
+      .kpi-card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 14px 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        border: 1px solid #e2d4bf;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .kpi-label {
+        font-size: 12px;
+        color: #7b6751;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f130c;
+      }
+
+      .kpi-sub {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      .section-group {
+        margin-bottom: 22px;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .section-header h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #2b2118;
+      }
+
+      .section-header span {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      .btn-export {
+        padding: 6px 12px;
+        background: #c79e4c;
+        color: #fff;
+        border-radius: 6px;
+        border: none;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .btn-export:hover {
+        background: #b5893c;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f6eee1;
+      }
+
+      th,
+      td {
+        padding: 8px 6px;
+        text-align: left;
+        border-bottom: 1px solid #eee0cf;
+      }
+
+      th {
+        font-weight: 600;
+        color: #5b4632;
+      }
+
+      tbody tr:nth-child(even) {
+        background: #fdf8f0;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .status-paid {
+        background: #e3f5ec;
+        color: #0f7a4a;
+      }
+
+      .status-pending {
+        background: #fff3cd;
+        color: #856404;
+      }
+
+      .status-overdue {
+        background: #fde2e1;
+        color: #b03232;
+      }
+
+      .badge-soft {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        background: #ece0cf;
+        color: #5b4632;
+      }
+
+      .filters-note {
+        font-size: 11px;
+        color: #8c775f;
+        margin-top: 6px;
+      }
+
+      .layout-2col {
+        display: grid;
+        grid-template-columns: minmax(0, 1.8fr) minmax(0, 1.4fr);
+        gap: 18px;
+      }
+
+      @media (max-width: 1024px) {
+        .layout-2col {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-wrapper">
+      <div class="page-header">
+        <div class="page-title">
+          <h1>Financial Reports</h1>
+          <span>
+            Agent and customer payment status confirmation. Revenue reporting by
+            month, year or custom period, including breakdown by type
+            (subscription, sponsored ads, banner ads).
+          </span>
+        </div>
+        <div class="controls">
+          <div class="controls-group">
+            <label for="granularity">View</label>
+            <select id="granularity">
+              <option value="month">By month</option>
+              <option value="year">By year</option>
+              <option value="custom">Custom period</option>
+            </select>
+          </div>
+          <div class="controls-group" id="monthControls">
+            <label for="yearSelect">Year</label>
+            <select id="yearSelect"></select>
+          </div>
+          <div class="controls-group" id="customControls" style="display: none">
+            <label for="fromDate">From</label>
+            <input id="fromDate" type="date" />
+            <label for="toDate">To</label>
+            <input id="toDate" type="date" />
+          </div>
+        </div>
+      </div>
+
+      <div class="filters-note" id="filtersNote">
+        Showing monthly revenue for selected year. All values are demo-only and
+        based on aggregate metadata, not actual payment records.
+      </div>
+
+      <div class="kpi-grid" id="kpiGrid"></div>
+
+      <div class="layout-2col">
+        <div class="section-group">
+          <div class="section-header">
+            <div>
+              <h2>Revenue summary</h2>
+              <span>
+                Aggregate revenue by period with breakdown by subscription and
+                advertising types.
+              </span>
+            </div>
+            <button class="btn-export" id="exportRevenueCsvBtn">
+              Download CSV
+            </button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th>Total revenue</th>
+                <th>Subscription</th>
+                <th>Sponsored ads</th>
+                <th>Banner ads</th>
+                <th>Other</th>
+              </tr>
+            </thead>
+            <tbody id="revenueTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="section-group">
+          <div class="section-header">
+            <div>
+              <h2>Payment status overview</h2>
+              <span>
+                High-level confirmation of agent and customer payment status.
+                Detailed invoices are handled in billing modules.
+              </span>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Entity</th>
+                <th>Type</th>
+                <th>Plan / Tier</th>
+                <th>Last payment</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="statusTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const revenueEvents = [
+        {
+          date: "2026-01-05",
+          type: "subscription",
+          channel: "agent",
+          amount: 320000,
+        },
+        {
+          date: "2026-01-18",
+          type: "subscription",
+          channel: "customer",
+          amount: 140000,
+        },
+        {
+          date: "2026-01-22",
+          type: "sponsored_ads",
+          channel: "agent",
+          amount: 210000,
+        },
+        {
+          date: "2026-01-28",
+          type: "banner_ads",
+          channel: "agent",
+          amount: 90000,
+        },
+        {
+          date: "2026-02-04",
+          type: "subscription",
+          channel: "agent",
+          amount: 340000,
+        },
+        {
+          date: "2026-02-12",
+          type: "subscription",
+          channel: "customer",
+          amount: 150000,
+        },
+        {
+          date: "2026-02-19",
+          type: "sponsored_ads",
+          channel: "agent",
+          amount: 230000,
+        },
+        {
+          date: "2026-02-25",
+          type: "banner_ads",
+          channel: "agent",
+          amount: 110000,
+        },
+        {
+          date: "2026-03-03",
+          type: "subscription",
+          channel: "agent",
+          amount: 360000,
+        },
+        {
+          date: "2026-03-15",
+          type: "subscription",
+          channel: "customer",
+          amount: 155000,
+        },
+        {
+          date: "2026-03-23",
+          type: "sponsored_ads",
+          channel: "agent",
+          amount: 245000,
+        },
+        {
+          date: "2026-03-29",
+          type: "banner_ads",
+          channel: "agent",
+          amount: 120000,
+        },
+        {
+          date: "2025-11-10",
+          type: "subscription",
+          channel: "agent",
+          amount: 280000,
+        },
+        {
+          date: "2025-11-21",
+          type: "banner_ads",
+          channel: "agent",
+          amount: 70000,
+        },
+        {
+          date: "2025-12-07",
+          type: "subscription",
+          channel: "customer",
+          amount: 120000,
+        },
+        {
+          date: "2025-12-19",
+          type: "sponsored_ads",
+          channel: "agent",
+          amount: 190000,
+        },
+      ];
+
+      const paymentStatusRows = [
+        {
+          name: "Sakura Homes Co.",
+          type: "Agent",
+          plan: "Agency Pro",
+          lastPayment: "2026-03-28",
+          status: "paid",
+        },
+        {
+          name: "Tokyo Prime Estates",
+          type: "Agent",
+          plan: "Premium Ads + Subscription",
+          lastPayment: "2026-03-15",
+          status: "pending",
+        },
+        {
+          name: "Nguyen Anh",
+          type: "Customer",
+          plan: "Investor tier",
+          lastPayment: "2026-02-02",
+          status: "overdue",
+        },
+        {
+          name: "Suzuki Haruka",
+          type: "Customer",
+          plan: "Buyer tier",
+          lastPayment: "2026-03-30",
+          status: "paid",
+        },
+        {
+          name: "Osaka Capital Partners",
+          type: "Agent",
+          plan: "Sponsored Ads",
+          lastPayment: "2026-01-31",
+          status: "overdue",
+        },
+      ];
+
+      function parseDate(value) {
+        const [year, month, day] = value.split("-").map(Number);
+        return new Date(year, month - 1, day);
+      }
+
+      function formatCurrency(value) {
+        return new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "JPY",
+          maximumFractionDigits: 0,
+        }).format(value);
+      }
+
+      function getYears() {
+        const years = Array.from(
+          new Set(revenueEvents.map((e) => parseDate(e.date).getFullYear())),
+        ).sort();
+        return years;
+      }
+
+      function aggregateRevenue(granularity, options = {}) {
+        const { year, fromDate, toDate } = options;
+        const map = new Map();
+
+        const from = fromDate ? parseDate(fromDate) : null;
+        const to = toDate ? parseDate(toDate) : null;
+
+        for (const ev of revenueEvents) {
+          const d = parseDate(ev.date);
+          if (from && d < from) continue;
+          if (to && d > to) continue;
+
+          const y = d.getFullYear();
+          const m = d.getMonth() + 1;
+
+          if (granularity === "month" && year && y !== year) continue;
+
+          let key;
+          if (granularity === "year") {
+            key = String(y);
+          } else if (granularity === "custom") {
+            key = `${y}-${String(m).padStart(2, "0")}`;
+          } else {
+            key = `${y}-${String(m).padStart(2, "0")}`;
+          }
+
+          if (!map.has(key)) {
+            map.set(key, {
+              period: key,
+              total: 0,
+              subscription: 0,
+              sponsored_ads: 0,
+              banner_ads: 0,
+              other: 0,
+            });
+          }
+          const bucket = map.get(key);
+          bucket.total += ev.amount;
+          if (ev.type === "subscription") bucket.subscription += ev.amount;
+          else if (ev.type === "sponsored_ads")
+            bucket.sponsored_ads += ev.amount;
+          else if (ev.type === "banner_ads") bucket.banner_ads += ev.amount;
+          else bucket.other += ev.amount;
+        }
+
+        const rows = Array.from(map.values()).sort((a, b) =>
+          a.period.localeCompare(b.period),
+        );
+        return rows;
+      }
+
+      function computeKpis(rows) {
+        const total = rows.reduce((sum, r) => sum + r.total, 0);
+        const subscription = rows.reduce((sum, r) => sum + r.subscription, 0);
+        const sponsored = rows.reduce((sum, r) => sum + r.sponsored_ads, 0);
+        const banner = rows.reduce((sum, r) => sum + r.banner_ads, 0);
+        return { total, subscription, sponsored, banner };
+      }
+
+      let lastAggregatedRows = [];
+
+      function renderRevenueTable(rows, granularity) {
+        const body = document.getElementById("revenueTableBody");
+        body.innerHTML = "";
+        if (!rows.length) {
+          const tr = document.createElement("tr");
+          const td = document.createElement("td");
+          td.colSpan = 6;
+          td.textContent = "No revenue data for current filters.";
+          body.appendChild(tr).appendChild(td);
+          lastAggregatedRows = [];
+          return;
+        }
+        lastAggregatedRows = rows;
+        rows.forEach((r) => {
+          const tr = document.createElement("tr");
+          const label =
+            granularity === "year"
+              ? r.period
+              : `${r.period} (${granularity === "month" ? "month" : "custom"})`;
+          tr.innerHTML = `
+            <td>${label}</td>
+            <td>${formatCurrency(r.total)}</td>
+            <td>${formatCurrency(r.subscription)}</td>
+            <td>${formatCurrency(r.sponsored_ads)}</td>
+            <td>${formatCurrency(r.banner_ads)}</td>
+            <td>${formatCurrency(r.other)}</td>
+          `;
+          body.appendChild(tr);
+        });
+      }
+
+      function renderKpisForRows(rows) {
+        const grid = document.getElementById("kpiGrid");
+        grid.innerHTML = "";
+        const { total, subscription, sponsored, banner } = computeKpis(rows);
+        const items = [
+          {
+            label: "Total revenue",
+            value: total,
+            sub: "All types in selected period",
+          },
+          {
+            label: "Subscription revenue",
+            value: subscription,
+            sub: "Recurring plans from agents and customers",
+          },
+          {
+            label: "Sponsored ads revenue",
+            value: sponsored,
+            sub: "Listing and spotlight placements",
+          },
+          {
+            label: "Banner ads revenue",
+            value: banner,
+            sub: "Display inventory on site",
+          },
+        ];
+        items.forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "kpi-card";
+          div.innerHTML = `
+            <div class="kpi-label">${item.label}</div>
+            <div class="kpi-value">${formatCurrency(item.value)}</div>
+            <div class="kpi-sub">${item.sub}</div>
+          `;
+          grid.appendChild(div);
+        });
+      }
+
+      function renderPaymentStatus() {
+        const body = document.getElementById("statusTableBody");
+        body.innerHTML = "";
+        paymentStatusRows.forEach((row) => {
+          const tr = document.createElement("tr");
+          const statusClass =
+            row.status === "paid"
+              ? "status-paid"
+              : row.status === "pending"
+                ? "status-pending"
+                : "status-overdue";
+          const label =
+            row.status === "paid"
+              ? "Paid"
+              : row.status === "pending"
+                ? "Pending confirmation"
+                : "Overdue";
+          tr.innerHTML = `
+            <td>${row.name}</td>
+            <td>${row.type}</td>
+            <td>${row.plan}</td>
+            <td>${row.lastPayment}</td>
+            <td><span class="status-pill ${statusClass}">${label}</span></td>
+          `;
+          body.appendChild(tr);
+        });
+      }
+
+      function updateFiltersNote(granularity) {
+        const note = document.getElementById("filtersNote");
+        if (granularity === "month") {
+          note.textContent =
+            "Showing monthly revenue for selected year. All values are demo-only and based on aggregate metadata, not actual payment records.";
+        } else if (granularity === "year") {
+          note.textContent =
+            "Showing yearly revenue over all available data. This is a simplified financial view for admin monitoring.";
+        } else {
+          note.textContent =
+            "Showing revenue aggregated by month within the selected custom period. Data is illustrative only.";
+        }
+      }
+
+      function exportRevenueCsv() {
+        if (!lastAggregatedRows.length) {
+          alert("No revenue data to export for current filters.");
+          return;
+        }
+        const header = [
+          "Period",
+          "Total revenue",
+          "Subscription",
+          "Sponsored ads",
+          "Banner ads",
+          "Other",
+        ];
+        const rows = lastAggregatedRows.map((r) => [
+          r.period,
+          r.total,
+          r.subscription,
+          r.sponsored_ads,
+          r.banner_ads,
+          r.other,
+        ]);
+        const all = [header, ...rows].map((row) => row.join(",")).join("\n");
+        const blob = new Blob([all], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "financial-reports-demo.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+
+      function applyFilters() {
+        const granularity = document.getElementById("granularity").value;
+        const yearSelect = document.getElementById("yearSelect");
+        const fromDate = document.getElementById("fromDate").value;
+        const toDate = document.getElementById("toDate").value;
+        let rows;
+        if (granularity === "month") {
+          const year = Number(yearSelect.value);
+          rows = aggregateRevenue("month", { year });
+        } else if (granularity === "year") {
+          rows = aggregateRevenue("year");
+        } else {
+          rows = aggregateRevenue("custom", { fromDate, toDate });
+        }
+        renderRevenueTable(rows, granularity);
+        renderKpisForRows(rows);
+        updateFiltersNote(granularity);
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const years = getYears();
+        const yearSelect = document.getElementById("yearSelect");
+        years.forEach((y) => {
+          const opt = document.createElement("option");
+          opt.value = String(y);
+          opt.textContent = String(y);
+          yearSelect.appendChild(opt);
+        });
+        if (years.length) yearSelect.value = String(years[years.length - 1]);
+
+        renderPaymentStatus();
+        applyFilters();
+
+        document
+          .getElementById("granularity")
+          .addEventListener("change", (e) => {
+            const value = e.target.value;
+            const monthControls = document.getElementById("monthControls");
+            const customControls = document.getElementById("customControls");
+            if (value === "month") {
+              monthControls.style.display = "flex";
+              customControls.style.display = "none";
+            } else if (value === "year") {
+              monthControls.style.display = "none";
+              customControls.style.display = "none";
+            } else {
+              monthControls.style.display = "none";
+              customControls.style.display = "flex";
+            }
+            applyFilters();
+          });
+
+        document
+          .getElementById("yearSelect")
+          .addEventListener("change", applyFilters);
+        document
+          .getElementById("fromDate")
+          .addEventListener("change", applyFilters);
+        document
+          .getElementById("toDate")
+          .addEventListener("change", applyFilters);
+
+        document
+          .getElementById("exportRevenueCsvBtn")
+          .addEventListener("click", exportRevenueCsv);
+      });
+    </script>
+  </body>
+</html>

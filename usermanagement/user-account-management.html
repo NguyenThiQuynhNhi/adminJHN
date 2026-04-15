@@ -387,6 +387,7 @@
                 <th>Saved properties</th>
                 <th>Appraisals</th>
                 <th>Alerts</th>
+                <th>Chat</th>
               </tr>
             </thead>
             <tbody id="accountTableBody"></tbody>
@@ -529,12 +530,13 @@
                   </select>
                 </div>
                 <div>
-                  <label for="fieldLocation">Nation (khu vực quan tâm)</label>
-                  <input
-                    id="fieldLocation"
-                    type="text"
-                    placeholder="Japan, Vietnam, Singapore..."
-                  />
+                  <label for="fieldLocation">Location</label>
+                  <select id="fieldLocation">
+                    <option value="">Not set</option>
+                    <option value="Japan">Japan</option>
+                    <option value="Vietnam">Vietnam</option>
+                    <option value="Singapore">Singapore</option>
+                  </select>
                 </div>
                 <div>
                   <label for="fieldBuyerStatus">Buyer status</label>
@@ -552,7 +554,7 @@
             </div>
 
             <div class="detail-section">
-              <div class="detail-title">3. Security (Bảo mật)</div>
+              <div class="detail-title">3. Security (Protection)</div>
               <div class="field-grid">
                 <div>
                   <label for="fieldSecQuestion">Security question</label>
@@ -713,16 +715,6 @@
                     <input id="quietTz" type="text" placeholder="Asia/Tokyo" />
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <div class="detail-section">
-              <div class="detail-title">Admin notes (internal)</div>
-              <div class="field-row">
-                <textarea
-                  id="fieldNotes"
-                  placeholder="Short internal note about this account (e.g. risk flags, VIP handling)."
-                ></textarea>
               </div>
             </div>
 
@@ -1010,7 +1002,7 @@
           {
             label: "Total end users",
             value: k.total,
-            sub: "Tổng số buyer / investor đăng ký",
+            sub: "Total registered buyers / investors",
           },
           {
             label: "Active end users",
@@ -1020,12 +1012,12 @@
           {
             label: "First-time buyers",
             value: k.firstTime,
-            sub: "Người mua lần đầu",
+            sub: "First-time buyers",
           },
           {
             label: "Investors",
             value: k.investors,
-            sub: "End user chủ yếu đầu tư",
+            sub: "End users mainly investing",
           },
         ];
         items.forEach((m) => {
@@ -1111,6 +1103,17 @@
                 : 0
             }</td>
             <td>${alerts || "-"}</td>
+            <td>
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                onclick="event.stopPropagation(); openChatForEndUser('${encodeURIComponent(
+                  String(a.id),
+                )}')"
+              >
+                Chat
+              </button>
+            </td>
           `;
           tr.addEventListener("click", () => {
             openDetail(a.id);
@@ -1119,12 +1122,31 @@
         });
       }
 
+      function openChatForEndUser(encodedId) {
+        const id = decodeURIComponent(encodedId);
+        const account = accounts.find((x) => String(x.id) === id);
+        if (!account) {
+          alert("Selected account not found in current dataset.");
+          return;
+        }
+        const params = new URLSearchParams();
+        params.set("contactType", "client");
+        params.set("name", account.name || "");
+        params.set("email", account.email || "");
+        window.location.href =
+          "../messagesupport/admin-messages.html?" + params.toString();
+      }
+
       function openDetail(id) {
         const listView = document.getElementById("listView");
         const detailView = document.getElementById("detailView");
         if (listView && detailView) {
           listView.style.display = "none";
           detailView.style.display = "block";
+        }
+        const kpiGrid = document.getElementById("kpiGrid");
+        if (kpiGrid) {
+          kpiGrid.style.display = "none";
         }
         selectAccount(id);
       }
@@ -1197,8 +1219,6 @@
         document.getElementById("quietFrom").value = a.quietFrom || "";
         document.getElementById("quietTo").value = a.quietTo || "";
         document.getElementById("quietTz").value = a.quietTz || "";
-
-        document.getElementById("fieldNotes").value = a.notes || "";
 
         const avatarUrl = a.avatarUrl || "";
         const avatarInput = document.getElementById("fieldAvatarUrl");
@@ -1303,7 +1323,6 @@
         a.quietTz = document.getElementById("quietTz").value;
 
         a.avatarUrl = document.getElementById("fieldAvatarUrl").value.trim();
-        a.notes = document.getElementById("fieldNotes").value;
         alert(
           "Changes saved locally (demo). In production this would update the user profile and write to audit logs.",
         );
@@ -1581,6 +1600,10 @@
               detailView.style.display = "none";
               listView.style.display = "block";
             }
+            const kpiGrid = document.getElementById("kpiGrid");
+            if (kpiGrid) {
+              kpiGrid.style.display = "";
+            }
             selectedId = null;
             selectAccount(null);
           });
@@ -1596,7 +1619,7 @@
           }
         }
 
-        // Khởi tạo state nút Save/Unsave
+        // Initialize Save/Unsave button state
         updateLeadButtonsForEndUser();
 
         document

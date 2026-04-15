@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MarketingDashboard</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f3eee5;
+        color: #2b2118;
+      }
+
+      .page-wrapper {
+        min-height: 100vh;
+        padding: 20px 24px 32px;
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .page-title {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .page-title h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a120b;
+      }
+
+      .page-title span {
+        font-size: 13px;
+        color: #7b6751;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .controls-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .controls label {
+        font-size: 12px;
+        color: #6b5740;
+        margin-right: 4px;
+      }
+
+      .controls select {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #d0c2aa;
+        background: #faf6ee;
+        font-size: 13px;
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+        margin-top: 12px;
+      }
+
+      @media (max-width: 1200px) {
+        .kpi-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 768px) {
+        .kpi-grid {
+          grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+      }
+
+      .kpi-card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 14px 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        border: 1px solid #e2d4bf;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .kpi-label {
+        font-size: 12px;
+        color: #7b6751;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f130c;
+      }
+
+      .kpi-sub {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      .layout-2col {
+        display: grid;
+        grid-template-columns: minmax(0, 1.9fr) minmax(0, 1.3fr);
+        gap: 18px;
+      }
+
+      @media (max-width: 1024px) {
+        .layout-2col {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .section-group {
+        margin-bottom: 22px;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .section-header h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #2b2118;
+      }
+
+      .section-header span {
+        font-size: 12px;
+        color: #8c775f;
+      }
+
+      .btn-export {
+        padding: 6px 12px;
+        background: #c79e4c;
+        color: #fff;
+        border-radius: 6px;
+        border: none;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .btn-export:hover {
+        background: #b5893c;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #f6eee1;
+      }
+
+      th,
+      td {
+        padding: 8px 6px;
+        text-align: left;
+        border-bottom: 1px solid #eee0cf;
+      }
+
+      th {
+        font-weight: 600;
+        color: #5b4632;
+      }
+
+      tbody tr:nth-child(even) {
+        background: #fdf8f0;
+      }
+
+      .badge-soft {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        background: #ece0cf;
+        color: #5b4632;
+      }
+
+      .opp-list {
+        background: #ffffff;
+        border-radius: 10px;
+        border: 1px solid #e2d4bf;
+        padding: 12px 14px 14px;
+      }
+
+      .opp-item {
+        padding: 8px 6px;
+        border-bottom: 1px solid #eee0cf;
+        font-size: 12px;
+      }
+
+      .opp-item:last-child {
+        border-bottom: none;
+      }
+
+      .opp-item-title {
+        font-weight: 600;
+        color: #2b2118;
+      }
+
+      .opp-item-sub {
+        font-size: 11px;
+        color: #8c775f;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-wrapper">
+      <div class="page-header">
+        <div class="page-title">
+          <h1>Marketing Dashboard</h1>
+          <span>
+            Overview of marketing campaigns, spend and performance across
+            subscription promotions and advertising.
+          </span>
+        </div>
+        <div class="controls">
+          <div class="controls-group">
+            <label for="mdTimeRange">Time</label>
+            <select id="mdTimeRange">
+              <option value="7d">Last 7 days</option>
+              <option value="30d" selected>Last 30 days</option>
+              <option value="90d">Last 90 days</option>
+            </select>
+          </div>
+          <div class="controls-group">
+            <label for="mdChannel">Channel</label>
+            <select id="mdChannel">
+              <option value="all">All channels</option>
+              <option value="subscription">Subscription</option>
+              <option value="sponsored">Sponsored property ads</option>
+              <option value="banner">Banner ads</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-grid" id="mdKpiGrid"></div>
+
+      <div class="layout-2col">
+        <div class="section-group">
+          <div class="section-header">
+            <div>
+              <h2>Campaign performance</h2>
+              <span>
+                Performance of active and recently completed campaigns (spend,
+                impressions, clicks, conversions).
+              </span>
+            </div>
+            <button class="btn-export" id="mdExportCampaignsBtn">
+              Export CSV
+            </button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Campaign</th>
+                <th>Channel</th>
+                <th>Status</th>
+                <th>Spend</th>
+                <th>Impressions</th>
+                <th>Clicks</th>
+                <th>CTR</th>
+                <th>Conversions</th>
+                <th>CVR</th>
+              </tr>
+            </thead>
+            <tbody id="mdCampaignsBody"></tbody>
+          </table>
+        </div>
+
+        <div class="section-group">
+          <div class="section-header">
+            <div>
+              <h2>Opportunities & pipeline</h2>
+              <span>
+                High-level list of marketing opportunities and planned
+                campaigns. This is a mock pipeline only.
+              </span>
+            </div>
+            <span class="badge-soft" id="mdPipelineBadge"></span>
+          </div>
+          <div class="opp-list" id="mdOppList"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const mdCampaigns = [
+        {
+          name: "Spring subscription push",
+          channel: "subscription",
+          status: "Active",
+          spend: 420000,
+          impressions: 480000,
+          clicks: 18000,
+          conversions: 620,
+        },
+        {
+          name: "Tokyo station spotlight",
+          channel: "sponsored",
+          status: "Active",
+          spend: 310000,
+          impressions: 210000,
+          clicks: 9500,
+          conversions: 310,
+        },
+        {
+          name: "Banner brand awareness",
+          channel: "banner",
+          status: "Paused",
+          spend: 180000,
+          impressions: 560000,
+          clicks: 7200,
+          conversions: 90,
+        },
+        {
+          name: "Investor onboarding series",
+          channel: "subscription",
+          status: "Completed",
+          spend: 260000,
+          impressions: 190000,
+          clicks: 9600,
+          conversions: 410,
+        },
+      ];
+
+      const mdOpportunities = [
+        {
+          title: "Summer investor campaign",
+          description:
+            "Bundle sponsored property ads and banner inventory for high-yield areas.",
+          stage: "Planning",
+        },
+        {
+          title: "First-time buyer education series",
+          description:
+            "Email and on-site content series to improve conversion for first-time buyers.",
+          stage: "Discovery",
+        },
+        {
+          title: "Agent co-marketing program",
+          description:
+            "Pilot program allowing top agents to co-fund promotional slots.",
+          stage: "Pipeline",
+        },
+      ];
+
+      function formatCurrencyJPY(value) {
+        return new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "JPY",
+          maximumFractionDigits: 0,
+        }).format(value);
+      }
+
+      function asPercent(numerator, denominator) {
+        if (!denominator) return "0.0%";
+        return `${((numerator / denominator) * 100).toFixed(1)}%`;
+      }
+
+      function filterCampaigns() {
+        const channel = document.getElementById("mdChannel").value;
+        if (channel === "all") return mdCampaigns;
+        return mdCampaigns.filter((c) => c.channel === channel);
+      }
+
+      function renderKpis() {
+        const grid = document.getElementById("mdKpiGrid");
+        grid.innerHTML = "";
+        const campaigns = filterCampaigns();
+        const totals = campaigns.reduce(
+          (acc, c) => {
+            acc.spend += c.spend;
+            acc.impressions += c.impressions;
+            acc.clicks += c.clicks;
+            acc.conversions += c.conversions;
+            return acc;
+          },
+          { spend: 0, impressions: 0, clicks: 0, conversions: 0 },
+        );
+        const ctr = asPercent(totals.clicks, totals.impressions);
+        const cvr = asPercent(totals.conversions, totals.clicks);
+
+        const items = [
+          {
+            label: "Total marketing spend",
+            value: formatCurrencyJPY(totals.spend),
+            sub: "Across selected channels and period (demo only)",
+          },
+          {
+            label: "Impressions",
+            value: totals.impressions.toLocaleString("en-US"),
+            sub: "Ad impressions across all placements",
+          },
+          {
+            label: "Clicks",
+            value: totals.clicks.toLocaleString("en-US"),
+            sub: `Overall CTR: ${ctr}`,
+          },
+          {
+            label: "Conversions",
+            value: totals.conversions.toLocaleString("en-US"),
+            sub: `Overall CVR: ${cvr}`,
+          },
+        ];
+
+        items.forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "kpi-card";
+          div.innerHTML = `
+            <div class="kpi-label">${item.label}</div>
+            <div class="kpi-value">${item.value}</div>
+            <div class="kpi-sub">${item.sub}</div>
+          `;
+          grid.appendChild(div);
+        });
+      }
+
+      function renderCampaignTable() {
+        const body = document.getElementById("mdCampaignsBody");
+        body.innerHTML = "";
+        const campaigns = filterCampaigns();
+        campaigns.forEach((c) => {
+          const ctr = asPercent(c.clicks, c.impressions);
+          const cvr = asPercent(c.conversions, c.clicks);
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${c.name}</td>
+            <td>${
+              c.channel === "subscription"
+                ? "Subscription"
+                : c.channel === "sponsored"
+                  ? "Sponsored ads"
+                  : "Banner ads"
+            }</td>
+            <td>${c.status}</td>
+            <td>${formatCurrencyJPY(c.spend)}</td>
+            <td>${c.impressions.toLocaleString("en-US")}</td>
+            <td>${c.clicks.toLocaleString("en-US")}</td>
+            <td>${ctr}</td>
+            <td>${c.conversions.toLocaleString("en-US")}</td>
+            <td>${cvr}</td>
+          `;
+          body.appendChild(tr);
+        });
+      }
+
+      function renderOpportunities() {
+        const list = document.getElementById("mdOppList");
+        const badge = document.getElementById("mdPipelineBadge");
+        list.innerHTML = "";
+        badge.textContent = `${mdOpportunities.length} items in pipeline`;
+        mdOpportunities.forEach((opp) => {
+          const div = document.createElement("div");
+          div.className = "opp-item";
+          div.innerHTML = `
+            <div class="opp-item-title">${opp.title}</div>
+            <div class="opp-item-sub">Stage: ${opp.stage}</div>
+            <div class="opp-item-sub">${opp.description}</div>
+          `;
+          list.appendChild(div);
+        });
+      }
+
+      function exportCampaignsCsv() {
+        const campaigns = filterCampaigns();
+        if (!campaigns.length) {
+          alert("No campaigns to export for current filters.");
+          return;
+        }
+        const header = [
+          "Campaign",
+          "Channel",
+          "Status",
+          "SpendJPY",
+          "Impressions",
+          "Clicks",
+          "CTR",
+          "Conversions",
+          "CVR",
+        ];
+        const rows = campaigns.map((c) => {
+          const ctr = (c.clicks / c.impressions) * 100 || 0;
+          const cvr = (c.conversions / c.clicks) * 100 || 0;
+          return [
+            c.name,
+            c.channel,
+            c.status,
+            c.spend,
+            c.impressions,
+            c.clicks,
+            ctr.toFixed(2),
+            c.conversions,
+            cvr.toFixed(2),
+          ];
+        });
+        const all = [header, ...rows].map((row) => row.join(",")).join("\n");
+        const blob = new Blob([all], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "marketing-dashboard-campaigns-demo.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderKpis();
+        renderCampaignTable();
+        renderOpportunities();
+
+        document.getElementById("mdChannel").addEventListener("change", () => {
+          renderKpis();
+          renderCampaignTable();
+        });
+
+        document
+          .getElementById("mdExportCampaignsBtn")
+          .addEventListener("click", exportCampaignsCsv);
+      });
+    </script>
+  </body>
+</html>
