@@ -94,6 +94,41 @@
         margin-bottom: 6px;
       }
 
+      .role-item-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .role-actions {
+        display: inline-flex;
+        gap: 4px;
+      }
+
+      .icon-btn {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        border: 1px solid #ddcdb9;
+        background: #fdf8f0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 0;
+      }
+
+      .icon-btn:hover {
+        background: #efe3cf;
+      }
+
+      .icon-btn svg {
+        width: 13px;
+        height: 13px;
+        stroke: #6a5641;
+      }
+
       .role-item:hover {
         background: #f6ede0;
       }
@@ -262,6 +297,72 @@
         grid-column: 2 / auto;
       }
 
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.35);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 40;
+      }
+
+      .modal {
+        background: #fffaf2;
+        border-radius: 10px;
+        border: 1px solid #eadccd;
+        padding: 16px 18px 14px;
+        width: 420px;
+        max-width: calc(100% - 32px);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .modal-title {
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .modal-field {
+        margin-bottom: 8px;
+      }
+
+      .modal-field label {
+        display: block;
+        font-size: 11px;
+        color: #7c6a55;
+        margin-bottom: 2px;
+      }
+
+      .modal-field input,
+      .modal-field textarea {
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #ddcdb9;
+        padding: 6px 8px;
+        font-size: 12px;
+        background: #fdf8f0;
+        font-family: inherit;
+      }
+
+      .modal-field textarea {
+        min-height: 80px;
+        resize: vertical;
+      }
+
+      .modal-footer {
+        margin-top: 10px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
       @media (max-width: 1180px) {
         .layout {
           grid-template-columns: minmax(0, 1.4fr) minmax(0, 2.2fr);
@@ -312,13 +413,6 @@
                 id="addRoleBtn"
               >
                 New role
-              </button>
-              <button
-                type="button"
-                class="btn btn-secondary btn-sm"
-                id="deleteRoleBtn"
-              >
-                Delete role
               </button>
             </div>
           </div>
@@ -371,6 +465,45 @@
             </thead>
             <tbody id="permissionBody"></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="roleModal">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title" id="roleModalTitle">New role</div>
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            id="closeRoleModalBtn"
+          >
+            Close
+          </button>
+        </div>
+        <div class="modal-field">
+          <label for="modalRoleName">Role name</label>
+          <input id="modalRoleName" type="text" />
+        </div>
+        <div class="modal-field">
+          <label for="modalRoleDescription">Description</label>
+          <textarea id="modalRoleDescription"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            id="cancelRoleModalBtn"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            id="saveRoleModalBtn"
+          >
+            Save role
+          </button>
         </div>
       </div>
     </div>
@@ -487,6 +620,8 @@
       ];
 
       let selectedRoleId = roles[0].id;
+      let roleModalMode = "create";
+      let editingRoleId = null;
 
       function getRole(id) {
         return roles.find((r) => r.id === id);
@@ -500,7 +635,24 @@
           div.className =
             "role-item" + (role.id === selectedRoleId ? " active" : "");
           div.innerHTML = `
-            <div class="role-name">${role.name}</div>
+            <div class="role-item-head">
+              <div class="role-name">${role.name}</div>
+              <div class="role-actions">
+                <button type="button" class="icon-btn" data-action="edit" title="Edit role" aria-label="Edit role">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                  </svg>
+                </button>
+                <button type="button" class="icon-btn" data-action="delete" title="Delete role" aria-label="Delete role">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4h8v2" />
+                    <path d="M19 6l-1 14H6L5 6" />
+                  </svg>
+                </button>
+              </div>
+            </div>
             <div class="role-meta">${role.description}</div>
           `;
           div.addEventListener("click", () => {
@@ -508,6 +660,23 @@
             renderRoles();
             renderMatrix();
           });
+
+          const editBtn = div.querySelector('[data-action="edit"]');
+          if (editBtn) {
+            editBtn.addEventListener("click", (event) => {
+              event.stopPropagation();
+              openRoleModal("edit", role.id);
+            });
+          }
+
+          const deleteBtn = div.querySelector('[data-action="delete"]');
+          if (deleteBtn) {
+            deleteBtn.addEventListener("click", (event) => {
+              event.stopPropagation();
+              deleteRole(role.id);
+            });
+          }
+
           list.appendChild(div);
         });
       }
@@ -517,7 +686,8 @@
         const role = getRole(selectedRoleId);
         if (!role) return;
         document.getElementById("matrixTitle").textContent = `Permission table`;
-        document.getElementById("matrixSubtitle").textContent = "";
+        document.getElementById("matrixSubtitle").textContent =
+          role.description;
 
         const nameInput = document.getElementById("roleNameInput");
         if (nameInput) {
@@ -574,10 +744,65 @@
       }
 
       function createRole() {
-        const name = prompt("New role name?", "New role");
-        if (!name) return;
-        const trimmed = name.trim();
-        if (!trimmed) return;
+        openRoleModal("create");
+      }
+
+      function openRoleModal(mode, roleId) {
+        roleModalMode = mode;
+        editingRoleId = roleId || null;
+
+        const modal = document.getElementById("roleModal");
+        const title = document.getElementById("roleModalTitle");
+        const nameInput = document.getElementById("modalRoleName");
+        const descInput = document.getElementById("modalRoleDescription");
+
+        if (!modal || !title || !nameInput || !descInput) return;
+
+        if (mode === "edit" && roleId) {
+          const role = getRole(roleId);
+          if (!role) return;
+          title.textContent = "Edit role";
+          nameInput.value = role.name;
+          descInput.value = role.description || "";
+        } else {
+          title.textContent = "New role";
+          nameInput.value = "";
+          descInput.value = "";
+        }
+
+        modal.style.display = "flex";
+      }
+
+      function closeRoleModal() {
+        const modal = document.getElementById("roleModal");
+        if (!modal) return;
+        modal.style.display = "none";
+      }
+
+      function saveRoleFromModal() {
+        const nameInput = document.getElementById("modalRoleName");
+        const descInput = document.getElementById("modalRoleDescription");
+        if (!nameInput || !descInput) return;
+
+        const trimmed = nameInput.value.trim();
+        const description =
+          descInput.value.trim() || "Custom role (demo only).";
+        if (!trimmed) {
+          alert("Role name is required.");
+          return;
+        }
+
+        if (roleModalMode === "edit" && editingRoleId) {
+          const role = getRole(editingRoleId);
+          if (!role) return;
+          role.name = trimmed;
+          role.description = description;
+          selectedRoleId = role.id;
+          closeRoleModal();
+          renderRoles();
+          renderMatrix();
+          return;
+        }
 
         const baseId = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, "_");
         let newId = baseId || "role";
@@ -595,30 +820,32 @@
           id: newId,
           name: trimmed,
           type: "Custom",
-          description: "Custom role (demo only).",
+          description,
           permissions: emptyPerms,
         };
         roles.push(newRole);
         selectedRoleId = newId;
+        closeRoleModal();
         renderRoles();
         renderMatrix();
       }
 
-      function deleteRole() {
-        if (!selectedRoleId) return;
+      function deleteRole(roleId) {
+        const targetRoleId = roleId || selectedRoleId;
+        if (!targetRoleId) return;
         if (roles.length <= 1) {
           alert("At least one role must remain.");
           return;
         }
-        const role = getRole(selectedRoleId);
+        const role = getRole(targetRoleId);
         if (
           !confirm(
-            `Delete role "${role ? role.name : selectedRoleId}"? This is demo only.`,
+            `Delete role "${role ? role.name : targetRoleId}"? This is demo only.`,
           )
         ) {
           return;
         }
-        roles = roles.filter((r) => r.id !== selectedRoleId);
+        roles = roles.filter((r) => r.id !== targetRoleId);
         selectedRoleId = roles[0] ? roles[0].id : null;
         renderRoles();
         renderMatrix();
@@ -647,9 +874,22 @@
         if (addBtn) {
           addBtn.addEventListener("click", createRole);
         }
+        const closeRoleModalBtn = document.getElementById("closeRoleModalBtn");
+        if (closeRoleModalBtn) {
+          closeRoleModalBtn.addEventListener("click", closeRoleModal);
+        }
+        const cancelRoleModalBtn =
+          document.getElementById("cancelRoleModalBtn");
+        if (cancelRoleModalBtn) {
+          cancelRoleModalBtn.addEventListener("click", closeRoleModal);
+        }
+        const saveRoleModalBtn = document.getElementById("saveRoleModalBtn");
+        if (saveRoleModalBtn) {
+          saveRoleModalBtn.addEventListener("click", saveRoleFromModal);
+        }
         const deleteBtn = document.getElementById("deleteRoleBtn");
         if (deleteBtn) {
-          deleteBtn.addEventListener("click", deleteRole);
+          deleteBtn.addEventListener("click", () => deleteRole(selectedRoleId));
         }
       });
     </script>

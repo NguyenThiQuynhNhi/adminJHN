@@ -43,422 +43,399 @@
         letter-spacing: 0.02em;
       }
 
-      .page-subtitle {
-        margin: 0 0 16px;
-        font-size: 13px;
-        color: var(--text-muted);
+      /*
+      const areaGuideLocations = {
+        Tokyo: {
+          cities: {
+            Shibuya: ["Yoyogi", "Ebisu", "Hikarie"],
+            Shinjuku: ["Kabukicho", "Nishi-Shinjuku", "Takadanobaba"],
+            Chiyoda: ["Marunouchi", "Kanda", "Akasaka-mitsuke"],
+          },
+        },
+        Osaka: {
+          cities: {
+            Kita: ["Umeda", "Nakatsu", "Higobashi"],
+            Namba: ["Dotonbori", "Shinsaibashi", "Nipponbashi"],
+          },
+        },
+        Fukuoka: {
+          cities: {
+            Hakata: ["Nakasu", "Gion", "Tenyamachi"],
+            Chuo: ["Tenjin", "Yakuin", "Akasaka"],
+          },
+        },
+      };
+
+      const activeContentAuthor = "Admin Tanaka";
+
+      let areaGuides = [
+        {
+          id: 1,
+          level: "city",
+          title: "Tokyo City Guide",
+          prefecture: "Tokyo",
+          city: "Shibuya",
+          area: "",
+          subtitle: "the capital city of Japan",
+          introDescription:
+            "Tokyo combines business districts, culture, nightlife and neighborhood living.",
+          description: "",
+          mapDescription:
+            "Central Tokyo access points, major stations and surrounding districts.",
+          status: "public",
+          author: "Admin Tanaka",
+          heroImageName: "tokyo-city-hero.jpg",
+          carouselImageNames: [],
+          updatedAt: "2026-04-21 09:30",
+        },
+        {
+          id: 2,
+          level: "area",
+          title: "Yoyogi Area Guide",
+          prefecture: "Tokyo",
+          city: "Shibuya",
+          area: "Yoyogi",
+          subtitle: "",
+          introDescription: "",
+          description:
+            "Yoyogi offers a quieter residential feel while staying close to major transport links and shopping zones.",
+          mapDescription:
+            "The area sits close to Shibuya Station and nearby green spaces.",
+          status: "draft",
+          author: "Admin Tanaka",
+          heroImageName: "yoyogi-hero.jpg",
+          carouselImageNames: ["yoyogi-1.jpg", "yoyogi-2.jpg"],
+          updatedAt: "2026-04-20 14:15",
+        },
+      ];
+
+      let editingAreaGuideId = null;
+      let areaGuideEditorMode = "city";
+      let areaGuideDraftStatus = "draft";
+
+      function getAreaGuideLevelLabel(level) {
+        return level === "area" ? "Area guide" : "City guide";
       }
 
-      .layout {
-        display: grid;
-        grid-template-columns: minmax(0, 7fr) minmax(0, 6fr);
-        gap: 16px;
-        align-items: flex-start;
+      function getAreaGuideLocation(guide) {
+        if (guide.level === "city") {
+          return [guide.prefecture, guide.city].filter(Boolean).join(" / ");
+        }
+        return [guide.prefecture, guide.city, guide.area]
+          .filter(Boolean)
+          .join(" / ");
       }
 
-      .card {
-        background-color: var(--bg-card);
-        border-radius: 14px;
-        border: 1px solid var(--border-subtle);
-        padding: 14px 16px 16px;
-        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
+      function populateLocationSelect(select, values, placeholder) {
+        if (!select) return;
+        select.innerHTML = `<option value="">${placeholder}</option>`;
+        values.forEach((value) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+          select.appendChild(option);
+        });
       }
 
-      .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        margin-bottom: 10px;
+      function setAreaGuideStatus(status) {
+        areaGuideDraftStatus = status === "public" ? "public" : "draft";
+        const toggle = document.getElementById("areaGuideStatusToggle");
+        if (toggle) {
+          toggle.textContent = areaGuideDraftStatus === "public" ? "Public" : "Draft";
+        }
       }
 
-      .card-title {
-        font-size: 14px;
-        font-weight: 600;
+      function toggleAreaGuideStatus() {
+        setAreaGuideStatus(areaGuideDraftStatus === "public" ? "draft" : "public");
       }
 
-      .card-subtitle {
-        font-size: 12px;
-        color: var(--text-muted);
+      function getPrefectureSelect(mode) {
+        return document.getElementById(
+          mode === "area" ? "areaGuidePrefecture" : "cityGuidePrefecture",
+        );
       }
 
-      .toolbar-right {
-        display: flex;
-        gap: 6px;
-        align-items: center;
+      function getCitySelect(mode) {
+        return document.getElementById(
+          mode === "area" ? "areaGuideCity" : "cityGuideCity",
+        );
       }
 
-      .btn {
-        border-radius: 999px;
-        border: 1px solid var(--border-subtle);
-        padding: 6px 11px;
-        font-size: 11px;
-        background-color: #fff;
-        cursor: pointer;
-        display: inline-flex;
-        gap: 4px;
-        align-items: center;
-        color: var(--text-main);
+      function getAreaSelect() {
+        return document.getElementById("areaGuideArea");
       }
 
-      .btn-primary {
-        background: linear-gradient(135deg, #c26b41, #a55232);
-        border-color: #a55232;
-        color: #fffaf3;
+      function updateAreaGuideLocationOptions() {
+        const mode = areaGuideEditorMode;
+        const prefectureSelect = getPrefectureSelect(mode);
+        const citySelect = getCitySelect(mode);
+        const areaSelect = getAreaSelect();
+
+        const currentPrefecture = prefectureSelect ? prefectureSelect.value : "";
+        const currentCity = citySelect ? citySelect.value : "";
+        const currentArea = areaSelect ? areaSelect.value : "";
+
+        populateLocationSelect(
+          prefectureSelect,
+          Object.keys(areaGuideLocations),
+          "Select prefecture *",
+        );
+        if (prefectureSelect) prefectureSelect.value = currentPrefecture;
+
+        const selectedPrefecture = prefectureSelect ? prefectureSelect.value : "";
+        const cityMap = areaGuideLocations[selectedPrefecture]?.cities || {};
+        populateLocationSelect(citySelect, Object.keys(cityMap), "Select city *");
+        if (citySelect) citySelect.value = currentCity;
+
+        if (mode === "area") {
+          const selectedCity = citySelect ? citySelect.value : "";
+          const areas = cityMap[selectedCity] || [];
+          populateLocationSelect(areaSelect, areas, "Select area *");
+          if (areaSelect) areaSelect.value = currentArea;
+        }
       }
 
-      .btn-ghost {
-        background: transparent;
+      function renderAreaGuides() {
+        const body = document.getElementById("areaGuidesBody");
+        if (!body) return;
+
+        const search = (
+          document.getElementById("areaGuideSearchInput")?.value || ""
+        )
+          .trim()
+          .toLowerCase();
+        const levelFilter =
+          document.getElementById("areaGuideLevelFilter")?.value || "all";
+        const statusFilter =
+          document.getElementById("areaGuideStatusFilter")?.value || "all";
+
+        const filtered = areaGuides.filter((guide) => {
+          if (levelFilter !== "all" && guide.level !== levelFilter) return false;
+          if (statusFilter !== "all" && guide.status !== statusFilter) return false;
+          if (!search) return true;
+
+          const haystack = [
+            guide.title,
+            guide.prefecture,
+            guide.city,
+            guide.area,
+            guide.author,
+            guide.subtitle,
+            guide.description,
+            guide.introDescription,
+          ]
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(search);
+        });
+
+        if (!filtered.length) {
+          body.innerHTML =
+            '<tr><td colspan="6" class="empty-state">No area guides match the current filters.</td></tr>';
+          return;
+        }
+
+        body.innerHTML = filtered
+          .map(
+            (guide) => `
+              <tr>
+                <td>
+                  <div class="page-title">${guide.title}</div>
+                  <div class="slug">Updated ${guide.updatedAt}</div>
+                </td>
+                <td>
+                  <span class="badge ${
+                    guide.level === "city" ? "badge-category" : "badge-location"
+                  }">${getAreaGuideLevelLabel(guide.level)}</span>
+                </td>
+                <td>${getAreaGuideLocation(guide)}</td>
+                <td>
+                  <span class="badge ${
+                    guide.status === "public"
+                      ? "badge-status-published"
+                      : "badge-status-draft"
+                  }">${guide.status === "public" ? "Public" : "Draft"}</span>
+                </td>
+                <td>${guide.author || "-"}</td>
+                <td style="text-align: right">
+                  <button type="button" class="btn btn-ghost" onclick="openAreaGuideEditor('${guide.level}', ${guide.id})">Edit</button>
+                  <button type="button" class="btn btn-ghost btn-danger" onclick="deleteAreaGuide(${guide.id})">Delete</button>
+                </td>
+              </tr>
+            `,
+          )
+          .join("");
       }
 
-      .btn-danger {
-        border-color: var(--badge-red);
-        color: var(--badge-red);
+      function openAreaGuideEditor(level, id) {
+        areaGuideEditorMode = level === "area" ? "area" : "city";
+        editingAreaGuideId = typeof id === "number" ? id : null;
+        const guide = editingAreaGuideId
+          ? areaGuides.find((item) => item.id === editingAreaGuideId)
+          : null;
+
+        const modal = document.getElementById("modal-area-guide");
+        const titleEl = document.getElementById("areaGuideModalTitle");
+        if (!modal || !titleEl) return;
+
+        titleEl.textContent = editingAreaGuideId
+          ? "Edit area guide"
+          : `New ${areaGuideEditorMode} guide`;
+
+        const isCity = areaGuideEditorMode === "city";
+        document.getElementById("cityGuideLocationBlock").style.display = isCity
+          ? ""
+          : "none";
+        document.getElementById("areaGuideLocationBlock").style.display = isCity
+          ? "none"
+          : "";
+        document.getElementById("cityGuideHeroRow").style.display = isCity
+          ? ""
+          : "none";
+        document.getElementById("cityGuideIntroRow").style.display = isCity
+          ? ""
+          : "none";
+        document.getElementById("cityGuideMapRow").style.display = isCity
+          ? ""
+          : "none";
+        document.getElementById("areaGuideHeroRow").style.display = isCity
+          ? "none"
+          : "";
+        document.getElementById("areaGuideDescriptionRow").style.display = isCity
+          ? "none"
+          : "";
+        document.getElementById("areaGuideMapRow").style.display = isCity
+          ? "none"
+          : "";
+
+        setAreaGuideStatus(guide?.status || "draft");
+
+        document.getElementById("areaGuideAuthor").value = guide?.author || activeContentAuthor;
+        document.getElementById("cityGuideSubtitle").value = guide?.subtitle || "";
+        document.getElementById("cityGuideIntroDescription").value = guide?.introDescription || "";
+        document.getElementById("areaGuideDescription").value = guide?.description || "";
+        document.getElementById("cityGuideMapDescription").value = guide?.mapDescription || "";
+        document.getElementById("areaGuideMapDescription").value = guide?.mapDescription || "";
+
+        const prefectureSelect = getPrefectureSelect(areaGuideEditorMode);
+        const citySelect = getCitySelect(areaGuideEditorMode);
+        const areaSelect = getAreaSelect();
+        if (prefectureSelect) prefectureSelect.value = guide?.prefecture || "";
+        updateAreaGuideLocationOptions();
+        if (citySelect) citySelect.value = guide?.city || "";
+        updateAreaGuideLocationOptions();
+        if (areaSelect) areaSelect.value = guide?.area || "";
+
+        modal.classList.add("open");
       }
 
-      .btn:disabled {
-        opacity: 0.55;
-        cursor: default;
+      function closeAreaGuideEditor() {
+        const modal = document.getElementById("modal-area-guide");
+        if (modal) modal.classList.remove("open");
+        editingAreaGuideId = null;
+        areaGuideEditorMode = "city";
       }
 
-      .filters {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 10px;
+      function deleteAreaGuide(id) {
+        const guide = areaGuides.find((item) => item.id === id);
+        if (!guide) return;
+        if (!confirm(`Delete ${guide.title}?`)) return;
+        areaGuides = areaGuides.filter((item) => item.id !== id);
+        renderAreaGuides();
       }
 
-      .field-group {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        min-width: 120px;
-      }
+      function saveAreaGuideFromModal() {
+        const isCity = areaGuideEditorMode === "city";
+        const prefectureSelect = getPrefectureSelect(areaGuideEditorMode);
+        const citySelect = getCitySelect(areaGuideEditorMode);
+        const areaSelect = getAreaSelect();
 
-      .field-label {
-        font-size: 11px;
-        font-weight: 500;
-        color: var(--text-muted);
-      }
+        const prefecture = prefectureSelect?.value || "";
+        const city = citySelect?.value || "";
+        const area = isCity ? "" : areaSelect?.value || "";
 
-      input[type="text"],
-      select {
-        border-radius: 999px;
-        border: 1px solid var(--border-subtle);
-        padding: 6px 10px;
-        font-size: 12px;
-        background-color: #fffcf7;
-        color: var(--text-main);
-        outline: none;
-      }
+        if (!prefecture || !city || (!isCity && !area)) {
+          alert(
+            isCity
+              ? "Prefecture and city are required."
+              : "Prefecture, city and area are required.",
+          );
+          return;
+        }
 
-      input[type="text"]:focus,
-      select:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
-      }
+        const heroImageInput = document.getElementById(
+          isCity ? "cityGuideHeroImage" : "areaGuideHeroImage",
+        );
+        const carouselInput = document.getElementById("areaGuideCarouselImages");
+        const heroImageName = heroImageInput?.files?.[0]?.name;
+        const carouselImageNames = isCity
+          ? []
+          : Array.from(carouselInput?.files || []).map((file) => file.name);
 
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-      }
+        if (!heroImageName && !editingAreaGuideId) {
+          alert("Hero background image is required.");
+          return;
+        }
 
-      thead {
-        background: #f7efe6;
-      }
+        if (!isCity && !carouselImageNames.length && !editingAreaGuideId) {
+          alert("At least one carousel image is required for area guides.");
+          return;
+        }
 
-      th,
-      td {
-        padding: 7px 8px;
-        text-align: left;
-        border-bottom: 1px solid #efe0d4;
-      }
+        const existing = editingAreaGuideId
+          ? areaGuides.find((item) => item.id === editingAreaGuideId)
+          : null;
 
-      th {
-        font-weight: 500;
-        font-size: 11px;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-      }
+        const mapDescription = isCity
+          ? document.getElementById("cityGuideMapDescription").value.trim()
+          : document.getElementById("areaGuideMapDescription").value.trim();
 
-      tbody tr {
-        cursor: pointer;
-        transition: background 0.12s ease;
-      }
+        const payload = {
+          level: areaGuideEditorMode,
+          title: isCity
+            ? `${city} City Guide`
+            : `${area} Area Guide`,
+          prefecture,
+          city,
+          area,
+          subtitle: isCity
+            ? document.getElementById("cityGuideSubtitle").value.trim()
+            : "",
+          introDescription: isCity
+            ? document.getElementById("cityGuideIntroDescription").value.trim()
+            : "",
+          description: isCity
+            ? ""
+            : document.getElementById("areaGuideDescription").value.trim(),
+          mapDescription,
+          status: areaGuideDraftStatus,
+          author: existing?.author || document.getElementById("areaGuideAuthor").value.trim() || activeContentAuthor,
+          heroImageName: heroImageName || existing?.heroImageName || "",
+          carouselImageNames: isCity
+            ? []
+            : carouselImageNames.length
+              ? carouselImageNames
+              : existing?.carouselImageNames || [],
+          updatedAt: new Date().toISOString().slice(0, 16).replace("T", " "),
+        };
 
-      tbody tr:hover {
-        background-color: #f8f1ea;
-      }
+        if (existing) {
+          Object.assign(existing, payload);
+        } else {
+          areaGuides.unshift({
+            id: Date.now(),
+            ...payload,
+          });
+        }
 
-      tbody tr.selected-row {
-        background-color: #f1e3d5;
+        renderAreaGuides();
+        closeAreaGuideEditor();
       }
-
-      .article-title {
-        font-weight: 600;
-      }
-
-      .article-meta-line {
-        font-size: 11px;
-        color: var(--text-muted);
-      }
-
-      .badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 7px;
-        border-radius: 999px;
-        font-size: 10px;
-        font-weight: 500;
-        border: 1px solid transparent;
-        white-space: nowrap;
-      }
-
-      .badge-status-published {
-        background: #e6f6ef;
-        color: var(--badge-green);
-        border-color: #b7e4cc;
-      }
-
-      .badge-status-draft {
-        background: #fff6e0;
-        color: var(--badge-orange);
-        border-color: #fbd38d;
-      }
-
-      .badge-status-scheduled {
-        background: #ebf8ff;
-        color: var(--badge-blue);
-        border-color: #bee3f8;
-      }
-
-      .badge-status-archived {
-        background: #f7f7f8;
-        color: var(--badge-gray);
-        border-color: #d2d6dc;
-      }
-
-      .badge-type {
-        background: #f0e3d7;
-        color: #744210;
-        border-color: #e2c6a8;
-      }
-
-      .badge-locale {
-        background: #fef3c7;
-        color: #92400e;
-        border-color: #fcd34d;
-      }
-
-      .badge-flag {
-        background: #fff5f5;
-        color: var(--badge-red);
-        border-color: #fed7d7;
-      }
-
-      .tag-chip {
-        display: inline-flex;
-        padding: 2px 7px;
-        border-radius: 999px;
-        font-size: 10px;
-        background: #f4efe9;
-        color: #5b4633;
-        margin-right: 4px;
-      }
-
-      .detail-layout {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      .detail-header {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        align-items: flex-start;
-      }
-
-      .detail-title-block h2 {
-        margin: 0 0 4px;
-        font-size: 16px;
-      }
-
-      .detail-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-        font-size: 11px;
-        color: var(--text-muted);
-      }
-
-      .detail-meta span + span::before {
-        content: "· ";
-        margin: 0 2px;
-      }
-
-      .detail-section-title {
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--text-muted);
-        margin-bottom: 4px;
-      }
-
-      .detail-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px 12px;
-        margin-bottom: 4px;
-      }
-
-      .detail-field-label {
-        font-size: 11px;
-        color: var(--text-muted);
-        margin-bottom: 2px;
-      }
-
-      .detail-input,
-      .detail-select,
-      textarea {
-        width: 100%;
-        border-radius: 9px;
-        border: 1px solid var(--border-subtle);
-        padding: 5px 8px;
-        font-size: 12px;
-        background-color: #fffcf7;
-        color: var(--text-main);
-        outline: none;
-      }
-
-      .detail-input:focus,
-      .detail-select:focus,
-      textarea:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
-      }
-
-      .detail-input[readonly] {
-        background: #f9f5f0;
-        color: var(--text-muted);
-      }
-
-      textarea {
-        min-height: 70px;
-        resize: vertical;
-        font-family: inherit;
-      }
-
-      .hint-text {
-        font-size: 11px;
-        color: var(--text-muted);
-      }
-
-      .preview-box {
-        border-radius: 10px;
-        border: 1px dashed #deccba;
-        padding: 8px 9px;
-        background: #fffaf1;
-        font-size: 12px;
-        color: var(--text-main);
-        max-height: 120px;
-        overflow: auto;
-      }
-
-      .footer-note {
-        margin-top: 4px;
-        font-size: 11px;
-        color: var(--text-muted);
-      }
-
-      .cms-shell {
-        max-width: 1200px;
-        margin: 0 auto;
-      }
-
-      .cms-layout {
-        margin-top: 6px;
-      }
-
-      .cms-pane-title {
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 4px;
-      }
-
-      .cms-pane-desc {
-        font-size: 13px;
-        color: var(--text-muted);
-        margin-bottom: 10px;
-        max-width: 720px;
-      }
-
-      .settings-card {
-        background-color: var(--bg-card);
-        border-radius: 14px;
-        border: 1px solid var(--border-subtle);
-        padding: 14px 16px 16px;
-        box-shadow: 0 6px 18px rgba(115, 72, 39, 0.08);
-      }
-
-      .settings-card-title {
-        font-size: 14px;
-        font-weight: 600;
-        margin-bottom: 6px;
-        display: flex;
-        gap: 6px;
-        align-items: center;
-      }
-
-      .cms-subnav {
-        display: inline-flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin: 6px 0 10px;
-      }
-
-      .cms-subtab,
-      .cms-subtab-sm {
-        border-radius: 999px;
-        border: 1px solid var(--border-subtle);
-        background: #f7efe4;
-        padding: 4px 10px;
-        font-size: 11px;
-        cursor: pointer;
-        color: var(--text-muted);
-      }
-
-      .cms-subtab.active,
-      .cms-subtab-sm.active {
-        background: #3a6b3c;
-        color: #fff;
-        border-color: #3a6b3c;
-      }
-
-      .cms-filter-bar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 8px;
-      }
-
-      .cms-filter-input {
-        border-radius: 999px;
-        border: 1px solid var(--border-subtle);
-        padding: 6px 10px;
-        font-size: 12px;
-        background-color: #fffcf7;
-        color: var(--text-main);
-        min-width: 180px;
-      }
-
-      .cms-inline-actions {
-        display: flex;
+      */
+      /*
         gap: 8px;
         align-items: center;
-      }
+      */
 
       .cms-hint {
         font-size: 11px;
@@ -652,17 +629,9 @@
         <section class="card">
           <div id="cms-pane-insights" class="setting-pane active">
             <h2 class="cms-pane-title">Insights Management</h2>
-            <p class="cms-pane-desc">
-              Core content library for Area Guides, Articles, News, and FAQs.
-              These datasets feed homepage sections and other views; layout and
-              placement are controlled elsewhere.
-            </p>
 
             <div class="settings-card">
-              <div class="settings-card-title">
-                Insights library
-                <span class="badge badge-gray">Core content store</span>
-              </div>
+              <div class="settings-card-title">Insights library</div>
 
               <div class="cms-subnav">
                 <button
@@ -699,34 +668,38 @@
               <div id="insights-sub-guides" class="insights-subpane active">
                 <div class="cms-filter-bar">
                   <input
+                    id="areaGuideSearchInput"
                     type="text"
                     class="cms-filter-input"
-                    placeholder="Search guides by area or keyword"
+                    placeholder="Search guides by title, prefecture, city, area or author"
                   />
+                  <select id="areaGuideLevelFilter" class="filter-select">
+                    <option value="all">All levels</option>
+                    <option value="city">City guides</option>
+                    <option value="area">Area guides</option>
+                  </select>
+                  <select id="areaGuideStatusFilter" class="filter-select">
+                    <option value="all">All statuses</option>
+                    <option value="public">Public</option>
+                    <option value="draft">Draft</option>
+                  </select>
                 </div>
                 <div class="table-wrap">
                   <table>
                     <thead>
                       <tr>
                         <th>Title</th>
-                        <th>Region</th>
+                        <th>Level</th>
+                        <th>Location</th>
                         <th>Status</th>
                         <th>Author</th>
-                        <th></th>
+                        <th style="text-align: right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="areaGuidesBody">
                       <tr>
-                        <td>Tokyo area guide — Yamanote line</td>
-                        <td>Tokyo</td>
-                        <td>
-                          <span class="badge badge-success">Published</span>
-                        </td>
-                        <td>Admin Tanaka</td>
-                        <td>
-                          <button class="btn btn-ghost" type="button">
-                            Edit
-                          </button>
+                        <td colspan="6" class="empty-state">
+                          Loading area guides...
                         </td>
                       </tr>
                     </tbody>
@@ -736,7 +709,14 @@
                   <button
                     class="btn btn-primary"
                     type="button"
-                    onclick="openBlogEditor('guide')"
+                    onclick="openAreaGuideEditor('city')"
+                  >
+                    New city guide
+                  </button>
+                  <button
+                    class="btn btn-secondary"
+                    type="button"
+                    onclick="openAreaGuideEditor('area')"
                   >
                     New area guide
                   </button>
@@ -1289,21 +1269,23 @@
       </div>
     </div>
 
-    <!-- AREA GUIDE EDITOR MODAL (PREFECTURE / CITY / AREA + BODY) -->
+    <!-- AREA GUIDE EDITOR MODAL (CITY / AREA GUIDE) -->
     <div id="modal-area-guide" class="modal-backdrop">
       <div class="modal-shell">
         <div class="modal-header">
           <div class="modal-header-main">
-            <div class="modal-title">Area guide editor</div>
+            <div class="modal-title" id="areaGuideModalTitle">
+              Area guide editor
+            </div>
             <div class="modal-subtitle">
-              Create a localized area article by choosing prefecture, city and
-              area, then writing the guide body.
+              Create city and area guides in English with location, images,
+              description, map notes, author and status.
             </div>
           </div>
           <button
             class="modal-close-btn"
             type="button"
-            onclick="closeModal('modal-area-guide')"
+            onclick="closeAreaGuideEditor()"
             aria-label="Close"
           >
             ×
@@ -1312,50 +1294,136 @@
         <div class="modal-body">
           <div class="modal-grid">
             <div>
-              <div class="modal-field-row">
-                <div class="modal-field-label">1. Prefecture</div>
-                <select class="filter-select">
-                  <option>Select prefecture</option>
-                  <option>Tokyo</option>
-                  <option>Osaka</option>
-                  <option>Fukuoka</option>
+              <div class="modal-field-row" id="cityGuideLocationBlock">
+                <div class="modal-field-label">Location</div>
+                <select id="cityGuidePrefecture" class="filter-select">
+                  <option value="">Select prefecture *</option>
+                </select>
+                <select id="cityGuideCity" class="filter-select" style="margin-top: 6px">
+                  <option value="">Select city *</option>
                 </select>
               </div>
-              <div class="modal-field-row">
-                <div class="modal-field-label">2. City</div>
-                <select class="filter-select">
-                  <option>Select city</option>
-                  <option>Shibuya</option>
-                  <option>Shinjuku</option>
-                  <option>Chiyoda</option>
+
+              <div class="modal-field-row" id="areaGuideLocationBlock" style="display: none">
+                <div class="modal-field-label">Location</div>
+                <select id="areaGuidePrefecture" class="filter-select">
+                  <option value="">Select prefecture *</option>
+                </select>
+                <select id="areaGuideCity" class="filter-select" style="margin-top: 6px">
+                  <option value="">Select city *</option>
+                </select>
+                <select id="areaGuideArea" class="filter-select" style="margin-top: 6px">
+                  <option value="">Select area *</option>
                 </select>
               </div>
-              <div class="modal-field-row">
-                <div class="modal-field-label">3. Area / neighbourhood</div>
+
+              <div class="modal-field-row" id="cityGuideHeroRow">
+                <div class="modal-field-label">Hero section</div>
                 <input
+                  id="cityGuideHeroImage"
+                  type="file"
+                  class="detail-input"
+                />
+                <div class="modal-field-hint">Background image *</div>
+                <input
+                  id="cityGuideSubtitle"
                   type="text"
                   class="detail-input"
-                  placeholder="e.g. Yamanote line, riverside zone"
+                  placeholder="the capital city of Japan"
+                  style="margin-top: 6px"
                 />
+                <div class="modal-field-hint">Subtitle</div>
               </div>
-            </div>
-            <div>
-              <div class="modal-field-row">
-                <div class="modal-field-label">4. Article title</div>
+
+              <div class="modal-field-row" id="areaGuideHeroRow" style="display: none">
+                <div class="modal-field-label">Hero section</div>
                 <input
-                  type="text"
+                  id="areaGuideHeroImage"
+                  type="file"
                   class="detail-input"
-                  placeholder="Title shown in cards and listings"
                 />
+                <div class="modal-field-hint">Background image *</div>
+                <input
+                  id="areaGuideCarouselImages"
+                  type="file"
+                  class="detail-input"
+                  multiple
+                  style="margin-top: 6px"
+                />
+                <div class="modal-field-hint">Image carousel *</div>
               </div>
-              <div class="modal-field-row" style="flex-direction: column">
-                <div class="modal-field-label">5. Area guide body</div>
+
+              <div class="modal-field-row" id="cityGuideIntroRow">
+                <div class="modal-field-label">Intro section</div>
                 <textarea
-                  rows="7"
+                  id="cityGuideIntroDescription"
+                  rows="5"
                   class="detail-input"
                   style="resize: vertical"
-                  placeholder="Describe transport, lifestyle, pricing, tips for this area..."
+                  placeholder="Describe the city..."
                 ></textarea>
+                <div class="modal-field-hint">Description *</div>
+              </div>
+
+              <div class="modal-field-row" id="areaGuideDescriptionRow" style="display: none">
+                <div class="modal-field-label">Description</div>
+                <textarea
+                  id="areaGuideDescription"
+                  rows="5"
+                  class="detail-input"
+                  style="resize: vertical"
+                  placeholder="Describe this area..."
+                ></textarea>
+                <div class="modal-field-hint">Description *</div>
+              </div>
+            </div>
+
+            <div>
+              <div class="modal-field-row" id="cityGuideMapRow">
+                <div class="modal-field-label">Map section</div>
+                <textarea
+                  id="cityGuideMapDescription"
+                  rows="4"
+                  class="detail-input"
+                  style="resize: vertical"
+                  placeholder="Describe the city location and transport links..."
+                ></textarea>
+                <div class="modal-field-hint">Map description *</div>
+              </div>
+
+              <div class="modal-field-row" id="areaGuideMapRow" style="display: none">
+                <div class="modal-field-label">Map section</div>
+                <textarea
+                  id="areaGuideMapDescription"
+                  rows="4"
+                  class="detail-input"
+                  style="resize: vertical"
+                  placeholder="Describe the map location, access points and surroundings..."
+                ></textarea>
+                <div class="modal-field-hint">Map description *</div>
+              </div>
+
+              <div class="modal-field-row">
+                <div class="modal-field-label">Status</div>
+                <button
+                  id="areaGuideStatusToggle"
+                  type="button"
+                  class="btn btn-secondary"
+                  onclick="toggleAreaGuideStatus()"
+                  style="justify-content: center"
+                >
+                  Draft
+                </button>
+              </div>
+
+              <div class="modal-field-row">
+                <div class="modal-field-label">Author</div>
+                <input
+                  id="areaGuideAuthor"
+                  type="text"
+                  class="detail-input"
+                  readonly
+                />
               </div>
             </div>
           </div>
@@ -1364,19 +1432,12 @@
           <button
             class="btn btn-secondary"
             type="button"
-            onclick="closeModal('modal-area-guide')"
+            onclick="closeAreaGuideEditor()"
           >
             Cancel
           </button>
-          <button
-            class="btn btn-primary"
-            type="button"
-            onclick="
-              alert('Save area guide (mock).');
-              closeModal('modal-area-guide');
-            "
-          >
-            Save area guide
+          <button class="btn btn-primary" type="button" onclick="saveAreaGuideFromModal()">
+            Save guide
           </button>
         </div>
       </div>
@@ -1508,7 +1569,8 @@
           } else if (type === "article") {
             titleEl.textContent = "Blog editor — Article";
           } else if (type === "guide") {
-            titleEl.textContent = "Area guide editor";
+            openAreaGuideEditor("city");
+            return;
           } else {
             titleEl.textContent = "Blog editor — Article / News";
           }
@@ -1516,13 +1578,460 @@
         openModal("modal-blog-editor");
       }
 
-      function openAreaGuideEditor() {
-        openModal("modal-area-guide");
+      const areaGuideLocations = {
+        Tokyo: {
+          cities: {
+            Shibuya: ["Yoyogi", "Ebisu", "Hikarie"],
+            Shinjuku: ["Kabukicho", "Nishi-Shinjuku", "Takadanobaba"],
+            Chiyoda: ["Marunouchi", "Kanda", "Akasaka-mitsuke"],
+          },
+        },
+        Osaka: {
+          cities: {
+            Kita: ["Umeda", "Nakatsu", "Higobashi"],
+            Namba: ["Dotonbori", "Shinsaibashi", "Nipponbashi"],
+          },
+        },
+        Fukuoka: {
+          cities: {
+            Hakata: ["Nakasu", "Gion", "Tenyamachi"],
+            Chuo: ["Tenjin", "Yakuin", "Akasaka"],
+          },
+        },
+      };
+
+      let areaGuides = [
+        {
+          id: 1,
+          level: "city",
+          title: "Tokyo City Guide",
+          prefecture: "Tokyo",
+          city: "Shibuya",
+          area: "",
+          subtitle: "the capital city of Japan",
+          introDescription:
+            "Tokyo combines business districts, culture, nightlife and neighborhood living.",
+          description: "",
+          mapDescription:
+            "Central Tokyo access points, major stations and surrounding districts.",
+          status: "published",
+          author: "Admin Tanaka",
+          heroImageName: "tokyo-city-hero.jpg",
+          carouselImageNames: [],
+          updatedAt: "2026-04-21 09:30",
+        },
+        {
+          id: 2,
+          level: "area",
+          title: "Shibuya Area Guide",
+          prefecture: "Tokyo",
+          city: "Shibuya",
+          area: "Yoyogi",
+          subtitle: "",
+          introDescription: "",
+          description:
+            "Yoyogi offers a quieter residential feel while staying close to major transport links and shopping zones.",
+          mapDescription:
+            "The area sits close to Shibuya Station and nearby green spaces.",
+          status: "draft",
+          author: "Admin Tanaka",
+          heroImageName: "yoyogi-hero.jpg",
+          carouselImageNames: ["yoyogi-1.jpg", "yoyogi-2.jpg"],
+          updatedAt: "2026-04-20 14:15",
+        },
+      ];
+
+      let editingAreaGuideId = null;
+
+      function getAreaGuideLevelLabel(level) {
+        return level === "area" ? "Area guide" : "City guide";
+      }
+
+      function getAreaGuideLocation(guide) {
+        if (guide.level === "city") {
+          return [guide.prefecture, guide.city].filter(Boolean).join(" / ");
+        }
+        return [guide.prefecture, guide.city, guide.area]
+          .filter(Boolean)
+          .join(" / ");
+      }
+
+      function populateLocationSelect(select, values, placeholder) {
+        if (!select) return;
+        select.innerHTML = `<option value="">${placeholder}</option>`;
+        values.forEach((value) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+          select.appendChild(option);
+        });
+      }
+
+      function getSelectedPrefecture(level) {
+        const select = document.getElementById(
+          level === "city" ? "cityGuidePrefecture" : "areaGuidePrefecture",
+        );
+        return select ? select.value : "";
+      }
+
+      function getSelectedCity(level) {
+        const select = document.getElementById(
+          level === "city" ? "cityGuideCity" : "areaGuideCity",
+        );
+        return select ? select.value : "";
+      }
+
+      function updateAreaGuideLocationOptions() {
+        const level = document.getElementById("areaGuideLevel").value;
+        const prefectureSelect = document.getElementById(
+          level === "city" ? "cityGuidePrefecture" : "areaGuidePrefecture",
+        );
+        const citySelect = document.getElementById(
+          level === "city" ? "cityGuideCity" : "areaGuideCity",
+        );
+        const areaSelect = document.getElementById("areaGuideArea");
+
+        const currentPrefecture = prefectureSelect
+          ? prefectureSelect.value
+          : "";
+        const currentCity = citySelect ? citySelect.value : "";
+        const currentArea = areaSelect ? areaSelect.value : "";
+
+        const prefectures = Object.keys(areaGuideLocations);
+        populateLocationSelect(
+          prefectureSelect,
+          prefectures,
+          "Select prefecture",
+        );
+        if (prefectureSelect) prefectureSelect.value = currentPrefecture;
+
+        const selectedPrefecture = prefectureSelect
+          ? prefectureSelect.value
+          : "";
+        const cityMap = areaGuideLocations[selectedPrefecture]?.cities || {};
+        populateLocationSelect(citySelect, Object.keys(cityMap), "Select city");
+        if (citySelect) citySelect.value = currentCity;
+
+        const selectedCity = citySelect ? citySelect.value : "";
+        const areas = cityMap[selectedCity] || [];
+        if (areaSelect) {
+          populateLocationSelect(areaSelect, areas, "Select area");
+          areaSelect.value = currentArea;
+        }
+      }
+
+      function toggleAreaGuideFields() {
+        const level = document.getElementById("areaGuideLevel").value;
+        const isCity = level === "city";
+
+        document.getElementById("cityGuideSubtitleRow").style.display = isCity
+          ? ""
+          : "none";
+        document.getElementById("cityGuideIntroRow").style.display = isCity
+          ? ""
+          : "none";
+        document.getElementById("cityGuidePrefectureRow").style.display = isCity
+          ? ""
+          : "none";
+        document.getElementById("cityGuideCityRow").style.display = isCity
+          ? ""
+          : "none";
+        document.getElementById("cityGuideMapRow").style.display = isCity
+          ? ""
+          : "none";
+        document.getElementById("cityGuideHeroRow").style.display = isCity
+          ? ""
+          : "none";
+
+        document.getElementById("areaGuideMapRow").style.display = isCity
+          ? "none"
+          : "";
+        document.getElementById("areaGuideCarouselRow").style.display = isCity
+          ? "none"
+          : "";
+        document.getElementById("areaGuideDescriptionRow").style.display =
+          isCity ? "none" : "";
+        document.getElementById("areaGuidePrefectureRow").style.display = isCity
+          ? "none"
+          : "";
+        document.getElementById("areaGuideCityRow").style.display = isCity
+          ? "none"
+          : "";
+        document.getElementById("areaGuideAreaRow").style.display = isCity
+          ? "none"
+          : "";
+
+        updateAreaGuideLocationOptions();
+      }
+
+      function renderAreaGuides() {
+        const body = document.getElementById("areaGuidesBody");
+        if (!body) return;
+
+        const search = (
+          document.getElementById("areaGuideSearchInput")?.value || ""
+        )
+          .trim()
+          .toLowerCase();
+        const levelFilter =
+          document.getElementById("areaGuideLevelFilter")?.value || "all";
+        const statusFilter =
+          document.getElementById("areaGuideStatusFilter")?.value || "all";
+
+        const filtered = areaGuides.filter((guide) => {
+          if (levelFilter !== "all" && guide.level !== levelFilter)
+            return false;
+          if (statusFilter !== "all" && guide.status !== statusFilter)
+            return false;
+          if (!search) return true;
+
+          const haystack = [
+            guide.title,
+            guide.prefecture,
+            guide.city,
+            guide.area,
+            guide.author,
+            guide.subtitle,
+            guide.description,
+            guide.introDescription,
+          ]
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(search);
+        });
+
+        if (!filtered.length) {
+          body.innerHTML =
+            '<tr><td colspan="6" class="empty-state">No area guides match the current filters.</td></tr>';
+          return;
+        }
+
+        body.innerHTML = filtered
+          .map(
+            (guide) => `
+              <tr>
+                <td>
+                  <div class="page-title">${guide.title}</div>
+                  <div class="slug">Updated ${guide.updatedAt}</div>
+                </td>
+                <td>
+                  <span class="badge ${
+                    guide.level === "city" ? "badge-category" : "badge-location"
+                  }">${getAreaGuideLevelLabel(guide.level)}</span>
+                </td>
+                <td>${getAreaGuideLocation(guide)}</td>
+                <td>
+                  <span class="badge ${
+                    guide.status === "published"
+                      ? "badge-status-published"
+                      : "badge-status-draft"
+                  }">${guide.status === "published" ? "Published" : "Draft"}</span>
+                </td>
+                <td>${guide.author || "-"}</td>
+                <td style="text-align: right">
+                  <button type="button" class="btn btn-ghost" onclick="openAreaGuideEditor('${guide.level}', ${guide.id})">Edit</button>
+                  <button type="button" class="btn btn-ghost btn-danger" onclick="deleteAreaGuide(${guide.id})">Delete</button>
+                </td>
+              </tr>
+            `,
+          )
+          .join("");
+      }
+
+      function openAreaGuideEditor(level, id) {
+        editingAreaGuideId = typeof id === "number" ? id : null;
+        const guide = editingAreaGuideId
+          ? areaGuides.find((item) => item.id === editingAreaGuideId)
+          : null;
+        const resolvedLevel =
+          level === "area" ? "area" : guide?.level || "city";
+
+        const modal = document.getElementById("modal-area-guide");
+        const titleEl = document.getElementById("areaGuideModalTitle");
+        if (!modal || !titleEl) return;
+
+        titleEl.textContent = editingAreaGuideId
+          ? "Edit area guide"
+          : `New ${resolvedLevel} guide`;
+
+        document.getElementById("areaGuideLevel").value =
+          guide?.level || resolvedLevel;
+        document.getElementById("areaGuideTitle").value = guide?.title || "";
+        document.getElementById("areaGuideStatus").value =
+          guide?.status || "draft";
+        document.getElementById("areaGuideAuthor").value = guide?.author || "";
+        document.getElementById("cityGuideSubtitle").value =
+          guide?.subtitle || "";
+        document.getElementById("cityGuideIntroDescription").value =
+          guide?.introDescription || "";
+        document.getElementById("areaGuideDescription").value =
+          guide?.description || "";
+        document.getElementById("areaGuideMapDescription").value =
+          guide?.mapDescription || "";
+        document.getElementById("cityGuideMapDescription").value =
+          guide?.mapDescription || "";
+
+        toggleAreaGuideFields();
+
+        const activeLevel = document.getElementById("areaGuideLevel").value;
+        const prefectureSelect = document.getElementById(
+          activeLevel === "city"
+            ? "cityGuidePrefecture"
+            : "areaGuidePrefecture",
+        );
+        const citySelect = document.getElementById(
+          activeLevel === "city" ? "cityGuideCity" : "areaGuideCity",
+        );
+        const areaSelect = document.getElementById("areaGuideArea");
+
+        if (prefectureSelect) prefectureSelect.value = guide?.prefecture || "";
+        updateAreaGuideLocationOptions();
+        if (citySelect) citySelect.value = guide?.city || "";
+        updateAreaGuideLocationOptions();
+        if (areaSelect) areaSelect.value = guide?.area || "";
+
+        modal.classList.add("open");
+      }
+
+      function closeAreaGuideEditor() {
+        const modal = document.getElementById("modal-area-guide");
+        if (modal) modal.classList.remove("open");
+        editingAreaGuideId = null;
+      }
+
+      function deleteAreaGuide(id) {
+        const guide = areaGuides.find((item) => item.id === id);
+        if (!guide) return;
+        if (!confirm(`Delete ${guide.title}?`)) return;
+        areaGuides = areaGuides.filter((item) => item.id !== id);
+        renderAreaGuides();
+      }
+
+      function saveAreaGuideFromModal() {
+        const level = document.getElementById("areaGuideLevel").value;
+        const title = document.getElementById("areaGuideTitle").value.trim();
+        const status = document.getElementById("areaGuideStatus").value;
+        const author = document.getElementById("areaGuideAuthor").value.trim();
+        const heroImageInput = document.getElementById("areaGuideHeroImage");
+        const carouselInput = document.getElementById(
+          "areaGuideCarouselImages",
+        );
+
+        if (!title) {
+          alert("Title is required.");
+          return;
+        }
+
+        const isCity = level === "city";
+        const prefectureSelect = document.getElementById(
+          isCity ? "cityGuidePrefecture" : "areaGuidePrefecture",
+        );
+        const citySelect = document.getElementById(
+          isCity ? "cityGuideCity" : "areaGuideCity",
+        );
+        const areaSelect = document.getElementById("areaGuideArea");
+
+        const prefecture = prefectureSelect?.value || "";
+        const city = citySelect?.value || "";
+        const area = isCity ? "" : areaSelect?.value || "";
+
+        if (!prefecture || !city || (!isCity && !area)) {
+          alert(
+            isCity
+              ? "Prefecture and city are required."
+              : "Prefecture, city and area are required.",
+          );
+          return;
+        }
+
+        const existing = editingAreaGuideId
+          ? areaGuides.find((item) => item.id === editingAreaGuideId)
+          : null;
+
+        const heroImageName =
+          heroImageInput?.files?.[0]?.name || existing?.heroImageName || "";
+        const carouselImageNames = isCity
+          ? []
+          : Array.from(carouselInput?.files || []).map((file) => file.name);
+
+        if (!heroImageName) {
+          alert("Hero background image is required.");
+          return;
+        }
+
+        const payload = {
+          level,
+          title,
+          prefecture,
+          city,
+          area,
+          subtitle: isCity
+            ? document.getElementById("cityGuideSubtitle").value.trim()
+            : "",
+          introDescription: isCity
+            ? document.getElementById("cityGuideIntroDescription").value.trim()
+            : "",
+          description: isCity
+            ? ""
+            : document.getElementById("areaGuideDescription").value.trim(),
+          mapDescription: isCity
+            ? document.getElementById("cityGuideMapDescription").value.trim()
+            : document.getElementById("areaGuideMapDescription").value.trim(),
+          status,
+          author,
+          heroImageName,
+          carouselImageNames,
+          updatedAt: new Date().toISOString().slice(0, 16).replace("T", " "),
+        };
+
+        if (existing) {
+          Object.assign(existing, payload);
+        } else {
+          areaGuides.unshift({
+            id: Date.now(),
+            ...payload,
+          });
+        }
+
+        renderAreaGuides();
+        closeAreaGuideEditor();
       }
 
       function openFaqEditor() {
         openModal("modal-faq-editor");
       }
+
+      const areaGuideSearchInputEl = document.getElementById(
+        "areaGuideSearchInput",
+      );
+      const areaGuideLevelFilterEl = document.getElementById(
+        "areaGuideLevelFilter",
+      );
+      const areaGuideStatusFilterEl = document.getElementById(
+        "areaGuideStatusFilter",
+      );
+
+      [
+        "areaGuidePrefecture",
+        "areaGuideCity",
+        "cityGuidePrefecture",
+        "cityGuideCity",
+      ].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener("change", updateAreaGuideLocationOptions);
+      });
+
+      if (areaGuideSearchInputEl) {
+        areaGuideSearchInputEl.addEventListener("input", renderAreaGuides);
+      }
+      if (areaGuideLevelFilterEl) {
+        areaGuideLevelFilterEl.addEventListener("change", renderAreaGuides);
+      }
+      if (areaGuideStatusFilterEl) {
+        areaGuideStatusFilterEl.addEventListener("change", renderAreaGuides);
+      }
+
+      renderAreaGuides();
     </script>
   </body>
 </html>

@@ -417,7 +417,6 @@
             <select id="statusFilter">
               <option value="">Any status</option>
               <option value="Pending">Pending</option>
-              <option value="In Progress">In Progress</option>
               <option value="Solved">Solved</option>
               <option value="Rejected">Rejected</option>
             </select>
@@ -435,6 +434,7 @@
                 <th>Request ID</th>
                 <th>Full name</th>
                 <th>Phone</th>
+                <th>Recovery Contact Email</th>
                 <th>User type</th>
                 <th>Created at</th>
                 <th>Status</th>
@@ -450,9 +450,8 @@
         <div class="card">
           <div class="card-header">
             <div>
-              <div class="card-title">Ticket detail &amp; manual decision</div>
+              <div class="card-title">Ticket detail</div>
             </div>
-            <span class="badge-soft" id="detailBadge">No ticket selected</span>
           </div>
 
           <div id="detailPanel">
@@ -481,7 +480,7 @@
                 <div class="field-value" id="detailUserType">–</div>
               </div>
               <div>
-                <div class="field-label">Account email (from request)</div>
+                <div class="field-label">Recovery Contact Email</div>
                 <div class="field-value" id="detailEmail">–</div>
               </div>
             </div>
@@ -500,38 +499,9 @@
               </div>
             </div>
 
-            <div style="margin-bottom: 10px">
-              <div class="field-label">
-                Manual verification steps (100% by admin)
-              </div>
-              <ul class="steps-list">
-                <li>1. Search the user in the relevant management screen.</li>
-                <li>2. Compare ID document with system profile &amp; phone.</li>
-                <li>3. Decide if this is the legitimate account owner.</li>
-                <li>
-                  4. If approved, change password manually in the user
-                  management page.
-                </li>
-              </ul>
-            </div>
-
-            <div style="margin-bottom: 10px">
-              <div class="field-label">Resolution metadata</div>
-              <div class="field-value muted" id="detailResolution">
-                Ticket not yet solved.
-              </div>
-            </div>
-
             <div>
               <div class="field-label">Actions on ticket</div>
               <div class="actions-row">
-                <button
-                  type="button"
-                  class="btn btn-secondary btn-sm"
-                  id="inProgressBtn"
-                >
-                  Mark as In Progress
-                </button>
                 <button
                   type="button"
                   class="btn btn-primary btn-sm"
@@ -547,30 +517,6 @@
                   Reject request
                 </button>
               </div>
-              <div class="log-meta" style="margin-top: 6px">
-                Mark as Solved will open a confirmation popup requiring account
-                email, phone number and the new password already set manually
-                for the user. The system will then log the action and send
-                simulated SMS content.
-              </div>
-            </div>
-
-            <div class="log-table-wrapper">
-              <div class="field-label">System log for recovery tickets</div>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Time</th>
-                    <th>Request</th>
-                    <th>Admin</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody id="logBody"></tbody>
-              </table>
-              <div class="empty-state" id="logEmpty" style="display: none">
-                No recovery actions recorded in this demo.
-              </div>
             </div>
           </div>
         </div>
@@ -581,19 +527,14 @@
       <div class="modal">
         <div class="modal-header">
           <div>
-            <div class="modal-title">Confirm solved &amp; notify user</div>
-            <div class="card-subtitle">
-              Enter the exact credentials you have just configured for this
-              user. These values will be sent via SMS in real life (simulated
-              here).
-            </div>
+            <div class="modal-title">Confirm solved</div>
           </div>
           <button
             type="button"
             class="btn btn-secondary btn-sm"
             id="closeModalBtn"
           >
-            Close
+            X
           </button>
         </div>
         <div class="modal-body">
@@ -602,15 +543,11 @@
             <div class="field-value muted" id="modalTicketLabel">–</div>
           </div>
           <div class="modal-field">
-            <label for="solveEmail">Email (account login)</label>
+            <label for="solveEmail">Register Email (account login)</label>
             <input id="solveEmail" type="email" />
           </div>
           <div class="modal-field">
-            <label for="solvePhone">Phone number (for SMS)</label>
-            <input id="solvePhone" type="text" />
-          </div>
-          <div class="modal-field">
-            <label for="solvePassword">New password (already set)</label>
+            <label for="solvePassword">New password</label>
             <input id="solvePassword" type="text" />
           </div>
         </div>
@@ -627,7 +564,7 @@
             class="btn btn-primary btn-sm"
             id="confirmSolveBtn"
           >
-            Confirm &amp; mark as Solved
+            Confirm &amp; send to recovery email
           </button>
         </div>
       </div>
@@ -662,7 +599,7 @@
           userType: "Agent",
           accountEmail: "info@sakura-realty.jp",
           createdAt: "2026-04-13 17:45",
-          status: "In Progress",
+          status: "Pending",
           reason:
             "Agency contact changed. New representative requesting access reset with company registration certificate.",
           docType: "pdf",
@@ -721,12 +658,25 @@
 
       let selectedRequestId = null;
 
+      function updateActionButtons(r) {
+        const markSolvedBtn = document.getElementById("markSolvedBtn");
+        const rejectBtn = document.getElementById("rejectBtn");
+        if (!markSolvedBtn || !rejectBtn) return;
+
+        if (!r || r.status === "Solved") {
+          markSolvedBtn.disabled = true;
+          rejectBtn.disabled = true;
+          return;
+        }
+
+        markSolvedBtn.disabled = r.status !== "Pending";
+        rejectBtn.disabled = r.status !== "Pending";
+      }
+
       function statusClass(status) {
         switch (status) {
           case "Pending":
             return "status-pending";
-          case "In Progress":
-            return "status-inprogress";
           case "Solved":
             return "status-solved";
           case "Rejected":
@@ -774,6 +724,7 @@
             <td>${r.id}</td>
             <td>${r.fullName}</td>
             <td>${r.phone}</td>
+            <td>${r.accountEmail || "-"}</td>
             <td>${r.userType}</td>
             <td>${r.createdAt}</td>
             <td><span class="status-pill ${statusClass(r.status)}">${r.status}</span></td>
@@ -818,9 +769,7 @@
       function selectRequest(id) {
         selectedRequestId = id;
         const r = recoveryRequests.find((x) => x.id === id);
-        const badge = document.getElementById("detailBadge");
         if (!r) {
-          badge.textContent = "No ticket selected";
           document.getElementById("detailRequestId").textContent = "–";
           document.getElementById("detailStatus").innerHTML = "–";
           document.getElementById("detailName").textContent = "–";
@@ -830,13 +779,11 @@
           document.getElementById("detailReason").textContent =
             "Select a ticket to view the provided reason.";
           renderDocument(null);
-          document.getElementById("detailResolution").textContent =
-            "Ticket not yet solved.";
+          updateActionButtons(null);
           renderRequestTable();
           return;
         }
 
-        badge.textContent = `${r.id} · ${r.fullName}`;
         document.getElementById("detailRequestId").textContent = r.id;
         document.getElementById("detailStatus").innerHTML =
           `<span class="status-pill ${statusClass(r.status)}">${r.status}</span>`;
@@ -846,9 +793,8 @@
         document.getElementById("detailEmail").textContent =
           r.accountEmail || "–";
         document.getElementById("detailReason").textContent = r.reason;
-        document.getElementById("detailResolution").textContent =
-          formatResolution(r);
         renderDocument(r);
+        updateActionButtons(r);
         renderRequestTable();
       }
 
@@ -867,6 +813,7 @@
       function renderLogs() {
         const body = document.getElementById("logBody");
         const empty = document.getElementById("logEmpty");
+        if (!body || !empty) return;
         body.innerHTML = "";
         if (!recoveryLogs.length) {
           empty.style.display = "block";
@@ -895,6 +842,10 @@
         }
         const r = recoveryRequests.find((x) => x.id === selectedRequestId);
         if (!r) return;
+        if (r.status === "Solved") {
+          alert("Solved tickets cannot be modified.");
+          return;
+        }
         if (r.status === newStatus) return;
         if (
           newStatus === "Rejected" &&
@@ -928,8 +879,7 @@
         backdrop.style.display = "flex";
         document.getElementById("modalTicketLabel").textContent =
           `${r.id} · ${r.fullName}`;
-        document.getElementById("solveEmail").value = r.accountEmail || "";
-        document.getElementById("solvePhone").value = r.phone || "";
+        document.getElementById("solveEmail").value = "";
         document.getElementById("solvePassword").value = "";
       }
 
@@ -945,11 +895,14 @@
         }
         const r = recoveryRequests.find((x) => x.id === selectedRequestId);
         if (!r) return;
+        if (r.status === "Solved") {
+          alert("Solved tickets cannot be modified.");
+          return;
+        }
         const email = document.getElementById("solveEmail").value.trim();
-        const phone = document.getElementById("solvePhone").value.trim();
         const password = document.getElementById("solvePassword").value.trim();
-        if (!email || !phone || !password) {
-          alert("Email, phone and new password are all required.");
+        if (!email || !password) {
+          alert("Register email and new password are required.");
           return;
         }
 
@@ -958,21 +911,25 @@
         r.solvedBy = currentAdmin.id;
         r.solvedAt = now;
 
-        addLogEntry(`Marked as Solved. SMS prepared for ${phone}.`, r.id);
+        addLogEntry(
+          `Marked as Solved. Recovery email prepared for ${r.accountEmail || "(missing email)"}.`,
+          r.id,
+        );
 
         closeSolveModal();
         selectRequest(r.id);
 
-        const smsMessage =
-          `SMS to ${phone}: Your login password has been reset.\n` +
-          `Login email: ${email}\n` +
+        const emailMessage =
+          `Recovery email to ${r.accountEmail || "(missing email)"}: Your login password has been reset.\n` +
+          `Register email: ${email}\n` +
           `New password: ${password}`;
-        alert(`${smsMessage}\n\n(This is a demo. No real SMS is sent.)`);
+        alert(`${emailMessage}\n\n(This is a demo. No real email is sent.)`);
       }
 
       document.addEventListener("DOMContentLoaded", () => {
         renderRequestTable();
         renderLogs();
+        updateActionButtons(null);
 
         ["searchInput", "statusFilter", "typeFilter"].forEach((id) => {
           const el = document.getElementById(id);
@@ -981,9 +938,6 @@
           el.addEventListener("change", renderRequestTable);
         });
 
-        document
-          .getElementById("inProgressBtn")
-          .addEventListener("click", () => setStatusForSelected("In Progress"));
         document
           .getElementById("rejectBtn")
           .addEventListener("click", () => setStatusForSelected("Rejected"));
