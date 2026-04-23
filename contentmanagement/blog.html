@@ -1,0 +1,1816 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Blog / Article Management</title>
+    <style>
+      :root {
+        --bg-body: #f5f3ef;
+        --bg-card: #fffaf2;
+        --border-subtle: #eadccd;
+        --accent: #c26b41;
+        --accent-soft: #f3d7c6;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+        --badge-green: #2f855a;
+        --badge-red: #c53030;
+        --badge-gray: #4a5568;
+        --badge-blue: #2b6cb0;
+        --badge-orange: #b7791f;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 20px 24px 32px;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        letter-spacing: 0.02em;
+      }
+      .page-subtitle {
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 7fr) minmax(0, 6fr);
+        gap: 16px;
+        align-items: flex-start;
+      }
+      .card {
+        background-color: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        padding: 14px 16px 16px;
+        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
+      }
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 10px;
+      }
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+      .toolbar-right {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .btn {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 11px;
+        font-size: 11px;
+        background-color: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+        color: var(--text-main);
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #c26b41, #a55232);
+        border-color: #a55232;
+        color: #fffaf3;
+      }
+      .btn-danger {
+        background: #fff5f5;
+        border-color: #feb2b2;
+        color: #c53030;
+      }
+      .btn-ghost {
+        background: transparent;
+      }
+      .btn-danger {
+        border-color: var(--badge-red);
+        color: var(--badge-red);
+      }
+      .btn:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 120px;
+      }
+      .field-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+      input[type="text"],
+      select {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+      input[type="text"]:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      thead {
+        background: #f7efe6;
+      }
+      th,
+      td {
+        padding: 7px 8px;
+        text-align: left;
+        border-bottom: 1px solid #efe0d4;
+      }
+      th {
+        font-weight: 500;
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      tbody tr {
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+      tbody tr:hover {
+        background-color: #f8f1ea;
+      }
+      tbody tr.selected-row {
+        background-color: #f1e3d5;
+      }
+      .article-title {
+        font-weight: 600;
+      }
+      .article-meta-line {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 500;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+      .badge-status-published {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+      .badge-status-draft {
+        background: #fff6e0;
+        color: var(--badge-orange);
+        border-color: #fbd38d;
+      }
+      .badge-status-scheduled {
+        background: #ebf8ff;
+        color: var(--badge-blue);
+        border-color: #bee3f8;
+      }
+      .badge-status-archived {
+        background: #f7f7f8;
+        color: var(--badge-gray);
+        border-color: #d2d6dc;
+      }
+      .badge-type {
+        background: #f0e3d7;
+        color: #744210;
+        border-color: #e2c6a8;
+      }
+      .badge-locale {
+        background: #fef3c7;
+        color: #92400e;
+        border-color: #fcd34d;
+      }
+      .badge-flag {
+        background: #fff5f5;
+        color: var(--badge-red);
+        border-color: #fed7d7;
+      }
+      .tag-chip {
+        display: inline-flex;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        background: #f4efe9;
+        color: #5b4633;
+        margin-right: 4px;
+      }
+      .detail-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .detail-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .detail-title-block h2 {
+        margin: 0 0 4px;
+        font-size: 16px;
+      }
+      .detail-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+      .detail-meta span + span::before {
+        content: "· ";
+        margin: 0 2px;
+      }
+      .detail-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+        margin-bottom: 4px;
+      }
+      .detail-field-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+      .detail-input,
+      .detail-select,
+      textarea {
+        width: 100%;
+        border-radius: 9px;
+        border: 1px solid var(--border-subtle);
+        padding: 5px 8px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+      .detail-input:focus,
+      .detail-select:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      }
+      .detail-input[readonly] {
+        background: #f9f5f0;
+        color: var(--text-muted);
+      }
+      textarea {
+        min-height: 70px;
+        resize: vertical;
+        font-family: inherit;
+      }
+      .hint-text {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+      .preview-box {
+        border-radius: 10px;
+        border: 1px dashed #deccba;
+        padding: 8px 9px;
+        background: #fffaf1;
+        font-size: 12px;
+        color: var(--text-main);
+        max-height: 120px;
+        overflow: auto;
+      }
+      .footer-note {
+        margin-top: 4px;
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+      .cms-shell {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .cms-layout {
+        margin-top: 6px;
+      }
+      .cms-pane-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .cms-pane-desc {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 10px;
+        max-width: 720px;
+      }
+      .settings-card {
+        background-color: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        padding: 14px 16px 16px;
+        box-shadow: 0 6px 18px rgba(115, 72, 39, 0.08);
+      }
+      .settings-card-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 6px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .cms-subnav {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 6px 0 10px;
+      }
+      .cms-subtab,
+      .cms-subtab-sm {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        background: #f7efe4;
+        padding: 4px 10px;
+        font-size: 11px;
+        cursor: pointer;
+        color: var(--text-muted);
+      }
+      .cms-subtab.active,
+      .cms-subtab-sm.active {
+        background: #3a6b3c;
+        color: #fff;
+        border-color: #3a6b3c;
+      }
+      .cms-filter-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .cms-filter-input {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        min-width: 180px;
+      }
+      .cms-inline-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .cms-hint {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 4px;
+      }
+      .insights-subpane,
+      .insights-articles-pane,
+      .insights-news-pane {
+        display: none;
+      }
+      .insights-subpane.active,
+      .insights-articles-pane.active,
+      .insights-news-pane.active {
+        display: block;
+      }
+      /* Modal */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 999;
+      }
+      .modal-backdrop.open {
+        display: flex;
+      }
+      .modal-shell {
+        width: 880px;
+        max-width: 95%;
+        max-height: 90vh;
+        background: var(--bg-card);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        box-shadow: 0 18px 45px rgba(115, 72, 39, 0.45);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .modal-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: #fffaf6;
+      }
+      .modal-header-main {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .modal-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-main);
+      }
+      .modal-subtitle {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+      .modal-close-btn {
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 18px;
+        line-height: 1;
+        color: var(--text-muted);
+      }
+      .modal-body {
+        padding: 12px 16px 10px;
+        overflow: auto;
+        font-size: 12px;
+        background: #fffaf2;
+      }
+      .modal-footer {
+        padding: 10px 16px 12px;
+        border-top: 1px solid var(--border-subtle);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        background: #f7efe6;
+      }
+      .modal-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 16px;
+      }
+      .modal-field-row {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .modal-field-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-weight: 500;
+      }
+      .modal-field-hint {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+      .field-row {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        margin-bottom: 8px;
+      }
+      .field-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        min-width: 140px;
+      }
+      .field-value {
+        flex: 1;
+        font-size: 12px;
+      }
+      .filter-select {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        font-size: 12px;
+        background-color: #fffcf7;
+        color: var(--text-main);
+        outline: none;
+      }
+      .badge-success {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+      .badge-warning {
+        background: #fff6e0;
+        color: var(--badge-orange);
+        border-color: #fbd38d;
+      }
+      .badge-info {
+        background: #ebf8ff;
+        color: var(--badge-blue);
+        border-color: #bee3f8;
+      }
+      .badge-gray {
+        background: #f7f7f8;
+        color: var(--badge-gray);
+        border-color: #d2d6dc;
+      }
+      .btn-secondary {
+        background: #f7efe4;
+        color: var(--text-main);
+        border: 1px solid var(--border-subtle);
+      }
+      /* Status toggle button */
+      .status-toggle {
+        display: inline-flex;
+        border-radius: 999px;
+        overflow: hidden;
+        border: 1px solid var(--border-subtle);
+        font-size: 11px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .status-toggle-opt {
+        padding: 5px 12px;
+        background: #f7efe4;
+        color: var(--text-muted);
+        transition:
+          background 0.15s,
+          color 0.15s;
+      }
+      .status-toggle-opt.active-draft {
+        background: #fff6e0;
+        color: var(--badge-orange);
+        font-weight: 600;
+      }
+      .status-toggle-opt.active-published {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        font-weight: 600;
+      }
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body data-default-insights-tab="articles">
+    <div class="cms-shell">
+      <div class="cms-layout">
+        <section class="card">
+          <div id="cms-pane-insights" class="setting-pane active">
+            <h2 class="cms-pane-title">Insights Management</h2>
+
+            <div class="settings-card">
+              <div class="settings-card-title">Insights library</div>
+              <div class="cms-subnav">
+                <button
+                  class="cms-subtab active"
+                  onclick="switchInsightsSubTab('guides', this)"
+                  type="button"
+                >
+                  Area guides
+                </button>
+                <button
+                  class="cms-subtab"
+                  onclick="switchInsightsSubTab('articles', this)"
+                  type="button"
+                >
+                  Articles
+                </button>
+                <button
+                  class="cms-subtab"
+                  onclick="switchInsightsSubTab('news', this)"
+                  type="button"
+                >
+                  News
+                </button>
+                <button
+                  class="cms-subtab"
+                  onclick="switchInsightsSubTab('faqs', this)"
+                  type="button"
+                >
+                  FAQs
+                </button>
+              </div>
+
+              <!-- Subpane container: loaded dynamically via fetch -->
+              <div id="insights-subpane-container">
+                <div id="insights-sub-guides" class="insights-subpane active">
+                  <div id="area-guide-content">
+                    Loading area guide content...
+                  </div>
+                </div>
+                <div id="insights-sub-articles" class="insights-subpane">
+                  <div id="articles-content">Loading articles content...</div>
+                </div>
+                <div id="insights-sub-news" class="insights-subpane">
+                  <div id="news-content">Loading news content...</div>
+                </div>
+                <div id="insights-sub-faqs" class="insights-subpane">
+                  <div id="faq-content">Loading FAQ content...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- BLOG EDITOR MODAL FOR ARTICLES / NEWS DB STRUCTURE -->
+    <div id="modal-blog-editor" class="modal-backdrop">
+      <div class="modal-shell">
+        <div class="modal-header">
+          <div class="modal-header-main">
+            <div class="modal-title" id="blog-editor-title">New Blog</div>
+          </div>
+          <button
+            class="modal-close-btn"
+            type="button"
+            onclick="closeModal('modal-blog-editor')"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-grid">
+            <div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Blog ID</div>
+                <input
+                  id="blogEditorId"
+                  type="text"
+                  class="detail-input"
+                  value="AUTO-GENERATED"
+                  readonly
+                />
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Title</div>
+                <input
+                  type="text"
+                  class="detail-input"
+                  placeholder="Headline shown in cards and listings"
+                />
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Category tag</div>
+                <select class="filter-select" id="blog-category-tag">
+                  <option>Guides</option>
+                  <option>Blog</option>
+                  <option>Market Analysis</option>
+                  <option>Japan</option>
+                  <option>Real Estate</option>
+                  <option>Investment</option>
+                </select>
+              </div>
+
+              <div class="modal-field-row">
+                <div class="modal-field-label">Transaction type</div>
+                <select class="filter-select">
+                  <option>None</option>
+                  <option>SellerGuide</option>
+                  <option>BuyerGuide</option>
+                  <option>Renter Guide</option>
+                </select>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Thumbnail asset</div>
+                <input type="file" class="detail-input" />
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Property prefecture scope</div>
+                <select class="filter-select">
+                  <option>None</option>
+                  <option>All Prefectures</option>
+                  <option>Specific Prefecture</option>
+                </select>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Property type scope</div>
+                <select class="filter-select">
+                  <option>None</option>
+                  <option>All Types</option>
+                  <option>Specific Type</option>
+                </select>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Author</div>
+                <input
+                  id="blogEditorAuthor"
+                  type="text"
+                  class="detail-input"
+                  readonly
+                />
+              </div>
+            </div>
+            <div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Display status</div>
+                <div class="status-toggle" onclick="toggleGuideStatus('blog')">
+                  <div
+                    class="status-toggle-opt active-draft"
+                    id="blogStatusDraft"
+                  >
+                    Draft
+                  </div>
+                  <div class="status-toggle-opt" id="blogStatusPublished">
+                    Published
+                  </div>
+                </div>
+                <input type="hidden" id="blogEditorStatus" value="draft" />
+              </div>
+              <div class="modal-field-row" style="flex-direction: column">
+                <div class="modal-field-label">Content body (rich text)</div>
+                <textarea
+                  id="blogContentBody"
+                  rows="7"
+                  class="detail-input"
+                  style="resize: vertical"
+                  placeholder="Headings, paragraphs, quotes, images, embedded video URLs..."
+                ></textarea>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Video status flag</div>
+                <span id="blogVideoFlag" class="badge badge-gray"
+                  >No video</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            type="button"
+            onclick="closeModal('modal-blog-editor')"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            type="button"
+            onclick="
+              alert('Save blog (mock).');
+              closeModal('modal-blog-editor');
+            "
+          >
+            Save blog
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CITY GUIDE EDITOR MODAL -->
+    <div id="modal-city-guide" class="modal-backdrop">
+      <div class="modal-shell">
+        <div class="modal-header">
+          <div class="modal-header-main">
+            <div class="modal-title" id="cityGuideModalTitle">
+              New city guide
+            </div>
+            <div class="modal-subtitle">
+              Create city guides in English with prefecture, city, hero image,
+              subtitle, and descriptions.
+            </div>
+          </div>
+          <button
+            class="modal-close-btn"
+            type="button"
+            onclick="closeCityGuideEditor()"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-grid">
+            <div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Prefecture *</div>
+                <select id="cityGuidePrefecture" class="filter-select">
+                  <option value="">Select prefecture</option>
+                </select>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">City *</div>
+                <select id="cityGuideCity" class="filter-select">
+                  <option value="">Select city</option>
+                </select>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Hero background image *</div>
+                <input
+                  id="cityGuideHeroImage"
+                  type="file"
+                  class="detail-input"
+                />
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Subtitle</div>
+                <input
+                  id="cityGuideSubtitle"
+                  type="text"
+                  class="detail-input"
+                  placeholder="e.g. the capital city of Japan"
+                />
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Intro section description *</div>
+                <textarea
+                  id="cityGuideIntroDescription"
+                  rows="5"
+                  class="detail-input"
+                  style="resize: vertical"
+                  placeholder="Describe the city..."
+                ></textarea>
+              </div>
+            </div>
+            <div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Map section description</div>
+                <textarea
+                  id="cityGuideMapDescription"
+                  rows="4"
+                  class="detail-input"
+                  style="resize: vertical"
+                  placeholder="Describe the city location and transport links..."
+                ></textarea>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Status</div>
+                <div class="status-toggle" onclick="toggleGuideStatus('city')">
+                  <div
+                    class="status-toggle-opt active-draft"
+                    id="cityStatusDraft"
+                  >
+                    Draft
+                  </div>
+                  <div class="status-toggle-opt" id="cityStatusPublished">
+                    Published
+                  </div>
+                </div>
+                <input type="hidden" id="cityGuideStatus" value="draft" />
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Author</div>
+                <input
+                  id="cityGuideAuthor"
+                  type="text"
+                  class="detail-input"
+                  readonly
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            type="button"
+            onclick="closeCityGuideEditor()"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            type="button"
+            onclick="saveCityGuideFromModal()"
+          >
+            Save guide
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AREA GUIDE EDITOR MODAL -->
+    <div id="modal-area-guide" class="modal-backdrop">
+      <div class="modal-shell">
+        <div class="modal-header">
+          <div class="modal-header-main">
+            <div class="modal-title" id="areaGuideModalTitle">
+              Area guide editor
+            </div>
+            <div class="modal-subtitle">
+              Create area guides in English with prefecture, city, area, images,
+              description, map notes, author and status.
+            </div>
+          </div>
+          <button
+            class="modal-close-btn"
+            type="button"
+            onclick="closeAreaGuideEditor()"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-grid">
+            <div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Prefecture *</div>
+                <select id="areaGuidePrefecture" class="filter-select">
+                  <option value="">Select prefecture</option>
+                </select>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">City *</div>
+                <select id="areaGuideCity" class="filter-select">
+                  <option value="">Select city</option>
+                </select>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Area *</div>
+                <select id="areaGuideArea" class="filter-select">
+                  <option value="">Select area</option>
+                </select>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Hero background image *</div>
+                <input
+                  id="areaGuideHeroImage"
+                  type="file"
+                  class="detail-input"
+                />
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Image carousel</div>
+                <input
+                  id="areaGuideCarouselImages"
+                  type="file"
+                  class="detail-input"
+                  multiple
+                />
+                <div class="modal-field-hint">
+                  Choose one or more images for the hero carousel.
+                </div>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Description *</div>
+                <textarea
+                  id="areaGuideDescription"
+                  rows="5"
+                  class="detail-input"
+                  style="resize: vertical"
+                  placeholder="Describe this area..."
+                ></textarea>
+              </div>
+            </div>
+            <div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Map section description</div>
+                <textarea
+                  id="areaGuideMapDescription"
+                  rows="4"
+                  class="detail-input"
+                  style="resize: vertical"
+                  placeholder="Describe the map location, access points and surroundings..."
+                ></textarea>
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Status</div>
+                <div class="status-toggle" onclick="toggleGuideStatus('area')">
+                  <div
+                    class="status-toggle-opt active-draft"
+                    id="areaStatusDraft"
+                  >
+                    Draft
+                  </div>
+                  <div class="status-toggle-opt" id="areaStatusPublished">
+                    Published
+                  </div>
+                </div>
+                <input type="hidden" id="areaGuideStatus" value="draft" />
+              </div>
+              <div class="modal-field-row">
+                <div class="modal-field-label">Author</div>
+                <input
+                  id="areaGuideAuthor"
+                  type="text"
+                  class="detail-input"
+                  readonly
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            type="button"
+            onclick="closeAreaGuideEditor()"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            type="button"
+            onclick="saveAreaGuideFromModal()"
+          >
+            Save guide
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FAQ EDITOR MODAL (QUESTION + ANSWER) -->
+    <div id="modal-faq-editor" class="modal-backdrop">
+      <div class="modal-shell">
+        <div class="modal-header">
+          <div class="modal-header-main">
+            <div class="modal-title">FAQ editor — Shared FAQ store</div>
+            <div class="modal-subtitle">
+              Model for FAQs consists of a question and an answer body used in
+              help pages and support widgets.
+            </div>
+          </div>
+          <button
+            class="modal-close-btn"
+            type="button"
+            onclick="closeModal('modal-faq-editor')"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-grid">
+            <div class="modal-field-row" style="grid-column: 1 / -1">
+              <div class="modal-field-label">FAQ question</div>
+              <input
+                type="text"
+                class="detail-input"
+                placeholder="Short, clear customer question"
+              />
+            </div>
+            <div
+              class="modal-field-row"
+              style="grid-column: 1 / -1; flex-direction: column"
+            >
+              <div class="modal-field-label">FAQ answer</div>
+              <textarea
+                rows="7"
+                class="detail-input"
+                style="resize: vertical"
+                placeholder="Step-by-step explanation, requirements, links to more details..."
+              ></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            type="button"
+            onclick="closeModal('modal-faq-editor')"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            type="button"
+            onclick="
+              alert('Save FAQ (mock).');
+              closeModal('modal-faq-editor');
+            "
+          >
+            Save FAQ
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ─── Simulated active user ────────────────────────────────────────────────
+      const ACTIVE_USER = "Admin Tanaka";
+
+      // ─── Shared state ─────────────────────────────────────────────────────────
+      const areaGuideLocations = {
+        Tokyo: {
+          cities: {
+            Shibuya: ["Yoyogi", "Ebisu", "Hikarie"],
+            Shinjuku: ["Kabukicho", "Nishi-Shinjuku", "Takadanobaba"],
+            Chiyoda: ["Marunouchi", "Kanda", "Akasaka-mitsuke"],
+          },
+        },
+        Osaka: {
+          cities: {
+            Kita: ["Umeda", "Nakatsu", "Higobashi"],
+            Namba: ["Dotonbori", "Shinsaibashi", "Nipponbashi"],
+          },
+        },
+        Fukuoka: {
+          cities: {
+            Hakata: ["Nakasu", "Gion", "Tenyamachi"],
+            Chuo: ["Tenjin", "Yakuin", "Akasaka"],
+          },
+        },
+      };
+
+      let areaGuides = [
+        {
+          id: 1,
+          level: "city",
+          title: "Shibuya",
+          prefecture: "Tokyo",
+          city: "Shibuya",
+          area: "",
+          subtitle: "the capital city of Japan",
+          introDescription:
+            "Tokyo combines business districts, culture, nightlife and neighborhood living.",
+          description: "",
+          mapDescription:
+            "Central Tokyo access points, major stations and surrounding districts.",
+          status: "published",
+          author: "Admin Tanaka",
+          heroImageName: "tokyo-city-hero.jpg",
+          carouselImageNames: [],
+          updatedAt: "2026-04-21 09:30",
+        },
+        {
+          id: 2,
+          level: "area",
+          title: "Yoyogi",
+          prefecture: "Tokyo",
+          city: "Shibuya",
+          area: "Yoyogi",
+          subtitle: "",
+          introDescription: "",
+          description:
+            "Yoyogi offers a quieter residential feel while staying close to major transport links and shopping zones.",
+          mapDescription:
+            "The area sits close to Shibuya Station and nearby green spaces.",
+          status: "draft",
+          author: "Admin Tanaka",
+          heroImageName: "yoyogi-hero.jpg",
+          carouselImageNames: ["yoyogi-1.jpg", "yoyogi-2.jpg"],
+          updatedAt: "2026-04-20 14:15",
+        },
+      ];
+
+      let editingAreaGuideId = null;
+      let editingCityGuideId = null;
+      const blogCategoryOptionsByType = {
+        article: ["Guides", "Blog", "Market analysis"],
+        news: ["Japan", "Real estate", "Investment"],
+      };
+
+      // ─── Child pane loading ───────────────────────────────────────────────────
+      const loadedPanes = {};
+
+      async function loadChildPane(key) {
+        if (loadedPanes[key]) return;
+        loadedPanes[key] = true;
+
+        const fileMap = {
+          guides: "area-guide.html",
+          articles: "articles.html",
+          news: "news.html",
+          faqs: "faq.html",
+        };
+        const containerIdMap = {
+          guides: "area-guide-content",
+          articles: "articles-content",
+          news: "news-content",
+          faqs: "faq-content",
+        };
+
+        const file = fileMap[key];
+        const containerId = containerIdMap[key];
+        if (!file || !containerId) return;
+
+        try {
+          const res = await fetch(file);
+          const html = await res.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+          const bodyContent = doc.body.innerHTML;
+          const container = document.getElementById(containerId);
+          if (container) container.innerHTML = bodyContent;
+          const scripts = doc.querySelectorAll("script");
+          scripts.forEach((s) => {
+            const newScript = document.createElement("script");
+            if (s.src) {
+              newScript.src = s.src;
+            } else {
+              newScript.textContent = s.textContent;
+            }
+            document.body.appendChild(newScript);
+          });
+        } catch (e) {
+          console.warn("Could not load pane:", key, e);
+        }
+      }
+
+      // ─── Tab switching ────────────────────────────────────────────────────────
+      function switchInsightsSubTab(key, el) {
+        const subTabs = document.querySelectorAll(
+          "#cms-pane-insights .cms-subnav > .cms-subtab",
+        );
+        subTabs.forEach((t) => t.classList.remove("active"));
+        if (el) el.classList.add("active");
+
+        const subPanes = document.querySelectorAll(
+          "#cms-pane-insights .insights-subpane",
+        );
+        subPanes.forEach((p) => p.classList.remove("active"));
+
+        const target = document.getElementById("insights-sub-" + key);
+        if (target) target.classList.add("active");
+
+        loadChildPane(key);
+      }
+
+      // ─── Modal helpers ────────────────────────────────────────────────────────
+      function openModal(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.add("open");
+      }
+
+      function closeModal(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove("open");
+      }
+
+      function openBlogEditor(type) {
+        if (type === "city") {
+          openCityGuideEditor();
+          return;
+        }
+        if (type === "area") {
+          openAreaGuideEditor();
+          return;
+        }
+        const titleEl = document.getElementById("blog-editor-title");
+        if (titleEl) {
+          if (type === "news") {
+            titleEl.textContent = "New Blog — News";
+          } else if (type === "article") {
+            titleEl.textContent = "New Blog — Article";
+          } else {
+            titleEl.textContent = "New Blog — Article / News";
+          }
+        }
+
+        const categorySelect = document.getElementById("blog-category-tag");
+        if (categorySelect) {
+          const dynamicArticleCategories =
+            typeof window.getArticleCategoryTags === "function"
+              ? window.getArticleCategoryTags()
+              : null;
+          const dynamicNewsCategories =
+            typeof window.getNewsCategoryTags === "function"
+              ? window.getNewsCategoryTags()
+              : null;
+
+          const categoryOptions =
+            type === "news"
+              ? dynamicNewsCategories?.length
+                ? dynamicNewsCategories
+                : blogCategoryOptionsByType.news
+              : dynamicArticleCategories?.length
+                ? dynamicArticleCategories
+                : blogCategoryOptionsByType.article;
+
+          categorySelect.innerHTML = categoryOptions
+            .map((option) => `<option>${option}</option>`)
+            .join("");
+        }
+
+        const blogIdEl = document.getElementById("blogEditorId");
+        if (blogIdEl) blogIdEl.value = "AUTO-GENERATED";
+
+        const authorEl = document.getElementById("blogEditorAuthor");
+        if (authorEl) authorEl.value = ACTIVE_USER;
+
+        const contentBodyEl = document.getElementById("blogContentBody");
+        if (contentBodyEl) contentBodyEl.value = "";
+        updateBlogVideoStatusFlag();
+
+        setGuideStatusUI("blog", "draft");
+        openModal("modal-blog-editor");
+      }
+
+      function updateBlogVideoStatusFlag() {
+        const contentBodyEl = document.getElementById("blogContentBody");
+        const flagEl = document.getElementById("blogVideoFlag");
+        if (!contentBodyEl || !flagEl) return;
+
+        const content = contentBodyEl.value || "";
+        const hasVideo =
+          /youtube\.com|youtu\.be|vimeo\.com|<iframe|<video|\.mp4|\.webm/i.test(
+            content,
+          );
+
+        flagEl.className = "badge " + (hasVideo ? "badge-info" : "badge-gray");
+        flagEl.textContent = hasVideo ? "Video detected" : "No video";
+      }
+
+      // ─── Status toggle ────────────────────────────────────────────────────────
+      function toggleGuideStatus(type) {
+        const isCity = type === "city";
+        const isBlog = type === "blog";
+        const hiddenInput = document.getElementById(
+          isCity
+            ? "cityGuideStatus"
+            : isBlog
+              ? "blogEditorStatus"
+              : "areaGuideStatus",
+        );
+        const draftBtn = document.getElementById(
+          isCity
+            ? "cityStatusDraft"
+            : isBlog
+              ? "blogStatusDraft"
+              : "areaStatusDraft",
+        );
+        const publishedBtn = document.getElementById(
+          isCity
+            ? "cityStatusPublished"
+            : isBlog
+              ? "blogStatusPublished"
+              : "areaStatusPublished",
+        );
+        if (!hiddenInput) return;
+
+        const current = hiddenInput.value;
+        const next = current === "draft" ? "published" : "draft";
+        hiddenInput.value = next;
+
+        draftBtn.className =
+          "status-toggle-opt" + (next === "draft" ? " active-draft" : "");
+        publishedBtn.className =
+          "status-toggle-opt" +
+          (next === "published" ? " active-published" : "");
+      }
+
+      function setGuideStatusUI(type, status) {
+        const isCity = type === "city";
+        const isBlog = type === "blog";
+        const hiddenInput = document.getElementById(
+          isCity
+            ? "cityGuideStatus"
+            : isBlog
+              ? "blogEditorStatus"
+              : "areaGuideStatus",
+        );
+        const draftBtn = document.getElementById(
+          isCity
+            ? "cityStatusDraft"
+            : isBlog
+              ? "blogStatusDraft"
+              : "areaStatusDraft",
+        );
+        const publishedBtn = document.getElementById(
+          isCity
+            ? "cityStatusPublished"
+            : isBlog
+              ? "blogStatusPublished"
+              : "areaStatusPublished",
+        );
+        if (!hiddenInput) return;
+        hiddenInput.value = status;
+        draftBtn.className =
+          "status-toggle-opt" + (status === "draft" ? " active-draft" : "");
+        publishedBtn.className =
+          "status-toggle-opt" +
+          (status === "published" ? " active-published" : "");
+      }
+
+      // ─── Location helpers ─────────────────────────────────────────────────────
+      function populateLocationSelect(select, values, placeholder) {
+        if (!select) return;
+        select.innerHTML = `<option value="">${placeholder}</option>`;
+        values.forEach((value) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+          select.appendChild(option);
+        });
+      }
+
+      function updateCityGuideLocationOptions() {
+        const prefectureSelect = document.getElementById("cityGuidePrefecture");
+        const citySelect = document.getElementById("cityGuideCity");
+        const currentPrefecture = prefectureSelect
+          ? prefectureSelect.value
+          : "";
+        const currentCity = citySelect ? citySelect.value : "";
+
+        populateLocationSelect(
+          prefectureSelect,
+          Object.keys(areaGuideLocations),
+          "Select prefecture",
+        );
+        if (prefectureSelect) prefectureSelect.value = currentPrefecture;
+
+        const cityMap =
+          areaGuideLocations[prefectureSelect?.value]?.cities || {};
+        populateLocationSelect(citySelect, Object.keys(cityMap), "Select city");
+        if (citySelect) citySelect.value = currentCity;
+      }
+
+      function updateAreaGuideLocationOptions() {
+        const prefectureSelect = document.getElementById("areaGuidePrefecture");
+        const citySelect = document.getElementById("areaGuideCity");
+        const areaSelect = document.getElementById("areaGuideArea");
+        const currentPrefecture = prefectureSelect
+          ? prefectureSelect.value
+          : "";
+        const currentCity = citySelect ? citySelect.value : "";
+        const currentArea = areaSelect ? areaSelect.value : "";
+
+        populateLocationSelect(
+          prefectureSelect,
+          Object.keys(areaGuideLocations),
+          "Select prefecture",
+        );
+        if (prefectureSelect) prefectureSelect.value = currentPrefecture;
+
+        const cityMap =
+          areaGuideLocations[prefectureSelect?.value]?.cities || {};
+        populateLocationSelect(citySelect, Object.keys(cityMap), "Select city");
+        if (citySelect) citySelect.value = currentCity;
+
+        const areas = cityMap[citySelect?.value] || [];
+        populateLocationSelect(areaSelect, areas, "Select area");
+        if (areaSelect) areaSelect.value = currentArea;
+      }
+
+      // ─── City guide editor ────────────────────────────────────────────────────
+      function openCityGuideEditor(id) {
+        editingCityGuideId = typeof id === "number" ? id : null;
+        const guide = editingCityGuideId
+          ? areaGuides.find(
+              (g) => g.id === editingCityGuideId && g.level === "city",
+            )
+          : null;
+
+        const titleEl = document.getElementById("cityGuideModalTitle");
+        if (titleEl)
+          titleEl.textContent = editingCityGuideId
+            ? "Edit city guide"
+            : "New city guide";
+
+        document.getElementById("cityGuideSubtitle").value =
+          guide?.subtitle || "";
+        document.getElementById("cityGuideIntroDescription").value =
+          guide?.introDescription || "";
+        document.getElementById("cityGuideMapDescription").value =
+          guide?.mapDescription || "";
+        document.getElementById("cityGuideAuthor").value = guide
+          ? guide.author || ""
+          : ACTIVE_USER;
+
+        setGuideStatusUI("city", guide?.status || "draft");
+
+        updateCityGuideLocationOptions();
+
+        const prefectureSelect = document.getElementById("cityGuidePrefecture");
+        if (prefectureSelect) prefectureSelect.value = guide?.prefecture || "";
+        updateCityGuideLocationOptions();
+        const citySelect = document.getElementById("cityGuideCity");
+        if (citySelect) citySelect.value = guide?.city || "";
+
+        openModal("modal-city-guide");
+      }
+
+      function closeCityGuideEditor() {
+        closeModal("modal-city-guide");
+        editingCityGuideId = null;
+      }
+
+      function saveCityGuideFromModal() {
+        const prefectureSelect = document.getElementById("cityGuidePrefecture");
+        const citySelect = document.getElementById("cityGuideCity");
+        const heroImageInput = document.getElementById("cityGuideHeroImage");
+
+        const prefecture = prefectureSelect?.value || "";
+        const city = citySelect?.value || "";
+        const introDescription = document
+          .getElementById("cityGuideIntroDescription")
+          .value.trim();
+
+        if (!prefecture || !city) {
+          alert("Prefecture and city are required.");
+          return;
+        }
+        if (!introDescription) {
+          alert("Intro section description is required.");
+          return;
+        }
+
+        const existing = editingCityGuideId
+          ? areaGuides.find((g) => g.id === editingCityGuideId)
+          : null;
+
+        const heroImageName =
+          heroImageInput?.files?.[0]?.name || existing?.heroImageName || "";
+        if (!heroImageName) {
+          alert("Hero background image is required.");
+          return;
+        }
+
+        const payload = {
+          level: "city",
+          title: city,
+          prefecture,
+          city,
+          area: "",
+          subtitle: document.getElementById("cityGuideSubtitle").value.trim(),
+          introDescription,
+          description: "",
+          mapDescription: document
+            .getElementById("cityGuideMapDescription")
+            .value.trim(),
+          status: document.getElementById("cityGuideStatus").value,
+          author: document.getElementById("cityGuideAuthor").value.trim(),
+          heroImageName,
+          carouselImageNames: [],
+          updatedAt: new Date().toISOString().slice(0, 16).replace("T", " "),
+        };
+
+        if (existing) {
+          Object.assign(existing, payload);
+        } else {
+          areaGuides.unshift({ id: Date.now(), ...payload });
+        }
+
+        renderAreaGuides();
+        closeCityGuideEditor();
+      }
+
+      // ─── Area guide editor ────────────────────────────────────────────────────
+      function openAreaGuideEditor(id) {
+        editingAreaGuideId = typeof id === "number" ? id : null;
+        const guide = editingAreaGuideId
+          ? areaGuides.find(
+              (g) => g.id === editingAreaGuideId && g.level === "area",
+            )
+          : null;
+
+        const titleEl = document.getElementById("areaGuideModalTitle");
+        if (titleEl)
+          titleEl.textContent = editingAreaGuideId
+            ? "Edit area guide"
+            : "New area guide";
+
+        document.getElementById("areaGuideDescription").value =
+          guide?.description || "";
+        document.getElementById("areaGuideMapDescription").value =
+          guide?.mapDescription || "";
+        document.getElementById("areaGuideAuthor").value = guide
+          ? guide.author || ""
+          : ACTIVE_USER;
+
+        setGuideStatusUI("area", guide?.status || "draft");
+
+        updateAreaGuideLocationOptions();
+
+        const prefectureSelect = document.getElementById("areaGuidePrefecture");
+        if (prefectureSelect) prefectureSelect.value = guide?.prefecture || "";
+        updateAreaGuideLocationOptions();
+        const citySelect = document.getElementById("areaGuideCity");
+        if (citySelect) citySelect.value = guide?.city || "";
+        updateAreaGuideLocationOptions();
+        const areaSelect = document.getElementById("areaGuideArea");
+        if (areaSelect) areaSelect.value = guide?.area || "";
+
+        openModal("modal-area-guide");
+      }
+
+      function closeAreaGuideEditor() {
+        closeModal("modal-area-guide");
+        editingAreaGuideId = null;
+      }
+
+      function saveAreaGuideFromModal() {
+        const prefectureSelect = document.getElementById("areaGuidePrefecture");
+        const citySelect = document.getElementById("areaGuideCity");
+        const areaSelect = document.getElementById("areaGuideArea");
+        const heroImageInput = document.getElementById("areaGuideHeroImage");
+        const carouselInput = document.getElementById(
+          "areaGuideCarouselImages",
+        );
+
+        const prefecture = prefectureSelect?.value || "";
+        const city = citySelect?.value || "";
+        const area = areaSelect?.value || "";
+        const description = document
+          .getElementById("areaGuideDescription")
+          .value.trim();
+
+        if (!prefecture || !city || !area) {
+          alert("Prefecture, city and area are required.");
+          return;
+        }
+        if (!description) {
+          alert("Description is required.");
+          return;
+        }
+
+        const existing = editingAreaGuideId
+          ? areaGuides.find((g) => g.id === editingAreaGuideId)
+          : null;
+
+        const heroImageName =
+          heroImageInput?.files?.[0]?.name || existing?.heroImageName || "";
+        if (!heroImageName) {
+          alert("Hero background image is required.");
+          return;
+        }
+
+        const carouselImageNames = Array.from(carouselInput?.files || []).map(
+          (f) => f.name,
+        );
+
+        const payload = {
+          level: "area",
+          title: area,
+          prefecture,
+          city,
+          area,
+          subtitle: "",
+          introDescription: "",
+          description,
+          mapDescription: document
+            .getElementById("areaGuideMapDescription")
+            .value.trim(),
+          status: document.getElementById("areaGuideStatus").value,
+          author: document.getElementById("areaGuideAuthor").value.trim(),
+          heroImageName,
+          carouselImageNames,
+          updatedAt: new Date().toISOString().slice(0, 16).replace("T", " "),
+        };
+
+        if (existing) {
+          Object.assign(existing, payload);
+        } else {
+          areaGuides.unshift({ id: Date.now(), ...payload });
+        }
+
+        renderAreaGuides();
+        closeAreaGuideEditor();
+      }
+
+      // ─── Area guide CRUD helpers ──────────────────────────────────────────────
+      function getAreaGuideLevelLabel(level) {
+        return level === "area" ? "Area guide" : "City guide";
+      }
+
+      function getAreaGuideLocation(guide) {
+        if (guide.level === "city") {
+          return [guide.prefecture, guide.city].filter(Boolean).join(" / ");
+        }
+        return [guide.prefecture, guide.city, guide.area]
+          .filter(Boolean)
+          .join(" / ");
+      }
+
+      function renderAreaGuides() {
+        const body = document.getElementById("areaGuidesBody");
+        if (!body) return;
+
+        const search = (
+          document.getElementById("areaGuideSearchInput")?.value || ""
+        )
+          .trim()
+          .toLowerCase();
+        const levelFilter =
+          document.getElementById("areaGuideLevelFilter")?.value || "all";
+        const statusFilter =
+          document.getElementById("areaGuideStatusFilter")?.value || "all";
+
+        const filtered = areaGuides.filter((guide) => {
+          if (levelFilter !== "all" && guide.level !== levelFilter)
+            return false;
+          if (statusFilter !== "all" && guide.status !== statusFilter)
+            return false;
+          if (!search) return true;
+          const haystack = [
+            guide.title,
+            guide.prefecture,
+            guide.city,
+            guide.area,
+            guide.author,
+            guide.subtitle,
+            guide.description,
+            guide.introDescription,
+          ]
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(search);
+        });
+
+        if (!filtered.length) {
+          body.innerHTML =
+            '<tr><td colspan="6" class="empty-state">No area guides match the current filters.</td></tr>';
+          return;
+        }
+
+        body.innerHTML = filtered
+          .map(
+            (guide) => `
+              <tr>
+                <td>
+                  <div class="page-title">${guide.title}</div>
+                  <div class="slug">Updated ${guide.updatedAt}</div>
+                </td>
+                <td>
+                  <span class="badge ${guide.level === "city" ? "badge-category" : "badge-location"}">${getAreaGuideLevelLabel(guide.level)}</span>
+                </td>
+                <td>${getAreaGuideLocation(guide)}</td>
+                <td>
+                  <span class="badge ${guide.status === "published" ? "badge-status-published" : "badge-status-draft"}">${guide.status === "published" ? "Published" : "Draft"}</span>
+                </td>
+                <td>${guide.author || "-"}</td>
+                <td style="text-align: right">
+                  <button type="button" class="btn btn-ghost" onclick="${guide.level === "city" ? `openCityGuideEditor(${guide.id})` : `openAreaGuideEditor(${guide.id})`}">Edit</button>
+                  <button type="button" class="btn btn-ghost btn-danger" onclick="deleteAreaGuide(${guide.id})">Delete</button>
+                </td>
+              </tr>
+            `,
+          )
+          .join("");
+      }
+
+      function deleteAreaGuide(id) {
+        const guide = areaGuides.find((item) => item.id === id);
+        if (!guide) return;
+        if (!confirm(`Delete "${guide.title}"?`)) return;
+        areaGuides = areaGuides.filter((item) => item.id !== id);
+        renderAreaGuides();
+      }
+
+      function openFaqEditor() {
+        openModal("modal-faq-editor");
+      }
+
+      // ─── Location select event listeners ─────────────────────────────────────
+      ["cityGuidePrefecture", "cityGuideCity"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener("change", updateCityGuideLocationOptions);
+      });
+
+      ["areaGuidePrefecture", "areaGuideCity"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener("change", updateAreaGuideLocationOptions);
+      });
+
+      const blogContentBodyEl = document.getElementById("blogContentBody");
+      if (blogContentBodyEl) {
+        blogContentBodyEl.addEventListener("input", updateBlogVideoStatusFlag);
+      }
+
+      // ─── Init ─────────────────────────────────────────────────────────────────
+      loadChildPane("guides");
+
+      updateCityGuideLocationOptions();
+      updateAreaGuideLocationOptions();
+
+      const defaultInsightsTab = document.body.dataset.defaultInsightsTab;
+      if (defaultInsightsTab) {
+        const defaultTabButton = document.querySelector(
+          `#cms-pane-insights .cms-subtab[onclick*="switchInsightsSubTab('${defaultInsightsTab}'"]`,
+        );
+        if (defaultTabButton) {
+          switchInsightsSubTab(defaultInsightsTab, defaultTabButton);
+        }
+      }
+    </script>
+  </body>
+</html>

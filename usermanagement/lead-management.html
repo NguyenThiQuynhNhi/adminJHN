@@ -27,7 +27,7 @@
       }
 
       .sidebar {
-        width: 300px;
+        width: 340px;
         background: #fffaf2;
         border-radius: 12px;
         border: 1px solid #eadccd;
@@ -69,7 +69,7 @@
         border: 1px solid #ddcdb9;
       }
 
-      .new-group input,
+      #newGroupName,
       .new-group select {
         width: 100%;
         padding: 9px 12px;
@@ -85,13 +85,23 @@
         padding: 0;
         margin: 0 0 10px 0;
       }
+      .group-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
       .group-item {
-        padding: 11px 14px;
+        padding: 11px 12px;
         border-radius: 8px;
         margin-bottom: 4px;
         cursor: pointer;
         font-size: 13.5px;
         transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
       }
       .group-item:hover {
         background: #f0e6d8;
@@ -99,6 +109,46 @@
       .group-item.active {
         background: #3a6b3c;
         color: white;
+      }
+
+      .group-main {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .group-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+
+      .group-action-btn {
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        border: 1px solid #ddcdb9;
+        background: #fff;
+        color: #6a5641;
+        font-size: 12px;
+        line-height: 1;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .group-action-btn:hover {
+        border-color: #c9b39a;
+        background: #f7efe4;
+      }
+
+      .group-item.active .group-action-btn {
+        border-color: rgba(255, 255, 255, 0.7);
+        background: rgba(255, 255, 255, 0.15);
+        color: #ffffff;
       }
 
       .filters-row {
@@ -190,7 +240,6 @@
         <div class="card-title">Lead Management</div>
 
         <div class="new-group">
-          <input id="newGroupName" type="text" placeholder="Find Group name" />
           <div class="lead-type-tabs">
             <button
               type="button"
@@ -204,17 +253,22 @@
             </button>
           </div>
           <input id="newGroupType" type="hidden" value="end_user" />
-          <button
-            class="btn btn-primary"
-            id="createNewGroupBtn"
-            style="width: 100%"
-          >
-            + Create New Group
-          </button>
         </div>
 
         <div style="margin-top: 24px">
-          <div class="card-title" style="font-size: 15px">Existing Groups</div>
+          <div class="group-header">
+            <div class="card-title" style="font-size: 15px; width: fit-content">
+              Groups
+            </div>
+            <button
+              class="btn btn-primary"
+              id="createNewGroupBtn"
+              style="width: fit-content"
+            >
+              + New Group
+            </button>
+          </div>
+          <input id="newGroupName" type="text" placeholder="Find Group name" />
           <ul id="groupList" class="group-list"></ul>
         </div>
       </div>
@@ -259,8 +313,6 @@
           phone: "+84-90-123-4567",
           buyerStatus: "Investor",
           location: "Hanoi, Vietnam",
-          status: "Active",
-          lastActive: "2026-04-10",
           loginCount: 34,
           avgSessionMinutes: 9.4,
           savedSearchCount: 5,
@@ -277,8 +329,6 @@
           phone: "+84-91-234-5678",
           buyerStatus: "First-time buyer",
           location: "Ho Chi Minh City, Vietnam",
-          status: "Active",
-          lastActive: "2026-04-12",
           loginCount: 21,
           avgSessionMinutes: 14.1,
           savedSearchCount: 2,
@@ -295,8 +345,6 @@
           phone: "+82-10-3456-7890",
           buyerStatus: "Investor",
           location: "Seoul, South Korea",
-          status: "Suspended",
-          lastActive: "2026-02-01",
           loginCount: 12,
           avgSessionMinutes: 5.2,
           savedSearchCount: 1,
@@ -313,8 +361,6 @@
           phone: "+65-9123-4567",
           buyerStatus: "Repeat buyer",
           location: "Singapore",
-          status: "Active",
-          lastActive: "2026-03-10",
           loginCount: 3,
           avgSessionMinutes: 3.1,
           savedSearchCount: 0,
@@ -331,8 +377,6 @@
           phone: "+84-97-456-7890",
           buyerStatus: "Investor",
           location: "Da Nang, Vietnam",
-          status: "Active",
-          lastActive: "2026-04-13",
           loginCount: 87,
           avgSessionMinutes: 18.7,
           savedSearchCount: 12,
@@ -349,8 +393,6 @@
           phone: "+1-415-555-0123",
           buyerStatus: "First-time buyer",
           location: "Los Angeles, USA",
-          status: "Active",
-          lastActive: "2026-04-08",
           loginCount: 19,
           avgSessionMinutes: 7.9,
           savedSearchCount: 4,
@@ -500,10 +542,90 @@
         visibleGroups.forEach((group) => {
           const li = document.createElement("li");
           li.className = `group-item ${group.id === currentGroupId ? "active" : ""}`;
-          li.innerHTML = `${group.name} <span class="group-count">(${group.leadIds.length})</span>`;
+          li.innerHTML = `
+            <div class="group-main">
+              ${group.name} <span class="group-count">(${group.leadIds.length})</span>
+            </div>
+            <div class="group-actions">
+              <button type="button" class="group-action-btn" data-action="edit" data-group-id="${group.id}" title="Edit group">✎</button>
+              <button type="button" class="group-action-btn" data-action="delete" data-group-id="${group.id}" title="Delete group">🗑</button>
+            </div>
+          `;
           li.onclick = () => loadGroup(group.id);
           ul.appendChild(li);
         });
+
+        ul.querySelectorAll(".group-action-btn").forEach((btn) => {
+          btn.addEventListener("click", (event) => {
+            event.stopPropagation();
+            const action = btn.getAttribute("data-action");
+            const groupId = btn.getAttribute("data-group-id");
+            if (!groupId) return;
+            if (action === "edit") {
+              editGroupName(groupId);
+              return;
+            }
+            if (action === "delete") {
+              deleteGroup(groupId);
+            }
+          });
+        });
+      }
+
+      function editGroupName(groupId) {
+        const groups = getGroups();
+        const target = groups.find((g) => g.id === groupId);
+        if (!target) return;
+
+        const nextName = prompt("Edit group name:", target.name);
+        if (nextName === null) return;
+
+        const trimmed = nextName.trim();
+        if (!trimmed) {
+          alert("Group name cannot be empty.");
+          return;
+        }
+
+        target.name = trimmed;
+        saveGroups(groups);
+        renderGroupList();
+
+        if (currentGroupId === groupId) {
+          document.getElementById("currentGroupName").textContent = target.name;
+        }
+      }
+
+      function deleteGroup(groupId) {
+        const groups = getGroups();
+        const target = groups.find((g) => g.id === groupId);
+        if (!target) return;
+
+        const shouldDelete = confirm(`Delete group "${target.name}"?`);
+        if (!shouldDelete) return;
+
+        const nextGroups = groups.filter((g) => g.id !== groupId);
+        saveGroups(nextGroups);
+
+        if (currentGroupId === groupId) {
+          const replacement = nextGroups.find(
+            (g) => g.entityType === currentLeadType,
+          );
+          if (replacement) {
+            loadGroup(replacement.id);
+          } else {
+            currentGroupId = null;
+            renderGroupList();
+            document.getElementById("leadBody").innerHTML = "";
+            document.getElementById("tableHeader").innerHTML = "";
+            document.getElementById("emptyState").style.display = "block";
+            document.getElementById("currentGroupName").textContent =
+              "Select a group to view leads";
+            document.getElementById("groupInfo").textContent = "";
+          }
+          return;
+        }
+
+        renderGroupList();
       }
 
       function loadGroup(groupId) {
@@ -556,8 +678,6 @@
             <th>User</th>
             <th>Buyer status</th>
             <th>Nation</th>
-            <th>Status</th>
-            <th>Last active</th>
             <th>Logins</th>
             <th>Avg session (min)</th>
             <th>Saved searches</th>
@@ -572,8 +692,6 @@
             const email = l.email || "";
             const buyerStatus = l.buyerStatus || "-";
             const nation = extractCountry(l.location);
-            const status = l.status || "-";
-            const lastActive = l.lastActive || "-";
             const loginCount =
               typeof l.loginCount === "number" ? l.loginCount : "-";
             const avgSession =
@@ -597,8 +715,6 @@
             <td class="lead-name">${name}<br><small>${email}</small></td>
             <td>${buyerStatus}</td>
             <td>${nation}</td>
-            <td>${status}</td>
-            <td>${lastActive}</td>
             <td>${loginCount}</td>
             <td>${avgSession}</td>
             <td>${savedSearches}</td>
@@ -678,14 +794,6 @@
         if (type === "end_user") {
           container.innerHTML = `
             <div class="filters-row">
-              <div class="filter-item">
-                <label for="filterStatus">Status</label>
-                <select id="filterStatus">
-                  <option value="">All</option>
-                  <option value="Active">Active</option>
-                  <option value="Suspended">Suspended</option>
-                </select>
-              </div>
               <div class="filter-item">
                 <label for="filterBuyerStatus">Buyer status</label>
                 <select id="filterBuyerStatus">
@@ -797,14 +905,10 @@
           const nationEl = document.getElementById("filterNation");
           const alertsEl = document.getElementById("filterAlerts");
 
-          const status = statusEl ? statusEl.value : "";
           const buyerStatus = buyerStatusEl ? buyerStatusEl.value : "";
           const nation = nationEl ? nationEl.value.trim().toLowerCase() : "";
           const alerts = alertsEl ? alertsEl.value : "";
 
-          if (status) {
-            filtered = filtered.filter((l) => (l.status || "") === status);
-          }
           if (buyerStatus) {
             filtered = filtered.filter(
               (l) => (l.buyerStatus || "") === buyerStatus,
