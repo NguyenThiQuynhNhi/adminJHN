@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ad Performance — YUUSHI Admin</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  /* Standalone module: only one page is shown, so .page is always active */
+  body { padding: 20px 24px 32px; }
+  .module-shell { max-width: 1600px; }
+</style>
+</head>
+<body>
+<div class="module-shell">
+<div class="page-hdr">
+      <div><div class="page-title">Ad Performance</div><div class="page-sub">Banner Ads and Sponsored Search Slots · Detailed metrics</div></div>
+      <div class="ctrl-row">
+        <select class="ctrl"><option>Last 30 Days</option><option>Last 7 Days</option><option>Last 90 Days</option></select>
+        <select class="ctrl"><option>All Ad Types</option><option>Banner Ads</option><option>Sponsored Slots</option></select>
+        <select class="ctrl"><option>All Agents</option><option>Sakura Realty</option><option>Tokyo Prime</option></select>
+        <button class="btn btn-out" onclick="alert('Exporting ad performance... (demo)')"><i class="fas fa-download"></i> Export</button>
+      </div>
+    </div>
+
+    <div class="g4" style="margin-bottom:12px">
+      <div class="kcard c-blue"><div class="k-lbl">Total Impressions</div><div class="k-val">2.84<small>M</small></div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+18% <span class="vs">vs prev</span></div></div>
+      <div class="kcard"><div class="k-lbl">Total Clicks</div><div class="k-val">18,420</div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+12% <span class="vs">vs prev</span></div></div>
+      <div class="kcard c-green"><div class="k-lbl">Overall CTR</div><div class="k-val">0.65<small>%</small></div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+0.08% <span class="vs">vs prev</span></div></div>
+      <div class="kcard"><div class="k-lbl">Total Conversions</div><div class="k-val">5,210</div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+9% <span class="vs">Chat starts + Saves</span></div></div>
+    </div>
+    <div class="g4" style="margin-bottom:20px">
+      <div class="kcard"><div class="k-lbl">CVR</div><div class="k-val">28.3<small>%</small></div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+1.2% <span class="vs">vs prev</span></div></div>
+      <div class="kcard c-blue"><div class="k-lbl">Total Ad Spend</div><div class="k-val"><sup>¥</sup>18.6<small>M</small></div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+8% <span class="vs">vs prev</span></div></div>
+      <div class="kcard"><div class="k-lbl">Avg. CPC</div><div class="k-val"><sup>¥</sup>1,010</div><div class="k-delta dn"><i class="fas fa-arrow-down"></i>-¥40 <span class="vs">vs prev</span></div></div>
+      <div class="kcard"><div class="k-lbl">Avg. CPA</div><div class="k-val"><sup>¥</sup>3,570</div><div class="k-delta dn"><i class="fas fa-arrow-down"></i>-¥120 <span class="vs">vs prev</span></div></div>
+    </div>
+
+    <div class="sec-hdr">Banner Ad Analytics</div>
+    <div class="g2" style="margin-bottom:16px">
+      <div class="ccard">
+        <div class="c-title">IMP by Banner Slot</div><div class="c-sub">Impressions per placement · Current period</div>
+        <div style="height:180px;position:relative;"><canvas id="bannerImpChart"></canvas></div>
+      </div>
+      <div class="ccard">
+        <div class="c-title">CTR Heatmap by Hour × Day</div><div class="c-sub">Click-through rate — darker = higher CTR</div>
+        <div style="overflow-x:auto;"><div class="hm-wrap" id="hmAd"></div></div>
+        <div class="hm-legend"><span>Low CTR</span><div class="hm-ld" id="hmAdLg"></div><span>High CTR</span></div>
+      </div>
+    </div>
+
+    <div class="sec-hdr">Sponsored Search Slot Analytics</div>
+    <div class="g2" style="margin-bottom:16px">
+      <div class="ccard">
+        <div class="c-title">Sponsored vs. Organic CTR</div><div class="c-sub">By search result position</div>
+        <div style="height:180px;position:relative;"><canvas id="sponsoredVsOrganicChart"></canvas></div>
+        <div class="legend"><div class="l-item"><div class="l-dot" style="background:var(--gold)"></div>Sponsored</div><div class="l-item"><div class="l-dot" style="background:var(--muted)"></div>Organic</div></div>
+      </div>
+      <div class="ccard">
+        <div class="c-title">Conversion Funnel (Ad-Specific)</div><div class="c-sub">Impression → Chat Start</div>
+        <div style="height:180px;position:relative;"><canvas id="adFunnelChart"></canvas></div>
+        <div style="display:flex;justify-content:space-around;font-family:sans-serif;font-size:10px;color:var(--muted);margin-top:6px;">
+          <span>Impression<br><strong style="color:var(--text)">100%</strong></span>
+          <span>Click<br><strong style="color:var(--text)">0.65%</strong></span>
+          <span>Page View<br><strong style="color:var(--text)">0.58%</strong></span>
+          <span>Soft Conv.<br><strong style="color:var(--text)">0.28%</strong></span>
+          <span>Chat Start<br><strong style="color:var(--text)">0.18%</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="g2" style="margin-bottom:16px">
+      <div class="ccard">
+        <div class="c-title">CTR by Slot Type</div><div class="c-sub">Grouped bar — compare CTR across all banner slots</div>
+        <div style="height:180px;position:relative;"><canvas id="ctrBySlotChart"></canvas></div>
+      </div>
+      <div class="ccard">
+        <div class="c-title">Banner CTR Fatigue Indicator</div><div class="c-sub">CTR trend over time per slot — declining = creative fatigue</div>
+        <div style="height:180px;position:relative;"><canvas id="bannerFatigueChart"></canvas></div>
+        <div class="legend"><div class="l-item"><div class="l-dot" style="background:var(--blue)"></div>Top Page</div><div class="l-item"><div class="l-dot" style="background:var(--green)"></div>Insights</div><div class="l-item"><div class="l-dot" style="background:var(--gold)"></div>Area Guide</div></div>
+      </div>
+    </div>
+    <div class="g2" style="margin-bottom:16px">
+      <div class="ccard">
+        <div class="c-title">Spend vs. Chat Starts — Sponsored Slots</div><div class="c-sub">Scatter plot · X = Spend (¥K), Y = Chat starts · Bubble = slot rank</div>
+        <div style="height:200px;position:relative;"><canvas id="scatterSpendChat"></canvas></div>
+      </div>
+      <div class="ccard">
+        <div class="c-title">Viewability Rate by Slot</div><div class="c-sub">% impressions where banner was in viewport ≥1s</div>
+        <div style="height:160px;position:relative;"><canvas id="viewabilityChart"></canvas></div>
+        <div style="font-family:sans-serif;font-size:11px;color:var(--muted);margin-top:8px;">% impressions where banner was in viewport ≥1s.</div>
+      </div>
+    </div>
+    <div class="sec-hdr">Top Performing Banners</div>
+    <div class="ccard">
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead><tr><th>Slot / Creative</th><th>Agent</th><th class="num">IMP</th><th class="num">CL</th><th class="num">CTR</th><th class="num">CV</th><th class="num">CVR</th><th class="num">Spend (¥)</th><th class="num">CPA (¥)</th></tr></thead>
+          <tbody>
+            <tr><td class="bold">Homepage Banner — Top Page</td><td>Sakura Realty</td><td class="num">480,200</td><td class="num">2,880</td><td class="num">0.60%</td><td class="num">864</td><td class="num">30.0%</td><td class="num">150,000</td><td class="num">174</td></tr>
+            <tr><td class="bold">Insights Article Sidebar</td><td>Tokyo Prime</td><td class="num">210,400</td><td class="num">1,580</td><td class="num">0.75%</td><td class="num">410</td><td class="num">25.9%</td><td class="num">80,000</td><td class="num">195</td></tr>
+            <tr><td class="bold">Area Guide — Mid Article</td><td>Osaka Living</td><td class="num">124,000</td><td class="num">840</td><td class="num">0.68%</td><td class="num">210</td><td class="num">25.0%</td><td class="num">60,000</td><td class="num">286</td></tr>
+            <tr><td class="bold">Category Page — Apartment</td><td>Nagoya Estate</td><td class="num">98,400</td><td class="num">480</td><td class="num">0.49%</td><td class="num">96</td><td class="num">20.0%</td><td class="num">30,000</td><td class="num">313</td></tr>
+            <tr><td class="bold">Homepage Banner — Bottom</td><td>Fukuoka City Homes</td><td class="num">320,000</td><td class="num">960</td><td class="num">0.30%</td><td class="num">192</td><td class="num">20.0%</td><td class="num">55,000</td><td class="num">286</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+</div>
+
+<script src="_shared.js"></script>
+<script>
+// Per-tab init for adperf
+(function() {
+  new Chart(document.getElementById('bannerImpChart'),{type:'bar',data:{labels:['Top Page','Insights Sidebar','Area Guide','Category','Article Mid'],datasets:[{data:[480200,210400,124000,98400,75000],backgroundColor:C.blue+'cc',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:{grid:{color:'#f0ece6'},ticks:{callback:v=>v>=1000?Math.round(v/1000)+'K':v}},y:{grid:{display:false}}}}});
+    hmap('hmAd','hmAdLg',['#f5f0eb','#e8d5b0','#d4a84b','#b8860b','#8b6914']);
+    new Chart(document.getElementById('sponsoredVsOrganicChart'),{type:'bar',data:{labels:['Position 1','Position 2','Position 3'],datasets:[{label:'Sponsored',data:[5.92,4.81,3.64],backgroundColor:C.gold+'cc',borderRadius:4},{label:'Organic',data:[1.20,0.84,0.62],backgroundColor:C.muted+'66',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:{grid:{display:false}},y:{grid:{color:'#f0ece6'},ticks:{callback:v=>v+'%'}}}}});
+    new Chart(document.getElementById('adFunnelChart'),{type:'bar',data:{labels:['Impression','Click','Page View','Soft Conv.','Chat Start'],datasets:[{data:[100,0.65,0.58,0.28,0.18],backgroundColor:[C.blue,C.green,C.gold,C.orange,C.red].map(c=>c+'bb'),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`${c.raw}%`}}},scales:{x:{grid:{display:false}},y:{grid:{color:'#f0ece6'},ticks:{callback:v=>v+'%'},min:0,max:110}}}});
+    // ─ patch ─
+  // CTR by slot grouped bar
+    new Chart(document.getElementById('ctrBySlotChart'),{type:'bar',data:{
+      labels:['Top Page','Insights','Area Guide','Category','Bottom'],
+      datasets:[
+        {label:'CTR %',data:[0.60,0.75,0.68,0.49,0.30],backgroundColor:[C.blue,C.green,C.gold,C.orange,C.muted].map(c=>c+'cc'),borderRadius:4}
+      ]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`CTR: ${c.raw}%`}}},scales:{x:{grid:{display:false}},y:{grid:{color:'#f0ece6'},ticks:{callback:v=>v+'%'}}}}});
+    // Banner fatigue line
+    new Chart(document.getElementById('bannerFatigueChart'),{type:'line',data:{labels:L30,datasets:[
+      {label:'Top Page',data:rf(0.50,0.75),borderColor:C.blue,fill:false,tension:0.4,pointRadius:0,borderWidth:2},
+      {label:'Insights',data:rf(0.60,0.82),borderColor:C.green,fill:false,tension:0.4,pointRadius:0,borderWidth:2},
+      {label:'Area Guide',data:rf(0.45,0.70),borderColor:C.gold,fill:false,tension:0.4,pointRadius:0,borderWidth:2},
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:TT},scales:{x:{display:false},y:{grid:{color:'#f0ece6'},ticks:{callback:v=>v+'%'}}}}});
+    // Scatter: spend vs chat starts
+    new Chart(document.getElementById('scatterSpendChat'),{type:'scatter',data:{datasets:[
+      {label:'Pos 1 Slots',data:[{x:120,y:620},{x:95,y:480},{x:80,y:410},{x:60,y:310}],backgroundColor:C.gold+'bb',pointRadius:8},
+      {label:'Pos 2 Slots',data:[{x:90,y:380},{x:70,y:290},{x:55,y:240},{x:45,y:180}],backgroundColor:C.blue+'bb',pointRadius:8},
+      {label:'Pos 3 Slots',data:[{x:70,y:240},{x:55,y:180},{x:40,y:140},{x:30,y:110}],backgroundColor:C.green+'bb',pointRadius:8},
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}},tooltip:{...TT,callbacks:{label:ctx=>`Spend: ¥${ctx.raw.x}K · Chats: ${ctx.raw.y}`}}},scales:{x:{grid:{color:'#f0ece6'},title:{display:true,text:'Ad Spend (¥K)',font:{size:10}}},y:{grid:{color:'#f0ece6'},title:{display:true,text:'Chat Starts',font:{size:10}}}}}});
+    // Viewability rate bar
+    new Chart(document.getElementById('viewabilityChart'),{type:'bar',data:{
+      labels:['Top Page','Insights','Area Guide','Category','Bottom'],
+      datasets:[{data:[72,68,64,58,42],backgroundColor:v=>v.raw>=50?C.green+'cc':C.red+'cc',borderRadius:4}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`${c.raw}% viewability`}}},scales:{x:{grid:{display:false}},y:{grid:{color:'#f0ece6'},ticks:{callback:v=>v+'%'},max:100}}}});
+})();
+</script>
+</body>
+</html>

@@ -169,6 +169,36 @@
             <option value="Nagoya">Nagoya</option>
             <option value="Fukuoka">Fukuoka</option>
           </select>
+          <select id="periodFilter" title="Time period">
+            <option value="">All time</option>
+            <option value="today">Today</option>
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+            <option value="90d">Last 90 days</option>
+          </select>
+          <select id="activityFilter" title="Activity level (by total)">
+            <option value="">All activity levels</option>
+            <option value="high">High (&gt; 100)</option>
+            <option value="medium">Medium (50–100)</option>
+            <option value="low">Low (&lt; 50)</option>
+          </select>
+          <select id="channelFilter" title="Primary channel">
+            <option value="">All channels</option>
+            <option value="calls">Calls-led</option>
+            <option value="emails">Emails-led</option>
+            <option value="sms">SMS-led</option>
+            <option value="viewings">Viewings-led</option>
+          </select>
+          <select id="sortBy" title="Sort by">
+            <option value="total-desc">Sort: Total ↓</option>
+            <option value="total-asc">Sort: Total ↑</option>
+            <option value="viewings-desc">Sort: Viewings ↓</option>
+            <option value="name-asc">Sort: Name A→Z</option>
+            <option value="office-asc">Sort: Office A→Z</option>
+          </select>
+          <button type="button" class="btn btn-ghost" id="resetFiltersBtn">
+            Reset
+          </button>
         </div>
 
         <table>
@@ -244,11 +274,29 @@
       let filters = {
         search: "",
         office: "",
+        period: "",
+        activity: "",
+        channel: "",
+        sortBy: "total-desc",
       };
+
+      function totalOf(a) {
+        return a.viewings + a.tasks + a.jobs + a.calls + a.emails + a.sms;
+      }
+
+      function primaryChannel(a) {
+        const map = {
+          calls: a.calls,
+          emails: a.emails,
+          sms: a.sms,
+          viewings: a.viewings,
+        };
+        return Object.entries(map).sort((x, y) => y[1] - x[1])[0][0];
+      }
 
       function applyFilters() {
         const search = filters.search.toLowerCase();
-        return agents.filter((a) => {
+        let result = agents.filter((a) => {
           if (
             search &&
             !(
@@ -260,8 +308,30 @@
             return false;
           }
           if (filters.office && a.office !== filters.office) return false;
+          if (filters.activity) {
+            const t = totalOf(a);
+            if (filters.activity === "high" && t <= 100) return false;
+            if (filters.activity === "medium" && (t < 50 || t > 100))
+              return false;
+            if (filters.activity === "low" && t >= 50) return false;
+          }
+          if (filters.channel && primaryChannel(a) !== filters.channel)
+            return false;
+          // period filter — demo data is static; left as no-op (would scope by date range in real data)
           return true;
         });
+        // Sort
+        const sorters = {
+          "total-desc": (x, y) => totalOf(y) - totalOf(x),
+          "total-asc": (x, y) => totalOf(x) - totalOf(y),
+          "viewings-desc": (x, y) => y.viewings - x.viewings,
+          "name-asc": (x, y) => x.name.localeCompare(y.name),
+          "office-asc": (x, y) => x.office.localeCompare(y.office),
+        };
+        result = [...result].sort(
+          sorters[filters.sortBy] || sorters["total-desc"],
+        );
+        return result;
       }
 
       function renderTable() {
@@ -339,18 +409,40 @@
       }
 
       document.addEventListener("DOMContentLoaded", () => {
+        const bind = (id, prop, evt = "change") => {
+          const el = document.getElementById(id);
+          if (el)
+            el.addEventListener(evt, (e) => {
+              filters[prop] = e.target.value;
+              renderTable();
+            });
+        };
+        bind("searchInput", "search", "input");
+        bind("officeFilter", "office");
+        bind("periodFilter", "period");
+        bind("activityFilter", "activity");
+        bind("channelFilter", "channel");
+        bind("sortBy", "sortBy");
+
         document
-          .getElementById("searchInput")
-          .addEventListener("input", (e) => {
-            filters.search = e.target.value;
+          .getElementById("resetFiltersBtn")
+          .addEventListener("click", () => {
+            filters = {
+              search: "",
+              office: "",
+              period: "",
+              activity: "",
+              channel: "",
+              sortBy: "total-desc",
+            };
+            document.getElementById("searchInput").value = "";
+            ["officeFilter", "periodFilter", "activityFilter", "channelFilter"].forEach(
+              (id) => (document.getElementById(id).value = ""),
+            );
+            document.getElementById("sortBy").value = "total-desc";
             renderTable();
           });
-        document
-          .getElementById("officeFilter")
-          .addEventListener("change", (e) => {
-            filters.office = e.target.value;
-            renderTable();
-          });
+
         document
           .getElementById("exportBtn")
           .addEventListener("click", exportCsv);

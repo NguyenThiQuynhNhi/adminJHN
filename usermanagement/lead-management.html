@@ -576,23 +576,22 @@
         const groups = getGroups();
         const target = groups.find((g) => g.id === groupId);
         if (!target) return;
-
-        const nextName = prompt("Edit group name:", target.name);
-        if (nextName === null) return;
-
-        const trimmed = nextName.trim();
-        if (!trimmed) {
-          alert("Group name cannot be empty.");
-          return;
-        }
-
-        target.name = trimmed;
-        saveGroups(groups);
-        renderGroupList();
-
-        if (currentGroupId === groupId) {
-          document.getElementById("currentGroupName").textContent = target.name;
-        }
+        openRenameModal(target.name, (newName) => {
+          const trimmed = newName.trim();
+          if (!trimmed) {
+            Toast.err("Group name cannot be empty.");
+            return false;
+          }
+          target.name = trimmed;
+          saveGroups(groups);
+          renderGroupList();
+          if (currentGroupId === groupId) {
+            document.getElementById("currentGroupName").textContent =
+              target.name;
+          }
+          Toast.ok("Group renamed");
+          return true;
+        });
       }
 
       function deleteGroup(groupId) {
@@ -600,8 +599,21 @@
         const target = groups.find((g) => g.id === groupId);
         if (!target) return;
 
-        const shouldDelete = confirm(`Delete group "${target.name}"?`);
-        if (!shouldDelete) return;
+        UX.confirm({
+          title: "Delete group?",
+          message: `Delete group "${target.name}"? This cannot be undone.`,
+          okLabel: "Delete",
+          danger: true,
+          onConfirm() {
+            performDeleteGroup(groupId);
+          },
+        });
+      }
+
+      function performDeleteGroup(groupId) {
+        const groups = getGroups();
+        const target = groups.find((g) => g.id === groupId);
+        if (!target) return;
 
         const nextGroups = groups.filter((g) => g.id !== groupId);
         saveGroups(nextGroups);
@@ -795,6 +807,10 @@
           container.innerHTML = `
             <div class="filters-row">
               <div class="filter-item">
+                <label for="filterSearch">Search</label>
+                <input id="filterSearch" type="text" placeholder="name or email" />
+              </div>
+              <div class="filter-item">
                 <label for="filterBuyerStatus">Buyer status</label>
                 <select id="filterBuyerStatus">
                   <option value="">All</option>
@@ -819,6 +835,44 @@
                   <option value="none">No alerts</option>
                 </select>
               </div>
+              <div class="filter-item">
+                <label for="filterSavedProps">Saved properties</label>
+                <select id="filterSavedProps">
+                  <option value="">All</option>
+                  <option value="any">≥ 1</option>
+                  <option value="5+">≥ 5</option>
+                  <option value="10+">≥ 10</option>
+                  <option value="none">None</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label for="filterAppraisals">Appraisals</label>
+                <select id="filterAppraisals">
+                  <option value="">All</option>
+                  <option value="any">Submitted (≥ 1)</option>
+                  <option value="none">None submitted</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label for="filterActivityLevel">Activity level</label>
+                <select id="filterActivityLevel">
+                  <option value="">All</option>
+                  <option value="high">High (logins ≥ 20)</option>
+                  <option value="medium">Medium (5–19)</option>
+                  <option value="low">Low (&lt; 5)</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label for="filterSortBy">Sort by</label>
+                <select id="filterSortBy">
+                  <option value="">Default</option>
+                  <option value="logins-desc">Logins ↓</option>
+                  <option value="session-desc">Avg session ↓</option>
+                  <option value="saved-desc">Saved properties ↓</option>
+                  <option value="appraisals-desc">Appraisals ↓</option>
+                  <option value="name-asc">Name A→Z</option>
+                </select>
+              </div>
               <div class="filter-actions">
                 <button class="btn btn-secondary" id="resetFiltersBtn">
                   Reset
@@ -829,6 +883,10 @@
         } else {
           container.innerHTML = `
             <div class="filters-row">
+              <div class="filter-item">
+                <label for="filterSearch">Search</label>
+                <input id="filterSearch" type="text" placeholder="agency name" />
+              </div>
               <div class="filter-item">
                 <label for="filterBadge">Badge</label>
                 <select id="filterBadge">
@@ -863,6 +921,45 @@
                   max="5"
                   placeholder="e.g. 4.5"
                 />
+              </div>
+              <div class="filter-item">
+                <label for="filterMinSales">Min sales (12m)</label>
+                <input
+                  id="filterMinSales"
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 30"
+                />
+              </div>
+              <div class="filter-item">
+                <label for="filterMinListings">Min active listings</label>
+                <input
+                  id="filterMinListings"
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 25"
+                />
+              </div>
+              <div class="filter-item">
+                <label for="filterEstablishedYear">Established by</label>
+                <select id="filterEstablishedYear">
+                  <option value="">Any</option>
+                  <option value="before-2000">Before 2000</option>
+                  <option value="2000-2010">2000 – 2010</option>
+                  <option value="2010-2020">2010 – 2020</option>
+                  <option value="2020+">2020 or newer</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label for="filterSortBy">Sort by</label>
+                <select id="filterSortBy">
+                  <option value="">Default</option>
+                  <option value="rating-desc">Rating ↓</option>
+                  <option value="sales-desc">Sales (12m) ↓</option>
+                  <option value="listings-desc">Active listings ↓</option>
+                  <option value="reviews-desc">Reviews ↓</option>
+                  <option value="agency-asc">Agency A→Z</option>
+                </select>
               </div>
               <div class="filter-actions">
                 <button class="btn btn-secondary" id="resetFiltersBtn">
@@ -899,15 +996,29 @@
       function applyFiltersAndRender() {
         let filtered = Array.isArray(currentLeads) ? [...currentLeads] : [];
 
+        const searchEl = document.getElementById("filterSearch");
+        const search = searchEl ? searchEl.value.trim().toLowerCase() : "";
+        if (search) {
+          filtered = filtered.filter((l) => {
+            const hay = `${l.name || ""} ${l.email || ""}`.toLowerCase();
+            return hay.includes(search);
+          });
+        }
+
         if (currentLeadType === "end_user") {
-          const statusEl = document.getElementById("filterStatus");
           const buyerStatusEl = document.getElementById("filterBuyerStatus");
           const nationEl = document.getElementById("filterNation");
           const alertsEl = document.getElementById("filterAlerts");
+          const savedEl = document.getElementById("filterSavedProps");
+          const apprEl = document.getElementById("filterAppraisals");
+          const activityEl = document.getElementById("filterActivityLevel");
 
           const buyerStatus = buyerStatusEl ? buyerStatusEl.value : "";
           const nation = nationEl ? nationEl.value.trim().toLowerCase() : "";
           const alerts = alertsEl ? alertsEl.value : "";
+          const saved = savedEl ? savedEl.value : "";
+          const appr = apprEl ? apprEl.value : "";
+          const activity = activityEl ? activityEl.value : "";
 
           if (buyerStatus) {
             filtered = filtered.filter(
@@ -929,16 +1040,51 @@
               (l) => !Array.isArray(l.alerts) || l.alerts.length === 0,
             );
           }
+          if (saved) {
+            filtered = filtered.filter((l) => {
+              const n = Number(l.savedPropertyCount) || 0;
+              if (saved === "any") return n >= 1;
+              if (saved === "5+") return n >= 5;
+              if (saved === "10+") return n >= 10;
+              if (saved === "none") return n === 0;
+              return true;
+            });
+          }
+          if (appr) {
+            filtered = filtered.filter((l) => {
+              const n = Number(l.appraisalFormCount) || 0;
+              if (appr === "any") return n >= 1;
+              if (appr === "none") return n === 0;
+              return true;
+            });
+          }
+          if (activity) {
+            filtered = filtered.filter((l) => {
+              const n = Number(l.loginCount) || 0;
+              if (activity === "high") return n >= 20;
+              if (activity === "medium") return n >= 5 && n < 20;
+              if (activity === "low") return n < 5;
+              return true;
+            });
+          }
         } else {
           const badgeEl = document.getElementById("filterBadge");
           const planEl = document.getElementById("filterPlan");
           const cityEl = document.getElementById("filterCity");
           const minRatingEl = document.getElementById("filterMinRating");
+          const minSalesEl = document.getElementById("filterMinSales");
+          const minListingsEl = document.getElementById("filterMinListings");
+          const estEl = document.getElementById("filterEstablishedYear");
 
           const badge = badgeEl ? badgeEl.value : "";
           const plan = planEl ? planEl.value : "";
           const city = cityEl ? cityEl.value.trim().toLowerCase() : "";
           const minRating = minRatingEl ? parseFloat(minRatingEl.value) : NaN;
+          const minSales = minSalesEl ? parseInt(minSalesEl.value, 10) : NaN;
+          const minListings = minListingsEl
+            ? parseInt(minListingsEl.value, 10)
+            : NaN;
+          const est = estEl ? estEl.value : "";
 
           if (badge) {
             filtered = filtered.filter((l) => (l.badge || "") === badge);
@@ -961,6 +1107,63 @@
               return r >= minRating;
             });
           }
+          if (!isNaN(minSales)) {
+            filtered = filtered.filter(
+              (l) => (Number(l.salesLast12Months) || 0) >= minSales,
+            );
+          }
+          if (!isNaN(minListings)) {
+            filtered = filtered.filter(
+              (l) => (Number(l.activeListings) || 0) >= minListings,
+            );
+          }
+          if (est) {
+            filtered = filtered.filter((l) => {
+              const y = parseInt(
+                (l.establishedDate || l.createdDate || "").slice(0, 4),
+                10,
+              );
+              if (isNaN(y)) return false;
+              if (est === "before-2000") return y < 2000;
+              if (est === "2000-2010") return y >= 2000 && y <= 2010;
+              if (est === "2010-2020") return y >= 2010 && y <= 2020;
+              if (est === "2020+") return y >= 2020;
+              return true;
+            });
+          }
+        }
+
+        const sortByEl = document.getElementById("filterSortBy");
+        const sortBy = sortByEl ? sortByEl.value : "";
+        if (sortBy) {
+          const sorters = {
+            "logins-desc": (a, b) =>
+              (Number(b.loginCount) || 0) - (Number(a.loginCount) || 0),
+            "session-desc": (a, b) =>
+              (Number(b.avgSessionMinutes) || 0) -
+              (Number(a.avgSessionMinutes) || 0),
+            "saved-desc": (a, b) =>
+              (Number(b.savedPropertyCount) || 0) -
+              (Number(a.savedPropertyCount) || 0),
+            "appraisals-desc": (a, b) =>
+              (Number(b.appraisalFormCount) || 0) -
+              (Number(a.appraisalFormCount) || 0),
+            "name-asc": (a, b) =>
+              (a.name || "").localeCompare(b.name || ""),
+            "rating-desc": (a, b) =>
+              (Number(b.averageRating) || 0) - (Number(a.averageRating) || 0),
+            "sales-desc": (a, b) =>
+              (Number(b.salesLast12Months) || 0) -
+              (Number(a.salesLast12Months) || 0),
+            "listings-desc": (a, b) =>
+              (Number(b.activeListings) || 0) -
+              (Number(a.activeListings) || 0),
+            "reviews-desc": (a, b) =>
+              (Number(b.totalReviews) || 0) - (Number(a.totalReviews) || 0),
+            "agency-asc": (a, b) =>
+              (a.name || "").localeCompare(b.name || ""),
+          };
+          if (sorters[sortBy]) filtered = [...filtered].sort(sorters[sortBy]);
         }
 
         renderLeadTable(filtered, currentLeadType);
@@ -970,13 +1173,17 @@
       document
         .getElementById("createNewGroupBtn")
         .addEventListener("click", () => {
-          const name = document.getElementById("newGroupName").value.trim();
+          const nameInput = document.getElementById("newGroupName");
+          const name = nameInput.value.trim();
           const type = document.getElementById("newGroupType").value;
 
           if (!name) {
-            alert("Please enter a group name!");
+            nameInput.classList.add("ux-invalid");
+            nameInput.focus();
+            Toast.err("Please enter a group name.");
             return;
           }
+          nameInput.classList.remove("ux-invalid");
 
           const groups = getGroups();
           const newGroup = {
@@ -990,12 +1197,81 @@
           groups.push(newGroup);
           saveGroups(groups);
 
-          document.getElementById("newGroupName").value = "";
+          nameInput.value = "";
           renderGroupList();
           loadGroup(newGroup.id);
 
-          alert(`Group "${name}" created successfully!`);
+          Toast.ok(`Group "${name}" created`);
         });
+
+      // ──────────── Rename modal (replaces prompt) ────────────
+      (function setupRenameModal() {
+        const modal = document.createElement("div");
+        modal.className = "ux-modal";
+        modal.id = "groupRenameModal";
+        modal.setAttribute("role", "dialog");
+        modal.setAttribute("aria-modal", "true");
+        modal.innerHTML = `
+          <div class="ux-modal-box">
+            <h3>Rename group</h3>
+            <div style="margin-bottom:14px">
+              <label class="req" style="display:block;font-size:11px;color:#7c6a55;margin-bottom:4px">Group name</label>
+              <input id="renameInput" type="text" style="width:100%;padding:7px 10px;border:1px solid #ddcdb9;border-radius:8px;font-size:13px;font-family:inherit;background:#fff" />
+              <span class="ux-field-error" id="renameError" style="display:none">Group name cannot be empty.</span>
+            </div>
+            <div class="ux-modal-actions">
+              <button type="button" class="ux-btn" id="renameCancel">Cancel</button>
+              <button type="button" class="ux-btn primary" id="renameSave">Save</button>
+            </div>
+          </div>`;
+        document.body.appendChild(modal);
+
+        const input = modal.querySelector("#renameInput");
+        const err = modal.querySelector("#renameError");
+        const cancelBtn = modal.querySelector("#renameCancel");
+        const saveBtn = modal.querySelector("#renameSave");
+        let _cb = null;
+
+        function close() {
+          modal.classList.remove("open");
+          _cb = null;
+        }
+        cancelBtn.addEventListener("click", close);
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal) close();
+        });
+        function trySave() {
+          const v = input.value;
+          if (!_cb) return close();
+          const ok = _cb(v);
+          if (ok !== false) close();
+          else {
+            err.style.display = "block";
+            input.classList.add("ux-invalid");
+          }
+        }
+        saveBtn.addEventListener("click", trySave);
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") trySave();
+          if (e.key === "Escape") close();
+        });
+        input.addEventListener("input", () => {
+          err.style.display = "none";
+          input.classList.remove("ux-invalid");
+        });
+
+        window.openRenameModal = function (currentValue, cb) {
+          input.value = currentValue || "";
+          err.style.display = "none";
+          input.classList.remove("ux-invalid");
+          _cb = cb;
+          modal.classList.add("open");
+          setTimeout(() => {
+            input.focus();
+            input.select();
+          }, 30);
+        };
+      })();
 
       // Initialize
       document.addEventListener("DOMContentLoaded", () => {
@@ -1054,5 +1330,932 @@
         }
       });
     </script>
+  <!-- ─────── UX KIT (toast · confirm · focus trap · dirty guard) ─────── -->
+<style id="uxKitStyle">
+  .ux-toast-wrap{position:fixed;right:18px;bottom:18px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+  .ux-toast{background:#fff;border:1px solid #e5d9c0;border-left:4px solid #c4a25f;border-radius:8px;padding:10px 14px;min-width:240px;max-width:380px;box-shadow:0 4px 16px rgba(0,0,0,.12);font-size:13px;color:#2c1810;display:flex;align-items:flex-start;gap:8px;animation:ux-slide .22s ease;pointer-events:auto}
+  .ux-toast.ok{border-left-color:#2d6a4f}
+  .ux-toast.err{border-left-color:#c41e3a}
+  .ux-toast.info{border-left-color:#1d4e89}
+  .ux-toast .x{margin-left:auto;cursor:pointer;color:#9d8777;background:none;border:none;font-size:14px;padding:0 4px;font-family:inherit}
+  .ux-toast .x:hover{color:#2c1810}
+  @keyframes ux-slide{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+
+  .ux-modal{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35)}
+  .ux-modal.open{display:flex}
+  .ux-modal-box{background:#fff;border-radius:12px;padding:22px 24px;width:420px;max-width:90vw;box-shadow:0 10px 32px rgba(0,0,0,.22)}
+  .ux-modal-box h3{font-size:15px;font-weight:700;color:#2c1810;margin:0 0 8px}
+  .ux-modal-box p{font-size:13px;color:#6b5c4e;line-height:1.5;margin:0 0 18px;white-space:pre-line}
+  .ux-modal-actions{display:flex;gap:8px;justify-content:flex-end}
+  .ux-btn{padding:7px 16px;border-radius:6px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500;border:1.5px solid #e5d9c0;background:#fff;color:#2c1810}
+  .ux-btn:hover{background:#fdfaf6}
+  .ux-btn.primary{background:#c4a25f;border-color:#c4a25f;color:#fff}
+  .ux-btn.primary:hover{background:#b08d4a}
+  .ux-btn.danger{background:#c41e3a;border-color:#c41e3a;color:#fff}
+  .ux-btn.danger:hover{background:#a51730}
+
+  /* Required-field marker */
+  .ux-req::after, label.req::after, .req::after{content:" *";color:#c41e3a;font-weight:700}
+
+  /* Form section heading */
+  .ux-form-section{margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid #e5d9c0;font-size:11px;font-weight:700;color:#6b5c4e;text-transform:uppercase;letter-spacing:.5px}
+  .ux-form-section:first-child{margin-top:4px}
+
+  /* Inline field validation */
+  .ux-field-error{font-size:11px;color:#c41e3a;margin-top:2px;display:block}
+  .ux-invalid, input.ux-invalid, textarea.ux-invalid, select.ux-invalid{border-color:#c41e3a !important;box-shadow:0 0 0 2px rgba(196,30,58,.12)}
+
+  /* Dirty indicator pill */
+  .ux-dirty-pill{display:none;background:#fff3cd;color:#856404;font-size:11px;font-weight:600;padding:3px 10px;border-radius:10px;margin-left:8px;vertical-align:middle}
+  .ux-dirty .ux-dirty-pill{display:inline-block}
+</style>
+
+<div class="ux-toast-wrap" id="uxToastWrap" role="status" aria-live="polite"></div>
+<div class="ux-modal" id="uxConfirmModal" role="dialog" aria-modal="true" aria-labelledby="uxConfirmTitle">
+  <div class="ux-modal-box">
+    <h3 id="uxConfirmTitle">Confirm</h3>
+    <p id="uxConfirmMsg"></p>
+    <div class="ux-modal-actions">
+      <button type="button" class="ux-btn" id="uxConfirmCancel">Cancel</button>
+      <button type="button" class="ux-btn primary" id="uxConfirmOk">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  if (window.UX) return; // idempotent
+  const wrap = document.getElementById('uxToastWrap');
+  const modal = document.getElementById('uxConfirmModal');
+  const titleEl = document.getElementById('uxConfirmTitle');
+  const msgEl = document.getElementById('uxConfirmMsg');
+  const okBtn = document.getElementById('uxConfirmOk');
+  const cancelBtn = document.getElementById('uxConfirmCancel');
+
+  // ──── Toast ────────────────────────────────────────────────────
+  function toast(msg, type){
+    if(!wrap) return;
+    const el = document.createElement('div');
+    el.className = 'ux-toast ' + (type || 'info');
+    const span = document.createElement('span');
+    span.textContent = msg || '';
+    const x = document.createElement('button');
+    x.className = 'x'; x.type = 'button'; x.setAttribute('aria-label','Dismiss');
+    x.textContent = '×';
+    x.addEventListener('click', () => el.remove());
+    el.appendChild(span); el.appendChild(x);
+    wrap.appendChild(el);
+    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 220); }, 3800);
+  }
+  window.Toast = {
+    show: toast,
+    ok:   (m) => toast(m, 'ok'),
+    err:  (m) => toast(m, 'err'),
+    info: (m) => toast(m, 'info'),
+  };
+
+  // ──── Confirm modal ───────────────────────────────────────────
+  let _onOk = null;
+  let _lastFocus = null;
+  function closeConfirm(){
+    modal.classList.remove('open');
+    _onOk = null;
+    if(_lastFocus && _lastFocus.focus) try { _lastFocus.focus(); } catch(e){}
+  }
+  okBtn.addEventListener('click', () => { const cb = _onOk; closeConfirm(); if(cb) cb(); });
+  cancelBtn.addEventListener('click', closeConfirm);
+  modal.addEventListener('click', (e) => { if(e.target === modal) closeConfirm(); });
+
+  function openConfirm(opts){
+    titleEl.textContent  = opts.title   || 'Confirm';
+    msgEl.textContent    = opts.message || 'Are you sure?';
+    okBtn.textContent    = opts.okLabel || 'Confirm';
+    cancelBtn.textContent= opts.cancelLabel || 'Cancel';
+    okBtn.className = 'ux-btn ' + (opts.danger ? 'danger' : 'primary');
+    _onOk = typeof opts.onConfirm === 'function' ? opts.onConfirm : null;
+    _lastFocus = document.activeElement;
+    modal.classList.add('open');
+    setTimeout(() => okBtn.focus(), 40);
+  }
+
+  window.UX = {
+    confirm: openConfirm,
+    toast,
+    // Run action only after confirming if dirty
+    guard(action){
+      if(!window.UX_dirty){ if(typeof action === 'function') action(); return; }
+      openConfirm({
+        title: 'Discard unsaved changes?',
+        message: 'You have edits that have not been saved. Leave anyway?',
+        okLabel: 'Discard',
+        danger: true,
+        onConfirm(){ window.UX_dirty = false; if(typeof action === 'function') action(); }
+      });
+    },
+    markClean(){ window.UX_dirty = false; document.body.classList.remove('ux-dirty'); },
+    markDirty(){ window.UX_dirty = true;  document.body.classList.add('ux-dirty'); },
+  };
+
+  // ──── Esc closes any open modal (built-in + page modals) ──────
+  document.addEventListener('keydown', (e) => {
+    if(e.key !== 'Escape') return;
+    if(modal.classList.contains('open')){ closeConfirm(); return; }
+    document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(m => {
+      const visible = getComputedStyle(m).display !== 'none' || m.classList.contains('show') || m.classList.contains('open');
+      if(!visible) return;
+      m.classList.remove('open','show','active');
+      m.style.display = 'none';
+    });
+  });
+
+  // ──── Backdrop click closes existing page modals ──────────────
+  document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(m => {
+    if(m.__uxBound) return; m.__uxBound = true;
+    m.addEventListener('click', (e) => {
+      if(e.target !== m) return;
+      m.classList.remove('open','show','active');
+      m.style.display = 'none';
+    });
+  });
+
+  // ──── Auto-track dirty on any [data-track-dirty] container ────
+  document.addEventListener('input', (e) => {
+    if(e.target.closest('[data-track-dirty]')) UX.markDirty();
+  });
+  document.addEventListener('change', (e) => {
+    if(e.target.closest('[data-track-dirty]')) UX.markDirty();
+  });
+  window.addEventListener('beforeunload', (e) => {
+    if(window.UX_dirty){ e.preventDefault(); e.returnValue = ''; }
+  });
+
+  // ──── Inline validation helper ────────────────────────────────
+  window.UX.validate = function(form){
+    let firstInvalid = null;
+    form.querySelectorAll('.ux-field-error').forEach(n => n.remove());
+    form.querySelectorAll('.ux-invalid').forEach(n => n.classList.remove('ux-invalid'));
+    form.querySelectorAll('[required]').forEach(field => {
+      const v = (field.value || '').trim();
+      let bad = !v;
+      if(!bad && field.type === 'email'){
+        bad = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      }
+      if(bad){
+        field.classList.add('ux-invalid');
+        const note = document.createElement('span');
+        note.className = 'ux-field-error';
+        note.textContent = field.dataset.errorMsg ||
+          (field.type === 'email' ? 'Please enter a valid email.' : 'This field is required.');
+        if(field.parentNode) field.parentNode.insertBefore(note, field.nextSibling);
+        if(!firstInvalid) firstInvalid = field;
+      }
+    });
+    if(firstInvalid){ firstInvalid.focus(); return false; }
+    return true;
+  };
+})();
+</script>
+<!-- ─────── END UX KIT ─────── -->
+
+  <!-- ─────── SYSTEM VISUAL POLISH (CRUD forms) ─────── -->
+<style id="uxVisualPolish">
+  /* ========== Inputs & selects ========== */
+  body .card input[type="text"],
+  body .card input[type="email"],
+  body .card input[type="number"],
+  body .card input[type="tel"],
+  body .card input[type="url"],
+  body .card input[type="date"],
+  body .card input[type="time"],
+  body .card input[type="password"],
+  body .card select,
+  body .card textarea,
+  body .modal input[type="text"],
+  body .modal input[type="email"],
+  body .modal input[type="password"],
+  body .modal select,
+  body .modal textarea,
+  body .field-grid input,
+  body .field-grid select,
+  body .field-row input,
+  body .field-row select,
+  body .field-row textarea {
+    padding: 9px 12px !important;
+    border-radius: 8px !important;
+    border: 1px solid #ddcdb9 !important;
+    background: #fff !important;
+    font-size: 13px !important;
+    color: #2c1810 !important;
+    font-family: inherit !important;
+    transition: border-color .15s, box-shadow .15s, background .15s;
+    line-height: 1.4;
+  }
+  body .card input:hover:not(:disabled):not([readonly]),
+  body .card select:hover:not(:disabled),
+  body .card textarea:hover:not(:disabled):not([readonly]),
+  body .modal input:hover:not(:disabled):not([readonly]),
+  body .modal select:hover:not(:disabled),
+  body .modal textarea:hover:not(:disabled):not([readonly]) {
+    border-color: #c9b079 !important;
+  }
+  body .card input:focus,
+  body .card select:focus,
+  body .card textarea:focus,
+  body .modal input:focus,
+  body .modal select:focus,
+  body .modal textarea:focus {
+    outline: none !important;
+    border-color: #c4a25f !important;
+    box-shadow: 0 0 0 3px rgba(196, 162, 95, 0.18) !important;
+    background: #fff !important;
+  }
+  body input[readonly],
+  body input:disabled,
+  body select:disabled,
+  body textarea:disabled,
+  body textarea[readonly] {
+    background: #f7f0e0 !important;
+    color: #7c6a55 !important;
+    cursor: not-allowed !important;
+    border-color: #e8dcc2 !important;
+  }
+
+  /* ========== Labels ========== */
+  body .field-grid > div > label,
+  body .field-grid label,
+  body .field-row > label,
+  body .modal-field > label,
+  body .detail-field-label {
+    font-size: 11.5px !important;
+    color: #6b5c4e !important;
+    font-weight: 600 !important;
+    margin-bottom: 5px !important;
+    display: block;
+    letter-spacing: 0.01em;
+  }
+
+  /* ========== Detail sections (turn flat dividers into sub-cards) ========== */
+  body .detail-section,
+  body .detail-block {
+    background: #fff !important;
+    border: 1px solid #eadccd !important;
+    border-radius: 10px !important;
+    padding: 18px 20px !important;
+    margin-bottom: 14px !important;
+    box-shadow: 0 1px 2px rgba(60, 42, 15, 0.03);
+    position: relative;
+  }
+
+  /* Section heading with gold accent bar */
+  body .detail-section > .detail-title,
+  body .detail-section > .ux-form-section,
+  body .detail-block > .ux-form-section,
+  body .detail-section-title {
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    color: #2c1810 !important;
+    margin: 0 0 14px !important;
+    padding: 0 0 10px !important;
+    border-bottom: 1px solid #f0e6d4 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+  body .detail-section > .detail-title::before,
+  body .detail-section > .ux-form-section::before,
+  body .detail-block > .ux-form-section::before,
+  body .detail-section-title::before {
+    content: "";
+    width: 3px;
+    height: 16px;
+    background: #c4a25f;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ========== Field grids: rhythm ========== */
+  body .field-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px 18px !important;
+  }
+  @media (max-width: 760px) {
+    body .field-grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+  body .field-row {
+    margin-bottom: 12px !important;
+  }
+
+  /* ========== Buttons ========== */
+  body .btn,
+  body .ux-btn {
+    padding: 8px 16px !important;
+    font-size: 12px !important;
+    border-radius: 8px !important;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 600;
+    transition: background 0.15s, border-color 0.15s, color 0.15s,
+      box-shadow 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.3;
+  }
+  body .btn-sm,
+  body .ux-btn.btn-sm {
+    padding: 5px 11px !important;
+    font-size: 11px !important;
+    border-radius: 6px !important;
+  }
+  body .btn-primary {
+    background: #c4a25f !important;
+    color: #fff !important;
+    border: 1.5px solid #c4a25f !important;
+  }
+  body .btn-primary:hover {
+    background: #b08d4a !important;
+    border-color: #b08d4a !important;
+  }
+  body .btn-ghost {
+    background: #fff !important;
+    color: #2c1810 !important;
+    border: 1.5px solid #e5d9c0 !important;
+  }
+  body .btn-ghost:hover {
+    background: #faf6ee !important;
+    border-color: #d4c3a0 !important;
+  }
+  body .btn-secondary {
+    background: #fff !important;
+    color: #2c1810 !important;
+    border: 1.5px solid #e5d9c0 !important;
+  }
+  body .btn-secondary:hover {
+    background: #faf6ee !important;
+  }
+  body .btn-danger {
+    background: #c41e3a !important;
+    color: #fff !important;
+    border: 1.5px solid #c41e3a !important;
+  }
+  body .btn-danger:hover {
+    background: #a51730 !important;
+    border-color: #a51730 !important;
+  }
+
+  /* ========== Detail / Edit page top header ========== */
+  body #detailView > .card:first-child > .card-header {
+    background: linear-gradient(135deg, #fdf8ee, #f7eddb) !important;
+    margin: -14px -16px 14px !important;
+    padding: 16px 20px !important;
+    border-radius: 10px 10px 0 0 !important;
+    border-bottom: 1px solid #eadccd !important;
+    align-items: center !important;
+  }
+
+  /* ========== Card refinements ========== */
+  body .card {
+    border-radius: 12px !important;
+    border: 1px solid #eadccd !important;
+    background: #fffaf2 !important;
+    box-shadow: 0 1px 3px rgba(60, 42, 15, 0.05) !important;
+    padding: 16px 18px 18px !important;
+  }
+
+  /* ========== Modal polish (page-native modals, not ux-modal) ========== */
+  body .modal-backdrop {
+    background: rgba(44, 24, 16, 0.45) !important;
+    backdrop-filter: blur(2px);
+  }
+  body .modal {
+    border-radius: 14px !important;
+    border: 1px solid #eadccd !important;
+    box-shadow: 0 16px 40px rgba(44, 24, 16, 0.25) !important;
+    padding: 22px 24px !important;
+    max-width: 480px !important;
+    width: calc(100% - 32px) !important;
+  }
+  body .modal-header {
+    margin-bottom: 14px !important;
+    padding-bottom: 12px !important;
+    border-bottom: 1px solid #f0e6d4;
+    align-items: center !important;
+  }
+  body .modal-title {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #2c1810 !important;
+  }
+  body .modal-field {
+    margin-bottom: 12px !important;
+  }
+  body .modal-footer {
+    margin-top: 16px !important;
+    padding-top: 14px !important;
+    border-top: 1px solid #f0e6d4;
+    display: flex !important;
+    gap: 8px !important;
+    justify-content: flex-end !important;
+  }
+
+  /* ========== Empty state ========== */
+  body .empty-state {
+    padding: 32px 20px !important;
+    color: #9a8466 !important;
+    font-size: 13px !important;
+  }
+  body #emptyDetail {
+    text-align: center;
+    padding: 60px 20px !important;
+    color: #9a8466 !important;
+  }
+
+  /* ========== Badges / status pills ========== */
+  body .status-pill,
+  body .badge {
+    padding: 3px 10px !important;
+    border-radius: 999px !important;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  body .badge-soft {
+    background: #f1e4d4 !important;
+    color: #7b623f !important;
+  }
+
+  /* ========== Avatar wrapper ========== */
+  body .avatar-circle {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 12px !important;
+    background: linear-gradient(135deg, #c9a574, #8c6845) !important;
+  }
+
+  /* ========== KPI cards ========== */
+  body .kpi-card,
+  body .kcard {
+    background: #fff !important;
+    border-radius: 10px !important;
+    border: 1px solid #eadccd !important;
+    padding: 14px 16px !important;
+    transition: box-shadow 0.15s, transform 0.15s;
+  }
+  body .kpi-card:hover,
+  body .kcard:hover {
+    box-shadow: 0 4px 14px rgba(60, 42, 15, 0.08) !important;
+    transform: translateY(-1px);
+  }
+  body .kpi-value {
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    color: #2c1810 !important;
+  }
+  body .kpi-label {
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    color: #7c6a55 !important;
+  }
+
+  /* ========== Filter bar refinement ========== */
+  body .filters {
+    padding: 12px 14px !important;
+    background: #fff !important;
+    border: 1px solid #eadccd !important;
+    border-radius: 10px !important;
+    margin-bottom: 14px !important;
+    gap: 8px !important;
+  }
+  body .filters input[type="text"],
+  body .filters select {
+    border-radius: 999px !important;
+    padding: 7px 12px !important;
+    font-size: 12px !important;
+    background: #faf6ee !important;
+    border: 1px solid #e5d9c0 !important;
+  }
+  body .filters input[type="text"]:focus,
+  body .filters select:focus {
+    outline: none !important;
+    border-color: #c4a25f !important;
+    background: #fff !important;
+    box-shadow: 0 0 0 3px rgba(196, 162, 95, 0.18) !important;
+  }
+
+  /* ========== Table refinement ========== */
+  body table thead {
+    background: #f7eedb !important;
+  }
+  body table th {
+    padding: 10px 12px !important;
+    font-size: 10.5px !important;
+    color: #7c6a55 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    font-weight: 700 !important;
+  }
+  body table td {
+    padding: 11px 12px !important;
+    font-size: 12.5px !important;
+    color: #2c1810;
+  }
+  body tbody tr:hover td {
+    background: #fbf5e8 !important;
+  }
+
+  /* ========== Page header refinement ========== */
+  body .page-header .page-title {
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    color: #2c1810 !important;
+    letter-spacing: -0.01em;
+  }
+  body .page-header .page-subtitle {
+    font-size: 13px !important;
+    color: #7c6a55 !important;
+    margin-top: 4px;
+  }
+
+  /* ========== Sticky form footer (auto-applied when a section has .save-bar class) ========== */
+  body .save-bar,
+  body .sticky-save-bar {
+    position: sticky;
+    bottom: 0;
+    background: linear-gradient(
+      to top,
+      #fffaf2 70%,
+      rgba(255, 250, 242, 0)
+    ) !important;
+    padding: 18px 0 10px !important;
+    display: flex !important;
+    gap: 10px !important;
+    justify-content: flex-end !important;
+    margin: 18px -20px -18px !important;
+    border-top: 1px solid #eadccd !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    z-index: 5;
+  }
+
+  /* ========== Permission matrix (roles page) ========== */
+  body .permission-table {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  body .permission-table thead {
+    background: #f7eedb !important;
+  }
+  body .matrix-indicator {
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 7px !important;
+    transition: transform 0.15s, background 0.15s;
+  }
+  body .matrix-indicator:hover {
+    transform: scale(1.1);
+  }
+  body .matrix-indicator.active {
+    background: #2d6a4f !important;
+    border-color: #2d6a4f !important;
+  }
+
+  /* ========== Role list items ========== */
+  body .role-item {
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
+    margin-bottom: 8px !important;
+    border: 1px solid #eadccd !important;
+    background: #fff;
+    transition: all 0.15s;
+  }
+  body .role-item:hover {
+    background: #fdf6e6 !important;
+    border-color: #d4c3a0 !important;
+    transform: translateX(2px);
+  }
+  body .role-item.active {
+    background: linear-gradient(135deg, #fdf2d8, #f8e8c4) !important;
+    border-color: #c4a25f !important;
+    box-shadow: 0 2px 8px rgba(196, 162, 95, 0.18);
+  }
+  body .role-name {
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    color: #2c1810;
+  }
+
+  /* ========== Pretty checkbox/toggle row ========== */
+  body input[type="checkbox"],
+  body input[type="radio"] {
+    accent-color: #c4a25f;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+
+  /* ========== File upload area ========== */
+  body input[type="file"] {
+    padding: 6px 10px !important;
+    border: 1.5px dashed #d4c3a0 !important;
+    border-radius: 8px !important;
+    background: #faf6ee !important;
+    cursor: pointer;
+    font-size: 11.5px !important;
+  }
+  body input[type="file"]:hover {
+    border-color: #c4a25f !important;
+    background: #fdf8ee !important;
+  }
+
+  /* ========== Required asterisk styled ========== */
+  body label.req::after,
+  body .req::after {
+    margin-left: 4px;
+    color: #c41e3a;
+    font-weight: 800;
+  }
+</style>
+<!-- ─────── END VISUAL POLISH ─────── -->
+
+  <!-- ─────── Detail-view layout primitives ─────── -->
+<style id="uxDetailLayout">
+  /* Top toolbar: back button + secondary actions */
+  body .entity-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  body .entity-toolbar-right {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  body .entity-back-btn {
+    background: none;
+    border: none;
+    color: #6b5c4e;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s, color 0.15s;
+  }
+  body .entity-back-btn:hover {
+    background: #faf6ee;
+    color: #2c1810;
+  }
+  body .entity-back-btn span {
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  /* Hero card: avatar + identity + status + primary actions */
+  body .entity-hero {
+    background: linear-gradient(135deg, #fffaf2 0%, #fcf4e6 100%);
+    border: 1px solid #eadccd;
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    box-shadow: 0 2px 6px rgba(60, 42, 15, 0.05);
+  }
+  body .entity-hero-avatar {
+    flex-shrink: 0;
+    position: relative;
+  }
+  body .entity-hero-avatar .avatar-circle {
+    width: 60px !important;
+    height: 60px !important;
+    font-size: 22px !important;
+    box-shadow: 0 2px 6px rgba(60, 42, 15, 0.18);
+  }
+  body .entity-hero-avatar img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #ddd;
+  }
+  body .entity-hero-info {
+    flex: 1;
+    min-width: 0;
+  }
+  body .entity-hero-name {
+    font-size: 22px !important;
+    font-weight: 800 !important;
+    color: #2c1810 !important;
+    margin: 0 0 6px !important;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+  body .entity-hero-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 12.5px;
+    color: #6b5c4e;
+  }
+  body .entity-hero-sep {
+    color: #c4a25f;
+  }
+  body .entity-hero-email {
+    color: #6b5c4e;
+    font-weight: 500;
+  }
+  body .entity-hero-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  /* Section sub-title (after main heading) */
+  body .detail-title .section-sub {
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #9d8a72;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-left: auto;
+  }
+
+  /* Settings block (subsection inside a section card) */
+  body .settings-block {
+    padding: 14px 0;
+    border-bottom: 1px dashed #f0e6d4;
+  }
+  body .settings-block:last-child {
+    border-bottom: none;
+    padding-bottom: 4px;
+  }
+  body .settings-block:first-child {
+    padding-top: 4px;
+  }
+  body .settings-block-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #2c1810;
+    margin-bottom: 8px;
+  }
+  body .settings-block-sub {
+    font-size: 11.5px;
+    color: #7c6a55;
+    margin-bottom: 10px;
+  }
+
+  /* Checkbox row: clean horizontal checkbox + label */
+  body .checkbox-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px !important;
+    color: #2c1810 !important;
+    font-weight: 500 !important;
+    cursor: pointer;
+    padding: 6px 0;
+    margin: 0 !important;
+  }
+  body .checkbox-row input[type="checkbox"] {
+    margin: 0;
+    width: 16px;
+    height: 16px;
+  }
+  body .checkbox-row span {
+    line-height: 1.3;
+  }
+  body .checkbox-group {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+
+  /* Sticky save bar: bottom action zone */
+  body .sticky-save-bar {
+    position: sticky;
+    bottom: 0;
+    background: #fffaf2;
+    border: 1px solid #eadccd;
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 16px;
+    box-shadow: 0 -4px 16px rgba(60, 42, 15, 0.06);
+    z-index: 5;
+  }
+  body .sticky-save-bar .save-bar-hint {
+    font-size: 11.5px;
+    color: #9d8a72;
+    margin-right: auto;
+    font-style: italic;
+  }
+  body .sticky-save-bar .btn {
+    padding: 9px 18px !important;
+    font-size: 13px !important;
+    font-weight: 600;
+  }
+  body .sticky-save-bar .btn-primary {
+    box-shadow: 0 2px 6px rgba(196, 162, 95, 0.32);
+  }
+
+  /* Entity form: reset wrapping that older .card forced */
+  body .entity-form {
+    margin: 0;
+  }
+  body .entity-form .detail-section {
+    margin-bottom: 14px !important;
+  }
+  body .entity-form .detail-section:last-child {
+    margin-bottom: 0 !important;
+  }
+
+  /* Detail section heading: allow flex layout for sub-title alignment */
+  body .detail-section > .detail-title {
+    flex-wrap: wrap;
+  }
+
+  /* Read-only info grid (definition list style) */
+  body .info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 24px;
+  }
+  body .info-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 0;
+    border-bottom: 1px dashed #f0e6d4;
+  }
+  body .info-row.info-row-wide {
+    grid-column: 1 / -1;
+  }
+  body .info-row:last-child,
+  body .info-row:nth-last-child(2):not(.info-row-wide) {
+    border-bottom: none;
+  }
+  body .info-label {
+    font-size: 11px;
+    color: #9d8a72;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+  }
+  body .info-value {
+    font-size: 13.5px;
+    color: #2c1810;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  /* Mobile */
+  @media (max-width: 720px) {
+    body .entity-hero {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    body .entity-hero-actions {
+      width: 100%;
+      justify-content: stretch;
+    }
+    body .entity-hero-actions .btn {
+      flex: 1;
+    }
+    body .sticky-save-bar {
+      flex-wrap: wrap;
+    }
+    body .sticky-save-bar .save-bar-hint {
+      flex-basis: 100%;
+      margin-right: 0;
+      margin-bottom: 6px;
+    }
+  }
+</style>
+<!-- ─────── END detail-view extras ─────── -->
+
   </body>
 </html>

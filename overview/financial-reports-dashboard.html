@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Financial & Payment Reports — YUUSHI Admin</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  /* Standalone module: only one page is shown, so .page is always active */
+  body { padding: 20px 24px 32px; }
+  .module-shell { max-width: 1600px; }
+</style>
+</head>
+<body>
+<div class="module-shell">
+<div class="page-hdr">
+      <div><div class="page-title">Financial & Payment Reports</div><div class="page-sub">Revenue overview, payment status, and billing history</div></div>
+      <div class="ctrl-row">
+        <select class="ctrl"><option>This Month</option><option>Last Month</option><option>This Quarter</option><option>This Year</option></select>
+        <select class="ctrl"><option>All Sources</option><option>Subscription</option><option>Sponsored Ads</option><option>Banner Ads</option></select>
+        <select class="ctrl"><option>All Status</option><option>Paid</option><option>Pending</option><option>Overdue</option><option>Failed</option></select>
+        <button class="btn btn-out" onclick="alert('Exporting financial report... (demo)')"><i class="fas fa-download"></i> Export CSV</button>
+        <button class="btn btn-gold" onclick="alert('Exporting Excel report... (demo)')"><i class="fas fa-file-excel"></i> Export Excel</button>
+      </div>
+    </div>
+
+    <div class="g4" style="margin-bottom:12px">
+      <div class="kcard c-green"><div class="k-lbl">Total Revenue (MTD)</div><div class="k-val"><sup>¥</sup>28.4<small>M</small></div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+12.4% <span class="vs">MoM</span></div></div>
+      <div class="kcard"><div class="k-lbl">Total Revenue (YTD)</div><div class="k-val"><sup>¥</sup>124.8<small>M</small></div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+18.2% <span class="vs">YoY</span></div></div>
+      <div class="kcard c-blue"><div class="k-lbl">MRR</div><div class="k-val"><sup>¥</sup>22.1<small>M</small></div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+8.4% <span class="vs">vs last month</span></div></div>
+      <div class="kcard"><div class="k-lbl">ARR</div><div class="k-val"><sup>¥</sup>265<small>M</small></div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+8.4% <span class="vs">annualized</span></div></div>
+    </div>
+    <div class="g4" style="margin-bottom:20px">
+      <div class="kcard c-orange"><div class="k-lbl">Pending Payments</div><div class="k-val"><sup>¥</sup>1.84<small>M</small></div><div class="k-delta dn"><i class="fas fa-exclamation-circle"></i>12 invoices <span class="vs">pending</span></div></div>
+      <div class="kcard c-red"><div class="k-lbl">Overdue Payments</div><div class="k-val"><sup>¥</sup>420<small>K</small></div><div class="k-delta dn"><i class="fas fa-exclamation-triangle"></i>3 agents <span class="vs">overdue</span></div></div>
+      <div class="kcard"><div class="k-lbl">Refunds Issued (MTD)</div><div class="k-val"><sup>¥</sup>84<small>K</small></div><div class="k-delta dn"><i class="fas fa-arrow-up"></i>2 refunds <span class="vs">this month</span></div></div>
+      <div class="kcard c-green"><div class="k-lbl">Net Revenue (MTD)</div><div class="k-val"><sup>¥</sup>27.9<small>M</small></div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+11.8% <span class="vs">MoM</span></div></div>
+    </div>
+
+    <div class="g2" style="margin-bottom:16px">
+      <div class="ccard">
+        <div class="c-title">Monthly Revenue by Source (12 months)</div><div class="c-sub">Stacked bar · Subscription + Ad + Banner + Other (¥M)</div>
+        <div style="height:200px;position:relative;"><canvas id="revenueChart"></canvas></div>
+        <div class="legend"><div class="l-item"><div class="l-dot" style="background:var(--blue)"></div>Subscription</div><div class="l-item"><div class="l-dot" style="background:var(--gold)"></div>Sponsored Ads</div><div class="l-item"><div class="l-dot" style="background:var(--green)"></div>Banner Ads</div><div class="l-item"><div class="l-dot" style="background:var(--muted)"></div>Other</div></div>
+      </div>
+      <div class="ccard">
+        <div class="c-title">Payment Status Distribution</div><div class="c-sub">Current month snapshot</div>
+        <div class="donut-row">
+          <div style="width:100px;height:100px;flex-shrink:0;"><canvas id="payStatusDonut" width="100" height="100"></canvas></div>
+          <div class="d-stats">
+            <div class="d-stat"><span><span class="d-dot" style="background:var(--green)"></span>Paid</span><strong>¥26.8M</strong></div>
+            <div class="d-stat"><span><span class="d-dot" style="background:var(--orange)"></span>Pending</span><strong>¥1.84M</strong></div>
+            <div class="d-stat"><span><span class="d-dot" style="background:var(--red)"></span>Overdue</span><strong>¥420K</strong></div>
+            <div class="d-stat"><span><span class="d-dot" style="background:var(--muted)"></span>Refunded</span><strong>¥84K</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-hdr">Payment Transaction Log</div>
+    <div class="ccard">
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead><tr><th>Transaction ID</th><th>Date</th><th>Agent</th><th>Product</th><th class="num">Amount (¥)</th><th class="num">Tax (¥)</th><th>Status</th><th>Method</th><th>Invoice</th></tr></thead>
+          <tbody>
+            <tr><td class="bold">TXN-20260512-001</td><td>2026-05-12</td><td>Sakura Realty</td><td>Silver Plan — May</td><td class="num">35,000</td><td class="num">3,500</td><td><span class="badge b-green">Paid</span></td><td>Credit Card</td><td><a href="#" onclick="alert('Opening invoice... (demo)')" style="color:var(--blue);font-family:sans-serif;font-size:11px;">Download</a></td></tr>
+            <tr><td class="bold">TXN-20260512-002</td><td>2026-05-12</td><td>Tokyo Prime</td><td>Gold Plan — May</td><td class="num">80,000</td><td class="num">8,000</td><td><span class="badge b-green">Paid</span></td><td>Credit Card</td><td><a href="#" onclick="alert('Opening invoice... (demo)')" style="color:var(--blue);font-family:sans-serif;font-size:11px;">Download</a></td></tr>
+            <tr><td class="bold">TXN-20260511-003</td><td>2026-05-11</td><td>Osaka Living</td><td>Sponsored Slot — Namba</td><td class="num">60,000</td><td class="num">6,000</td><td><span class="badge b-green">Paid</span></td><td>Credit Card</td><td><a href="#" onclick="alert('Opening invoice... (demo)')" style="color:var(--blue);font-family:sans-serif;font-size:11px;">Download</a></td></tr>
+            <tr><td class="bold">TXN-20260510-004</td><td>2026-05-10</td><td>Nagoya Estate</td><td>Bronze Plan — May</td><td class="num">15,000</td><td class="num">1,500</td><td><span class="badge b-orange">Pending</span></td><td>Bank Transfer</td><td><a href="#" onclick="alert('Opening invoice... (demo)')" style="color:var(--blue);font-family:sans-serif;font-size:11px;">Download</a></td></tr>
+            <tr><td class="bold">TXN-20260509-005</td><td>2026-05-09</td><td>Kyoto View</td><td>Homepage Banner</td><td class="num">150,000</td><td class="num">15,000</td><td><span class="badge b-red">Overdue</span></td><td>Credit Card</td><td><a href="#" onclick="alert('Opening invoice... (demo)')" style="color:var(--blue);font-family:sans-serif;font-size:11px;">Download</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+</div>
+
+<script src="_shared.js"></script>
+<script>
+// Per-tab init for financial
+(function() {
+  new Chart(document.getElementById('revenueChart'),{type:'bar',data:{labels:L12,datasets:[
+      {label:'Subscription',data:ri(14,18,12),backgroundColor:C.blue+'cc',borderRadius:2},
+      {label:'Sponsored Ads',data:ri(4,7,12),backgroundColor:C.gold+'cc',borderRadius:2},
+      {label:'Banner Ads',data:ri(2,4,12),backgroundColor:C.green+'cc',borderRadius:2},
+      {label:'Other',data:ri(0.5,1.5,12),backgroundColor:C.muted+'88',borderRadius:2},
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`${c.dataset.label}: ¥${c.raw}M`}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'#f0ece6'},ticks:{callback:v=>'¥'+v+'M'}}}}});
+    donut('payStatusDonut',['Paid','Pending','Overdue','Refunded'],[26800000,1840000,420000,84000],[C.green,C.orange,C.red,C.muted]);
+})();
+</script>
+</body>
+</html>

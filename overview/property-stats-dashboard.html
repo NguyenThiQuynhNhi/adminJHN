@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Property Statistics — YUUSHI Admin</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  /* Standalone module: only one page is shown, so .page is always active */
+  body { padding: 20px 24px 32px; }
+  .module-shell { max-width: 1600px; }
+</style>
+</head>
+<body>
+<div class="module-shell">
+<div class="page-hdr">
+      <div><div class="page-title">Property Statistics</div><div class="page-sub">Listing inventory, pricing trends, and performance analytics</div></div>
+      <div class="ctrl-row">
+        <select class="ctrl"><option>Last 30 Days</option><option>Last 7 Days</option><option>Last 90 Days</option><option>Last 12 Months</option></select>
+        <select class="ctrl"><option>All Types</option><option>Apartment</option><option>House</option><option>Land</option><option>Commercial</option></select>
+        <select class="ctrl"><option>Sale + Rent</option><option>For Sale</option><option>For Rent</option></select>
+        <select class="ctrl"><option>National</option><option>Tokyo</option><option>Osaka</option></select>
+        <button class="btn btn-out" onclick="alert('Exporting property stats... (demo)')"><i class="fas fa-download"></i> Export</button>
+      </div>
+    </div>
+
+    <div class="g4" style="margin-bottom:12px">
+      <div class="kcard c-green"><div class="k-lbl">Total Active Listings</div><div class="k-val">9,284</div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+184 <span class="vs">this week</span></div></div>
+      <div class="kcard"><div class="k-lbl">New Today</div><div class="k-val">43</div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+12 <span class="vs">vs yesterday</span></div></div>
+      <div class="kcard"><div class="k-lbl">Avg. Days on Market</div><div class="k-val">52 <small>days</small></div><div class="k-delta up"><i class="fas fa-arrow-up"></i>-3d <span class="vs">vs prev</span></div></div>
+      <div class="kcard c-blue"><div class="k-lbl">Total Listing Views (MTD)</div><div class="k-val">780<small>K</small></div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+14% <span class="vs">vs prev</span></div></div>
+    </div>
+    <div class="g4" style="margin-bottom:20px">
+      <div class="kcard"><div class="k-lbl">Avg. Views/Listing</div><div class="k-val">84</div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+6 <span class="vs">vs prev</span></div></div>
+      <div class="kcard"><div class="k-lbl">Avg. Price/m² (Sale)</div><div class="k-val"><sup>¥</sup>820<small>K</small></div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+2.1% <span class="vs">MoM</span></div></div>
+      <div class="kcard"><div class="k-lbl">Avg. Rent/m²</div><div class="k-val"><sup>¥</sup>3,840</div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+1.4% <span class="vs">MoM</span></div></div>
+      <div class="kcard c-red"><div class="k-lbl">Stale Listings (&gt;90 days)</div><div class="k-val">284</div><div class="k-delta dn"><i class="fas fa-arrow-up"></i>+18 <span class="vs">vs prev</span></div></div>
+    </div>
+
+    <div class="g2" style="margin-bottom:16px">
+      <div class="ccard">
+        <div class="c-title">Avg. Price per m² Trend (Sale)</div><div class="c-sub">Monthly average · Last 24 months (¥K)</div>
+        <div style="height:180px;position:relative;"><canvas id="priceTrendChart"></canvas></div>
+      </div>
+      <div class="ccard">
+        <div class="c-title">Listings by Type & DOM</div><div class="c-sub">Avg. Days on Market by property type</div>
+        <div style="height:180px;position:relative;"><canvas id="domChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="g3" style="margin-bottom:16px">
+      <div class="ccard">
+        <div class="c-title">Listings by Property Type</div>
+        <div class="donut-row">
+          <div style="width:90px;height:90px;flex-shrink:0;"><canvas id="pPropTypeDonut" width="90" height="90"></canvas></div>
+          <div class="d-stats">
+            <div class="d-stat"><span><span class="d-dot" style="background:var(--blue)"></span>Apartment</span><strong>4,120</strong></div>
+            <div class="d-stat"><span><span class="d-dot" style="background:var(--green)"></span>House</span><strong>2,840</strong></div>
+            <div class="d-stat"><span><span class="d-dot" style="background:var(--gold)"></span>Land</span><strong>1,110</strong></div>
+            <div class="d-stat"><span><span class="d-dot" style="background:var(--red)"></span>Commercial</span><strong>1,214</strong></div>
+          </div>
+        </div>
+      </div>
+      <div class="ccard">
+        <div class="c-title">Price by Distance to Station</div><div class="c-sub">Avg. price/m² by walking time (¥K)</div>
+        <div style="height:160px;position:relative;"><canvas id="stationChart"></canvas></div>
+      </div>
+      <div class="ccard">
+        <div class="c-title">Top Viewed Listings (MTD)</div><div class="c-sub">Top 5 by view count</div>
+        <table class="tbl">
+          <thead><tr><th>Property</th><th class="num">Views</th><th class="num">Saves</th></tr></thead>
+          <tbody>
+            <tr><td>Shibuya 3LDK Apt</td><td class="num">1,840</td><td class="num">284</td></tr>
+            <tr><td>Minato House 4LDK</td><td class="num">1,420</td><td class="num">210</td></tr>
+            <tr><td>Osaka Namba 2LDK</td><td class="num">1,280</td><td class="num">180</td></tr>
+            <tr><td>Kyoto Higashiyama Land</td><td class="num">980</td><td class="num">142</td></tr>
+            <tr><td>Fukuoka Hakata Office</td><td class="num">840</td><td class="num">98</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="g3" style="margin-bottom:16px">
+      <div class="ccard">
+        <div class="c-title">By Bedrooms</div><div class="c-sub">Listing count per bedroom type</div>
+        <div style="height:160px;position:relative;"><canvas id="bedroomsChart"></canvas></div>
+      </div>
+      <div class="ccard">
+        <div class="c-title">By Building Age</div><div class="c-sub">Histogram — years since construction</div>
+        <div style="height:160px;position:relative;"><canvas id="buildingAgeChart"></canvas></div>
+      </div>
+      <div class="ccard">
+        <div class="c-title">By Floor Area (m²)</div><div class="c-sub">Histogram — size distribution</div>
+        <div style="height:160px;position:relative;"><canvas id="floorAreaChart"></canvas></div>
+      </div>
+    </div>
+    <div class="g2" style="margin-bottom:16px">
+      <div class="ccard">
+        <div class="c-title">Price Range Distribution</div><div class="c-sub">Histogram + cumulative line · For Sale listings</div>
+        <div style="height:180px;position:relative;"><canvas id="priceRangeChart"></canvas></div>
+        <div class="legend"><div class="l-item"><div class="l-dot" style="background:var(--blue)"></div>Count</div><div class="l-item"><div class="l-dot" style="background:var(--red)"></div>Cumulative %</div></div>
+      </div>
+      <div class="ccard">
+        <div class="c-title">DOM Distribution (Active Listings)</div><div class="c-sub">Histogram with P25 / P50 / P75 markers</div>
+        <div style="height:180px;position:relative;"><canvas id="domDistChart"></canvas></div>
+      </div>
+    </div>
+    <div class="g2" style="margin-bottom:16px">
+      <div class="ccard">
+        <div class="c-title">Price by Building Age</div><div class="c-sub">Avg. price/m² (¥K) by age group</div>
+        <div style="height:160px;position:relative;"><canvas id="priceByAgeChart"></canvas></div>
+      </div>
+      <div class="ccard">
+        <div class="c-title">DOM Trend Over Time</div><div class="c-sub">Monthly avg. days on market · 12 months</div>
+        <div style="height:160px;position:relative;"><canvas id="domTrendChart"></canvas></div>
+      </div>
+    </div>
+    <div class="ccard">
+      <div class="c-title">Listings by Region</div><div class="c-sub">Top prefectures by active listing count</div>
+      <div style="margin-top:8px;"><div id="prefBarsP"></div></div>
+    </div>
+</div>
+
+<script src="_shared.js"></script>
+<script>
+// Per-tab init for propstat
+(function() {
+  new Chart(document.getElementById('priceTrendChart'),{type:'line',data:{labels:dates(24,'monthly'),datasets:[{label:'¥/m²',data:ri(780,860,24).map(v=>v*1000),borderColor:C.blue,fill:false,tension:0.4,pointRadius:0,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:{grid:{color:'#f0ece6'},ticks:{maxTicksLimit:8}},y:{grid:{color:'#f0ece6'},ticks:{callback:v=>'¥'+(v/1000).toFixed(0)+'K'}}}}});
+    new Chart(document.getElementById('domChart'),{type:'bar',data:{labels:['Apartment','House','Land','Commercial','Villa'],datasets:[{data:[38,54,82,61,48],backgroundColor:[C.blue,C.green,C.gold,C.red,C.orange].map(c=>c+'cc'),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`${c.raw} days avg. DOM`}}},scales:{x:{grid:{display:false}},y:{grid:{color:'#f0ece6'},ticks:{callback:v=>v+'d'}}}}});
+    donut('pPropTypeDonut',['Apartment','House','Land','Commercial'],[44,31,12,13],[C.blue,C.green,C.gold,C.red]);
+    new Chart(document.getElementById('stationChart'),{type:'line',data:{labels:['0–5 min','5–10 min','10–15 min','15–20 min','20+ min'],datasets:[{data:[1240,980,820,680,540].map(v=>v*1000),borderColor:C.gold,fill:true,backgroundColor:C.goldA,tension:0.4,pointRadius:4,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`¥${(c.raw/1000).toFixed(0)}K/m²`}}},scales:{x:{grid:{color:'#f0ece6'}},y:{grid:{color:'#f0ece6'},ticks:{callback:v=>'¥'+(v/1000).toFixed(0)+'K'}}}}});
+    miniBar('prefBarsP',[{label:'Tokyo',val:2840,display:'2,840',color:C.green,w:80},{label:'Osaka',val:1420,display:'1,420',color:C.green,w:80},{label:'Kanagawa',val:980,display:'980',color:C.green,w:80},{label:'Fukuoka',val:720,display:'720',color:C.green,w:80},{label:'Kyoto',val:610,display:'610',color:C.green,w:80}]);
+    // ─ patch ─
+  // Bedrooms bar
+    new Chart(document.getElementById('bedroomsChart'),{type:'bar',data:{
+      labels:['Studio','1BR','2BR','3BR','4BR','5BR+'],
+      datasets:[{data:[420,1840,2960,2480,1140,444],backgroundColor:C.blue+'cc',borderRadius:4}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:{grid:{display:false}},y:{grid:{color:'#f0ece6'}}}}});
+    // Building age histogram
+    new Chart(document.getElementById('buildingAgeChart'),{type:'bar',data:{
+      labels:['0–5yr','6–10yr','11–20yr','21–30yr','30+yr'],
+      datasets:[{data:[1240,1680,2840,2120,1404],backgroundColor:C.green+'cc',borderRadius:4}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:{grid:{display:false}},y:{grid:{color:'#f0ece6'}}}}});
+    // Floor area histogram
+    new Chart(document.getElementById('floorAreaChart'),{type:'bar',data:{
+      labels:['<30m²','30–50','50–80','80–120','120–200','200+'],
+      datasets:[{data:[480,2840,3120,1840,680,324],backgroundColor:C.gold+'cc',borderRadius:4}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:{grid:{display:false}},y:{grid:{color:'#f0ece6'}}}}});
+    // Price range histogram + cumulative line
+    const priceCount=[280,840,2120,3240,1980,824];
+    const total=priceCount.reduce((a,b)=>a+b,0);
+    let cum=0;
+    const cumPct=priceCount.map(v=>{cum+=v;return +(cum/total*100).toFixed(1);});
+    new Chart(document.getElementById('priceRangeChart'),{type:'bar',data:{
+      labels:['<¥10M','¥10–30M','¥30–50M','¥50–80M','¥80–150M','¥150M+'],
+      datasets:[
+        {label:'Count',data:priceCount,backgroundColor:C.blue+'cc',borderRadius:4,yAxisID:'y'},
+        {label:'Cumulative %',data:cumPct,type:'line',borderColor:C.red,fill:false,tension:0.4,pointRadius:3,borderWidth:2,yAxisID:'y1'},
+      ]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{type:'linear',position:'left',grid:{color:'#f0ece6'}},y1:{type:'linear',position:'right',grid:{display:false},ticks:{callback:v=>v+'%'}}}}});
+    // DOM distribution histogram
+    new Chart(document.getElementById('domDistChart'),{type:'bar',data:{
+      labels:['<15d','15–30d','30–45d','45–60d','60–90d','90+d'],
+      datasets:[{data:[420,1840,2480,1920,1360,1264],backgroundColor:C.orange+'cc',borderRadius:4}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:{grid:{display:false}},y:{grid:{color:'#f0ece6'}}}}});
+    // Price by building age
+    new Chart(document.getElementById('priceByAgeChart'),{type:'bar',data:{
+      labels:['0–5yr','6–10yr','11–20yr','21–30yr','30+yr'],
+      datasets:[{data:[1240,980,820,640,480].map(v=>v*1000),backgroundColor:C.gold+'cc',borderRadius:4}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`¥${(c.raw/1000).toFixed(0)}K/m²`}}},scales:{x:{grid:{display:false}},y:{grid:{color:'#f0ece6'},ticks:{callback:v=>'¥'+(v/1000).toFixed(0)+'K'}}}}});
+    // DOM trend line
+    new Chart(document.getElementById('domTrendChart'),{type:'line',data:{labels:L12,datasets:[
+      {label:'Avg. DOM',data:ri(46,58,12),borderColor:C.orange,backgroundColor:C.orange+'22',fill:true,tension:0.4,pointRadius:3,borderWidth:2}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:{grid:{color:'#f0ece6'}},y:{grid:{color:'#f0ece6'},ticks:{callback:v=>v+'d'}}}}});
+})();
+</script>
+</body>
+</html>

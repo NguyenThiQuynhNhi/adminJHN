@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marketing Dashboard — YUUSHI Admin</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  /* Standalone module: only one page is shown, so .page is always active */
+  body { padding: 20px 24px 32px; }
+  .module-shell { max-width: 1600px; }
+</style>
+</head>
+<body>
+<div class="module-shell">
+<div class="page-hdr">
+      <div><div class="page-title">Marketing Dashboard</div><div class="page-sub">Ad performance, budget, and campaign health · All ad types</div></div>
+      <div class="ctrl-row">
+        <select class="ctrl"><option>Last 30 Days</option><option>Last 7 Days</option><option>Last 90 Days</option></select>
+        <select class="ctrl"><option>All Ad Types</option><option>Banner Ads</option><option>Sponsored Search Slots</option><option>Email Campaigns</option></select>
+        <select class="ctrl"><option>All Agents</option><option>Sakura Realty</option><option>Tokyo Prime</option></select>
+        <button class="btn btn-out" onclick="alert('Exporting marketing report... (demo)')"><i class="fas fa-download"></i> Export</button>
+      </div>
+    </div>
+
+    <div class="g4" style="margin-bottom:12px">
+      <div class="kcard c-blue"><div class="k-lbl">Total Impressions (IMP)</div><div class="k-val">2.84<small>M</small></div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+18% <span class="vs">vs prev</span></div></div>
+      <div class="kcard"><div class="k-lbl">Total Clicks (CL)</div><div class="k-val">18,420</div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+12% <span class="vs">vs prev</span></div></div>
+      <div class="kcard c-green"><div class="k-lbl">Overall CTR</div><div class="k-val">0.65<small>%</small></div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+0.08% <span class="vs">vs prev</span></div></div>
+      <div class="kcard"><div class="k-lbl">Total Conversions (Chat + Save)</div><div class="k-val">5,210</div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+9% <span class="vs">vs prev</span></div></div>
+    </div>
+    <div class="g4" style="margin-bottom:20px">
+      <div class="kcard"><div class="k-lbl">Overall CVR</div><div class="k-val">28.3<small>%</small></div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+1.2% <span class="vs">vs prev</span></div></div>
+      <div class="kcard c-blue"><div class="k-lbl">Total Ad Spend</div><div class="k-val"><sup>¥</sup>18.6<small>M</small></div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+8% <span class="vs">vs prev</span></div></div>
+      <div class="kcard"><div class="k-lbl">Active Campaigns</div><div class="k-val">47</div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+5 <span class="vs">vs prev</span></div></div>
+      <div class="kcard c-green"><div class="k-lbl">Slot Occupancy Rate</div><div class="k-val">69.3<small>%</small></div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+4.1% <span class="vs">vs prev</span></div></div>
+    </div>
+
+    <div class="g2" style="margin-bottom:16px">
+      <div class="ccard">
+        <div class="c-title">Impressions & Clicks Over Time</div><div class="c-sub">Daily · Dual axis · Left = IMP, Right = CL</div>
+        <div style="height:200px;position:relative;"><canvas id="mktImpClChart"></canvas></div>
+        <div class="legend"><div class="l-item"><div class="l-dot" style="background:var(--blue)"></div>Impressions</div><div class="l-item"><div class="l-dot" style="background:var(--gold)"></div>Clicks</div></div>
+      </div>
+      <div class="ccard">
+        <div class="c-title">CTR by Ad Type</div><div class="c-sub">Comparison across all ad product types</div>
+        <div style="height:200px;position:relative;"><canvas id="mktCtrTypeChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="sec-hdr">Ad Type Performance Breakdown</div>
+    <div class="g2" style="margin-bottom:16px">
+      <div class="ccard">
+        <div class="c-title">Banner Ads by Slot</div><div class="c-sub">Impressions per placement · Current period</div>
+        <div style="height:180px;position:relative;"><canvas id="mktBannerChart"></canvas></div>
+      </div>
+      <div class="ccard">
+        <div class="c-title">Sponsored Search Slots</div><div class="c-sub">CTR vs. Organic comparison · Current period</div>
+        <div style="height:180px;position:relative;"><canvas id="mktSponsoredChart"></canvas></div>
+        <div class="legend" style="margin-top:8px;"><div class="l-item"><div class="l-dot" style="background:var(--gold)"></div>Sponsored CTR</div><div class="l-item"><div class="l-dot" style="background:var(--muted)"></div>Organic CTR</div></div>
+      </div>
+    </div>
+
+    <div class="sec-hdr">Campaign Performance Table</div>
+    <div class="ccard">
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead>
+            <tr><th>Campaign</th><th>Type</th><th>Status</th><th>Start</th><th>End</th><th class="num">IMP</th><th class="num">CL</th><th class="num">CTR</th><th class="num">CV</th><th class="num">Spend (¥)</th><th>Performance</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="bold">Spring Investment EDM</td><td>Email</td><td><span class="badge b-green">Active</span></td><td>2026-05-01</td><td>2026-05-31</td><td class="num">—</td><td class="num">3,840</td><td class="num">18.9%</td><td class="num">412</td><td class="num">—</td><td><span class="badge b-green">Excellent</span></td></tr>
+            <tr><td class="bold">Tokyo Homepage Banner</td><td>Banner</td><td><span class="badge b-green">Active</span></td><td>2026-05-01</td><td>2026-05-31</td><td class="num">480,200</td><td class="num">2,880</td><td class="num">0.60%</td><td class="num">864</td><td class="num">150,000</td><td><span class="badge b-green">Good</span></td></tr>
+            <tr><td class="bold">Shibuya / Apt Slot #1</td><td>Sponsored</td><td><span class="badge b-green">Active</span></td><td>2026-05-01</td><td>2026-05-31</td><td class="num">52,400</td><td class="num">3,100</td><td class="num">5.92%</td><td class="num">620</td><td class="num">120,000</td><td><span class="badge b-green">Excellent</span></td></tr>
+            <tr><td class="bold">Osaka Area Guide Banner</td><td>Banner</td><td><span class="badge b-watch">Paused</span></td><td>2026-04-15</td><td>2026-05-15</td><td class="num">124,000</td><td class="num">480</td><td class="num">0.39%</td><td class="num">96</td><td class="num">60,000</td><td><span class="badge b-watch">Underperforming</span></td></tr>
+            <tr><td class="bold">Agent Monthly Digest</td><td>Email</td><td><span class="badge b-grey">Ended</span></td><td>2026-04-01</td><td>2026-04-30</td><td class="num">—</td><td class="num">2,140</td><td class="num">16.2%</td><td class="num">320</td><td class="num">—</td><td><span class="badge b-green">Good</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="g2" style="margin-bottom:16px">
+      <div class="ccard">
+        <div class="c-title">Geographic Ad Performance</div><div class="c-sub">CTR by prefecture · Top 10</div>
+        <div style="height:220px;position:relative;"><canvas id="mktGeoChart"></canvas></div>
+      </div>
+      <div class="ccard">
+        <div class="c-title">Top 10 Converting Campaigns</div><div class="c-sub">Absolute conversions this month (chat starts + saves)</div>
+        <div style="height:200px;position:relative;"><canvas id="topConvChart"></canvas></div>
+      </div>
+    </div>
+</div>
+
+<script src="_shared.js"></script>
+<script>
+// Per-tab init for marketing
+(function() {
+  new Chart(document.getElementById('mktImpClChart'),{type:'line',data:{labels:L30,datasets:[
+      {label:'Impressions',data:ri(80000,120000),borderColor:C.blue,fill:false,tension:0.4,pointRadius:0,borderWidth:2,yAxisID:'y'},
+      {label:'Clicks',data:ri(500,800),borderColor:C.gold,fill:false,tension:0.4,pointRadius:0,borderWidth:2,yAxisID:'y1'},
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:TT},scales:{x:{grid:{color:'#f0ece6'},ticks:{maxTicksLimit:8}},y:{type:'linear',position:'left',grid:{color:'#f0ece6'}},y1:{type:'linear',position:'right',grid:{display:false}}}}});
+    new Chart(document.getElementById('mktCtrTypeChart'),{type:'bar',data:{labels:['Homepage Banner','Insights Banner','Area Guide Banner','Category Banner','Sponsored Slot','Email Campaign'],datasets:[{data:[0.60,0.75,0.68,0.49,5.92,18.9],backgroundColor:[C.blue,C.green,C.gold,C.muted,C.orange,C.red].map(c=>c+'cc'),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`CTR: ${c.raw}%`}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'#f0ece6'},ticks:{callback:v=>v+'%'}}}}});
+    new Chart(document.getElementById('mktBannerChart'),{type:'bar',data:{labels:['Top Page','Insights','Area Guide','Category','Bottom'],datasets:[{data:[480200,210400,124000,98400,320000],backgroundColor:C.blue+'cc',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:{grid:{display:false}},y:{grid:{color:'#f0ece6'},ticks:{callback:v=>v>=1000?Math.round(v/1000)+'K':v}}}}});
+    new Chart(document.getElementById('mktSponsoredChart'),{type:'bar',data:{labels:['Pos 1','Pos 2','Pos 3'],datasets:[{label:'Sponsored',data:[5.92,4.81,3.64],backgroundColor:C.gold+'cc',borderRadius:4},{label:'Organic',data:[1.20,0.84,0.62],backgroundColor:C.muted+'88',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:{grid:{display:false}},y:{grid:{color:'#f0ece6'},ticks:{callback:v=>v+'%'}}}}});
+    // ─ patch ─
+  new Chart(document.getElementById('topConvChart'),{type:'bar',data:{
+      labels:['Spring EDM','Shibuya Slot#1','Tokyo Banner','Osaka EDM','Minato Slot#1','Namba Banner','Kyoto EDM','Fukuoka Slot','Agent Digest','Area Guide Bnr'],
+      datasets:[{data:[412,380,340,310,280,240,210,190,170,150],backgroundColor:C.blue+'cc',borderRadius:4}]
+    },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:{grid:{color:'#f0ece6'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
+    // Geographic ad performance — horizontal bar of CTR % by prefecture
+    const _geo=[
+      {p:'Tokyo',ctr:0.82},{p:'Osaka',ctr:0.71},{p:'Kanagawa',ctr:0.65},
+      {p:'Aichi',ctr:0.58},{p:'Fukuoka',ctr:0.54},{p:'Kyoto',ctr:0.49},
+      {p:'Hyogo',ctr:0.46},{p:'Saitama',ctr:0.42},{p:'Hokkaido',ctr:0.38},
+      {p:'Hiroshima',ctr:0.34}
+    ];
+    const _max=Math.max(..._geo.map(x=>x.ctr));
+    const _gcolors=_geo.map(x=>{
+      const t=x.ctr/_max;
+      if(t>=0.8)return C.green+'cc';
+      if(t>=0.55)return C.gold+'cc';
+      if(t>=0.35)return C.blue+'cc';
+      return C.muted+'aa';
+    });
+    new Chart(document.getElementById('mktGeoChart'),{type:'bar',data:{
+      labels:_geo.map(x=>x.p),
+      datasets:[{data:_geo.map(x=>x.ctr),backgroundColor:_gcolors,borderRadius:4}]
+    },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`CTR: ${c.raw}%`}}},scales:{x:{grid:{color:'#f0ece6'},ticks:{callback:v=>v+'%'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
+})();
+</script>
+</body>
+</html>

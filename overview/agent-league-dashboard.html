@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent League — YUUSHI Admin</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  /* Standalone module: only one page is shown, so .page is always active */
+  body { padding: 20px 24px 32px; }
+  .module-shell { max-width: 1600px; }
+</style>
+</head>
+<body>
+<div class="module-shell">
+<div class="page-hdr">
+      <div><div class="page-title">Agent League Table</div><div class="page-sub">Competitive performance ranking · Composite score 0–100</div></div>
+      <div class="ctrl-row">
+        <select class="ctrl"><option>This Month</option><option>Last Month</option><option>Last Quarter</option><option>Last Year</option></select>
+        <select class="ctrl"><option>All Regions</option><option>Tokyo</option><option>Osaka</option><option>Fukuoka</option></select>
+        <select class="ctrl"><option>All Tiers</option><option>Free</option><option>Bronze</option><option>Silver</option><option>Gold</option></select>
+        <input type="text" class="ctrl" placeholder="Search agent..." style="padding:6px 10px;font-family:sans-serif;font-size:12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);">
+        <button class="btn btn-out" onclick="alert('Exporting agent league... (demo)')"><i class="fas fa-download"></i> Export</button>
+      </div>
+    </div>
+
+    <div class="g4" style="margin-bottom:20px">
+      <div class="kcard"><div class="k-lbl">Total Agents Ranked</div><div class="k-val">1,842</div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+38 <span class="vs">vs last month</span></div></div>
+      <div class="kcard c-green"><div class="k-lbl">Top Performer Score</div><div class="k-val">94.2</div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+2.1 <span class="vs">vs last month</span></div></div>
+      <div class="kcard c-blue"><div class="k-lbl">Avg. Composite Score</div><div class="k-val">61.4</div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+3.8 <span class="vs">vs last month</span></div></div>
+      <div class="kcard"><div class="k-lbl">Avg. Star Rating</div><div class="k-val">4.2 <small>★</small></div><div class="k-delta up"><i class="fas fa-arrow-up"></i>+0.1 <span class="vs">vs last month</span></div></div>
+    </div>
+
+    <div class="ccard" style="margin-bottom:16px">
+      <div class="c-title">Leaderboard</div>
+      <div class="c-sub">Ranked by composite score · Click column header to sort</div>
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th style="width:50px">Rank</th>
+              <th>Agency Name</th>
+              <th>Region</th>
+              <th class="num">Active Listings</th>
+              <th class="num">Ad Spend (MTD)</th>
+              <th class="num">Avg. Rating</th>
+              <th class="num">Response Rate</th>
+              <th>Plan</th>
+              <th class="num">Score</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="leagueTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="g2" style="margin-bottom:16px">
+      <div class="ccard">
+        <div class="c-title">Top 10 Agents by Active Listings</div><div class="c-sub">Current month</div>
+        <div style="height:200px;position:relative;"><canvas id="leagueListingsChart"></canvas></div>
+      </div>
+      <div class="ccard">
+        <div class="c-title">Top 10 Agents by Ad Spend</div><div class="c-sub">Month to date (¥)</div>
+        <div style="height:200px;position:relative;"><canvas id="leagueAdSpendChart"></canvas></div>
+      </div>
+    </div>
+    <div class="g2" style="margin-bottom:16px">
+      <div class="ccard">
+        <div class="c-title">Agent Activity Heatmap</div><div class="c-sub">Listing update activity by hour × day · Last 7 days</div>
+        <div style="overflow-x:auto;"><div class="hm-wrap" id="hmLeague"></div></div>
+        <div class="hm-legend"><span>Low</span><div class="hm-ld" id="hmLeagueLg"></div><span>High</span></div>
+      </div>
+      <div class="ccard">
+        <div class="c-title">Rating Distribution — Top 10 Agents</div><div class="c-sub">Stacked bar · 1★ to 5★ breakdown</div>
+        <div style="height:200px;position:relative;"><canvas id="ratingDistChart"></canvas></div>
+        <div class="legend"><div class="l-item"><div class="l-dot" style="background:#c0392b"></div>1★</div><div class="l-item"><div class="l-dot" style="background:#e67e22"></div>2★</div><div class="l-item"><div class="l-dot" style="background:#f1c40f"></div>3★</div><div class="l-item"><div class="l-dot" style="background:#2ecc71"></div>4★</div><div class="l-item"><div class="l-dot" style="background:var(--green)"></div>5★</div></div>
+      </div>
+    </div>
+    <div class="ccard">
+      <div class="c-title">Ad Spend Trend — Top 5 Agents</div><div class="c-sub">Monthly over last 6 months (¥K)</div>
+      <div style="height:180px;position:relative;"><canvas id="leagueAdTrendChart"></canvas></div>
+    </div>
+</div>
+
+<script src="_shared.js"></script>
+<script>
+// Per-tab init for league
+(function() {
+  // Table
+    const agents=[
+      {rank:1,name:'Sakura Realty Co.',region:'Tokyo',listings:84,spend:'¥840K',rating:'4.8★',resp:'96%',plan:'Gold',score:94.2},
+      {rank:2,name:'Tokyo Prime Homes',region:'Tokyo',listings:72,spend:'¥620K',rating:'4.6★',resp:'92%',plan:'Gold',score:88.4},
+      {rank:3,name:'Osaka Living Corp.',region:'Osaka',listings:58,spend:'¥480K',rating:'4.5★',resp:'88%',plan:'Silver',score:81.2},
+      {rank:4,name:'Kyoto View Partners',region:'Kyoto',listings:48,spend:'¥320K',rating:'4.4★',resp:'85%',plan:'Silver',score:74.8},
+      {rank:5,name:'Nagoya Estate Ltd.',region:'Nagoya',listings:42,spend:'¥240K',rating:'4.2★',resp:'81%',plan:'Bronze',score:68.4},
+      {rank:6,name:'Fukuoka City Homes',region:'Fukuoka',listings:38,spend:'¥180K',rating:'4.1★',resp:'78%',plan:'Bronze',score:62.1},
+      {rank:7,name:'Sapporo Realty K.K.',region:'Sapporo',listings:28,spend:'¥120K',rating:'3.9★',resp:'74%',plan:'Free',score:54.2},
+    ];
+    const tbody=document.getElementById('leagueTableBody');
+    const planColors={Gold:'b-gold',Silver:'b-grey',Bronze:'b-watch',Free:'b-grey'};
+    const medals=['🥇','🥈','🥉'];
+    agents.forEach(a=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td style="text-align:center">${a.rank<=3?`<span style="font-size:18px">${medals[a.rank-1]}</span>`:a.rank}</td>
+        <td class="bold">${a.name}</td><td>${a.region}</td><td class="num">${a.listings}</td>
+        <td class="num">${a.spend}</td><td class="num">${a.rating}</td><td class="num">${a.resp}</td>
+        <td><span class="badge ${planColors[a.plan]}">${a.plan}</span></td>
+        <td class="num"><strong>${a.score}</strong></td>
+        <td><button class="btn btn-out btn-sm" onclick="alert('Opening agent detail... (demo)')">View</button></td>`;
+      tbody.appendChild(tr);
+    });
+    new Chart(document.getElementById('leagueListingsChart'),{type:'bar',data:{labels:agents.slice(0,7).map(a=>a.name.split(' ')[0]),datasets:[{data:agents.map(a=>a.listings),backgroundColor:C.gold+'cc',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:{grid:{color:'#f0ece6'}},y:{grid:{display:false}}}}});
+    new Chart(document.getElementById('leagueAdSpendChart'),{type:'bar',data:{labels:agents.slice(0,7).map(a=>a.name.split(' ')[0]),datasets:[{data:[840,620,480,320,240,180,120],backgroundColor:C.blue+'cc',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`¥${c.raw}K`}}},scales:{x:{grid:{color:'#f0ece6'}},y:{grid:{display:false}}}}});
+    // ─ patch ─
+  // Activity heatmap
+    hmap('hmLeague','hmLeagueLg',['#ede7dc','#c9dbb5','#8dbf75','#4a9e52','#1d6b30']);
+    // Rating distribution stacked bar
+    const agNames=['Sakura','Tokyo Prime','Osaka Liv.','Kyoto View','Nagoya Est.','Fukuoka C.','Sapporo R.'];
+    new Chart(document.getElementById('ratingDistChart'),{type:'bar',data:{labels:agNames,datasets:[
+      {label:'5★',data:ri(60,120,7),backgroundColor:'#2d6a4f',borderRadius:2},
+      {label:'4★',data:ri(30,80,7),backgroundColor:'#2ecc71aa',borderRadius:2},
+      {label:'3★',data:ri(10,30,7),backgroundColor:'#f1c40faa',borderRadius:2},
+      {label:'2★',data:ri(2,10,7),backgroundColor:'#e67e22aa',borderRadius:2},
+      {label:'1★',data:ri(0,5,7),backgroundColor:'#c0392baa',borderRadius:2},
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:10}}},y:{stacked:true,grid:{color:'#f0ece6'}}}}});
+    // Ad spend trend
+    const m6=dates(6,'monthly');
+    new Chart(document.getElementById('leagueAdTrendChart'),{type:'line',data:{labels:m6,datasets:[
+      {label:'Sakura Realty',data:ri(600,900,6),borderColor:C.gold,fill:false,tension:0.4,pointRadius:3,borderWidth:2},
+      {label:'Tokyo Prime',data:ri(400,700,6),borderColor:C.blue,fill:false,tension:0.4,pointRadius:3,borderWidth:2},
+      {label:'Osaka Living',data:ri(300,550,6),borderColor:C.green,fill:false,tension:0.4,pointRadius:3,borderWidth:2},
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}},tooltip:TT},scales:{x:{grid:{display:false}},y:{grid:{color:'#f0ece6'},ticks:{callback:v=>'¥'+v+'K'}}}}});
+})();
+</script>
+</body>
+</html>
