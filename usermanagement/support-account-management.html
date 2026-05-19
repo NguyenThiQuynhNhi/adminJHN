@@ -241,7 +241,113 @@
         }
       }
     </style>
-  </head>
+    <style id="uxResponsiveSplitFix">
+/* Force stack 1 column: list full-width on top, detail below */
+.layout {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+/* Compact tightening for very narrow viewports */
+@media (max-width: 900px) {
+  .page {
+    padding: 16px !important;
+  }
+}
+</style>
+<style id="uxTableOverflowFix">
+/* Table overflow handling: keep text intact, only enable horizontal scroll on narrow viewport */
+@media (max-width: 1199px) {
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+</style>
+  <style id="uxBaselinePolish">
+/* Baseline UI polish — applies only where file CSS doesn't override */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Pointer cursor on interactive */
+button, .btn, [role="button"], select,
+input[type="checkbox"], input[type="radio"], input[type="submit"],
+input[type="button"], a[href], label[for] {
+  cursor: pointer;
+}
+
+/* Disabled state */
+button:disabled, .btn:disabled, input:disabled, select:disabled, textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Focus-visible outline (a11y) */
+button:focus-visible, .btn:focus-visible,
+a:focus-visible, [role="button"]:focus-visible,
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid #c4a25f;
+  outline-offset: 2px;
+}
+
+/* Inherit font family for form controls (fixes browser-default) */
+input, select, textarea, button {
+  font-family: inherit;
+}
+
+/* Responsive media */
+img, svg, video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Subtle hover for buttons (only if no transition already set, gentle filter) */
+button:hover:not(:disabled), .btn:hover:not(:disabled) {
+  filter: brightness(0.96);
+  transition: filter 0.15s ease;
+}
+
+/* Smooth scrollbar on Webkit */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #f5ece0;
+}
+::-webkit-scrollbar-thumb {
+  background: #d9c8b4;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c4a25f;
+}
+
+/* Selection highlight on-brand */
+::selection {
+  background: #c4a25f;
+  color: #fff;
+}
+
+/* HR baseline */
+hr {
+  border: none;
+  border-top: 1px solid #eadccd;
+  margin: 12px 0;
+}
+
+/* Anchor baseline color matches brand (no underline by default to match flat UI) */
+a {
+  color: #8a5a3b;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+</style>
+</head>
   <body>
     <div class="page">
       <div class="page-header">
@@ -765,9 +871,10 @@
           source: "Support Account Management",
         };
 
-        upsertLead(lead);
-        Toast.ok("Saved as lead in admin overview");
-        updateLeadButtonsForSupport();
+        openLeadGroupPicker({
+          lead,
+          onSaved() { updateLeadButtonsForSupport(); },
+        });
       }
 
       function unsaveLeadFromSupport() {
@@ -1783,6 +1890,226 @@
   }
 </style>
 <!-- ─────── END detail-view extras ─────── -->
+
+    <!-- ─────── LEAD GROUP PICKER (shared) ─────── -->
+<style id="leadPickerStyle">
+  .lp-modal-box{width:520px;max-width:90vw}
+  .lp-subject{
+    background:#fdf8f0;border:1px solid #eadccd;border-radius:8px;
+    padding:8px 12px;margin-bottom:12px;font-size:12.5px;color:#4a3f35;
+  }
+  .lp-newrow{
+    background:#faf6ee;border:1px dashed #d4c3a0;border-radius:8px;
+    padding:10px 12px;margin-bottom:12px;display:flex;gap:8px;
+  }
+  .lp-newrow input{
+    flex:1;padding:7px 10px;border:1px solid #ddcdb9;border-radius:6px;
+    font-size:13px;font-family:inherit;background:#fff;
+  }
+  .lp-newrow input:focus{
+    outline:none;border-color:#c4a25f;box-shadow:0 0 0 3px rgba(196,162,95,.18);
+  }
+  .lp-newrow button{
+    padding:7px 14px;border-radius:6px;border:none;background:#c4a25f;
+    color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:12px;
+  }
+  .lp-newrow button:hover{background:#b08d4a}
+  .lp-list{max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .lp-group{
+    display:flex;align-items:center;gap:10px;padding:10px 12px;
+    border:1.5px solid #e5d9c0;border-radius:8px;cursor:pointer;
+    background:#fff;transition:border-color .15s,background .15s;
+  }
+  .lp-group:hover{background:#fdfaf6}
+  .lp-group.selected{border-color:#c4a25f;background:#fdf2d8}
+  .lp-group input{accent-color:#c4a25f;flex-shrink:0}
+  .lp-group-body{flex:1;min-width:0}
+  .lp-group-name{font-size:13px;font-weight:600;color:#2c1810}
+  .lp-group-meta{font-size:11px;color:#7c6a55;margin-top:2px}
+  .lp-group-badge{
+    font-size:10.5px;font-weight:700;background:#f1e4d4;color:#7b623f;
+    padding:3px 8px;border-radius:10px;flex-shrink:0;
+  }
+  .lp-empty{
+    text-align:center;padding:24px 12px;font-size:12.5px;color:#9d8a72;
+    font-style:italic;background:#faf6ee;border-radius:8px;
+  }
+  .lp-already{
+    font-size:11px;color:#856404;background:#fff3cd;border-radius:4px;
+    padding:1px 6px;margin-left:6px;
+  }
+</style>
+
+<div class="ux-modal" id="leadPickerModal" role="dialog" aria-modal="true" aria-labelledby="lpTitle">
+  <div class="ux-modal-box lp-modal-box">
+    <h3 id="lpTitle">Save to lead group</h3>
+    <div class="lp-subject" id="lpSubject">—</div>
+
+    <div class="lp-newrow">
+      <input id="lpNewName" type="text" placeholder="New group name…" />
+      <button type="button" id="lpCreateBtn">Create group</button>
+    </div>
+
+    <div class="lp-list" id="lpList"></div>
+
+    <div class="ux-modal-actions">
+      <button type="button" class="ux-btn" id="lpCancelBtn">Cancel</button>
+      <button type="button" class="ux-btn primary" id="lpSaveBtn" disabled>Save to group</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  if (window.openLeadGroupPicker) return;
+  const GROUP_KEY = "yuushiLeadGroups";
+  const LEAD_KEY = "yuushiLeads";
+
+  function readGroups() {
+    try { return JSON.parse(localStorage.getItem(GROUP_KEY)) || []; }
+    catch (e) { return []; }
+  }
+  function writeGroups(g) {
+    localStorage.setItem(GROUP_KEY, JSON.stringify(g));
+  }
+  function readLeads() {
+    try { return JSON.parse(localStorage.getItem(LEAD_KEY)) || []; }
+    catch (e) { return []; }
+  }
+  function writeLeads(l) {
+    localStorage.setItem(LEAD_KEY, JSON.stringify(l));
+  }
+  function upsertLead(lead) {
+    const all = readLeads();
+    const keyId = String(lead.id);
+    const idx = all.findIndex(
+      (x) => x && x.entityType === lead.entityType && String(x.id) === keyId,
+    );
+    if (idx >= 0) all[idx] = { ...all[idx], ...lead };
+    else all.push(lead);
+    writeLeads(all);
+  }
+
+  const modal     = document.getElementById('leadPickerModal');
+  const titleEl   = document.getElementById('lpTitle');
+  const subjEl    = document.getElementById('lpSubject');
+  const listEl    = document.getElementById('lpList');
+  const newNameEl = document.getElementById('lpNewName');
+  const createBtn = document.getElementById('lpCreateBtn');
+  const cancelBtn = document.getElementById('lpCancelBtn');
+  const saveBtn   = document.getElementById('lpSaveBtn');
+  let _ctx = null;   // { lead, onSaved }
+  let _selectedId = null;
+
+  function close() {
+    modal.classList.remove('open');
+    _ctx = null;
+    _selectedId = null;
+    newNameEl.value = '';
+    saveBtn.disabled = true;
+  }
+  cancelBtn.addEventListener('click', close);
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+  function render() {
+    if (!_ctx) return;
+    const lead = _ctx.lead;
+    const groups = readGroups().filter((g) => g.entityType === lead.entityType);
+    listEl.innerHTML = '';
+    if (!groups.length) {
+      listEl.innerHTML = '<div class="lp-empty">No groups yet for this type. Use the box above to create one.</div>';
+      saveBtn.disabled = true;
+      return;
+    }
+    groups.forEach((g) => {
+      const already = (g.leadIds || []).map(String).includes(String(lead.id));
+      const row = document.createElement('label');
+      row.className = 'lp-group';
+      if (_selectedId === g.id) row.classList.add('selected');
+      row.innerHTML = `
+        <input type="radio" name="lpGroup" value="${g.id}" ${_selectedId === g.id ? 'checked' : ''} />
+        <div class="lp-group-body">
+          <div class="lp-group-name">${g.name}${already ? '<span class="lp-already">already in group</span>' : ''}</div>
+          <div class="lp-group-meta">${(g.leadIds || []).length} member${(g.leadIds || []).length === 1 ? '' : 's'} · created ${g.createdDate || '—'}</div>
+        </div>
+        <span class="lp-group-badge">${g.entityType === 'agent' ? 'AGENT' : g.entityType === 'end_user' ? 'END USER' : g.entityType.toUpperCase()}</span>
+      `;
+      row.addEventListener('click', () => {
+        _selectedId = g.id;
+        render();
+      });
+      listEl.appendChild(row);
+    });
+    saveBtn.disabled = !_selectedId;
+  }
+
+  createBtn.addEventListener('click', () => {
+    if (!_ctx) return;
+    const name = newNameEl.value.trim();
+    if (!name) {
+      newNameEl.classList.add('ux-invalid');
+      newNameEl.focus();
+      return;
+    }
+    newNameEl.classList.remove('ux-invalid');
+    const groups = readGroups();
+    const id = 'g_' + Date.now();
+    groups.push({
+      id,
+      name,
+      entityType: _ctx.lead.entityType,
+      leadIds: [],
+      createdDate: new Date().toISOString().slice(0, 10),
+    });
+    writeGroups(groups);
+    newNameEl.value = '';
+    _selectedId = id;
+    render();
+    if (window.Toast) Toast.ok(`Group "${name}" created`);
+  });
+
+  newNameEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); createBtn.click(); }
+  });
+
+  saveBtn.addEventListener('click', () => {
+    if (!_ctx || !_selectedId) return;
+    const lead = _ctx.lead;
+    const onSaved = _ctx.onSaved;
+    const groups = readGroups();
+    const group = groups.find((g) => g.id === _selectedId);
+    if (!group) { close(); return; }
+    group.leadIds = group.leadIds || [];
+    if (!group.leadIds.map(String).includes(String(lead.id))) {
+      group.leadIds.push(lead.id);
+    }
+    writeGroups(groups);
+    upsertLead(lead);
+    if (window.Toast) Toast.ok(`Added to "${group.name}"`);
+    if (typeof onSaved === 'function') onSaved(group);
+    close();
+  });
+
+  window.openLeadGroupPicker = function (opts) {
+    opts = opts || {};
+    const lead = opts.lead;
+    if (!lead || !lead.id || !lead.entityType) {
+      console.error('openLeadGroupPicker: lead.id and lead.entityType required');
+      return;
+    }
+    _ctx = { lead, onSaved: opts.onSaved };
+    _selectedId = null;
+    titleEl.textContent = opts.title || 'Save to lead group';
+    subjEl.textContent =
+      (lead.name ? lead.name : 'Lead') +
+      (lead.email ? ' · ' + lead.email : lead.id ? ' · ' + lead.id : '');
+    render();
+    modal.classList.add('open');
+    setTimeout(() => newNameEl.focus(), 40);
+  };
+})();
+</script>
+<!-- ─────── END LEAD GROUP PICKER ─────── -->
 
   </body>
 </html>

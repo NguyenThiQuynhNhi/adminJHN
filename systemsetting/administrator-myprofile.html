@@ -384,7 +384,101 @@
         }
       }
     </style>
-  </head>
+    <style id="uxTableOverflowFix">
+/* Table overflow handling: keep text intact, only enable horizontal scroll on narrow viewport */
+@media (max-width: 1199px) {
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+</style>
+  <style id="uxBaselinePolish">
+/* Baseline UI polish — applies only where file CSS doesn't override */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Pointer cursor on interactive */
+button, .btn, [role="button"], select,
+input[type="checkbox"], input[type="radio"], input[type="submit"],
+input[type="button"], a[href], label[for] {
+  cursor: pointer;
+}
+
+/* Disabled state */
+button:disabled, .btn:disabled, input:disabled, select:disabled, textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Focus-visible outline (a11y) */
+button:focus-visible, .btn:focus-visible,
+a:focus-visible, [role="button"]:focus-visible,
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid #c4a25f;
+  outline-offset: 2px;
+}
+
+/* Inherit font family for form controls (fixes browser-default) */
+input, select, textarea, button {
+  font-family: inherit;
+}
+
+/* Responsive media */
+img, svg, video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Subtle hover for buttons (only if no transition already set, gentle filter) */
+button:hover:not(:disabled), .btn:hover:not(:disabled) {
+  filter: brightness(0.96);
+  transition: filter 0.15s ease;
+}
+
+/* Smooth scrollbar on Webkit */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #f5ece0;
+}
+::-webkit-scrollbar-thumb {
+  background: #d9c8b4;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c4a25f;
+}
+
+/* Selection highlight on-brand */
+::selection {
+  background: #c4a25f;
+  color: #fff;
+}
+
+/* HR baseline */
+hr {
+  border: none;
+  border-top: 1px solid #eadccd;
+  margin: 12px 0;
+}
+
+/* Anchor baseline color matches brand (no underline by default to match flat UI) */
+a {
+  color: #8a5a3b;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+</style>
+</head>
   <body>
     <div>
       <h1>My Profile</h1>
@@ -402,11 +496,34 @@
               accept="image/*"
             />
           </div>
-          <div>
+          <div style="flex: 1">
             <h2 class="profile-name" id="profileName">Admin Tanaka</h2>
-            <button id="btnUploadAvatar" class="btn btn-ghost" type="button">
-              Change avatar
-            </button>
+            <div class="profile-subtitle" id="profileSubtitle">
+              Super Admin · admin@company.co.jp
+            </div>
+            <div style="margin-top: 6px; display: flex; gap: 6px; align-items: center">
+              <span class="badge" id="profileStatus">Active</span>
+              <button id="btnUploadAvatar" class="btn btn-ghost" type="button">
+                Change avatar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-summary">
+          <div class="summary-tile">
+            <div class="summary-label">Username</div>
+            <div class="summary-value" id="summaryUsername">admin_tanaka</div>
+          </div>
+          <div class="summary-tile">
+            <div class="summary-label">Last login</div>
+            <div class="summary-value" id="summaryLastLogin">
+              2026-04-21 09:12 JST
+            </div>
+          </div>
+          <div class="summary-tile">
+            <div class="summary-label">Language</div>
+            <div class="summary-value" id="summaryLanguage">Japanese</div>
           </div>
         </div>
       </section>
@@ -445,13 +562,13 @@
           </div>
           <div class="form-field">
             <label class="field-label" for="profileRole">Role</label>
-            <div style="flex-direction: row">
+            <div style="display: flex; gap: 8px; align-items: center">
               <input
                 id="profileRole"
                 type="text"
                 value="Super Admin"
                 readonly
-                style="width: fit-content"
+                style="flex: 1"
               />
               <button
                 id="btnViewPermissions"
@@ -471,13 +588,12 @@
             </select>
           </div>
           <div class="form-field">
-            <label class="field-label">Address</label>
+            <label class="field-label" for="profileAddress">Address</label>
             <input
               id="profileAddress"
               type="text"
               value="123 Main St, Tokyo, Japan"
             />
-            <div class="actions-row left"></div>
           </div>
         </div>
 
@@ -618,6 +734,7 @@
         role: "Super Admin",
         email: "admin@company.co.jp",
         phone: "+81 90 1234 5678",
+        address: "123 Main St, Tokyo, Japan",
         language: "jp",
         status: "Active",
         lastLogin: "2026-04-21 09:12 JST",
@@ -654,6 +771,7 @@
         phone: document.getElementById("profilePhone"),
         role: document.getElementById("profileRole"),
         language: document.getElementById("profileLanguage"),
+        address: document.getElementById("profileAddress"),
         save: document.getElementById("btnSaveProfile"),
         viewPermissions: document.getElementById("btnViewPermissions"),
         changePassword: document.getElementById("btnChangePassword"),
@@ -716,13 +834,15 @@
         els.phone.value = profile.phone;
         els.role.value = profile.role;
         els.language.value = profile.language;
+        els.address.value = profile.address;
       }
 
       function saveProfile() {
         profile.phone = els.phone.value.trim() || profile.phone;
         profile.language = els.language.value;
+        profile.address = els.address.value.trim() || profile.address;
         renderProfile();
-        alert("Profile saved (demo).");
+        alert("Profile saved.");
       }
 
       function triggerAvatarUpload() {
@@ -842,7 +962,7 @@
           return;
         }
         closeModal("passwordModal");
-        alert("Password updated (demo).");
+        alert("Password updated.");
       }
 
       function bindModalCloseButtons() {

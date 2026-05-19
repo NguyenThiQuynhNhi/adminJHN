@@ -4,429 +4,170 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin - End User Management</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
     <style>
-      * {
-        box-sizing: border-box;
+      :root {
+        --bg-body: #f5f3ef; --bg-card: #fffaf2; --border-subtle: #eadccd;
+        --accent: #c26b41; --accent-dark: #a55232; --text-main: #3b2f2a; --text-muted: #7a6a5c;
+        --badge-green: #2f855a; --badge-red: #c53030; --badge-gray: #4a5568; --badge-amber: #b7791f;
+        --fs-h1: 22px; --fs-card-title: 14px; --fs-body: 13px; --fs-small: 12px; --fs-label: 11px;
       }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body { padding: clamp(16px, 2.5vw, 24px); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg-body); color: var(--text-main); font-size: var(--fs-body); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+      h1 { margin: 0 0 4px; font-size: var(--fs-h1); font-weight: 700; letter-spacing: 0.02em; }
+      .page-subtitle { margin: 0 0 16px; font-size: var(--fs-small); color: var(--text-muted); }
+      .page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+      .page-header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+      .card { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-subtle); padding: 18px; box-shadow: 0 8px 24px rgba(115, 72, 39, 0.05); margin-bottom: 16px; transition: border-color 0.2s; }
+      .card-title { font-size: var(--fs-card-title); font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid #f5ece0; }
+      .card-title i { color: var(--accent); font-size: 13px; width: 18px; text-align: center; }
+      .filter-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 10px 12px; align-items: end; }
+      .field-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+      .field-label { font-size: var(--fs-label); font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+      input, select, textarea { border-radius: 8px; border: 1px solid var(--border-subtle); padding: 8px 11px; font-size: var(--fs-body); background: #fffcf7; color: var(--text-main); outline: none; font-family: inherit; width: 100%; min-height: 36px; }
+      textarea { resize: vertical; min-height: 70px; }
+      input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(194, 107, 65, 0.18); }
+      .number-range { display: flex; gap: 4px; align-items: center; }
+      .number-range input { padding: 6px 8px; }
+      .filter-actions { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; flex-wrap: wrap; }
+      .btn { border-radius: 8px; border: 1px solid var(--border-subtle); padding: 8px 14px; font-size: var(--fs-body); background: #fff; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; justify-content: center; color: var(--text-main); font-family: inherit; font-weight: 500; min-height: 36px; transition: background 0.15s, transform 0.1s; }
+      .btn:hover { background: #f9f6f0; }
+      .btn:active { transform: translateY(1px); }
+      .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); border-color: var(--accent-dark); color: #fffaf3; }
+      .btn-primary:hover { background: linear-gradient(135deg, #b5603a, #9a482d); }
+      .btn-ghost { background: transparent; border-color: transparent; }
+      .btn-ghost:hover { background: #f3ece1; }
+      .btn-sm { padding: 5px 10px; font-size: 12px; min-height: 30px; }
+      .btn-danger { color: var(--badge-red); border-color: #fbcaca; background: #fff; }
+      .btn-danger:hover { background: #fde8e8; }
+      .btn-warning { color: var(--badge-amber); border-color: #fbd38d; background: #fff; }
+      .btn-warning:hover { background: #fff6e0; }
+      .btn-star { color: #b7791f; border-color: #fbd38d; background: #fff; }
+      .btn-star:hover { background: #fff6e0; }
+      .data-table-wrap { overflow-x: auto; }
+      table.data-table { width: 100%; border-collapse: collapse; font-size: var(--fs-small); }
+      .data-table thead { background: #f7efe6; }
+      .data-table th, .data-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #efe0d4; white-space: nowrap; }
+      .data-table th { font-weight: 600; font-size: var(--fs-label); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+      .data-table th.num, .data-table td.num { text-align: right; }
+      .data-table tbody tr { cursor: pointer; transition: background 0.12s; }
+      .data-table tbody tr:hover { background: #f8f1ea; }
+      .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; border: 1px solid transparent; white-space: nowrap; }
+      .badge-active, .badge-on, .badge-normal, .badge-verified, .badge-paid { background: #e6f6ef; color: var(--badge-green); border-color: #b7e4cc; }
+      .badge-suspended, .badge-pending, .badge-overdue { background: #fff6e0; color: var(--badge-amber); border-color: #fbd38d; }
+      .badge-deactivated, .badge-none { background: #f7f7f8; color: var(--badge-gray); border-color: #d2d6dc; }
+      .badge-off, .badge-locked, .badge-unverified { background: #fde8e8; color: var(--badge-red); border-color: #fbcaca; }
+      .badge-premium { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+      .results-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+      .results-count { font-size: var(--fs-small); color: var(--text-muted); }
+      .results-count strong { color: var(--text-main); }
+      .btn-chat { width: 32px; height: 32px; border-radius: 8px; background: #fef1e6; color: var(--accent); border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s; padding: 0; }
+      .btn-chat:hover { background: var(--accent); color: #fff; }
+      .alert-dot { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 22px; padding: 0 7px; border-radius: 999px; background: #fde8e8; color: var(--badge-red); font-size: 11px; font-weight: 700; gap: 4px; }
+      .alert-dot.none { background: #e6f6ef; color: var(--badge-green); }
+      .detail-toolbar { position: sticky; top: 0; background: var(--bg-body); padding: 12px 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; border-bottom: 1px solid transparent; }
+      .detail-toolbar-left { display: flex; align-items: center; gap: 8px; }
+      .detail-toolbar-right { display: flex; gap: 8px; flex-wrap: wrap; }
+      .mode-indicator { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; background: #f3ece1; color: #5b4a35; }
+      .mode-indicator.edit { background: #fff6e0; color: var(--badge-amber); }
+      .mode-indicator .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+      .detail-hero { background: linear-gradient(135deg, #fffaf2 0%, #fff5e8 60%, #fef1e6 100%); border-radius: 14px; border: 1px solid var(--border-subtle); padding: 22px; display: flex; align-items: center; gap: 18px; margin-bottom: 16px; flex-wrap: wrap; box-shadow: 0 8px 28px rgba(115, 72, 39, 0.06); }
+      .detail-avatar { width: 76px; height: 76px; border-radius: 18px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fffaf3; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; flex-shrink: 0; box-shadow: 0 8px 20px rgba(194, 107, 65, 0.25); }
+      .detail-hero-info { flex: 1; min-width: 0; }
+      .detail-name { font-size: 20px; font-weight: 700; margin: 0 0 6px; color: var(--text-main); }
+      .detail-meta { font-size: var(--fs-small); color: var(--text-muted); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+      .section-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 14px; }
+      .kv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px 16px; }
+      .kv { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+      .kv-label { font-size: var(--fs-label); font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+      .kv-value { font-size: var(--fs-body); color: var(--text-main); word-break: break-word; min-height: 20px; }
+      .kv-full { grid-column: 1 / -1; }
+      .edit-input { width: 100%; padding: 7px 10px; font-size: 13px; border: 1px solid #d9c8b4; border-radius: 6px; background: #fff; color: var(--text-main); outline: none; font-family: inherit; min-height: 34px; }
+      .edit-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(194, 107, 65, 0.18); }
+      textarea.edit-input { resize: vertical; min-height: 60px; }
+      .mini-table { width: 100%; border-collapse: collapse; font-size: var(--fs-small); }
+      .mini-table th, .mini-table td { padding: 8px 10px; border-bottom: 1px solid #efe0d4; text-align: left; }
+      .mini-table th { font-size: var(--fs-label); font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; background: #f7efe6; }
+      .mini-table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border-subtle); }
+      .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 10px; }
+      .kpi-tile { background: linear-gradient(135deg, #fffaf2 0%, #fff5e8 100%); border-radius: 10px; padding: 12px 14px; border: 1px solid #f3ece1; display: flex; gap: 10px; align-items: center; }
+      .kpi-tile-icon { width: 34px; height: 34px; border-radius: 8px; background: #fff; color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+      .kpi-tile-info { flex: 1; min-width: 0; }
+      .kpi-tile-label { font-size: var(--fs-label); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px; }
+      .kpi-tile-value { font-size: 17px; font-weight: 700; color: var(--text-main); }
+      .hidden { display: none !important; }
+      .month-chart { display: flex; gap: 6px; align-items: flex-end; height: 80px; padding: 8px 0; }
+      .month-bar { flex: 1; background: linear-gradient(180deg, var(--accent), var(--accent-dark)); border-radius: 4px 4px 0 0; min-height: 4px; }
+      .month-bar.recv { background: linear-gradient(180deg, #6b7c8f, #4a5568); }
+      .month-chart-wrap { display: flex; gap: 18px; flex-wrap: wrap; }
+      .month-chart-col { flex: 1; min-width: 240px; }
+      .month-chart-title { font-size: var(--fs-label); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+      .month-labels { display: flex; gap: 6px; font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+      .month-labels > div { flex: 1; text-align: center; }
+      /* Password reset modal */
+      .modal-backdrop { position: fixed; inset: 0; background: rgba(34, 24, 18, 0.48); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
+      .modal-backdrop.open { display: flex; }
+      .modal-box { width: 480px; max-width: 100%; background: #fff; border-radius: 14px; box-shadow: 0 24px 60px rgba(0,0,0,0.24); display: flex; flex-direction: column; max-height: 90vh; }
+      .modal-header { padding: 14px 18px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; }
+      .modal-title { margin: 0; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+      .modal-title i { color: var(--badge-red); }
+      .modal-body { padding: 18px; overflow: auto; }
+      .modal-footer { padding: 12px 18px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 8px; }
+      .warning-banner { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; color: #6b3a00; font-size: 12.5px; line-height: 1.45; }
+      .warning-banner i { color: #b7791f; font-size: 18px; margin-top: 2px; flex-shrink: 0; }
+      .modal-field { margin-top: 12px; display: flex; flex-direction: column; gap: 4px; }
+      .modal-error { display: none; color: var(--badge-red); font-size: 12px; margin-top: 8px; padding: 8px 10px; background: #fde8e8; border: 1px solid #fbcaca; border-radius: 6px; }
+      .modal-error.show { display: block; }
+      .btn-primary-danger { background: linear-gradient(135deg, #d24a3d, #a73128); border-color: #a73128; color: #fff; }
+      .btn-primary-danger:hover { background: linear-gradient(135deg, #c34033, #962d24); }
 
-      body {
-        margin: 0;
-        font-family:
-          system-ui,
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
-          sans-serif;
-        background: #f5f3ef;
-        color: #2a2118;
-      }
-
-      .page {
-        padding: 24px 32px 32px;
-      }
-
-      .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 18px;
-      }
-
-      .top-actions {
-        display: flex;
-        justify-content: flex-end;
-        margin-bottom: 12px;
-        gap: 8px;
-      }
-
-      .page-title {
-        font-size: 22px;
-        font-weight: 700;
-        margin-bottom: 4px;
-      }
-
-      .page-subtitle {
-        font-size: 13px;
-        color: #7c6a55;
-        max-width: 640px;
-      }
-
-      .layout {
-        display: grid;
-        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-        gap: 18px;
-      }
-
-      .card {
-        background: #fffaf2;
-        border-radius: 10px;
-        border: 1px solid #eadccd;
-        padding: 14px 16px 16px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-      }
-
-      .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-      }
-
-      .card-title {
-        font-size: 15px;
-        font-weight: 600;
-      }
-
-      .card-subtitle {
-        font-size: 12px;
-        color: #7c6a55;
-      }
-
-      .filters {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 10px;
-      }
-
-      .filters input[type="text"],
-      .filters select {
-        border-radius: 999px;
-        border: 1px solid #ddcdb9;
-        padding: 6px 10px;
-        font-size: 12px;
-        background: #fdf8f0;
-      }
-
-      .filters input[type="text"] {
-        flex: 1;
-        min-width: 200px;
-      }
-
-      .filters select {
-        min-width: 140px;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-      }
-
-      thead {
-        background: #f1e4d4;
-      }
-
-      th,
-      td {
-        padding: 8px 6px;
-        text-align: left;
-        border-bottom: 1px solid #efe2d3;
-      }
-
-      th {
-        font-weight: 600;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.02em;
-        color: #7b623f;
-      }
-
-      tbody tr:hover td {
-        background: #f8efe3;
-      }
-
-      .status-pill {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 8px;
-        border-radius: 999px;
-        font-size: 10px;
-        font-weight: 600;
-      }
-
-      .status-active {
-        background: #e0f6df;
-        color: #266734;
-      }
-
-      .status-suspended {
-        background: #fde0dd;
-        color: #9a2136;
-      }
-
-      .status-pending {
-        background: #fff5d6;
-        color: #8a6a21;
-      }
-
-      .btn {
-        border-radius: 999px;
-        border: none;
-        padding: 4px 10px;
-        font-size: 11px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-      }
-
-      .btn-ghost {
-        background: #f7efe4;
-        color: #6a5641;
-        border: 1px solid #ddcdb9;
-      }
-
-      .btn-primary {
-        background: #3a6b3c;
-        color: #fff;
-      }
-
-      .btn-danger {
-        background: #b53838;
-        color: #fff;
-      }
-
-      .btn-sm {
-        padding: 3px 8px;
-        font-size: 10px;
-      }
-
-      .actions {
-        display: flex;
-        gap: 6px;
-      }
-
-      .empty-state {
-        font-size: 12px;
-        color: #7c6a55;
-        text-align: center;
-        padding: 14px 0;
-      }
-
-      .detail-title {
-        font-size: 14px;
-        font-weight: 600;
-        margin-bottom: 6px;
-      }
-
-      .detail-section {
-        margin-bottom: 14px;
-      }
-
-      .detail-list {
-        list-style: none;
-        padding-left: 0;
-        margin: 0;
-        font-size: 12px;
-        color: #6d5b45;
-      }
-
-      .detail-list li {
-        margin-bottom: 4px;
-      }
-
-      .badge-soft {
-        font-size: 10px;
-        padding: 2px 6px;
-        border-radius: 999px;
-        background: #f1e4d4;
-        color: #7b623f;
-      }
-
-      .avatar-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .avatar-circle {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #c9a574, #8c6845);
-        color: #fffaf2;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 11px;
-        font-weight: 600;
-      }
-
-      .kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 10px;
-        margin-bottom: 16px;
-      }
-
-      .kpi-card {
-        background: #fffaf2;
-        border-radius: 10px;
-        border: 1px solid #eadccd;
-        padding: 10px 12px;
-      }
-
-      .kpi-label {
-        font-size: 11px;
-        color: #7c6a55;
-        margin-bottom: 2px;
-      }
-
-      .kpi-value {
-        font-size: 18px;
-        font-weight: 700;
-        color: #2a2118;
-      }
-
-      .kpi-sub {
-        font-size: 11px;
-        color: #9a8465;
-      }
-
-      .field-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px 12px;
-      }
-
-      .field-grid label {
-        font-size: 11px;
-        color: #7c6a55;
-        display: block;
-        margin-bottom: 2px;
-      }
-
-      .field-grid input,
-      .field-grid select {
-        width: 100%;
-        border-radius: 8px;
-        border: 1px solid #ddcdb9;
-        padding: 5px 8px;
-        font-size: 12px;
-        background: #fdf8f0;
-      }
-
-      .field-row {
-        margin-bottom: 8px;
-      }
-
-      .field-row textarea {
-        width: 100%;
-        border-radius: 8px;
-        border: 1px solid #ddcdb9;
-        padding: 6px 8px;
-        font-size: 12px;
-        background: #fdf8f0;
-        resize: vertical;
-        min-height: 60px;
-      }
-
-      @media (max-width: 960px) {
-        .layout {
-          grid-template-columns: minmax(0, 1fr);
-        }
-
-        .kpi-grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-      }
+      @media (max-width: 768px) { .page-header { flex-direction: column; } .detail-toolbar { flex-direction: column; align-items: stretch; } .detail-toolbar-right { justify-content: flex-end; } }
     </style>
   </head>
   <body>
-    <div class="page">
+    <div id="listView">
       <div class="page-header">
         <div>
-          <div class="page-title">End User Management</div>
+          <h1>End User Management</h1>
+          <div class="page-subtitle">Manage end-user accounts: verification, segmentation, engagement and support history.</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn" type="button" onclick="exportCsv()"><i class="fas fa-file-export"></i> Export CSV</button>
         </div>
       </div>
 
-      <div class="top-actions">
-        <button type="button" class="btn btn-ghost" id="exportCsvBtn">
-          Export CSV
-        </button>
-      </div>
+      <section class="card">
+        <div class="card-title"><i class="fas fa-filter"></i> Filters</div>
+        <div class="filter-bar">
+          <div class="field-group"><label class="field-label" for="fStatus">Status</label><select id="fStatus" multiple size="4"><option value="Active">Active</option><option value="Suspended">Suspended</option><option value="Pending">Pending</option><option value="Deactivated">Deactivated</option></select></div>
+          <div class="field-group"><label class="field-label" for="fRegFrom">Registration — From</label><input id="fRegFrom" type="date" /></div>
+          <div class="field-group"><label class="field-label" for="fRegTo">Registration — To</label><input id="fRegTo" type="date" /></div>
+          <div class="field-group"><label class="field-label" for="fLoginFrom">Last Login — From</label><input id="fLoginFrom" type="date" /></div>
+          <div class="field-group"><label class="field-label" for="fLoginTo">Last Login — To</label><input id="fLoginTo" type="date" /></div>
+          <div class="field-group"><label class="field-label">Failed Logins (24h)</label><div class="number-range"><input id="fFailMin" type="number" min="0" placeholder="Min" /><span>–</span><input id="fFailMax" type="number" min="0" placeholder="Max" /></div></div>
+          <div class="field-group"><label class="field-label" for="fFailThreshold">Or Threshold</label><select id="fFailThreshold"><option value="">— Any —</option><option value="0">0</option><option value="1-4">1–4</option><option value="5+">5+</option></select></div>
+          <div class="field-group"><label class="field-label" for="fBuyerStatus">Buyer Status</label><select id="fBuyerStatus" multiple size="4"><option value="Cash Buyer">Cash Buyer</option><option value="Mortgage Approved">Mortgage Approved</option><option value="Mortgage Needed">Mortgage Needed</option><option value="Not Set">Not Set</option></select></div>
+          <div class="field-group"><label class="field-label">Budget (¥)</label><div class="number-range"><input id="fBudgetMin" type="number" min="0" placeholder="Min ¥" /><span>–</span><input id="fBudgetMax" type="number" min="0" placeholder="Max ¥" /></div></div>
+          <div class="field-group"><label class="field-label" for="fAuthProvider">Auth Provider</label><select id="fAuthProvider" multiple size="4"><option value="Email">Email</option><option value="Google">Google</option><option value="Apple">Apple</option><option value="Facebook">Facebook</option><option value="LINE">LINE</option><option value="Weibo">Weibo</option><option value="WeChat">WeChat</option><option value="Other">Other</option></select></div>
+          <div class="field-group"><label class="field-label" for="fPlan">Subscription Plan</label><select id="fPlan" multiple size="2"><option value="Free">Free</option><option value="Premium">Premium</option></select></div>
+          <div class="field-group"><label class="field-label" for="fSupportFrom">Last Support — From</label><input id="fSupportFrom" type="date" /></div>
+          <div class="field-group"><label class="field-label" for="fSupportTo">Last Support — To</label><input id="fSupportTo" type="date" /></div>
+          <div class="field-group"><label class="field-label" for="fResidentCountry">Resident Country</label><select id="fResidentCountry" multiple size="4"><option value="JP">Japan</option><option value="VN">Vietnam</option><option value="US">United States</option><option value="CN">China</option><option value="KR">Korea</option><option value="TW">Taiwan</option><option value="SG">Singapore</option><option value="GB">United Kingdom</option></select></div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" type="button" onclick="resetFilters()">Reset</button>
+          <button class="btn btn-primary" type="button" onclick="applyFilters()"><i class="fas fa-search"></i> Apply</button>
+        </div>
+      </section>
 
-      <div class="kpi-grid" id="kpiGrid"></div>
-
-      <div id="listView">
-        <div class="card">
-          <div class="filters">
-            <input
-              type="text"
-              id="searchInput"
-              placeholder="Search name, email, phone"
-            />
-            <select id="buyerStatusFilter">
-              <option value="">All buyer status</option>
-              <option value="First-time buyer">First-time buyer</option>
-              <option value="Cash buyer">Cash buyer</option>
-              <option value="Need to sell existing property first">
-                Need to sell existing property first
-              </option>
-              <option value="Investor">Investor</option>
-            </select>
-            <select id="statusFilter">
-              <option value="">Any status</option>
-              <option value="Active">Active</option>
-              <option value="Suspended">Suspended</option>
-            </select>
-            <select id="nationFilter" title="Nation">
-              <option value="">All nations</option>
-              <option value="Japan">Japan</option>
-              <option value="Vietnam">Vietnam</option>
-              <option value="China">China</option>
-              <option value="United States">United States</option>
-              <option value="Singapore">Singapore</option>
-              <option value="Hong Kong">Hong Kong</option>
-              <option value="Australia">Australia</option>
-              <option value="United Kingdom">United Kingdom</option>
-            </select>
-            <select id="lastActiveFilter" title="Last active">
-              <option value="">Active: Any time</option>
-              <option value="7d">Last 7 days</option>
-              <option value="30d">Last 30 days</option>
-              <option value="90d">Last 90 days</option>
-              <option value="stale">Inactive 90d+</option>
-            </select>
-            <select id="appraisalsFilter" title="Appraisals">
-              <option value="">Appraisals: All</option>
-              <option value="any">Submitted (≥ 1)</option>
-              <option value="none">None submitted</option>
-            </select>
-            <select id="savedFilter" title="Saved properties">
-              <option value="">Saved: All</option>
-              <option value="any">≥ 1</option>
-              <option value="5+">≥ 5</option>
-              <option value="10+">≥ 10</option>
-              <option value="none">None</option>
-            </select>
-            <select id="activityFilter" title="Engagement level (logins)">
-              <option value="">Engagement: All</option>
-              <option value="high">High (≥ 20 logins)</option>
-              <option value="medium">Medium (5–19 logins)</option>
-              <option value="low">Low (&lt; 5 logins)</option>
-            </select>
-            <select id="alertsFilter" title="Alerts">
-              <option value="">Alerts: All</option>
-              <option value="has">Has alerts</option>
-              <option value="none">No alerts</option>
-            </select>
-            <select id="sortBy" title="Sort by">
-              <option value="lastActive-desc">Sort: Last active ↓</option>
-              <option value="lastActive-asc">Sort: Last active ↑</option>
-              <option value="logins-desc">Sort: Logins ↓</option>
-              <option value="session-desc">Sort: Avg session ↓</option>
-              <option value="saved-desc">Sort: Saved properties ↓</option>
-              <option value="appraisals-desc">Sort: Appraisals ↓</option>
-              <option value="name-asc">Sort: Name A→Z</option>
-            </select>
-            <button type="button" class="btn btn-ghost" id="resetFiltersBtn">
-              Reset
-            </button>
-          </div>
-
-          <table>
+      <section class="card">
+        <div class="results-header"><div class="results-count">Total: <strong id="resultCount">0</strong> end users</div></div>
+        <div class="data-table-wrap">
+          <table class="data-table">
             <thead>
               <tr>
                 <th>User</th>
@@ -434,2314 +175,571 @@
                 <th>Nation</th>
                 <th>Status</th>
                 <th>Last active</th>
-                <th>Logins</th>
-                <th>Avg session (min)</th>
-                <th>Saved searches</th>
-                <th>Saved properties</th>
-                <th>Appraisals</th>
+                <th class="num">Logins</th>
+                <th class="num">Avg session (min)</th>
+                <th class="num">Saved searches</th>
+                <th class="num">Saved properties</th>
+                <th class="num">Appraisals</th>
                 <th>Alerts</th>
                 <th>Chat</th>
               </tr>
             </thead>
-            <tbody id="accountTableBody"></tbody>
+            <tbody id="listBody"></tbody>
           </table>
-          <div class="empty-state" id="emptyState" style="display: none">
-            No accounts match current filters.
+        </div>
+      </section>
+    </div>
+
+    <div id="detailView" class="hidden">
+      <div class="detail-toolbar">
+        <div class="detail-toolbar-left">
+          <button class="btn btn-ghost" type="button" onclick="showList()"><i class="fas fa-arrow-left"></i> Back to list</button>
+          <span class="mode-indicator" id="modeIndicator"><span class="dot"></span> <span id="modeLabel">View mode</span></span>
+        </div>
+        <div class="detail-toolbar-right" id="toolbarView">
+          <button class="btn" type="button" onclick="enterEditMode()"><i class="fas fa-edit"></i> Edit</button>
+          <button class="btn btn-warning" type="button" onclick="suspendAccount()"><i class="fas fa-ban"></i> Suspend</button>
+          <button class="btn btn-danger" type="button" onclick="deleteAccount()"><i class="fas fa-trash"></i> Delete account</button>
+          <button class="btn btn-star" type="button" onclick="saveAsLead()"><i class="fas fa-star"></i> Save as lead</button>
+        </div>
+        <div class="detail-toolbar-right hidden" id="toolbarEdit">
+          <button class="btn" type="button" onclick="cancelEdit()"><i class="fas fa-times"></i> Cancel</button>
+          <button class="btn btn-primary" type="button" onclick="saveChanges()"><i class="fas fa-check"></i> Save changes</button>
+        </div>
+      </div>
+
+      <div class="detail-hero">
+        <div class="detail-avatar" id="dAvatar">U</div>
+        <div class="detail-hero-info">
+          <h2 class="detail-name" id="dName">—</h2>
+          <div class="detail-meta">
+            <span id="dMetaId">—</span><span>·</span><span id="dMetaEmail">—</span><span>·</span><span id="dMetaStatus">—</span>
           </div>
         </div>
       </div>
 
-      <div id="detailView" style="display: none">
-        <!-- Breadcrumb + top toolbar -->
-        <div class="entity-toolbar">
-          <button type="button" class="entity-back-btn" id="backToListBtn">
-            <span aria-hidden="true">←</span> Back to user list
-          </button>
-          <div class="entity-toolbar-right">
-            <button
-              type="button"
-              class="btn btn-ghost"
-              id="saveLeadEndUserBtn"
-              title="Pin this user to the admin Lead overview"
-            >
-              <span aria-hidden="true">★</span> Save as lead
-            </button>
-            <button
-              type="button"
-              class="btn btn-ghost"
-              id="unsaveLeadEndUserBtn"
-              style="display: none"
-            >
-              <span aria-hidden="true">✕</span> Unsave lead
-            </button>
+      <div class="section-grid">
+        <section class="card" style="grid-column: 1 / -1">
+          <div class="card-title"><i class="fas fa-chart-line"></i> Section 1 — Engagement Analytics</div>
+          <div class="kpi-row">
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-sign-in-alt"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Total Logins</div><div class="kpi-tile-value" id="dTotalLogins">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-clock"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Last Login</div><div class="kpi-tile-value" id="dLastLogin" style="font-size:13px">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-hourglass-half"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Avg Session</div><div class="kpi-tile-value" id="dAvgSession">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-search"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Saved Searches</div><div class="kpi-tile-value" id="dSavedSearches">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-bookmark"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Saved Properties</div><div class="kpi-tile-value" id="dSavedProps">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-file-signature"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Appraisals Submitted</div><div class="kpi-tile-value" id="dAppraisals">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-reply"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Avg. Response to Agents</div><div class="kpi-tile-value" id="dAvgResp" style="font-size:13px">—</div></div></div>
           </div>
-        </div>
+        </section>
 
-        <!-- Hero: avatar + identity + status + destructive actions -->
-        <div class="entity-hero">
-          <div class="entity-hero-avatar">
-            <div class="avatar-circle" id="avatarPreviewCircle">U</div>
-            <img
-              id="avatarPreviewImage"
-              src=""
-              alt=""
-              style="display: none"
-            />
+        <section class="card">
+          <div class="card-title"><i class="fas fa-user"></i> Section 2 — Profile</div>
+          <div class="kv-grid" id="dProfileGrid"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-title"><i class="fas fa-circle-info"></i> Section 3 — Additional Information (Optional)</div>
+          <div class="kv-grid" id="dAdditionalGrid"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-title"><i class="fas fa-coins"></i> Section 4 — Investment & Preferences</div>
+          <div class="kv-grid" id="dInvestmentGrid"></div>
+        </section>
+
+        <section class="card" style="grid-column: 1 / -1">
+          <div class="card-title"><i class="fas fa-bookmark"></i> Section 5 — Saved Items</div>
+          <div class="kv-label" style="margin-bottom:6px">Saved Properties List</div>
+          <div class="mini-table-wrap" style="margin-bottom:14px">
+            <table class="mini-table"><thead><tr><th>Property Name</th><th>Saved Date</th><th>Current Listing Status</th></tr></thead><tbody id="dSavedPropsList"></tbody></table>
           </div>
-          <div class="entity-hero-info">
-            <h1 class="entity-hero-name" id="heroName">Select an account</h1>
-            <div class="entity-hero-meta">
-              <span class="badge-soft" id="selectedBadge"
-                >No account selected</span
-              >
-              <span class="entity-hero-sep">·</span>
-              <span class="entity-hero-email" id="heroEmail">—</span>
-            </div>
+          <div class="kv-label" style="margin-bottom:6px">Saved Search Criteria List</div>
+          <div class="mini-table-wrap">
+            <table class="mini-table"><thead><tr><th>Criteria Name</th><th>Notification Settings</th></tr></thead><tbody id="dSavedSearchesList"></tbody></table>
           </div>
-          <div class="entity-hero-actions">
-            <button type="button" class="btn btn-ghost" id="suspendBtn">
-              Suspend
-            </button>
-            <button type="button" class="btn btn-danger" id="deleteBtn">
-              Delete account
-            </button>
+        </section>
+
+        <section class="card" style="grid-column: 1 / -1">
+          <div class="card-title"><i class="fas fa-comments"></i> Section 6 — Inquiry & Message History</div>
+          <div class="kv-label" style="margin-bottom:6px">Inquiry History</div>
+          <div class="mini-table-wrap" style="margin-bottom:14px">
+            <table class="mini-table"><thead><tr><th>Property</th><th>DateTime</th><th>Agent Name</th><th>Message Status</th></tr></thead><tbody id="dInquiryHistory"></tbody></table>
           </div>
-        </div>
-
-        <form id="detailForm" data-track-dirty class="entity-form">
-          <!-- Engagement analytics (read-only) -->
-          <div class="detail-section">
-            <div class="detail-title">Engagement analytics</div>
-            <ul class="detail-list" id="analyticsPanel">
-              <li>
-                Select an end user in the list to view login frequency, session
-                time and saved items.
-              </li>
-            </ul>
+          <div class="month-chart-wrap" style="margin-bottom:14px">
+            <div class="month-chart-col"><div class="month-chart-title">Messages Sent per Month</div><div class="month-chart" id="dMsgSent"></div><div class="month-labels" id="dMsgSentLabels"></div></div>
+            <div class="month-chart-col"><div class="month-chart-title">Messages Received per Month</div><div class="month-chart" id="dMsgRecv"></div><div class="month-labels" id="dMsgRecvLabels"></div></div>
           </div>
-
-          <!-- Profile -->
-          <div class="detail-section">
-            <div class="detail-title">
-              Profile
-              <span class="section-sub">Account identity</span>
-            </div>
-            <input id="fieldId" type="hidden" />
-            <div class="field-row">
-              <label for="fieldAvatarUrl">Avatar image URL</label>
-              <input
-                id="fieldAvatarUrl"
-                type="text"
-                placeholder="https://… (optional)"
-              />
-            </div>
-            <div class="field-grid">
-              <div>
-                <label for="fieldType">Type</label>
-                <input id="fieldType" type="text" value="End User" readonly />
-              </div>
-              <div>
-                <label for="fieldFirstName">First name</label>
-                <input id="fieldFirstName" type="text" />
-              </div>
-              <div>
-                <label for="fieldName" class="req">Full name</label>
-                <input id="fieldName" type="text" required />
-              </div>
-              <div>
-                <label for="fieldEmail" class="req">Email</label>
-                <input id="fieldEmail" type="email" required />
-              </div>
-              <div>
-                <label for="fieldCountryCode">Country code</label>
-                <input id="fieldCountryCode" type="text" placeholder="+81" />
-              </div>
-              <div>
-                <label for="fieldStatus">Account status</label>
-                <select id="fieldStatus">
-                  <option value="Active">Active</option>
-                  <option value="Suspended">Suspended</option>
-                </select>
-              </div>
-              <div>
-                <label for="fieldPhone">Phone number</label>
-                <input id="fieldPhone" type="text" />
-              </div>
-              <div>
-                <label for="fieldAddress">Current address</label>
-                <input id="fieldAddress" type="text" />
-              </div>
-              <div>
-                <label for="fieldNationality">Nationality</label>
-                <input id="fieldNationality" type="text" />
-              </div>
-            </div>
+          <div class="kv-label" style="margin-bottom:6px">Blocked Agents</div>
+          <div class="mini-table-wrap">
+            <table class="mini-table"><thead><tr><th>Agent Name</th><th>Block Date</th></tr></thead><tbody id="dBlockedAgents"></tbody></table>
           </div>
+        </section>
 
-          <!-- Additional info -->
-          <div class="detail-section">
-            <div class="detail-title">
-              Additional info
-              <span class="section-sub">Optional, behavioural</span>
-            </div>
-            <div class="field-grid">
-              <div>
-                <label for="fieldOwnedJapan"
-                  >Has previously owned property in Japan?</label
-                >
-                <select id="fieldOwnedJapan">
-                  <option value="">Not set</option>
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
-              </div>
-              <div>
-                <label for="fieldLocation">Current location</label>
-                <select id="fieldLocation">
-                  <option value="">Not set</option>
-                  <option value="Japan">Japan</option>
-                  <option value="Vietnam">Vietnam</option>
-                  <option value="Singapore">Singapore</option>
-                </select>
-              </div>
-              <div>
-                <label for="fieldBuyerStatus">Buyer status</label>
-                <select id="fieldBuyerStatus">
-                  <option value="">Not set</option>
-                  <option value="First-time buyer">First-time buyer</option>
-                  <option value="Cash buyer">Cash buyer</option>
-                  <option value="Need to sell existing property first">
-                    Need to sell existing property first
-                  </option>
-                  <option value="Investor">Investor</option>
-                </select>
-              </div>
-            </div>
+        <section class="card" style="grid-column: 1 / -1">
+          <div class="card-title"><i class="fas fa-handshake"></i> Section 7 — Transaction History (Phase 2)</div>
+          <div class="kv-label" style="margin-bottom:6px">Closing Reports</div>
+          <div class="mini-table-wrap">
+            <table class="mini-table"><thead><tr><th>Property</th><th>Agent Name</th><th>Closing Date</th><th>Approval Status</th></tr></thead><tbody id="dClosingReports"></tbody></table>
           </div>
+        </section>
 
-          <!-- Security -->
-          <div class="detail-section">
-            <div class="detail-title">
-              Security
-              <span class="section-sub">Account protection</span>
-            </div>
-            <div class="field-grid">
-              <div>
-                <label for="fieldSecQuestion">Security question</label>
-                <input id="fieldSecQuestion" type="text" />
-              </div>
-              <div>
-                <label for="fieldSecAnswer">Security answer</label>
-                <input
-                  id="fieldSecAnswer"
-                  type="password"
-                  placeholder="Hidden – only reset, never shown"
-                />
-              </div>
-              <div>
-                <label for="fieldPasswordNote">Password</label>
-                <input
-                  id="fieldPasswordNote"
-                  type="text"
-                  readonly
-                  value="reset"
-                />
-              </div>
-            </div>
+        <section class="card" style="grid-column: 1 / -1">
+          <div class="card-title"><i class="fas fa-credit-card"></i> Section 8 — Billing & Transaction History</div>
+          <div class="kv-grid" style="margin-bottom:14px">
+            <div class="kv"><span class="kv-label">Subscription Status</span><span class="kv-value" id="dSubStatus">—</span></div>
+            <div class="kv"><span class="kv-label">Total Billing Amount</span><span class="kv-value" id="dTotalBilling">—</span></div>
+            <div class="kv"><span class="kv-label">Outstanding Balance</span><span class="kv-value" id="dOutstanding">—</span></div>
+            <div class="kv"><span class="kv-label">Payment Status</span><span class="kv-value" id="dPaymentStatus">—</span></div>
           </div>
-
-          <!-- Investment criteria -->
-          <div class="detail-section">
-            <div class="detail-title">
-              Investment criteria
-              <span class="section-sub">What this user is looking for</span>
-            </div>
-            <div class="field-grid">
-              <div>
-                <label for="fieldPropertyType">Property type</label>
-                <input id="fieldPropertyType" type="text" />
-              </div>
-              <div>
-                <label for="fieldDesiredCity">Desired city</label>
-                <input id="fieldDesiredCity" type="text" />
-              </div>
-              <div>
-                <label for="fieldDesiredArea">Desired area</label>
-                <input id="fieldDesiredArea" type="text" />
-              </div>
-              <div>
-                <label for="fieldBudgetFrom">Budget from</label>
-                <input id="fieldBudgetFrom" type="number" />
-              </div>
-              <div>
-                <label for="fieldBudgetTo">Budget to</label>
-                <input id="fieldBudgetTo" type="number" />
-              </div>
-              <div>
-                <label for="fieldYield">Target yield (%)</label>
-                <input id="fieldYield" type="number" step="0.1" />
-              </div>
-              <div>
-                <label for="fieldBedrooms">Number of bedrooms</label>
-                <input id="fieldBedrooms" type="number" />
-              </div>
-              <div>
-                <label for="fieldPurpose">Purpose of purchase</label>
-                <input id="fieldPurpose" type="text" />
-              </div>
-              <div>
-                <label for="fieldPropertyStatus">Property status</label>
-                <input id="fieldPropertyStatus" type="text" />
-              </div>
-            </div>
+          <div class="kv-label" style="margin-bottom:6px">Purchase History</div>
+          <div class="mini-table-wrap" style="margin-bottom:14px">
+            <table class="mini-table"><thead><tr><th>Date</th><th>Item</th><th>Amount (¥)</th></tr></thead><tbody id="dPurchaseHistory"></tbody></table>
           </div>
-
-          <!-- Notification settings -->
-          <div class="detail-section">
-            <div class="detail-title">
-              Notification settings
-              <span class="section-sub">How and when to reach this user</span>
-            </div>
-
-            <div class="settings-block">
-              <div class="settings-block-title">Email notifications</div>
-              <label class="checkbox-row">
-                <input type="checkbox" id="notifEmailOn" />
-                <span>Enable email notifications</span>
-              </label>
-            </div>
-
-            <div class="settings-block">
-              <div class="settings-block-title">Property &amp; service updates</div>
-              <div class="settings-block-sub">Saved property updates</div>
-              <div class="checkbox-group">
-                <label class="checkbox-row">
-                  <input type="checkbox" id="notifPricesOnly" />
-                  <span>Prices only</span>
-                </label>
-                <label class="checkbox-row">
-                  <input type="checkbox" id="notifAnyUpdates" />
-                  <span>Any other updates</span>
-                </label>
-              </div>
-              <div class="field-grid" style="margin-top: 10px">
-                <div>
-                  <label for="notifFrequency">Frequency</label>
-                  <select id="notifFrequency">
-                    <option value="Immediate">Immediate</option>
-                    <option value="Daily">Daily</option>
-                  </select>
-                </div>
-                <div>
-                  <label for="notifTime">Delivery time</label>
-                  <input id="notifTime" type="time" />
-                </div>
-              </div>
-            </div>
-
-            <div class="settings-block">
-              <div class="settings-block-title">Proposals &amp; replies</div>
-              <div class="field-grid">
-                <div>
-                  <label for="notifAgentComm">Agent communications</label>
-                  <select id="notifAgentComm">
-                    <option value="Immediate">Immediate</option>
-                    <option value="Daily">Daily</option>
-                  </select>
-                </div>
-                <div>
-                  <label for="notifSupportComm">Support communications</label>
-                  <select id="notifSupportComm">
-                    <option value="Immediate">Immediate</option>
-                    <option value="Daily">Daily</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div class="settings-block">
-              <div class="settings-block-title">Other</div>
-              <label class="checkbox-row">
-                <input type="checkbox" id="notifPromo" />
-                <span>Promotional messages</span>
-              </label>
-            </div>
-
-            <div class="settings-block">
-              <div class="settings-block-title">Quiet hours</div>
-              <div class="settings-block-sub">
-                No push notifications during this window
-              </div>
-              <div class="field-grid">
-                <div>
-                  <label for="quietEnabled">Enable quiet hours</label>
-                  <select id="quietEnabled">
-                    <option value="Off">Off</option>
-                    <option value="On">On</option>
-                  </select>
-                </div>
-                <div>
-                  <label for="quietFrom">From</label>
-                  <input id="quietFrom" type="time" />
-                </div>
-                <div>
-                  <label for="quietTo">To</label>
-                  <input id="quietTo" type="time" />
-                </div>
-                <div>
-                  <label for="quietTz">Timezone</label>
-                  <input id="quietTz" type="text" placeholder="Asia/Tokyo" />
-                </div>
-              </div>
-            </div>
+          <div class="kv-label" style="margin-bottom:6px">Refund History</div>
+          <div class="mini-table-wrap">
+            <table class="mini-table"><thead><tr><th>Date</th><th>Item</th><th>Refund Amount (¥)</th><th>Reason</th></tr></thead><tbody id="dRefundHistory"></tbody></table>
           </div>
-        </form>
+        </section>
 
-        <!-- Sticky save bar at the bottom -->
-        <div class="sticky-save-bar">
-          <span class="save-bar-hint">
-            Changes are saved locally for this demo session.
-          </span>
-          <button type="button" class="btn btn-ghost" id="cancelBtn">
-            Cancel
-          </button>
-          <button type="button" class="btn btn-primary" id="saveBtn">
-            Save changes
-          </button>
-        </div>
+        <section class="card">
+          <div class="card-title"><i class="fas fa-bell"></i> Section 9 — Notification Settings</div>
+          <div class="kv-grid" id="dNotifGrid"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-title"><i class="fas fa-lock"></i> Section 10 — Security</div>
+          <div class="kv-grid">
+            <div class="kv"><span class="kv-label">Account Lock Status</span><span class="kv-value" id="dLockStatus">—</span></div>
+            <div class="kv"><span class="kv-label">2FA Status</span><span class="kv-value" id="d2FA">—</span></div>
+            <div class="kv"><span class="kv-label">Last Password Change</span><span class="kv-value" id="dLastPwd">—</span></div>
+            <div class="kv"><span class="kv-label">Last Login Device</span><span class="kv-value" id="dLastDevice">—</span></div>
+            <div class="kv"><span class="kv-label">Failed Login Attempts (24h)</span><span class="kv-value" id="dFailedLogins">—</span></div>
+            <div class="kv"><span class="kv-label">Identity Verification</span><span class="kv-value" id="dIdVerify">—</span></div>
+            <div class="kv kv-full"><span class="kv-label">Password Reset</span><div style="margin-top:4px"><button class="btn btn-sm btn-danger" type="button" onclick="resetPwd()"><i class="fas fa-key"></i> Reset password</button></div></div>
+            <div class="kv kv-full"><span class="kv-label">Login History</span><div class="mini-table-wrap"><table class="mini-table"><thead><tr><th>DateTime</th><th>Device Type</th><th>IP Address</th><th>Country</th></tr></thead><tbody id="dLoginHistory"></tbody></table></div></div>
+          </div>
+        </section>
+
+        <section class="card" style="grid-column: 1 / -1">
+          <div class="card-title"><i class="fas fa-headset"></i> Section 11 — Customer Support</div>
+          <div class="kv-grid"><div class="kv"><span class="kv-label">Last Support Inquiry</span><span class="kv-value" id="dLastSupport">—</span></div></div>
+          <div style="margin-top:12px"><span class="kv-label">Admin Internal Memo</span><div id="dMemoBox" style="margin-top:6px"></div></div>
+        </section>
       </div>
     </div>
 
     <script>
-      const accounts = [
-        {
-          id: "U-1001",
-          name: "Nguyen Anh",
-          email: "anh.nguyen@example.com",
-          type: "End User",
-          status: "Active",
-          subscription: "Free",
-          createdAt: "2025-11-10",
-          lastActive: "2026-04-10",
-          trafficSource: "Google",
-          loginCount: 34,
-          engagementScore: 78,
-          crmTier: "Basic",
-          alerts: ["Unverified phone number"],
-          supportTickets: 1,
-          avgSessionMinutes: 9.4,
-          buyerStatus: "First-time buyer",
-          location: "Vietnam",
-          savedSearchCount: 5,
-          savedPropertyCount: 18,
-          appraisalFormCount: 1,
-          notes: "Engaged user via organic search.",
-        },
-        {
-          id: "U-1002",
-          name: "Tran Mai",
-          email: "mai.tran@example.com",
-          type: "End User",
-          status: "Active",
-          subscription: "Standard",
-          createdAt: "2025-12-02",
-          lastActive: "2026-04-12",
-          trafficSource: "Facebook",
-          loginCount: 21,
-          engagementScore: 92,
-          crmTier: "Standard",
-          alerts: [],
-          supportTickets: 0,
-          avgSessionMinutes: 14.1,
-          buyerStatus: "Investor",
-          location: "Japan",
-          savedSearchCount: 2,
-          savedPropertyCount: 7,
-          appraisalFormCount: 0,
-          notes: "High intent investor.",
-        },
-        {
-          id: "U-1003",
-          name: "Pham Thu",
-          email: "thu.pham@example.com",
-          type: "End User",
-          status: "Suspended",
-          subscription: "Free",
-          createdAt: "2025-09-18",
-          lastActive: "2026-02-01",
-          trafficSource: "Email",
-          loginCount: 12,
-          engagementScore: 45,
-          crmTier: "Basic",
-          alerts: ["Unverified phone number"],
-          supportTickets: 3,
-          avgSessionMinutes: 5.2,
-          buyerStatus: "Cash buyer",
-          location: "Singapore",
-          savedSearchCount: 1,
-          savedPropertyCount: 3,
-          appraisalFormCount: 0,
-          notes: "Suspended due to suspicious activity.",
-        },
-        {
-          id: "U-1004",
-          name: "Le Minh",
-          email: "minh.le@example.com",
-          type: "End User",
-          status: "Active",
-          subscription: "Free",
-          createdAt: "2026-03-05",
-          lastActive: "2026-03-10",
-          trafficSource: "Google",
-          loginCount: 3,
-          engagementScore: 26,
-          crmTier: "Prospect",
-          alerts: [],
-          supportTickets: 0,
-          avgSessionMinutes: 3.1,
-          buyerStatus: "First-time buyer",
-          location: "Japan",
-          savedSearchCount: 0,
-          savedPropertyCount: 1,
-          appraisalFormCount: 0,
-          notes: "Waiting for KYC verification.",
-        },
-        {
-          id: "U-1005",
-          name: "Ito Haru",
-          email: "haru.ito@example.com",
-          type: "End User",
-          status: "Active",
-          subscription: "Premium",
-          createdAt: "2024-12-22",
-          lastActive: "2026-04-13",
-          trafficSource: "Safari",
-          loginCount: 87,
-          engagementScore: 96,
-          crmTier: "VIP",
-          alerts: ["Unverified phone number"],
-          supportTickets: 5,
-          avgSessionMinutes: 18.7,
-          buyerStatus: "Investor",
-          location: "Japan",
-          savedSearchCount: 12,
-          savedPropertyCount: 34,
-          appraisalFormCount: 4,
-          notes: "Top-tier investor, priority routing.",
-        },
-        {
-          id: "U-1006",
-          name: "Nguyen Long",
-          email: "long.nguyen@example.com",
-          type: "End User",
-          status: "Active",
-          subscription: "Standard",
-          createdAt: "2025-05-01",
-          lastActive: "2026-04-08",
-          trafficSource: "Email",
-          loginCount: 19,
-          engagementScore: 63,
-          crmTier: "Standard",
-          alerts: [],
-          supportTickets: 1,
-          avgSessionMinutes: 7.9,
-          buyerStatus: "Need to sell existing property first",
-          location: "Hong Kong",
-          savedSearchCount: 4,
-          savedPropertyCount: 9,
-          appraisalFormCount: 2,
-          notes: "Interested in upgrading from current condo.",
-        },
-        {
-          id: "U-1007",
-          name: "Sato Yuri",
-          email: "yuri.sato@example.com",
-          type: "End User",
-          status: "Active",
-          subscription: "Free",
-          createdAt: "2025-01-11",
-          lastActive: "2026-03-30",
-          trafficSource: "Instagram",
-          loginCount: 15,
-          engagementScore: 58,
-          crmTier: "Basic",
-          alerts: [],
-          supportTickets: 0,
-          avgSessionMinutes: 6.4,
-          buyerStatus: "Cash buyer",
-          location: "Japan",
-          savedSearchCount: 3,
-          savedPropertyCount: 5,
-          appraisalFormCount: 1,
-          notes: "Prefers heritage properties in Kyoto.",
-        },
-        {
-          id: "U-1008",
-          name: "Hoang Linh",
-          email: "linh.hoang@example.com",
-          type: "End User",
-          status: "Suspended",
-          subscription: "Free",
-          createdAt: "2024-11-02",
-          lastActive: "2025-12-19",
-          trafficSource: "Google",
-          loginCount: 7,
-          engagementScore: 31,
-          crmTier: "Dormant",
-          alerts: [],
-          supportTickets: 2,
-          avgSessionMinutes: 4.3,
-          buyerStatus: "Investor",
-          location: "Thailand",
-          savedSearchCount: 1,
-          savedPropertyCount: 0,
-          appraisalFormCount: 0,
-          notes: "Email hard bounce, contact disabled.",
-        },
+      const users = [
+        { id:"USR-00000001", fullName:"Tanaka Yui", email:"yui.tanaka@example.com", avatarFile:"yui.jpg", regDate:"2025-08-12 10:30 JST", countryCode:"+81", phone:"90-1111-2222", status:"Active", address:"Shibuya-ku, Tokyo", nationality:"JP", gender:"Female", age:34, authProvider:"Email", withdrawal:"", prevOwnership:"No", residentCountry:"JP", buyerStatus:"Cash Buyer",
+          propType:["Apartment","House"], desiredCity:"Tokyo", desiredArea:"Shibuya", budgetMin:80000000, budgetMax:150000000, targetYield:5.5, bedrooms:"2BR", purpose:"Investment", propStatus:"Any",
+          totalLogins:142, lastLogin:"2026-05-18 09:12 JST", avgSession:"4.5 min", savedSearches:8, savedProps:24, appraisals:3, avgRespTime:"2.5h", plan:"Premium", totalBilling:48000, outstanding:0, paymentStatus:"Paid",
+          savedPropsList:[{name:"Shibuya Sky Residence #1203", savedAt:"2026-05-10 14:00", status:"Active"},{name:"Aoyama Garden House", savedAt:"2026-04-22 11:30", status:"Sold"}],
+          savedSearchesList:[{name:"Shibuya 2BR ¥80M-150M", notif:"Daily"},{name:"Aoyama investment yield ≥5%", notif:"Weekly"}],
+          inquiryHistory:[{prop:"Shibuya Sky Residence #1203", at:"2026-05-15 10:00", agent:"Yamada Estates", status:"Replied"},{prop:"Roppongi Hills Apt", at:"2026-04-30 16:20", agent:"Mori Real Estate", status:"Read"}],
+          msgSent:[12,18,15,22,30,25,19,21,28,33,18,12], msgRecv:[10,16,12,18,28,20,17,20,26,30,15,9],
+          blockedAgents:[{name:"Shady Realty Co.", at:"2026-02-14"}], closingReports:[],
+          purchaseHistory:[{date:"2026-01-15", item:"Premium 1-year", amount:48000}], refundHistory:[],
+          emailNotif:true, savedPropUpdates:"All Updates", notifFreq:"Daily", deliveryTime:"08:00", agentMsgNotif:"Immediate", supportMsgNotif:"Immediate", promo:true, quietStart:"22:00", quietEnd:"07:00", quietTz:"Asia/Tokyo",
+          lockStatus:"Normal", twoFa:true, lastPwd:"2026-03-10 14:22 JST", lastDevice:"Mobile", failedLogins:0, idVerify:"Verified",
+          loginHistory:[{at:"2026-05-18 09:12", device:"Mobile", ip:"203.0.113.10", country:"Japan"},{at:"2026-05-15 19:30", device:"Desktop", ip:"203.0.113.10", country:"Japan"}],
+          lastSupport:"2026-05-02 11:00 JST", memo:"VIP cash buyer. Priority response." },
+        { id:"USR-00000002", fullName:"John Smith", email:"john.smith@example.com", avatarFile:"", regDate:"2026-04-01 08:00 JST", countryCode:"+1", phone:"555-1234", status:"Pending", address:"", nationality:"US", gender:"Male", age:45, authProvider:"Google", withdrawal:"", prevOwnership:"Not Set", residentCountry:"US", buyerStatus:"Mortgage Needed",
+          propType:["Apartment"], desiredCity:"Tokyo", desiredArea:"", budgetMin:30000000, budgetMax:60000000, targetYield:6.0, bedrooms:"1BR", purpose:"Self-use", propStatus:"New",
+          totalLogins:5, lastLogin:"2026-05-10 22:00 JST", avgSession:"2.1 min", savedSearches:2, savedProps:4, appraisals:0, avgRespTime:"N/A", plan:"Free", totalBilling:0, outstanding:0, paymentStatus:"None",
+          savedPropsList:[{name:"Minato 1BR Compact", savedAt:"2026-05-05 22:00", status:"Active"}],
+          savedSearchesList:[{name:"Tokyo 1BR ¥30M-60M", notif:"Weekly"}],
+          inquiryHistory:[], msgSent:[0,0,0,0,0,0,0,0,0,0,2,3], msgRecv:[0,0,0,0,0,0,0,0,0,0,1,2], blockedAgents:[], closingReports:[], purchaseHistory:[], refundHistory:[],
+          emailNotif:true, savedPropUpdates:"Price Only", notifFreq:"Weekly", deliveryTime:"09:00", agentMsgNotif:"Daily", supportMsgNotif:"Daily", promo:false, quietStart:"23:00", quietEnd:"08:00", quietTz:"America/Los_Angeles",
+          lockStatus:"Normal", twoFa:false, lastPwd:"2026-04-01 08:00 JST", lastDevice:"Desktop", failedLogins:0, idVerify:"Unverified",
+          loginHistory:[{at:"2026-05-10 22:00", device:"Desktop", ip:"198.51.100.5", country:"USA"}], lastSupport:"", memo:"Awaiting SMS OTP verification." },
+        { id:"USR-00000003", fullName:"Nguyen Anh", email:"anh.nguyen@example.com", avatarFile:"", regDate:"2025-11-20 14:30 JST", countryCode:"+84", phone:"912-345-678", status:"Suspended", address:"Hanoi, Vietnam", nationality:"VN", gender:"Other", age:29, authProvider:"Facebook", withdrawal:"", prevOwnership:"No", residentCountry:"VN", buyerStatus:"Not Set",
+          propType:["Land"], desiredCity:"Osaka", desiredArea:"", budgetMin:10000000, budgetMax:25000000, targetYield:4.0, bedrooms:"Studio", purpose:"Both", propStatus:"Resale",
+          totalLogins:67, lastLogin:"2026-03-15 10:00 JST", avgSession:"6.8 min", savedSearches:5, savedProps:12, appraisals:1, avgRespTime:"5.2h", plan:"Free", totalBilling:0, outstanding:0, paymentStatus:"None",
+          savedPropsList:[], savedSearchesList:[], inquiryHistory:[], msgSent:[3,5,4,6,7,5,8,6,5,4,2,0], msgRecv:[2,4,3,5,6,4,7,5,4,3,1,0], blockedAgents:[], closingReports:[], purchaseHistory:[], refundHistory:[],
+          emailNotif:false, savedPropUpdates:"Price Only", notifFreq:"Weekly", deliveryTime:"09:00", agentMsgNotif:"Weekly", supportMsgNotif:"Weekly", promo:false, quietStart:"22:00", quietEnd:"07:00", quietTz:"Asia/Ho_Chi_Minh",
+          lockStatus:"Locked", twoFa:false, lastPwd:"2025-11-20 14:30 JST", lastDevice:"App", failedLogins:7, idVerify:"Unverified",
+          loginHistory:[{at:"2026-03-15 10:00", device:"App", ip:"203.0.113.30", country:"Vietnam"}], lastSupport:"2026-03-20 16:00 JST", memo:"Suspended after 7 failed logins." },
+        { id:"USR-00000004", fullName:"Lee Mina", email:"mina.lee@example.com", avatarFile:"", regDate:"2024-06-05 10:00 JST", countryCode:"+82", phone:"10-2345-6789", status:"Active", address:"Seoul, Korea", nationality:"KR", gender:"Female", age:38, authProvider:"LINE", withdrawal:"", prevOwnership:"Yes", residentCountry:"KR", buyerStatus:"Mortgage Approved",
+          propType:["Commercial"], desiredCity:"Tokyo", desiredArea:"Ginza", budgetMin:200000000, budgetMax:500000000, targetYield:7.0, bedrooms:"5BR+", purpose:"Investment", propStatus:"Any",
+          totalLogins:298, lastLogin:"2026-05-19 07:45 JST", avgSession:"8.3 min", savedSearches:15, savedProps:42, appraisals:6, avgRespTime:"1.8h", plan:"Premium", totalBilling:96000, outstanding:0, paymentStatus:"Paid",
+          savedPropsList:[{name:"Ginza Commercial Floor", savedAt:"2026-05-12 09:00", status:"Active"}],
+          savedSearchesList:[{name:"Ginza commercial ≥¥200M", notif:"Immediate"}],
+          inquiryHistory:[{prop:"Ginza Commercial Floor", at:"2026-05-12 10:00", agent:"Prime Tokyo Realty", status:"Replied"}],
+          msgSent:[20,25,30,28,35,32,40,38,42,45,48,30], msgRecv:[18,22,28,25,32,30,38,35,40,42,45,28], blockedAgents:[], closingReports:[],
+          purchaseHistory:[{date:"2025-06-05", item:"Premium 1-year", amount:48000},{date:"2026-06-05", item:"Premium renewal", amount:48000}], refundHistory:[],
+          emailNotif:true, savedPropUpdates:"All Updates", notifFreq:"Immediate", deliveryTime:"07:00", agentMsgNotif:"Immediate", supportMsgNotif:"Immediate", promo:true, quietStart:"23:00", quietEnd:"06:00", quietTz:"Asia/Seoul",
+          lockStatus:"Normal", twoFa:true, lastPwd:"2026-02-01 10:00 JST", lastDevice:"Desktop", failedLogins:0, idVerify:"Verified",
+          loginHistory:[{at:"2026-05-19 07:45", device:"Desktop", ip:"203.0.113.80", country:"Korea"}], lastSupport:"2026-04-18 14:00 JST", memo:"High-value commercial investor." },
+        { id:"USR-00000005", fullName:"Marie Dubois", email:"marie.dubois@example.fr", avatarFile:"", regDate:"2023-05-10 11:00 JST", countryCode:"+33", phone:"6-12-34-56-78", status:"Deactivated", address:"Paris, France", nationality:"FR", gender:"Female", age:51, authProvider:"Apple", withdrawal:"2026-02-10 09:00 — Returning to France permanently.", prevOwnership:"Yes", residentCountry:"GB", buyerStatus:"Not Set",
+          propType:[], desiredCity:"", desiredArea:"", budgetMin:0, budgetMax:0, targetYield:0, bedrooms:"", purpose:"", propStatus:"",
+          totalLogins:50, lastLogin:"2026-02-10 09:00 JST", avgSession:"3.0 min", savedSearches:0, savedProps:0, appraisals:2, avgRespTime:"3.0h", plan:"Free", totalBilling:0, outstanding:0, paymentStatus:"None",
+          savedPropsList:[], savedSearchesList:[], inquiryHistory:[], msgSent:[5,4,3,2,1,0,0,0,0,0,0,0], msgRecv:[5,4,3,2,1,0,0,0,0,0,0,0], blockedAgents:[], closingReports:[], purchaseHistory:[], refundHistory:[],
+          emailNotif:false, savedPropUpdates:"Price Only", notifFreq:"Weekly", deliveryTime:"09:00", agentMsgNotif:"Weekly", supportMsgNotif:"Weekly", promo:false, quietStart:"22:00", quietEnd:"07:00", quietTz:"Europe/Paris",
+          lockStatus:"Normal", twoFa:false, lastPwd:"2024-01-01 09:00 JST", lastDevice:"Tablet", failedLogins:0, idVerify:"Verified",
+          loginHistory:[{at:"2026-02-10 09:00", device:"Tablet", ip:"203.0.113.99", country:"France"}], lastSupport:"2026-02-10 09:00 JST", memo:"Account closed by user request." }
       ];
 
-      let selectedId = null;
+      let filtered = users.slice();
+      let currentUser = null;
+      let originalUser = null;
+      let editMode = false;
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+      const escAttr = (s) => esc(s).replace(/"/g,"&quot;");
+      const initials = (n) => n.split(/\s+/).slice(0,2).map(p=>p[0]).join("").toUpperCase();
+      function avatarImg(name, size=40, rounded=8) {
+        const init = (name || "?").split(/\s+/).slice(0,2).map(p=>p[0]||"").join("").toUpperCase();
+        const fs = size>=64?20:size>=48?15:size>=36?12:10;
+        return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:${rounded}px;background:linear-gradient(135deg,#c26b41,#a55232);color:#fffaf3;font-weight:700;font-size:${fs}px;flex-shrink:0;vertical-align:middle;box-shadow:0 2px 6px rgba(194,107,65,0.25)">${esc(init)}</span>`;
+      }
+      const getSel = (id) => Array.from($(id).selectedOptions).map(o=>o.value);
+      const fmtYen = (n) => n ? "¥ " + n.toLocaleString() : "—";
+      const parseSession = (s) => { const m = String(s||"").match(/([\d.]+)/); return m ? parseFloat(m[1]) : 0; };
+      const badgeStatus = (s) => `<span class="badge ${s==="Active"?"badge-active":s==="Suspended"?"badge-suspended":s==="Pending"?"badge-pending":"badge-deactivated"}">${s}</span>`;
+      const badge2FA = (on) => on ? '<span class="badge badge-on">ON · Email OTP</span>' : '<span class="badge badge-off">OFF</span>';
+      const badgePlan = (p) => `<span class="badge ${p==='Premium'?'badge-premium':'badge-none'}">${p}</span>`;
+      const badgePaid = (s) => `<span class="badge ${s==="Paid"?"badge-paid":s==="Pending"?"badge-pending":s==="Overdue"?"badge-overdue":"badge-none"}">${s}</span>`;
+      const badgeYesNo = (b) => b ? '<span class="badge badge-on">ON</span>' : '<span class="badge badge-off">OFF</span>';
+      const badgeLock = (s) => s==="Locked" ? '<span class="badge badge-locked">Locked</span>' : '<span class="badge badge-normal">Normal</span>';
+      const badgeIdVerify = (s) => s==="Verified" ? '<span class="badge badge-verified">Verified</span>' : '<span class="badge badge-unverified">Unverified</span>';
 
-      function applyFilters(list) {
-        const keyword = document
-          .getElementById("searchInput")
-          .value.toLowerCase();
-        const buyerSelect = document.getElementById("buyerStatusFilter");
-        const buyerStatusValues = Array.from(
-          (buyerSelect && buyerSelect.selectedOptions) || [],
-        )
-          .map((opt) => opt.value)
-          .filter((v) => v);
-        const status = document.getElementById("statusFilter").value;
-        const nation = document.getElementById("nationFilter")?.value || "";
-        const lastActive =
-          document.getElementById("lastActiveFilter")?.value || "";
-        const appraisals =
-          document.getElementById("appraisalsFilter")?.value || "";
-        const saved = document.getElementById("savedFilter")?.value || "";
-        const activity =
-          document.getElementById("activityFilter")?.value || "";
-        const alerts = document.getElementById("alertsFilter")?.value || "";
-        const sortBy =
-          document.getElementById("sortBy")?.value || "lastActive-desc";
+      function alertCount(u) {
+        let n = 0;
+        if (u.failedLogins > 0) n++;
+        if (u.idVerify === "Unverified") n++;
+        if (u.lockStatus === "Locked") n++;
+        if (u.outstanding > 0) n++;
+        return n;
+      }
+      function alertBadge(u) {
+        const n = alertCount(u);
+        if (n === 0) return '<span class="alert-dot none" title="No alerts"><i class="fas fa-check"></i></span>';
+        const issues = [];
+        if (u.failedLogins > 0) issues.push(`${u.failedLogins} failed logins`);
+        if (u.idVerify === "Unverified") issues.push("ID unverified");
+        if (u.lockStatus === "Locked") issues.push("Account locked");
+        if (u.outstanding > 0) issues.push(fmtYen(u.outstanding) + " outstanding");
+        return `<span class="alert-dot" title="${esc(issues.join(' · '))}"><i class="fas fa-triangle-exclamation"></i>${n}</span>`;
+      }
 
-        const now = new Date("2026-05-15T00:00:00");
-        const daysSince = (s) => {
-          if (!s) return Infinity;
-          const d = new Date(String(s).replace(" ", "T"));
-          return isNaN(d) ? Infinity : (now - d) / 86400000;
-        };
+      function renderList() {
+        const tbody = $("listBody");
+        $("resultCount").textContent = filtered.length;
+        if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:var(--text-muted)">No users match the filters.</td></tr>'; return; }
+        tbody.innerHTML = filtered.map(u=>`
+          <tr onclick="showDetail('${u.id}')">
+            <td><div style="display:flex;align-items:center;gap:10px">${avatarImg(u.fullName, 36, 8)}<div><strong>${esc(u.fullName)}</strong><br><span style="font-size:11px;color:var(--text-muted)">${u.id} · ${esc(u.email)}</span></div></div></td>
+            <td>${esc(u.buyerStatus)}</td>
+            <td>${esc(u.residentCountry)}</td>
+            <td>${badgeStatus(u.status)}</td>
+            <td>${esc(u.lastLogin || '—')}</td>
+            <td class="num">${u.totalLogins.toLocaleString()}</td>
+            <td class="num">${parseSession(u.avgSession).toFixed(1)}</td>
+            <td class="num">${u.savedSearches}</td>
+            <td class="num">${u.savedProps}</td>
+            <td class="num">${u.appraisals}</td>
+            <td>${alertBadge(u)}</td>
+            <td onclick="event.stopPropagation()">
+              <button class="btn-chat" type="button" onclick="openChat('${u.id}')" title="Chat with ${esc(u.fullName)}"><i class="fas fa-comment-dots"></i></button>
+            </td>
+          </tr>`).join("");
+      }
 
-        let result = list.filter((a) => {
-          if (keyword) {
-            const text = `${a.id} ${a.name} ${a.email} ${
-              a.phone || ""
-            }`.toLowerCase();
-            if (!text.includes(keyword)) return false;
-          }
-          if (
-            buyerStatusValues.length &&
-            !buyerStatusValues.includes(a.buyerStatus)
-          ) {
-            return false;
-          }
-          if (status && a.status !== status) return false;
-          if (nation && (a.location || "") !== nation) return false;
-          if (lastActive) {
-            const d = daysSince(a.lastActive);
-            if (lastActive === "7d" && d > 7) return false;
-            if (lastActive === "30d" && d > 30) return false;
-            if (lastActive === "90d" && d > 90) return false;
-            if (lastActive === "stale" && d <= 90) return false;
-          }
-          if (appraisals) {
-            const n = Number(a.appraisalFormCount) || 0;
-            if (appraisals === "any" && n < 1) return false;
-            if (appraisals === "none" && n > 0) return false;
-          }
-          if (saved) {
-            const n = Number(a.savedPropertyCount) || 0;
-            if (saved === "any" && n < 1) return false;
-            if (saved === "5+" && n < 5) return false;
-            if (saved === "10+" && n < 10) return false;
-            if (saved === "none" && n > 0) return false;
-          }
-          if (activity) {
-            const n = Number(a.loginCount) || 0;
-            if (activity === "high" && n < 20) return false;
-            if (activity === "medium" && (n < 5 || n >= 20)) return false;
-            if (activity === "low" && n >= 5) return false;
-          }
-          if (alerts) {
-            const has = Array.isArray(a.alerts) && a.alerts.length > 0;
-            if (alerts === "has" && !has) return false;
-            if (alerts === "none" && has) return false;
-          }
+      function applyFilters() {
+        const st=getSel("fStatus"), bs=getSel("fBuyerStatus"), ap=getSel("fAuthProvider"), pl=getSel("fPlan"), rc=getSel("fResidentCountry");
+        const regF=$("fRegFrom").value, regT=$("fRegTo").value, lgF=$("fLoginFrom").value, lgT=$("fLoginTo").value, sF=$("fSupportFrom").value, sT=$("fSupportTo").value;
+        const fMin=$("fFailMin").value, fMax=$("fFailMax").value, fThr=$("fFailThreshold").value;
+        const bMin=$("fBudgetMin").value, bMax=$("fBudgetMax").value;
+        const inRange=(d,f,t)=>{ if(!d) return !f&&!t; const x=new Date(d.split(" ")[0]); if(f && x<new Date(f)) return false; if(t && x>new Date(t)) return false; return true; };
+        filtered = users.filter(u=>{
+          if (st.length && !st.includes(u.status)) return false;
+          if (bs.length && !bs.includes(u.buyerStatus)) return false;
+          if (ap.length && !ap.includes(u.authProvider)) return false;
+          if (pl.length && !pl.includes(u.plan)) return false;
+          if (rc.length && !rc.includes(u.residentCountry)) return false;
+          if ((regF||regT) && !inRange(u.regDate, regF, regT)) return false;
+          if ((lgF||lgT) && !inRange(u.lastLogin, lgF, lgT)) return false;
+          if ((sF||sT) && !inRange(u.lastSupport, sF, sT)) return false;
+          if (fMin!=="" && u.failedLogins < +fMin) return false;
+          if (fMax!=="" && u.failedLogins > +fMax) return false;
+          if (fThr==="0" && u.failedLogins!==0) return false;
+          if (fThr==="1-4" && (u.failedLogins<1 || u.failedLogins>4)) return false;
+          if (fThr==="5+" && u.failedLogins<5) return false;
+          if (bMin!=="" && u.budgetMax < +bMin) return false;
+          if (bMax!=="" && u.budgetMin > +bMax) return false;
           return true;
         });
-
-        const sorters = {
-          "lastActive-desc": (x, y) =>
-            (y.lastActive || "").localeCompare(x.lastActive || ""),
-          "lastActive-asc": (x, y) =>
-            (x.lastActive || "").localeCompare(y.lastActive || ""),
-          "logins-desc": (x, y) =>
-            (Number(y.loginCount) || 0) - (Number(x.loginCount) || 0),
-          "session-desc": (x, y) =>
-            (Number(y.avgSessionMinutes) || 0) -
-            (Number(x.avgSessionMinutes) || 0),
-          "saved-desc": (x, y) =>
-            (Number(y.savedPropertyCount) || 0) -
-            (Number(x.savedPropertyCount) || 0),
-          "appraisals-desc": (x, y) =>
-            (Number(y.appraisalFormCount) || 0) -
-            (Number(x.appraisalFormCount) || 0),
-          "name-asc": (x, y) =>
-            (x.name || "").localeCompare(y.name || ""),
-        };
-        return [...result].sort(sorters[sortBy] || sorters["lastActive-desc"]);
+        renderList();
       }
 
-      function computeKpis() {
-        const total = accounts.length;
-        const active = accounts.filter((u) => u.status === "Active").length;
-        const firstTime = accounts.filter(
-          (u) => u.buyerStatus === "First-time buyer",
-        ).length;
-        const investors = accounts.filter(
-          (u) => u.buyerStatus === "Investor",
-        ).length;
-        const avgEngagement = total
-          ? (
-              accounts.reduce((sum, u) => sum + (u.engagementScore || 0), 0) /
-              total
-            ).toFixed(1)
-          : "0.0";
-        return {
-          total,
-          active,
-          firstTime,
-          investors,
-          avgEngagement,
-        };
+      function resetFilters() {
+        ["fStatus","fBuyerStatus","fAuthProvider","fPlan","fResidentCountry"].forEach(id=>{Array.from($(id).options).forEach(o=>o.selected=false);});
+        ["fRegFrom","fRegTo","fLoginFrom","fLoginTo","fSupportFrom","fSupportTo","fFailMin","fFailMax","fBudgetMin","fBudgetMax"].forEach(id=>$(id).value="");
+        $("fFailThreshold").value="";
+        filtered = users.slice();
+        renderList();
       }
 
-      function renderKpis() {
-        const grid = document.getElementById("kpiGrid");
-        if (!grid) return;
-        const k = computeKpis();
-        grid.innerHTML = "";
-        const items = [
-          {
-            label: "Total end users",
-            value: k.total,
-            sub: "Total registered buyers / investors",
-          },
-          {
-            label: "Active end users",
-            value: k.active,
-            sub: `Engagement score avg ${k.avgEngagement}`,
-          },
-          {
-            label: "First-time buyers",
-            value: k.firstTime,
-            sub: "First-time buyers",
-          },
-          {
-            label: "Investors",
-            value: k.investors,
-            sub: "End users mainly investing",
-          },
-        ];
-        items.forEach((m) => {
-          const div = document.createElement("div");
-          div.className = "kpi-card";
-          div.innerHTML = `
-            <div class="kpi-label">${m.label}</div>
-            <div class="kpi-value">${m.value}</div>
-            <div class="kpi-sub">${m.sub}</div>
-          `;
-          grid.appendChild(div);
-        });
+      // View/Edit field helpers ===============================
+      function vField(value, field, type="text", options=null, editable=true) {
+        if (!editMode || !editable) {
+          if (type === "badge-status") return badgeStatus(value);
+          if (type === "badge-plan") return badgePlan(value);
+          if (type === "badge-paid") return badgePaid(value);
+          if (type === "badge-yesno") return badgeYesNo(value);
+          if (type === "badge-lock") return badgeLock(value);
+          if (type === "badge-2fa") return badge2FA(value);
+          if (type === "badge-idverify") return badgeIdVerify(value);
+          if (type === "array") return Array.isArray(value)&&value.length ? value.map(v=>`<span class="badge badge-none" style="margin-right:4px">${esc(v)}</span>`).join("") : "—";
+          if (type === "yen") return fmtYen(value);
+          return esc(value) || "—";
+        }
+        if (type === "select") {
+          const opts = options.map(o => `<option value="${escAttr(o)}" ${o===value?"selected":""}>${esc(o)}</option>`).join("");
+          return `<select class="edit-input" data-field="${field}">${opts}</select>`;
+        }
+        if (type === "checkbox") {
+          return `<label style="display:flex;align-items:center;gap:6px"><input type="checkbox" data-field="${field}" data-type="bool" ${value?"checked":""} style="width:18px;height:18px;min-height:0"> <span style="font-size:12px">${value?"ON":"OFF"}</span></label>`;
+        }
+        if (type === "textarea") return `<textarea class="edit-input" data-field="${field}">${esc(value)}</textarea>`;
+        if (type === "array") return `<input class="edit-input" type="text" value="${escAttr(Array.isArray(value)?value.join(", "):value)}" data-field="${field}" data-type="array" placeholder="Comma-separated">`;
+        if (type === "number") return `<input class="edit-input" type="number" value="${escAttr(value)}" data-field="${field}" data-type="num">`;
+        if (type === "yen") return `<input class="edit-input" type="number" value="${escAttr(value)}" data-field="${field}" data-type="num" placeholder="¥">`;
+        return `<input class="edit-input" type="text" value="${escAttr(value)}" data-field="${field}">`;
       }
 
-      function renderTable() {
-        const body = document.getElementById("accountTableBody");
-        const empty = document.getElementById("emptyState");
-        const filtered = applyFilters(accounts);
+      function kv(label, valHtml) { return `<div class="kv"><span class="kv-label">${label}</span><span class="kv-value">${valHtml}</span></div>`; }
+      function kvFull(label, valHtml) { return `<div class="kv kv-full"><span class="kv-label">${label}</span><span class="kv-value">${valHtml}</span></div>`; }
 
-        body.innerHTML = "";
-        if (!filtered.length) {
-          empty.style.display = "block";
-          return;
-        }
-        empty.style.display = "none";
+      function renderEditableSections(u) {
+        // Section 2 - Profile
+        $("dProfileGrid").innerHTML = [
+          kv("User ID", esc(u.id)),
+          kv("Registration / First Login", esc(u.regDate)),
+          kv("Avatar", avatarImg(u.fullName, 44, 10) + (u.avatarFile ? `<span style="margin-left:10px;color:var(--text-muted);font-size:11px">${esc(u.avatarFile)}</span>` : "")),
+          kv("Full Name", vField(u.fullName, "fullName")),
+          kv("Email Address", vField(u.email, "email", "text")),
+          kv("Country Code", vField(u.countryCode, "countryCode")),
+          kv("Phone Number", vField(u.phone, "phone")),
+          kv("Status", vField(u.status, "status", editMode ? "select" : "badge-status", ["Active","Suspended","Pending","Deactivated"])),
+          kv("Current Address", vField(u.address, "address")),
+          kv("Nationality", vField(u.nationality, "nationality")),
+          kv("Gender", vField(u.gender, "gender", "select", ["Male","Female","Other","Prefer not to say"])),
+          kv("Age", vField(u.age, "age", "number")),
+          kv("Authentication Provider", esc(u.authProvider)),
+          kvFull("Withdrawal Date & Reason", esc(u.withdrawal) || "—"),
+        ].join("");
 
-        filtered.forEach((a) => {
-          const tr = document.createElement("tr");
-          const statusClass =
-            a.status === "Active"
-              ? "status-active"
-              : a.status === "Suspended"
-                ? "status-suspended"
-                : "status-pending";
-          const alerts = (a.alerts || [])
-            .map((al) => `<span class="badge-soft">${al}</span>`)
-            .join(" ");
-          const avatarUrl = a.avatarUrl || "";
-          const initials =
-            (a.name || "")
-              .split(/\s+/)
-              .filter(Boolean)
-              .map((part) => part[0])
-              .join("")
-              .slice(0, 2)
-              .toUpperCase() || "U";
-          tr.innerHTML = `
-            <td>
-              <div class="avatar-wrapper">
-                <div class="avatar-circle">${initials}</div>
-                ${
-                  avatarUrl
-                    ? `<img src="${avatarUrl}" alt="Avatar" style="width:28px;height:28px;border-radius:50%;object-fit:cover;background:#ddd;" />`
-                    : ""
-                }
-                <div>
-                  <div style="font-weight:600;">${a.name}</div>
-                  <div style="font-size:10px;color:#7c6a55;">${a.email}</div>
-                </div>
-              </div>
-            </td>
-            <td>${a.buyerStatus || "-"}</td>
-            <td>${a.location || "-"}</td>
-            <td><span class="status-pill ${statusClass}">${a.status}</span></td>
-            <td>${a.lastActive || "-"}</td>
-            <td>${typeof a.loginCount === "number" ? a.loginCount : "-"}</td>
-            <td>${
-              typeof a.avgSessionMinutes === "number"
-                ? a.avgSessionMinutes
-                : "-"
-            }</td>
-            <td>${
-              typeof a.savedSearchCount === "number" ? a.savedSearchCount : 0
-            }</td>
-            <td>${
-              typeof a.savedPropertyCount === "number"
-                ? a.savedPropertyCount
-                : 0
-            }</td>
-            <td>${
-              typeof a.appraisalFormCount === "number"
-                ? a.appraisalFormCount
-                : 0
-            }</td>
-            <td>${alerts || "-"}</td>
-            <td>
-              <button
-                type="button"
-                class="btn btn-ghost btn-sm"
-                onclick="event.stopPropagation(); openChatForEndUser('${encodeURIComponent(
-                  String(a.id),
-                )}')"
-              >
-                Chat
-              </button>
-            </td>
-          `;
-          tr.addEventListener("click", () => {
-            openDetail(a.id);
-          });
-          body.appendChild(tr);
-        });
+        // Section 3 - Additional
+        $("dAdditionalGrid").innerHTML = [
+          kv("Previous Property Ownership in Japan", vField(u.prevOwnership, "prevOwnership", "select", ["Yes","No","Not Set"])),
+          kv("Resident Country", vField(u.residentCountry, "residentCountry")),
+          kv("Buyer Status", vField(u.buyerStatus, "buyerStatus", "select", ["Cash Buyer","Mortgage Approved","Mortgage Needed","Not Set"])),
+        ].join("");
+
+        // Section 4 - Investment
+        $("dInvestmentGrid").innerHTML = [
+          kv("Property Type", vField(u.propType, "propType", "array")),
+          kv("Desired City", vField(u.desiredCity, "desiredCity")),
+          kv("Desired Area", vField(u.desiredArea, "desiredArea")),
+          kv("Budget (Min)", vField(u.budgetMin, "budgetMin", "yen")),
+          kv("Budget (Max)", vField(u.budgetMax, "budgetMax", "yen")),
+          kv("Target Yield (%)", vField(u.targetYield, "targetYield", "number")),
+          kv("Bedrooms / Floor Plan", vField(u.bedrooms, "bedrooms", "select", ["Studio","1BR","2BR","3BR","4BR","5BR+"])),
+          kv("Purpose of Purchase", vField(u.purpose, "purpose", "select", ["Investment","Self-use","Both",""])),
+          kv("Property Status Preference", vField(u.propStatus, "propStatus", "select", ["New","Resale","Any",""])),
+        ].join("");
+
+        // Section 9 - Notification
+        $("dNotifGrid").innerHTML = [
+          kv("Email Notifications", vField(u.emailNotif, "emailNotif", editMode ? "checkbox" : "badge-yesno")),
+          kv("Saved Property Updates", vField(u.savedPropUpdates, "savedPropUpdates", "select", ["Price Only","All Updates"])),
+          kv("Notification Frequency", vField(u.notifFreq, "notifFreq", "select", ["Immediate","Daily","Weekly"])),
+          kv("Delivery Time", vField(u.deliveryTime, "deliveryTime")),
+          kv("Agent Message Notifications", vField(u.agentMsgNotif, "agentMsgNotif", "select", ["Immediate","Daily","Weekly"])),
+          kv("Support Message Notifications", vField(u.supportMsgNotif, "supportMsgNotif", "select", ["Immediate","Daily","Weekly"])),
+          kv("Promotional Messages", vField(u.promo, "promo", editMode ? "checkbox" : "badge-yesno")),
+          kv("Quiet Hours — Start", vField(u.quietStart, "quietStart")),
+          kv("Quiet Hours — End", vField(u.quietEnd, "quietEnd")),
+          kv("Quiet Hours — Timezone", vField(u.quietTz, "quietTz")),
+        ].join("");
+
+        // Section 11 - Memo
+        $("dMemoBox").innerHTML = editMode
+          ? `<textarea class="edit-input" data-field="memo" style="min-height:80px">${esc(u.memo)}</textarea>`
+          : `<div class="kv-value" style="white-space:pre-wrap">${esc(u.memo) || '<em style="color:var(--text-muted)">No notes.</em>'}</div>`;
       }
 
-      function openChatForEndUser(encodedId) {
-        const id = decodeURIComponent(encodedId);
-        const account = accounts.find((x) => String(x.id) === id);
-        if (!account) {
-          Toast.err("Account not found."); 
-          return;
-        }
-        const params = new URLSearchParams();
-        params.set("contactType", "client");
-        params.set("name", account.name || "");
-        params.set("email", account.email || "");
-        window.location.href =
-          "../messagesupport/admin-messages.html?" + params.toString();
+      function showDetail(id) {
+        const u = users.find(x=>x.id===id); if (!u) return;
+        currentUser = u;
+        originalUser = JSON.parse(JSON.stringify(u));
+        editMode = false;
+        renderDetail();
+        $("listView").classList.add("hidden"); $("detailView").classList.remove("hidden"); window.scrollTo(0,0);
       }
 
-      function openDetail(id) {
-        const listView = document.getElementById("listView");
-        const detailView = document.getElementById("detailView");
-        if (listView && detailView) {
-          listView.style.display = "none";
-          detailView.style.display = "block";
-        }
-        const kpiGrid = document.getElementById("kpiGrid");
-        if (kpiGrid) {
-          kpiGrid.style.display = "none";
-        }
-        selectAccount(id);
+      function renderDetail() {
+        const u = currentUser; if (!u) return;
+        // Toggle toolbar
+        $("toolbarView").classList.toggle("hidden", editMode);
+        $("toolbarEdit").classList.toggle("hidden", !editMode);
+        $("modeIndicator").classList.toggle("edit", editMode);
+        $("modeLabel").textContent = editMode ? "Edit mode" : "View mode";
+
+        $("dAvatar").textContent = initials(u.fullName); $("dName").textContent = u.fullName;
+        $("dMetaId").textContent = u.id; $("dMetaEmail").textContent = u.email; $("dMetaStatus").innerHTML = badgeStatus(u.status);
+        $("dTotalLogins").textContent = u.totalLogins.toLocaleString(); $("dLastLogin").textContent = u.lastLogin;
+        $("dAvgSession").textContent = u.avgSession; $("dSavedSearches").textContent = u.savedSearches;
+        $("dSavedProps").textContent = u.savedProps; $("dAppraisals").textContent = u.appraisals; $("dAvgResp").textContent = u.avgRespTime;
+
+        renderEditableSections(u);
+
+        // Read-only sections
+        $("dSavedPropsList").innerHTML = u.savedPropsList.length
+          ? u.savedPropsList.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.savedAt)}</td><td><span class="badge ${p.status==='Active'?'badge-active':'badge-deactivated'}">${p.status}</span></td></tr>`).join("")
+          : '<tr><td colspan="3" style="color:var(--text-muted)"><em>No saved properties.</em></td></tr>';
+        $("dSavedSearchesList").innerHTML = u.savedSearchesList.length
+          ? u.savedSearchesList.map(s=>`<tr><td>${esc(s.name)}</td><td>${esc(s.notif)}</td></tr>`).join("")
+          : '<tr><td colspan="2" style="color:var(--text-muted)"><em>No saved searches.</em></td></tr>';
+        $("dInquiryHistory").innerHTML = u.inquiryHistory.length
+          ? u.inquiryHistory.map(h=>`<tr><td>${esc(h.prop)}</td><td>${esc(h.at)}</td><td>${esc(h.agent)}</td><td><span class="badge ${h.status==='Replied'?'badge-active':h.status==='Read'?'badge-pending':'badge-off'}">${h.status}</span></td></tr>`).join("")
+          : '<tr><td colspan="4" style="color:var(--text-muted)"><em>No inquiries.</em></td></tr>';
+        renderMonthChart("dMsgSent","dMsgSentLabels",u.msgSent,false);
+        renderMonthChart("dMsgRecv","dMsgRecvLabels",u.msgRecv,true);
+        $("dBlockedAgents").innerHTML = u.blockedAgents.length
+          ? u.blockedAgents.map(b=>`<tr><td>${esc(b.name)}</td><td>${esc(b.at)}</td></tr>`).join("")
+          : '<tr><td colspan="2" style="color:var(--text-muted)"><em>No blocked agents.</em></td></tr>';
+        $("dClosingReports").innerHTML = u.closingReports.length
+          ? u.closingReports.map(c=>`<tr><td>${esc(c.prop)}</td><td>${esc(c.agent)}</td><td>${esc(c.date)}</td><td><span class="badge badge-pending">${esc(c.status)}</span></td></tr>`).join("")
+          : '<tr><td colspan="4" style="color:var(--text-muted)"><em>No closing reports (Phase 2).</em></td></tr>';
+        $("dSubStatus").innerHTML = badgePlan(u.plan); $("dTotalBilling").textContent = fmtYen(u.totalBilling);
+        $("dOutstanding").textContent = fmtYen(u.outstanding); $("dPaymentStatus").innerHTML = badgePaid(u.paymentStatus);
+        $("dPurchaseHistory").innerHTML = u.purchaseHistory.length
+          ? u.purchaseHistory.map(p=>`<tr><td>${esc(p.date)}</td><td>${esc(p.item)}</td><td>${fmtYen(p.amount)}</td></tr>`).join("")
+          : '<tr><td colspan="3" style="color:var(--text-muted)"><em>No purchases.</em></td></tr>';
+        $("dRefundHistory").innerHTML = u.refundHistory.length
+          ? u.refundHistory.map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.item)}</td><td>${fmtYen(r.amount)}</td><td>${esc(r.reason)}</td></tr>`).join("")
+          : '<tr><td colspan="4" style="color:var(--text-muted)"><em>No refunds.</em></td></tr>';
+        $("dLockStatus").innerHTML = badgeLock(u.lockStatus); $("d2FA").innerHTML = badge2FA(u.twoFa);
+        $("dLastPwd").textContent = u.lastPwd; $("dLastDevice").textContent = u.lastDevice;
+        $("dFailedLogins").textContent = u.failedLogins; $("dIdVerify").innerHTML = badgeIdVerify(u.idVerify);
+        $("dLoginHistory").innerHTML = u.loginHistory.length
+          ? u.loginHistory.map(l=>`<tr><td>${esc(l.at)}</td><td>${esc(l.device)}</td><td>${esc(l.ip)}</td><td>${esc(l.country)}</td></tr>`).join("")
+          : '<tr><td colspan="4" style="color:var(--text-muted)"><em>No login history.</em></td></tr>';
+        $("dLastSupport").textContent = u.lastSupport || "—";
       }
 
-      function selectAccount(id) {
-        selectedId = id;
-        UX.markClean();
-        const a = accounts.find((x) => x.id === id);
-        const badge = document.getElementById("selectedBadge");
-        const analytics = document.getElementById("analyticsPanel");
-        const heroName = document.getElementById("heroName");
-        const heroEmail = document.getElementById("heroEmail");
-        if (!a) {
-          badge.textContent = "No account selected";
-          if (heroName) heroName.textContent = "Select an account";
-          if (heroEmail) heroEmail.textContent = "—";
-          if (analytics) {
-            analytics.innerHTML =
-              "<li>Select an end user in the list to view traffic source, login frequency, session time and saved items.</li>";
-          }
-          return;
-        }
-        badge.textContent = `${a.id} · ${a.type}`;
-        if (heroName) heroName.textContent = a.name || a.id;
-        if (heroEmail) heroEmail.textContent = a.email || "—";
-        const name = a.name || "";
-        const parts = name.split(" ").filter(Boolean);
-        const firstName = parts.length ? parts[parts.length - 1] : name;
-
-        document.getElementById("fieldId").value = a.id;
-        document.getElementById("fieldType").value = a.type;
-        document.getElementById("fieldFirstName").value = firstName;
-        document.getElementById("fieldName").value = name;
-        document.getElementById("fieldEmail").value = a.email || "";
-        document.getElementById("fieldCountryCode").value = a.countryCode || "";
-        document.getElementById("fieldStatus").value = a.status || "Active";
-        document.getElementById("fieldPhone").value = a.phone || "";
-        document.getElementById("fieldAddress").value = a.address || "";
-        document.getElementById("fieldNationality").value = a.nationality || "";
-
-        document.getElementById("fieldOwnedJapan").value = a.ownedJapan || "";
-        document.getElementById("fieldLocation").value = a.location || "";
-        document.getElementById("fieldBuyerStatus").value = a.buyerStatus || "";
-
-        document.getElementById("fieldSecQuestion").value =
-          a.securityQuestion || "";
-        document.getElementById("fieldSecAnswer").value =
-          a.securityAnswer || "";
-
-        document.getElementById("fieldPropertyType").value =
-          a.propertyType || "";
-        document.getElementById("fieldDesiredCity").value = a.desiredCity || "";
-        document.getElementById("fieldDesiredArea").value = a.desiredArea || "";
-        document.getElementById("fieldBudgetFrom").value = a.budgetFrom || "";
-        document.getElementById("fieldBudgetTo").value = a.budgetTo || "";
-        document.getElementById("fieldYield").value = a.targetYield || "";
-        document.getElementById("fieldBedrooms").value = a.bedrooms || "";
-        document.getElementById("fieldPurpose").value = a.purchasePurpose || "";
-        document.getElementById("fieldPropertyStatus").value =
-          a.propertyStatus || "";
-
-        document.getElementById("notifEmailOn").checked =
-          a.notifEmailOn === false ? false : true;
-        document.getElementById("notifPricesOnly").checked =
-          !!a.notifPricesOnly;
-        document.getElementById("notifAnyUpdates").checked =
-          !!a.notifAnyUpdates;
-        document.getElementById("notifFrequency").value =
-          a.notifFrequency || "Immediate";
-        document.getElementById("notifTime").value = a.notifTime || "";
-        document.getElementById("notifAgentComm").value =
-          a.notifAgentComm || "Immediate";
-        document.getElementById("notifSupportComm").value =
-          a.notifSupportComm || "Immediate";
-        document.getElementById("notifPromo").checked = !!a.notifPromo;
-        document.getElementById("quietEnabled").value = a.quietEnabled || "Off";
-        document.getElementById("quietFrom").value = a.quietFrom || "";
-        document.getElementById("quietTo").value = a.quietTo || "";
-        document.getElementById("quietTz").value = a.quietTz || "";
-
-        const avatarUrl = a.avatarUrl || "";
-        const avatarInput = document.getElementById("fieldAvatarUrl");
-        const avatarCircle = document.getElementById("avatarPreviewCircle");
-        const avatarImg = document.getElementById("avatarPreviewImage");
-        if (avatarInput) {
-          avatarInput.value = avatarUrl;
-        }
-        const initials =
-          (name || "")
-            .split(/\s+/)
-            .filter(Boolean)
-            .map((part) => part[0])
-            .join("")
-            .slice(0, 2)
-            .toUpperCase() || "U";
-        if (avatarCircle) {
-          avatarCircle.textContent = initials;
-        }
-        if (avatarImg && avatarCircle) {
-          if (avatarUrl) {
-            avatarImg.src = avatarUrl;
-            avatarImg.style.display = "block";
-            avatarCircle.style.display = "none";
-          } else {
-            avatarImg.style.display = "none";
-            avatarCircle.style.display = "flex";
-          }
-        }
-
-        if (analytics) {
-          analytics.innerHTML = `
-            <li><strong>Total logins:</strong> ${
-              typeof a.loginCount === "number" ? a.loginCount : "-"
-            }</li>
-            <li><strong>Last login:</strong> ${a.lastActive || "-"}</li>
-            <li><strong>Average session length:</strong> ${
-              typeof a.avgSessionMinutes === "number"
-                ? a.avgSessionMinutes + " minutes"
-                : "-"
-            }</li>
-            <li><strong>Saved searches:</strong> ${
-              typeof a.savedSearchCount === "number" ? a.savedSearchCount : 0
-            }</li>
-            <li><strong>Saved properties:</strong> ${
-              typeof a.savedPropertyCount === "number"
-                ? a.savedPropertyCount
-                : 0
-            }</li>
-            <li><strong>Appraisal forms submitted:</strong> ${
-              typeof a.appraisalFormCount === "number"
-                ? a.appraisalFormCount
-                : 0
-            }</li>
-          `;
-        }
+      function renderMonthChart(barId, labelId, data, recv) {
+        const max = Math.max(...data, 1);
+        const labels = ["Jun","Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May"];
+        $(barId).innerHTML = data.map(v=>`<div class="month-bar ${recv?'recv':''}" style="height:${(v/max)*100}%" title="${v}"></div>`).join("");
+        $(labelId).innerHTML = labels.map(l=>`<div>${l}</div>`).join("");
       }
 
+      function showList() {
+        if (editMode && !confirm("Discard unsaved changes?")) return;
+        editMode = false;
+        $("detailView").classList.add("hidden"); $("listView").classList.remove("hidden");
+      }
+
+      function enterEditMode() { editMode = true; renderDetail(); }
+      function cancelEdit() {
+        if (!confirm("Discard changes and return to view mode?")) return;
+        Object.assign(currentUser, JSON.parse(JSON.stringify(originalUser)));
+        editMode = false;
+        renderDetail();
+      }
       function saveChanges() {
-        if (!selectedId) {
-          Toast.err("Select an account first.");
-          return;
-        }
-        const form = document.getElementById("detailForm");
-        if (form && !UX.validate(form)) {
-          Toast.err("Please fix the highlighted fields.");
-          return;
-        }
-        const a = accounts.find((x) => x.id === selectedId);
-        if (!a) return;
-        a.name = document.getElementById("fieldName").value;
-        a.email = document.getElementById("fieldEmail").value;
-        a.countryCode = document.getElementById("fieldCountryCode").value;
-        a.status = document.getElementById("fieldStatus").value;
-        a.phone = document.getElementById("fieldPhone").value;
-        a.address = document.getElementById("fieldAddress").value;
-        a.nationality = document.getElementById("fieldNationality").value;
-
-        a.ownedJapan = document.getElementById("fieldOwnedJapan").value;
-        a.location = document.getElementById("fieldLocation").value;
-        a.buyerStatus = document.getElementById("fieldBuyerStatus").value;
-
-        a.securityQuestion = document.getElementById("fieldSecQuestion").value;
-        a.securityAnswer = document.getElementById("fieldSecAnswer").value;
-
-        a.propertyType = document.getElementById("fieldPropertyType").value;
-        a.desiredCity = document.getElementById("fieldDesiredCity").value;
-        a.desiredArea = document.getElementById("fieldDesiredArea").value;
-        a.budgetFrom = document.getElementById("fieldBudgetFrom").value;
-        a.budgetTo = document.getElementById("fieldBudgetTo").value;
-        a.targetYield = document.getElementById("fieldYield").value;
-        a.bedrooms = document.getElementById("fieldBedrooms").value;
-        a.purchasePurpose = document.getElementById("fieldPurpose").value;
-        a.propertyStatus = document.getElementById("fieldPropertyStatus").value;
-
-        a.notifEmailOn = document.getElementById("notifEmailOn").checked;
-        a.notifPricesOnly = document.getElementById("notifPricesOnly").checked;
-        a.notifAnyUpdates = document.getElementById("notifAnyUpdates").checked;
-        a.notifFrequency = document.getElementById("notifFrequency").value;
-        a.notifTime = document.getElementById("notifTime").value;
-        a.notifAgentComm = document.getElementById("notifAgentComm").value;
-        a.notifSupportComm = document.getElementById("notifSupportComm").value;
-        a.notifPromo = document.getElementById("notifPromo").checked;
-        a.quietEnabled = document.getElementById("quietEnabled").value;
-        a.quietFrom = document.getElementById("quietFrom").value;
-        a.quietTo = document.getElementById("quietTo").value;
-        a.quietTz = document.getElementById("quietTz").value;
-
-        a.avatarUrl = document.getElementById("fieldAvatarUrl").value.trim();
-        UX.markClean();
-        Toast.ok("Account changes saved");
-        renderTable();
-        renderKpis();
-      }
-
-      function toggleSuspend(id) {
-        const a = accounts.find((x) => x.id === id);
-        if (!a) return;
-        const unsuspending = a.status === "Suspended";
-        UX.confirm({
-          title: unsuspending ? "Unsuspend account?" : "Suspend account?",
-          message: unsuspending
-            ? `Unsuspend account ${a.name} (${a.email})? User will regain access to the platform.`
-            : `Suspend account ${a.name} (${a.email})? User will be blocked from logging in.`,
-          okLabel: unsuspending ? "Unsuspend" : "Suspend",
-          danger: !unsuspending,
-          onConfirm() {
-            a.status = unsuspending ? "Active" : "Suspended";
-            if (selectedId === id) {
-              document.getElementById("fieldStatus").value = a.status;
-            }
-            renderTable();
-            renderKpis();
-            Toast.ok(
-              unsuspending
-                ? `${a.name} unsuspended`
-                : `${a.name} suspended`,
-            );
-          },
+        document.querySelectorAll("[data-field]").forEach(el => {
+          const f = el.dataset.field;
+          const t = el.dataset.type;
+          if (t === "bool") currentUser[f] = el.checked;
+          else if (t === "num") currentUser[f] = el.value === "" ? 0 : Number(el.value);
+          else if (t === "array") currentUser[f] = el.value.split(",").map(s=>s.trim()).filter(Boolean);
+          else currentUser[f] = el.value;
         });
+        originalUser = JSON.parse(JSON.stringify(currentUser));
+        editMode = false;
+        renderDetail();
+        renderList();
+        alert("Changes saved (demo).");
       }
 
-      function deleteAccount(id) {
-        const index = accounts.findIndex((x) => x.id === id);
-        if (index === -1) return;
-        const a = accounts[index];
-        UX.confirm({
-          title: "Delete account?",
-          message: `Delete account ${a.name} (${a.email})?\n\nThis is intended for GDPR/PDPA compliant erasure and cannot be undone.`,
-          okLabel: "Delete",
-          danger: true,
-          onConfirm() {
-            accounts.splice(index, 1);
-            if (selectedId === id) {
-              selectedId = null;
-              document.getElementById("detailForm").reset();
-              document.getElementById("selectedBadge").textContent =
-                "No account selected";
-            }
-            renderTable();
-            renderKpis();
-            Toast.ok(`Account ${a.name} deleted`);
-          },
-        });
+      function suspendAccount() {
+        if (!currentUser) return;
+        const next = currentUser.status === "Suspended" ? "Active" : "Suspended";
+        if (!confirm(`${next === "Suspended" ? "Suspend" : "Re-activate"} account ${currentUser.id} (${currentUser.fullName})?`)) return;
+        currentUser.status = next;
+        originalUser.status = next;
+        renderDetail(); renderList();
       }
-
-      function exportCsv() {
-        const filtered = applyFilters(accounts);
-        if (!filtered.length) {
-          Toast.info("No users match current filters."); 
-          return;
-        }
-        const header = [
-          "User ID",
-          "Name",
-          "Email",
-          "Buyer status",
-          "Nation",
-          "Status",
-          "Last Active",
-          "Login Count",
-          "Engagement Score",
-          "Alerts",
-          "Support Tickets",
-          "Avg Session Minutes",
-          "Saved Searches",
-          "Saved Properties",
-          "Appraisal Forms",
-        ];
-        const rows = filtered.map((u) => [
-          u.id,
-          u.name,
-          u.email,
-          u.buyerStatus || "",
-          u.location || "",
-          u.status,
-          u.lastActive || "",
-          u.loginCount ?? "",
-          u.engagementScore ?? "",
-          (u.alerts || []).join(" | "),
-          u.supportTickets ?? "",
-          u.avgSessionMinutes ?? "",
-          u.savedSearchCount ?? "",
-          u.savedPropertyCount ?? "",
-          u.appraisalFormCount ?? "",
-        ]);
-
-        const csvLines = [
-          header.join(","),
-          ...rows.map((r) =>
-            r
-              .map((val) => {
-                const v = String(val ?? "");
-                return `"${v.replace(/"/g, '""')}"`;
-              })
-              .join(","),
-          ),
-        ];
-        const csv = csvLines.join("\n");
-
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "yuushi_end_user_management.csv";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+      function deleteAccount() {
+        if (!currentUser) return;
+        if (!confirm(`PERMANENTLY delete ${currentUser.id} (${currentUser.fullName})? This action cannot be undone.`)) return;
+        const idx = users.findIndex(u => u.id === currentUser.id);
+        if (idx >= 0) users.splice(idx, 1);
+        filtered = filtered.filter(u => u.id !== currentUser.id);
+        showList();
+        renderList();
+        alert("Account deleted (demo).");
       }
-
-      const LEAD_STORAGE_KEY = "yuushiAdminLeads";
-
-      function getStoredLeads() {
-        try {
-          const raw = window.localStorage.getItem(LEAD_STORAGE_KEY);
-          if (!raw) return [];
-          const parsed = JSON.parse(raw);
-          return Array.isArray(parsed) ? parsed : [];
-        } catch (e) {
-          console.error("Failed to read leads from storage", e);
-          return [];
-        }
+      function saveAsLead() {
+        if (!currentUser) return;
+        alert(`★ Saved as lead: ${currentUser.fullName} (${currentUser.id})\nLead group picker would open here.`);
       }
-
-      function saveStoredLeads(list) {
-        try {
-          window.localStorage.setItem(LEAD_STORAGE_KEY, JSON.stringify(list));
-        } catch (e) {
-          console.error("Failed to write leads to storage", e);
-          Toast.err("Unable to save: localStorage blocked.");
-        }
+      function openChat(id) {
+        const u = users.find(x=>x.id===id); if (!u) return;
+        alert(`Open chat with ${u.fullName} (${id}) — would navigate to Messages module.`);
       }
-
-      function upsertLead(lead) {
-        const list = getStoredLeads();
-        const keyId = String(lead.id);
-        const idx = list.findIndex(
-          (l) =>
-            l && l.entityType === lead.entityType && String(l.id) === keyId,
-        );
-        const now = new Date().toISOString().slice(0, 10);
-        if (idx >= 0) {
-          list[idx] = { ...list[idx], ...lead, updatedDate: now };
-        } else {
-          list.push({ ...lead, createdDate: lead.createdDate || now });
-        }
-        saveStoredLeads(list);
+      function resetPwd() {
+        if (!currentUser) return;
+        $("pwdSubject").textContent = `${currentUser.id} · ${currentUser.fullName} (${currentUser.email})`;
+        $("pwdNew").value = ""; $("pwdConfirm").value = "";
+        $("pwdError").classList.remove("show");
+        $("pwdResetModal").classList.add("open");
+        setTimeout(()=>$("pwdNew").focus(), 50);
       }
-
-      function removeLead(entityType, id) {
-        const all = getStoredLeads();
-        const keyId = String(id);
-        const filtered = all.filter(
-          (l) => !(l && l.entityType === entityType && String(l.id) === keyId),
-        );
-        saveStoredLeads(filtered);
+      function closePwdResetModal() { $("pwdResetModal").classList.remove("open"); }
+      function submitPwdReset() {
+        const np = $("pwdNew").value, cp = $("pwdConfirm").value;
+        const err = $("pwdError");
+        if (!np || !cp) { err.textContent = "Both fields are required."; err.classList.add("show"); return; }
+        if (np.length < 8) { err.textContent = "Password must be at least 8 characters."; err.classList.add("show"); return; }
+        if (np !== cp) { err.textContent = "Passwords do not match."; err.classList.add("show"); return; }
+        closePwdResetModal();
+        alert(`Password reset for ${currentUser.fullName}.\nAction recorded in Audit Logs.`);
       }
+      function exportCsv() { alert(`Export ${filtered.length} filtered user records as CSV (demo)`); }
 
-      function isLead(entityType, id) {
-        const all = getStoredLeads();
-        const keyId = String(id);
-        return all.some(
-          (l) => l && l.entityType === entityType && String(l.id) === keyId,
-        );
-      }
-
-      function updateLeadButtonsForEndUser() {
-        const saveBtn = document.getElementById("saveLeadEndUserBtn");
-        const unsaveBtn = document.getElementById("unsaveLeadEndUserBtn");
-        if (!saveBtn || !unsaveBtn) return;
-        if (!selectedId) {
-          saveBtn.style.display = "inline-flex";
-          unsaveBtn.style.display = "none";
-          return;
-        }
-        if (isLead("end_user", selectedId)) {
-          saveBtn.style.display = "none";
-          unsaveBtn.style.display = "inline-flex";
-        } else {
-          saveBtn.style.display = "inline-flex";
-          unsaveBtn.style.display = "none";
-        }
-      }
-
-      function saveLeadFromEndUser() {
-        if (!selectedId) {
-          Toast.err("Select an account first."); 
-          return;
-        }
-        const a = accounts.find((x) => x.id === selectedId);
-        if (!a) {
-          Toast.err("Account not found."); 
-          return;
-        }
-
-        const lead = {
-          id: a.id,
-          entityType: "end_user",
-          name: a.name || "",
-          email: a.email || "",
-          phone: a.phone || "",
-          leadStatus: "New",
-          accountStatus: a.status || "Active",
-          buyerStatus: a.buyerStatus || "",
-          location: a.location || "",
-          crmTier: a.crmTier || "",
-          source: "End User Management",
-        };
-
-        upsertLead(lead);
-        Toast.ok("Saved as lead in admin overview");
-        updateLeadButtonsForEndUser();
-      }
-
-      function unsaveLeadFromEndUser() {
-        if (!selectedId) {
-          Toast.err("Select an account first."); 
-          return;
-        }
-        removeLead("end_user", selectedId);
-        Toast.ok("Lead removed");
-        updateLeadButtonsForEndUser();
-      }
-
-      document.addEventListener("DOMContentLoaded", () => {
-        renderKpis();
-        renderTable();
-        selectAccount(null);
-
-        [
-          "searchInput",
-          "buyerStatusFilter",
-          "statusFilter",
-          "nationFilter",
-          "lastActiveFilter",
-          "appraisalsFilter",
-          "savedFilter",
-          "activityFilter",
-          "alertsFilter",
-          "sortBy",
-        ].forEach((id) => {
-          const el = document.getElementById(id);
-          if (!el) return;
-          el.addEventListener("input", renderTable);
-          el.addEventListener("change", renderTable);
-        });
-        document
-          .getElementById("resetFiltersBtn")
-          ?.addEventListener("click", () => {
-            [
-              "searchInput",
-              "buyerStatusFilter",
-              "statusFilter",
-              "nationFilter",
-              "lastActiveFilter",
-              "appraisalsFilter",
-              "savedFilter",
-              "activityFilter",
-              "alertsFilter",
-            ].forEach((id) => {
-              const el = document.getElementById(id);
-              if (el) el.value = "";
-            });
-            const sb = document.getElementById("sortBy");
-            if (sb) sb.value = "lastActive-desc";
-            renderTable();
-          });
-
-        const exportBtn = document.getElementById("exportCsvBtn");
-        if (exportBtn) {
-          exportBtn.addEventListener("click", exportCsv);
-        }
-
-        const saveLeadBtn = document.getElementById("saveLeadEndUserBtn");
-        if (saveLeadBtn) {
-          saveLeadBtn.addEventListener("click", saveLeadFromEndUser);
-        }
-
-        const unsaveLeadBtn = document.getElementById("unsaveLeadEndUserBtn");
-        if (unsaveLeadBtn) {
-          unsaveLeadBtn.addEventListener("click", unsaveLeadFromEndUser);
-        }
-
-        const returnToList = () => {
-          UX.guard(() => {
-            const listView = document.getElementById("listView");
-            const detailView = document.getElementById("detailView");
-            if (listView && detailView) {
-              detailView.style.display = "none";
-              listView.style.display = "block";
-            }
-            const kpiGrid = document.getElementById("kpiGrid");
-            if (kpiGrid) {
-              kpiGrid.style.display = "";
-            }
-            selectedId = null;
-            selectAccount(null);
-          });
-        };
-        const backBtn = document.getElementById("backToListBtn");
-        if (backBtn) backBtn.addEventListener("click", returnToList);
-        const cancelBtn = document.getElementById("cancelBtn");
-        if (cancelBtn) cancelBtn.addEventListener("click", returnToList);
-
-        const params = new URLSearchParams(window.location.search);
-        const from = params.get("from");
-        const leadId = params.get("leadId");
-        if (from === "leads" && leadId) {
-          const match = accounts.find((a) => String(a.id) === String(leadId));
-          if (match) {
-            openDetail(match.id);
-          }
-        }
-
-        // Initialize Save/Unsave button state
-        updateLeadButtonsForEndUser();
-
-        document
-          .getElementById("saveBtn")
-          .addEventListener("click", saveChanges);
-        document.getElementById("suspendBtn").addEventListener("click", () => {
-          if (!selectedId) {
-            Toast.err("Select an account first.");
-            return;
-          }
-          toggleSuspend(selectedId);
-        });
-        document.getElementById("deleteBtn").addEventListener("click", () => {
-          if (!selectedId) {
-            Toast.err("Select an account first.");
-            return;
-          }
-          deleteAccount(selectedId);
-        });
-      });
+      renderList();
     </script>
-  <!-- ─────── UX KIT (toast · confirm · focus trap · dirty guard) ─────── -->
-<style id="uxKitStyle">
-  .ux-toast-wrap{position:fixed;right:18px;bottom:18px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-  .ux-toast{background:#fff;border:1px solid #e5d9c0;border-left:4px solid #c4a25f;border-radius:8px;padding:10px 14px;min-width:240px;max-width:380px;box-shadow:0 4px 16px rgba(0,0,0,.12);font-size:13px;color:#2c1810;display:flex;align-items:flex-start;gap:8px;animation:ux-slide .22s ease;pointer-events:auto}
-  .ux-toast.ok{border-left-color:#2d6a4f}
-  .ux-toast.err{border-left-color:#c41e3a}
-  .ux-toast.info{border-left-color:#1d4e89}
-  .ux-toast .x{margin-left:auto;cursor:pointer;color:#9d8777;background:none;border:none;font-size:14px;padding:0 4px;font-family:inherit}
-  .ux-toast .x:hover{color:#2c1810}
-  @keyframes ux-slide{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
 
-  .ux-modal{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35)}
-  .ux-modal.open{display:flex}
-  .ux-modal-box{background:#fff;border-radius:12px;padding:22px 24px;width:420px;max-width:90vw;box-shadow:0 10px 32px rgba(0,0,0,.22)}
-  .ux-modal-box h3{font-size:15px;font-weight:700;color:#2c1810;margin:0 0 8px}
-  .ux-modal-box p{font-size:13px;color:#6b5c4e;line-height:1.5;margin:0 0 18px;white-space:pre-line}
-  .ux-modal-actions{display:flex;gap:8px;justify-content:flex-end}
-  .ux-btn{padding:7px 16px;border-radius:6px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500;border:1.5px solid #e5d9c0;background:#fff;color:#2c1810}
-  .ux-btn:hover{background:#fdfaf6}
-  .ux-btn.primary{background:#c4a25f;border-color:#c4a25f;color:#fff}
-  .ux-btn.primary:hover{background:#b08d4a}
-  .ux-btn.danger{background:#c41e3a;border-color:#c41e3a;color:#fff}
-  .ux-btn.danger:hover{background:#a51730}
-
-  /* Required-field marker */
-  .ux-req::after, label.req::after, .req::after{content:" *";color:#c41e3a;font-weight:700}
-
-  /* Form section heading */
-  .ux-form-section{margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid #e5d9c0;font-size:11px;font-weight:700;color:#6b5c4e;text-transform:uppercase;letter-spacing:.5px}
-  .ux-form-section:first-child{margin-top:4px}
-
-  /* Inline field validation */
-  .ux-field-error{font-size:11px;color:#c41e3a;margin-top:2px;display:block}
-  .ux-invalid, input.ux-invalid, textarea.ux-invalid, select.ux-invalid{border-color:#c41e3a !important;box-shadow:0 0 0 2px rgba(196,30,58,.12)}
-
-  /* Dirty indicator pill */
-  .ux-dirty-pill{display:none;background:#fff3cd;color:#856404;font-size:11px;font-weight:600;padding:3px 10px;border-radius:10px;margin-left:8px;vertical-align:middle}
-  .ux-dirty .ux-dirty-pill{display:inline-block}
-</style>
-
-<div class="ux-toast-wrap" id="uxToastWrap" role="status" aria-live="polite"></div>
-<div class="ux-modal" id="uxConfirmModal" role="dialog" aria-modal="true" aria-labelledby="uxConfirmTitle">
-  <div class="ux-modal-box">
-    <h3 id="uxConfirmTitle">Confirm</h3>
-    <p id="uxConfirmMsg"></p>
-    <div class="ux-modal-actions">
-      <button type="button" class="ux-btn" id="uxConfirmCancel">Cancel</button>
-      <button type="button" class="ux-btn primary" id="uxConfirmOk">Confirm</button>
+    <!-- Password Reset Modal -->
+    <div id="pwdResetModal" class="modal-backdrop">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 class="modal-title"><i class="fas fa-key"></i> Reset password</h3>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="closePwdResetModal()" aria-label="Close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="warning-banner">
+            <i class="fas fa-triangle-exclamation"></i>
+            <div>
+              <strong>Force-reset password without email verification.</strong><br>
+              The account owner must use the new password to log in next time. This action is recorded in Audit Logs.
+            </div>
+          </div>
+          <div class="kv" style="margin-top:14px"><span class="kv-label">Subject account</span><span class="kv-value" id="pwdSubject">—</span></div>
+          <div class="modal-field"><label class="field-label" for="pwdNew">New password</label><input id="pwdNew" type="password" autocomplete="new-password" placeholder="Min 8 characters" /></div>
+          <div class="modal-field"><label class="field-label" for="pwdConfirm">Confirm new password</label><input id="pwdConfirm" type="password" autocomplete="new-password" /></div>
+          <div class="modal-error" id="pwdError"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" type="button" onclick="closePwdResetModal()">Cancel</button>
+          <button class="btn btn-primary-danger" type="button" onclick="submitPwdReset()"><i class="fas fa-key"></i> Reset password</button>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-
-<script>
-(function(){
-  if (window.UX) return; // idempotent
-  const wrap = document.getElementById('uxToastWrap');
-  const modal = document.getElementById('uxConfirmModal');
-  const titleEl = document.getElementById('uxConfirmTitle');
-  const msgEl = document.getElementById('uxConfirmMsg');
-  const okBtn = document.getElementById('uxConfirmOk');
-  const cancelBtn = document.getElementById('uxConfirmCancel');
-
-  // ──── Toast ────────────────────────────────────────────────────
-  function toast(msg, type){
-    if(!wrap) return;
-    const el = document.createElement('div');
-    el.className = 'ux-toast ' + (type || 'info');
-    const span = document.createElement('span');
-    span.textContent = msg || '';
-    const x = document.createElement('button');
-    x.className = 'x'; x.type = 'button'; x.setAttribute('aria-label','Dismiss');
-    x.textContent = '×';
-    x.addEventListener('click', () => el.remove());
-    el.appendChild(span); el.appendChild(x);
-    wrap.appendChild(el);
-    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 220); }, 3800);
-  }
-  window.Toast = {
-    show: toast,
-    ok:   (m) => toast(m, 'ok'),
-    err:  (m) => toast(m, 'err'),
-    info: (m) => toast(m, 'info'),
-  };
-
-  // ──── Confirm modal ───────────────────────────────────────────
-  let _onOk = null;
-  let _lastFocus = null;
-  function closeConfirm(){
-    modal.classList.remove('open');
-    _onOk = null;
-    if(_lastFocus && _lastFocus.focus) try { _lastFocus.focus(); } catch(e){}
-  }
-  okBtn.addEventListener('click', () => { const cb = _onOk; closeConfirm(); if(cb) cb(); });
-  cancelBtn.addEventListener('click', closeConfirm);
-  modal.addEventListener('click', (e) => { if(e.target === modal) closeConfirm(); });
-
-  function openConfirm(opts){
-    titleEl.textContent  = opts.title   || 'Confirm';
-    msgEl.textContent    = opts.message || 'Are you sure?';
-    okBtn.textContent    = opts.okLabel || 'Confirm';
-    cancelBtn.textContent= opts.cancelLabel || 'Cancel';
-    okBtn.className = 'ux-btn ' + (opts.danger ? 'danger' : 'primary');
-    _onOk = typeof opts.onConfirm === 'function' ? opts.onConfirm : null;
-    _lastFocus = document.activeElement;
-    modal.classList.add('open');
-    setTimeout(() => okBtn.focus(), 40);
-  }
-
-  window.UX = {
-    confirm: openConfirm,
-    toast,
-    // Run action only after confirming if dirty
-    guard(action){
-      if(!window.UX_dirty){ if(typeof action === 'function') action(); return; }
-      openConfirm({
-        title: 'Discard unsaved changes?',
-        message: 'You have edits that have not been saved. Leave anyway?',
-        okLabel: 'Discard',
-        danger: true,
-        onConfirm(){ window.UX_dirty = false; if(typeof action === 'function') action(); }
-      });
-    },
-    markClean(){ window.UX_dirty = false; document.body.classList.remove('ux-dirty'); },
-    markDirty(){ window.UX_dirty = true;  document.body.classList.add('ux-dirty'); },
-  };
-
-  // ──── Esc closes any open modal (built-in + page modals) ──────
-  document.addEventListener('keydown', (e) => {
-    if(e.key !== 'Escape') return;
-    if(modal.classList.contains('open')){ closeConfirm(); return; }
-    document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(m => {
-      const visible = getComputedStyle(m).display !== 'none' || m.classList.contains('show') || m.classList.contains('open');
-      if(!visible) return;
-      m.classList.remove('open','show','active');
-      m.style.display = 'none';
-    });
-  });
-
-  // ──── Backdrop click closes existing page modals ──────────────
-  document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(m => {
-    if(m.__uxBound) return; m.__uxBound = true;
-    m.addEventListener('click', (e) => {
-      if(e.target !== m) return;
-      m.classList.remove('open','show','active');
-      m.style.display = 'none';
-    });
-  });
-
-  // ──── Auto-track dirty on any [data-track-dirty] container ────
-  document.addEventListener('input', (e) => {
-    if(e.target.closest('[data-track-dirty]')) UX.markDirty();
-  });
-  document.addEventListener('change', (e) => {
-    if(e.target.closest('[data-track-dirty]')) UX.markDirty();
-  });
-  window.addEventListener('beforeunload', (e) => {
-    if(window.UX_dirty){ e.preventDefault(); e.returnValue = ''; }
-  });
-
-  // ──── Inline validation helper ────────────────────────────────
-  window.UX.validate = function(form){
-    let firstInvalid = null;
-    form.querySelectorAll('.ux-field-error').forEach(n => n.remove());
-    form.querySelectorAll('.ux-invalid').forEach(n => n.classList.remove('ux-invalid'));
-    form.querySelectorAll('[required]').forEach(field => {
-      const v = (field.value || '').trim();
-      let bad = !v;
-      if(!bad && field.type === 'email'){
-        bad = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-      }
-      if(bad){
-        field.classList.add('ux-invalid');
-        const note = document.createElement('span');
-        note.className = 'ux-field-error';
-        note.textContent = field.dataset.errorMsg ||
-          (field.type === 'email' ? 'Please enter a valid email.' : 'This field is required.');
-        if(field.parentNode) field.parentNode.insertBefore(note, field.nextSibling);
-        if(!firstInvalid) firstInvalid = field;
-      }
-    });
-    if(firstInvalid){ firstInvalid.focus(); return false; }
-    return true;
-  };
-})();
-</script>
-<!-- ─────── END UX KIT ─────── -->
-
-  <!-- ─────── SYSTEM VISUAL POLISH (CRUD forms) ─────── -->
-<style id="uxVisualPolish">
-  /* ========== Inputs & selects ========== */
-  body .card input[type="text"],
-  body .card input[type="email"],
-  body .card input[type="number"],
-  body .card input[type="tel"],
-  body .card input[type="url"],
-  body .card input[type="date"],
-  body .card input[type="time"],
-  body .card input[type="password"],
-  body .card select,
-  body .card textarea,
-  body .modal input[type="text"],
-  body .modal input[type="email"],
-  body .modal input[type="password"],
-  body .modal select,
-  body .modal textarea,
-  body .field-grid input,
-  body .field-grid select,
-  body .field-row input,
-  body .field-row select,
-  body .field-row textarea {
-    padding: 9px 12px !important;
-    border-radius: 8px !important;
-    border: 1px solid #ddcdb9 !important;
-    background: #fff !important;
-    font-size: 13px !important;
-    color: #2c1810 !important;
-    font-family: inherit !important;
-    transition: border-color .15s, box-shadow .15s, background .15s;
-    line-height: 1.4;
-  }
-  body .card input:hover:not(:disabled):not([readonly]),
-  body .card select:hover:not(:disabled),
-  body .card textarea:hover:not(:disabled):not([readonly]),
-  body .modal input:hover:not(:disabled):not([readonly]),
-  body .modal select:hover:not(:disabled),
-  body .modal textarea:hover:not(:disabled):not([readonly]) {
-    border-color: #c9b079 !important;
-  }
-  body .card input:focus,
-  body .card select:focus,
-  body .card textarea:focus,
-  body .modal input:focus,
-  body .modal select:focus,
-  body .modal textarea:focus {
-    outline: none !important;
-    border-color: #c4a25f !important;
-    box-shadow: 0 0 0 3px rgba(196, 162, 95, 0.18) !important;
-    background: #fff !important;
-  }
-  body input[readonly],
-  body input:disabled,
-  body select:disabled,
-  body textarea:disabled,
-  body textarea[readonly] {
-    background: #f7f0e0 !important;
-    color: #7c6a55 !important;
-    cursor: not-allowed !important;
-    border-color: #e8dcc2 !important;
-  }
-
-  /* ========== Labels ========== */
-  body .field-grid > div > label,
-  body .field-grid label,
-  body .field-row > label,
-  body .modal-field > label,
-  body .detail-field-label {
-    font-size: 11.5px !important;
-    color: #6b5c4e !important;
-    font-weight: 600 !important;
-    margin-bottom: 5px !important;
-    display: block;
-    letter-spacing: 0.01em;
-  }
-
-  /* ========== Detail sections (turn flat dividers into sub-cards) ========== */
-  body .detail-section,
-  body .detail-block {
-    background: #fff !important;
-    border: 1px solid #eadccd !important;
-    border-radius: 10px !important;
-    padding: 18px 20px !important;
-    margin-bottom: 14px !important;
-    box-shadow: 0 1px 2px rgba(60, 42, 15, 0.03);
-    position: relative;
-  }
-
-  /* Section heading with gold accent bar */
-  body .detail-section > .detail-title,
-  body .detail-section > .ux-form-section,
-  body .detail-block > .ux-form-section,
-  body .detail-section-title {
-    font-size: 13.5px !important;
-    font-weight: 700 !important;
-    color: #2c1810 !important;
-    margin: 0 0 14px !important;
-    padding: 0 0 10px !important;
-    border-bottom: 1px solid #f0e6d4 !important;
-    text-transform: none !important;
-    letter-spacing: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 10px !important;
-  }
-  body .detail-section > .detail-title::before,
-  body .detail-section > .ux-form-section::before,
-  body .detail-block > .ux-form-section::before,
-  body .detail-section-title::before {
-    content: "";
-    width: 3px;
-    height: 16px;
-    background: #c4a25f;
-    border-radius: 2px;
-    flex-shrink: 0;
-  }
-
-  /* ========== Field grids: rhythm ========== */
-  body .field-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 14px 18px !important;
-  }
-  @media (max-width: 760px) {
-    body .field-grid {
-      grid-template-columns: 1fr !important;
-    }
-  }
-  body .field-row {
-    margin-bottom: 12px !important;
-  }
-
-  /* ========== Buttons ========== */
-  body .btn,
-  body .ux-btn {
-    padding: 8px 16px !important;
-    font-size: 12px !important;
-    border-radius: 8px !important;
-    cursor: pointer;
-    font-family: inherit;
-    font-weight: 600;
-    transition: background 0.15s, border-color 0.15s, color 0.15s,
-      box-shadow 0.15s;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    line-height: 1.3;
-  }
-  body .btn-sm,
-  body .ux-btn.btn-sm {
-    padding: 5px 11px !important;
-    font-size: 11px !important;
-    border-radius: 6px !important;
-  }
-  body .btn-primary {
-    background: #c4a25f !important;
-    color: #fff !important;
-    border: 1.5px solid #c4a25f !important;
-  }
-  body .btn-primary:hover {
-    background: #b08d4a !important;
-    border-color: #b08d4a !important;
-  }
-  body .btn-ghost {
-    background: #fff !important;
-    color: #2c1810 !important;
-    border: 1.5px solid #e5d9c0 !important;
-  }
-  body .btn-ghost:hover {
-    background: #faf6ee !important;
-    border-color: #d4c3a0 !important;
-  }
-  body .btn-secondary {
-    background: #fff !important;
-    color: #2c1810 !important;
-    border: 1.5px solid #e5d9c0 !important;
-  }
-  body .btn-secondary:hover {
-    background: #faf6ee !important;
-  }
-  body .btn-danger {
-    background: #c41e3a !important;
-    color: #fff !important;
-    border: 1.5px solid #c41e3a !important;
-  }
-  body .btn-danger:hover {
-    background: #a51730 !important;
-    border-color: #a51730 !important;
-  }
-
-  /* ========== Detail / Edit page top header ========== */
-  body #detailView > .card:first-child > .card-header {
-    background: linear-gradient(135deg, #fdf8ee, #f7eddb) !important;
-    margin: -14px -16px 14px !important;
-    padding: 16px 20px !important;
-    border-radius: 10px 10px 0 0 !important;
-    border-bottom: 1px solid #eadccd !important;
-    align-items: center !important;
-  }
-
-  /* ========== Card refinements ========== */
-  body .card {
-    border-radius: 12px !important;
-    border: 1px solid #eadccd !important;
-    background: #fffaf2 !important;
-    box-shadow: 0 1px 3px rgba(60, 42, 15, 0.05) !important;
-    padding: 16px 18px 18px !important;
-  }
-
-  /* ========== Modal polish (page-native modals, not ux-modal) ========== */
-  body .modal-backdrop {
-    background: rgba(44, 24, 16, 0.45) !important;
-    backdrop-filter: blur(2px);
-  }
-  body .modal {
-    border-radius: 14px !important;
-    border: 1px solid #eadccd !important;
-    box-shadow: 0 16px 40px rgba(44, 24, 16, 0.25) !important;
-    padding: 22px 24px !important;
-    max-width: 480px !important;
-    width: calc(100% - 32px) !important;
-  }
-  body .modal-header {
-    margin-bottom: 14px !important;
-    padding-bottom: 12px !important;
-    border-bottom: 1px solid #f0e6d4;
-    align-items: center !important;
-  }
-  body .modal-title {
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    color: #2c1810 !important;
-  }
-  body .modal-field {
-    margin-bottom: 12px !important;
-  }
-  body .modal-footer {
-    margin-top: 16px !important;
-    padding-top: 14px !important;
-    border-top: 1px solid #f0e6d4;
-    display: flex !important;
-    gap: 8px !important;
-    justify-content: flex-end !important;
-  }
-
-  /* ========== Empty state ========== */
-  body .empty-state {
-    padding: 32px 20px !important;
-    color: #9a8466 !important;
-    font-size: 13px !important;
-  }
-  body #emptyDetail {
-    text-align: center;
-    padding: 60px 20px !important;
-    color: #9a8466 !important;
-  }
-
-  /* ========== Badges / status pills ========== */
-  body .status-pill,
-  body .badge {
-    padding: 3px 10px !important;
-    border-radius: 999px !important;
-    font-size: 10.5px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-  }
-  body .badge-soft {
-    background: #f1e4d4 !important;
-    color: #7b623f !important;
-  }
-
-  /* ========== Avatar wrapper ========== */
-  body .avatar-circle {
-    width: 36px !important;
-    height: 36px !important;
-    font-size: 12px !important;
-    background: linear-gradient(135deg, #c9a574, #8c6845) !important;
-  }
-
-  /* ========== KPI cards ========== */
-  body .kpi-card,
-  body .kcard {
-    background: #fff !important;
-    border-radius: 10px !important;
-    border: 1px solid #eadccd !important;
-    padding: 14px 16px !important;
-    transition: box-shadow 0.15s, transform 0.15s;
-  }
-  body .kpi-card:hover,
-  body .kcard:hover {
-    box-shadow: 0 4px 14px rgba(60, 42, 15, 0.08) !important;
-    transform: translateY(-1px);
-  }
-  body .kpi-value {
-    font-size: 22px !important;
-    font-weight: 700 !important;
-    color: #2c1810 !important;
-  }
-  body .kpi-label {
-    font-size: 10.5px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    color: #7c6a55 !important;
-  }
-
-  /* ========== Filter bar refinement ========== */
-  body .filters {
-    padding: 12px 14px !important;
-    background: #fff !important;
-    border: 1px solid #eadccd !important;
-    border-radius: 10px !important;
-    margin-bottom: 14px !important;
-    gap: 8px !important;
-  }
-  body .filters input[type="text"],
-  body .filters select {
-    border-radius: 999px !important;
-    padding: 7px 12px !important;
-    font-size: 12px !important;
-    background: #faf6ee !important;
-    border: 1px solid #e5d9c0 !important;
-  }
-  body .filters input[type="text"]:focus,
-  body .filters select:focus {
-    outline: none !important;
-    border-color: #c4a25f !important;
-    background: #fff !important;
-    box-shadow: 0 0 0 3px rgba(196, 162, 95, 0.18) !important;
-  }
-
-  /* ========== Table refinement ========== */
-  body table thead {
-    background: #f7eedb !important;
-  }
-  body table th {
-    padding: 10px 12px !important;
-    font-size: 10.5px !important;
-    color: #7c6a55 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    font-weight: 700 !important;
-  }
-  body table td {
-    padding: 11px 12px !important;
-    font-size: 12.5px !important;
-    color: #2c1810;
-  }
-  body tbody tr:hover td {
-    background: #fbf5e8 !important;
-  }
-
-  /* ========== Page header refinement ========== */
-  body .page-header .page-title {
-    font-size: 24px !important;
-    font-weight: 800 !important;
-    color: #2c1810 !important;
-    letter-spacing: -0.01em;
-  }
-  body .page-header .page-subtitle {
-    font-size: 13px !important;
-    color: #7c6a55 !important;
-    margin-top: 4px;
-  }
-
-  /* ========== Sticky form footer (auto-applied when a section has .save-bar class) ========== */
-  body .save-bar,
-  body .sticky-save-bar {
-    position: sticky;
-    bottom: 0;
-    background: linear-gradient(
-      to top,
-      #fffaf2 70%,
-      rgba(255, 250, 242, 0)
-    ) !important;
-    padding: 18px 0 10px !important;
-    display: flex !important;
-    gap: 10px !important;
-    justify-content: flex-end !important;
-    margin: 18px -20px -18px !important;
-    border-top: 1px solid #eadccd !important;
-    padding-left: 20px !important;
-    padding-right: 20px !important;
-    z-index: 5;
-  }
-
-  /* ========== Permission matrix (roles page) ========== */
-  body .permission-table {
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  body .permission-table thead {
-    background: #f7eedb !important;
-  }
-  body .matrix-indicator {
-    width: 22px !important;
-    height: 22px !important;
-    border-radius: 7px !important;
-    transition: transform 0.15s, background 0.15s;
-  }
-  body .matrix-indicator:hover {
-    transform: scale(1.1);
-  }
-  body .matrix-indicator.active {
-    background: #2d6a4f !important;
-    border-color: #2d6a4f !important;
-  }
-
-  /* ========== Role list items ========== */
-  body .role-item {
-    padding: 10px 12px !important;
-    border-radius: 10px !important;
-    margin-bottom: 8px !important;
-    border: 1px solid #eadccd !important;
-    background: #fff;
-    transition: all 0.15s;
-  }
-  body .role-item:hover {
-    background: #fdf6e6 !important;
-    border-color: #d4c3a0 !important;
-    transform: translateX(2px);
-  }
-  body .role-item.active {
-    background: linear-gradient(135deg, #fdf2d8, #f8e8c4) !important;
-    border-color: #c4a25f !important;
-    box-shadow: 0 2px 8px rgba(196, 162, 95, 0.18);
-  }
-  body .role-name {
-    font-size: 13.5px !important;
-    font-weight: 700 !important;
-    color: #2c1810;
-  }
-
-  /* ========== Pretty checkbox/toggle row ========== */
-  body input[type="checkbox"],
-  body input[type="radio"] {
-    accent-color: #c4a25f;
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-  }
-
-  /* ========== File upload area ========== */
-  body input[type="file"] {
-    padding: 6px 10px !important;
-    border: 1.5px dashed #d4c3a0 !important;
-    border-radius: 8px !important;
-    background: #faf6ee !important;
-    cursor: pointer;
-    font-size: 11.5px !important;
-  }
-  body input[type="file"]:hover {
-    border-color: #c4a25f !important;
-    background: #fdf8ee !important;
-  }
-
-  /* ========== Required asterisk styled ========== */
-  body label.req::after,
-  body .req::after {
-    margin-left: 4px;
-    color: #c41e3a;
-    font-weight: 800;
-  }
-</style>
-<!-- ─────── END VISUAL POLISH ─────── -->
-
-  <!-- ─────── Detail-view layout primitives ─────── -->
-<style id="uxDetailLayout">
-  /* Top toolbar: back button + secondary actions */
-  body .entity-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-  }
-  body .entity-toolbar-right {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  body .entity-back-btn {
-    background: none;
-    border: none;
-    color: #6b5c4e;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 6px 10px;
-    border-radius: 8px;
-    font-family: inherit;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: background 0.15s, color 0.15s;
-  }
-  body .entity-back-btn:hover {
-    background: #faf6ee;
-    color: #2c1810;
-  }
-  body .entity-back-btn span {
-    font-size: 16px;
-    line-height: 1;
-  }
-
-  /* Hero card: avatar + identity + status + primary actions */
-  body .entity-hero {
-    background: linear-gradient(135deg, #fffaf2 0%, #fcf4e6 100%);
-    border: 1px solid #eadccd;
-    border-radius: 14px;
-    padding: 22px 24px;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    box-shadow: 0 2px 6px rgba(60, 42, 15, 0.05);
-  }
-  body .entity-hero-avatar {
-    flex-shrink: 0;
-    position: relative;
-  }
-  body .entity-hero-avatar .avatar-circle {
-    width: 60px !important;
-    height: 60px !important;
-    font-size: 22px !important;
-    box-shadow: 0 2px 6px rgba(60, 42, 15, 0.18);
-  }
-  body .entity-hero-avatar img {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    object-fit: cover;
-    background: #ddd;
-  }
-  body .entity-hero-info {
-    flex: 1;
-    min-width: 0;
-  }
-  body .entity-hero-name {
-    font-size: 22px !important;
-    font-weight: 800 !important;
-    color: #2c1810 !important;
-    margin: 0 0 6px !important;
-    letter-spacing: -0.01em;
-    line-height: 1.2;
-  }
-  body .entity-hero-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    font-size: 12.5px;
-    color: #6b5c4e;
-  }
-  body .entity-hero-sep {
-    color: #c4a25f;
-  }
-  body .entity-hero-email {
-    color: #6b5c4e;
-    font-weight: 500;
-  }
-  body .entity-hero-actions {
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
-  /* Section sub-title (after main heading) */
-  body .detail-title .section-sub {
-    font-size: 11.5px;
-    font-weight: 500;
-    color: #9d8a72;
-    text-transform: none;
-    letter-spacing: 0;
-    margin-left: auto;
-  }
-
-  /* Settings block (subsection inside a section card) */
-  body .settings-block {
-    padding: 14px 0;
-    border-bottom: 1px dashed #f0e6d4;
-  }
-  body .settings-block:last-child {
-    border-bottom: none;
-    padding-bottom: 4px;
-  }
-  body .settings-block:first-child {
-    padding-top: 4px;
-  }
-  body .settings-block-title {
-    font-size: 12.5px;
-    font-weight: 700;
-    color: #2c1810;
-    margin-bottom: 8px;
-  }
-  body .settings-block-sub {
-    font-size: 11.5px;
-    color: #7c6a55;
-    margin-bottom: 10px;
-  }
-
-  /* Checkbox row: clean horizontal checkbox + label */
-  body .checkbox-row {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12.5px !important;
-    color: #2c1810 !important;
-    font-weight: 500 !important;
-    cursor: pointer;
-    padding: 6px 0;
-    margin: 0 !important;
-  }
-  body .checkbox-row input[type="checkbox"] {
-    margin: 0;
-    width: 16px;
-    height: 16px;
-  }
-  body .checkbox-row span {
-    line-height: 1.3;
-  }
-  body .checkbox-group {
-    display: flex;
-    gap: 18px;
-    flex-wrap: wrap;
-  }
-
-  /* Sticky save bar: bottom action zone */
-  body .sticky-save-bar {
-    position: sticky;
-    bottom: 0;
-    background: #fffaf2;
-    border: 1px solid #eadccd;
-    border-radius: 12px;
-    padding: 14px 18px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: flex-end;
-    margin-top: 16px;
-    box-shadow: 0 -4px 16px rgba(60, 42, 15, 0.06);
-    z-index: 5;
-  }
-  body .sticky-save-bar .save-bar-hint {
-    font-size: 11.5px;
-    color: #9d8a72;
-    margin-right: auto;
-    font-style: italic;
-  }
-  body .sticky-save-bar .btn {
-    padding: 9px 18px !important;
-    font-size: 13px !important;
-    font-weight: 600;
-  }
-  body .sticky-save-bar .btn-primary {
-    box-shadow: 0 2px 6px rgba(196, 162, 95, 0.32);
-  }
-
-  /* Entity form: reset wrapping that older .card forced */
-  body .entity-form {
-    margin: 0;
-  }
-  body .entity-form .detail-section {
-    margin-bottom: 14px !important;
-  }
-  body .entity-form .detail-section:last-child {
-    margin-bottom: 0 !important;
-  }
-
-  /* Detail section heading: allow flex layout for sub-title alignment */
-  body .detail-section > .detail-title {
-    flex-wrap: wrap;
-  }
-
-  /* Read-only info grid (definition list style) */
-  body .info-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px 24px;
-  }
-  body .info-row {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 8px 0;
-    border-bottom: 1px dashed #f0e6d4;
-  }
-  body .info-row.info-row-wide {
-    grid-column: 1 / -1;
-  }
-  body .info-row:last-child,
-  body .info-row:nth-last-child(2):not(.info-row-wide) {
-    border-bottom: none;
-  }
-  body .info-label {
-    font-size: 11px;
-    color: #9d8a72;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 700;
-  }
-  body .info-value {
-    font-size: 13.5px;
-    color: #2c1810;
-    font-weight: 500;
-    line-height: 1.5;
-  }
-
-  /* Mobile */
-  @media (max-width: 720px) {
-    body .entity-hero {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 14px;
-    }
-    body .entity-hero-actions {
-      width: 100%;
-      justify-content: stretch;
-    }
-    body .entity-hero-actions .btn {
-      flex: 1;
-    }
-    body .sticky-save-bar {
-      flex-wrap: wrap;
-    }
-    body .sticky-save-bar .save-bar-hint {
-      flex-basis: 100%;
-      margin-right: 0;
-      margin-bottom: 6px;
-    }
-  }
-</style>
-<!-- ─────── END detail-view extras ─────── -->
-
   </body>
 </html>

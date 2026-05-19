@@ -4,2659 +4,944 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin - Agent Management</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
     <style>
-      * {
-        box-sizing: border-box;
+      :root {
+        --bg-body: #f5f3ef; --bg-card: #fffaf2; --border-subtle: #eadccd;
+        --accent: #c26b41; --accent-dark: #a55232; --text-main: #3b2f2a; --text-muted: #7a6a5c;
+        --badge-green: #2f855a; --badge-red: #c53030; --badge-gray: #4a5568; --badge-amber: #b7791f;
+        --fs-h1: 22px; --fs-card-title: 14px; --fs-body: 13px; --fs-small: 12px; --fs-label: 11px;
       }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body { padding: clamp(16px, 2.5vw, 24px); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg-body); color: var(--text-main); font-size: var(--fs-body); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+      h1 { margin: 0 0 4px; font-size: var(--fs-h1); font-weight: 700; letter-spacing: 0.02em; }
+      .page-subtitle { margin: 0 0 16px; font-size: var(--fs-small); color: var(--text-muted); }
+      .page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+      .page-header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+      .card { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-subtle); padding: 18px; box-shadow: 0 8px 24px rgba(115, 72, 39, 0.05); margin-bottom: 16px; }
+      .card-title { font-size: var(--fs-card-title); font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid #f5ece0; }
+      .card-title i { color: var(--accent); font-size: 13px; width: 18px; text-align: center; }
+      .filter-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 10px 12px; align-items: end; }
+      .field-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+      .field-label { font-size: var(--fs-label); font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+      input, select, textarea { border-radius: 8px; border: 1px solid var(--border-subtle); padding: 8px 11px; font-size: var(--fs-body); background: #fffcf7; color: var(--text-main); outline: none; font-family: inherit; width: 100%; min-height: 36px; }
+      textarea { resize: vertical; min-height: 70px; }
+      input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(194, 107, 65, 0.18); }
+      .number-range { display: flex; gap: 4px; align-items: center; }
+      .number-range input { padding: 6px 8px; }
+      .filter-actions { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; flex-wrap: wrap; }
+      .btn { border-radius: 8px; border: 1px solid var(--border-subtle); padding: 8px 14px; font-size: var(--fs-body); background: #fff; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; justify-content: center; color: var(--text-main); font-family: inherit; font-weight: 500; min-height: 36px; transition: background 0.15s, transform 0.1s; }
+      .btn:hover { background: #f9f6f0; }
+      .btn:active { transform: translateY(1px); }
+      .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); border-color: var(--accent-dark); color: #fffaf3; }
+      .btn-ghost { background: transparent; border-color: transparent; }
+      .btn-ghost:hover { background: #f3ece1; }
+      .btn-sm { padding: 5px 10px; font-size: 12px; min-height: 30px; }
+      .btn-danger { color: var(--badge-red); border-color: #fbcaca; }
+      .btn-danger:hover { background: #fde8e8; }
+      .btn-warning { color: var(--badge-amber); border-color: #fbd38d; }
+      .btn-warning:hover { background: #fff6e0; }
+      .btn-star { color: #b7791f; border-color: #fbd38d; }
+      .btn-star:hover { background: #fff6e0; }
+      .data-table-wrap { overflow-x: auto; }
+      table.data-table { width: 100%; border-collapse: collapse; font-size: var(--fs-small); }
+      .data-table thead { background: #f7efe6; }
+      .data-table th, .data-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #efe0d4; white-space: nowrap; vertical-align: middle; }
+      .data-table th { font-weight: 600; font-size: var(--fs-label); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+      .data-table th.num, .data-table td.num { text-align: right; }
+      .data-table tbody tr { cursor: pointer; transition: background 0.12s; }
+      .data-table tbody tr:hover { background: #f8f1ea; }
+      .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; border: 1px solid transparent; white-space: nowrap; }
+      .badge-active, .badge-on, .badge-normal, .badge-verified, .badge-paid { background: #e6f6ef; color: var(--badge-green); border-color: #b7e4cc; }
+      .badge-suspended, .badge-pending, .badge-overdue, .badge-warning { background: #fff6e0; color: var(--badge-amber); border-color: #fbd38d; }
+      .badge-deactivated, .badge-none, .badge-cancelled { background: #f7f7f8; color: var(--badge-gray); border-color: #d2d6dc; }
+      .badge-off, .badge-locked, .badge-invalid, .badge-red { background: #fde8e8; color: var(--badge-red); border-color: #fbcaca; }
+      .badge-premium, .badge-gold { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+      .badge-silver { background: #e2e8f0; color: #2c5282; border-color: #cbd5e0; }
+      .badge-bronze { background: #fed7aa; color: #9a3412; border-color: #fdba74; }
+      .badge-top { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+      .results-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+      .results-count { font-size: var(--fs-small); color: var(--text-muted); }
+      .results-count strong { color: var(--text-main); }
+      .btn-chat { width: 32px; height: 32px; border-radius: 8px; background: #fef1e6; color: var(--accent); border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s; padding: 0; }
+      .btn-chat:hover { background: var(--accent); color: #fff; }
+      .star-display { color: #f0a020; font-size: 13px; }
+      .detail-toolbar { position: sticky; top: 0; background: var(--bg-body); padding: 12px 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+      .detail-toolbar-left { display: flex; align-items: center; gap: 8px; }
+      .detail-toolbar-right { display: flex; gap: 8px; flex-wrap: wrap; }
+      .mode-indicator { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; background: #f3ece1; color: #5b4a35; }
+      .mode-indicator.edit { background: #fff6e0; color: var(--badge-amber); }
+      .mode-indicator .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+      .detail-hero { background: linear-gradient(135deg, #fffaf2 0%, #fff5e8 60%, #fef1e6 100%); border-radius: 14px; border: 1px solid var(--border-subtle); padding: 22px; display: flex; align-items: center; gap: 18px; margin-bottom: 16px; flex-wrap: wrap; box-shadow: 0 8px 28px rgba(115, 72, 39, 0.06); }
+      .detail-avatar { width: 76px; height: 76px; border-radius: 18px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fffaf3; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; flex-shrink: 0; box-shadow: 0 8px 20px rgba(194, 107, 65, 0.25); }
+      .detail-hero-info { flex: 1; min-width: 0; }
+      .detail-name { font-size: 20px; font-weight: 700; margin: 0 0 6px; color: var(--text-main); }
+      .detail-meta { font-size: var(--fs-small); color: var(--text-muted); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+      .section-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 14px; }
+      .kv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px 16px; }
+      .kv { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+      .kv-label { font-size: var(--fs-label); font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+      .kv-value { font-size: var(--fs-body); color: var(--text-main); word-break: break-word; min-height: 20px; }
+      .kv-full { grid-column: 1 / -1; }
+      .edit-input { width: 100%; padding: 7px 10px; font-size: 13px; border: 1px solid #d9c8b4; border-radius: 6px; background: #fff; color: var(--text-main); outline: none; font-family: inherit; min-height: 34px; }
+      .edit-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(194, 107, 65, 0.18); }
+      textarea.edit-input { resize: vertical; min-height: 60px; }
+      .mini-table { width: 100%; border-collapse: collapse; font-size: var(--fs-small); }
+      .mini-table th, .mini-table td { padding: 8px 10px; border-bottom: 1px solid #efe0d4; text-align: left; }
+      .mini-table th { font-size: var(--fs-label); font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; background: #f7efe6; }
+      .mini-table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border-subtle); }
+      .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 10px; }
+      .kpi-tile { background: linear-gradient(135deg, #fffaf2 0%, #fff5e8 100%); border-radius: 10px; padding: 12px 14px; border: 1px solid #f3ece1; display: flex; gap: 10px; align-items: center; }
+      .kpi-tile-icon { width: 34px; height: 34px; border-radius: 8px; background: #fff; color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+      .kpi-tile-info { flex: 1; min-width: 0; }
+      .kpi-tile-label { font-size: var(--fs-label); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px; }
+      .kpi-tile-value { font-size: 17px; font-weight: 700; color: var(--text-main); }
+      .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+      .chip { padding: 3px 9px; border-radius: 999px; background: #f3ece1; border: 1px solid var(--border-subtle); font-size: 11px; color: var(--text-main); }
+      .rating-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+      .rating-bar-label { font-size: 11px; color: var(--text-muted); width: 32px; }
+      .rating-bar-track { flex: 1; height: 8px; background: #f3ece1; border-radius: 4px; overflow: hidden; }
+      .rating-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-dark)); }
+      .rating-bar-count { font-size: 11px; color: var(--text-muted); width: 32px; text-align: right; }
+      .hidden { display: none !important; }
 
-      body {
-        margin: 0;
-        font-family:
-          system-ui,
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
-          sans-serif;
-        background: #f5f3ef;
-        color: #2a2118;
-      }
+      /* Password reset modal */
+      .modal-backdrop { position: fixed; inset: 0; background: rgba(34, 24, 18, 0.48); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
+      .modal-backdrop.open { display: flex; }
+      .modal-box { width: 480px; max-width: 100%; background: #fff; border-radius: 14px; box-shadow: 0 24px 60px rgba(0,0,0,0.24); display: flex; flex-direction: column; max-height: 90vh; }
+      .modal-header { padding: 14px 18px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; }
+      .modal-title { margin: 0; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+      .modal-title i { color: var(--badge-red); }
+      .modal-body { padding: 18px; overflow: auto; }
+      .modal-footer { padding: 12px 18px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 8px; }
+      .warning-banner { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; color: #6b3a00; font-size: 12.5px; line-height: 1.45; }
+      .warning-banner i { color: #b7791f; font-size: 18px; margin-top: 2px; flex-shrink: 0; }
+      .modal-field { margin-top: 12px; display: flex; flex-direction: column; gap: 4px; }
+      .modal-error { display: none; color: var(--badge-red); font-size: 12px; margin-top: 8px; padding: 8px 10px; background: #fde8e8; border: 1px solid #fbcaca; border-radius: 6px; }
+      .modal-error.show { display: block; }
+      .btn-primary-danger { background: linear-gradient(135deg, #d24a3d, #a73128); border-color: #a73128; color: #fff; }
+      .btn-primary-danger:hover { background: linear-gradient(135deg, #c34033, #962d24); }
 
-      .page {
-        padding: 24px 32px 32px;
-      }
-
-      .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 20px;
-      }
-
-      .page-title {
-        font-size: 22px;
-        font-weight: 700;
-        margin-bottom: 4px;
-      }
-
-      .page-subtitle {
-        font-size: 13px;
-        color: #7c6a55;
-        max-width: 640px;
-      }
-
-      .pill {
-        padding: 4px 10px;
-        border-radius: 999px;
-        font-size: 11px;
-        font-weight: 600;
-        background: #efe3cf;
-        color: #7b623f;
-      }
-
-      .layout {
-        display: grid;
-        grid-template-columns: minmax(0, 3fr) minmax(0, 2.4fr);
-        gap: 18px;
-      }
-
-      .card {
-        background: #fffaf2;
-        border-radius: 10px;
-        border: 1px solid #eadccd;
-        padding: 16px 18px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-      }
-
-      .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-      }
-
-      .card-title {
-        font-size: 15px;
-        font-weight: 600;
-      }
-
-      .card-subtitle {
-        font-size: 12px;
-        color: #7c6a55;
-      }
-
-      .metrics-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 10px;
-        margin-bottom: 16px;
-      }
-
-      .metric-card {
-        background: #fffaf2;
-        border-radius: 10px;
-        border: 1px solid #eadccd;
-        padding: 10px 12px;
-      }
-
-      .metric-label {
-        font-size: 11px;
-        color: #7c6a55;
-        margin-bottom: 4px;
-      }
-
-      .metric-value {
-        font-size: 18px;
-        font-weight: 700;
-        margin-bottom: 2px;
-      }
-
-      .metric-sub {
-        font-size: 11px;
-        color: #97846c;
-      }
-
-      .filters {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 10px;
-      }
-
-      .filters select,
-      .filters input[type="text"] {
-        border-radius: 999px;
-        border: 1px solid #ddcdb9;
-        padding: 6px 10px;
-        font-size: 12px;
-        background: #fdf8f0;
-        min-width: 130px;
-      }
-
-      .filters input[type="text"] {
-        flex: 1;
-        min-width: 200px;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-      }
-
-      thead {
-        background: #f1e4d4;
-      }
-
-      th,
-      td {
-        padding: 8px 6px;
-        text-align: left;
-        border-bottom: 1px solid #efe2d3;
-      }
-
-      th {
-        font-weight: 600;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.02em;
-        color: #7b623f;
-      }
-
-      tbody tr:hover td {
-        background: #f8efe3;
-      }
-
-      .row-selected td {
-        background: #f8efe3;
-      }
-
-      .status-pill {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 8px;
-        border-radius: 999px;
-        font-size: 10px;
-        font-weight: 600;
-      }
-
-      .status-badge-top {
-        background: #fbe4c3;
-        color: #91521b;
-      }
-
-      .status-badge-premium {
-        background: #e0f6df;
-        color: #266734;
-      }
-
-      .status-badge-none {
-        background: #f1e4d4;
-        color: #7b623f;
-      }
-
-      .btn {
-        border-radius: 999px;
-        border: none;
-        padding: 4px 10px;
-        font-size: 11px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-      }
-
-      .btn-ghost {
-        background: #f7efe4;
-        color: #6a5641;
-        border: 1px solid #ddcdb9;
-      }
-
-      .btn-primary {
-        background: #3a6b3c;
-        color: #fff;
-      }
-
-      .btn-sm {
-        padding: 3px 8px;
-        font-size: 10px;
-      }
-
-      .actions {
-        display: flex;
-        gap: 6px;
-      }
-
-      .tag {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 8px;
-        border-radius: 999px;
-        background: #efe3cf;
-        font-size: 10px;
-        margin: 0 4px 4px 0;
-      }
-
-      .badge-soft {
-        font-size: 11px;
-        padding: 3px 8px;
-        border-radius: 999px;
-        background: #f1e4d4;
-        color: #7b623f;
-      }
-
-      .detail-section {
-        margin-bottom: 12px;
-      }
-
-      .detail-title {
-        font-size: 13px;
-        font-weight: 600;
-        margin-bottom: 4px;
-      }
-
-      .detail-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px 14px;
-      }
-
-      .field-label {
-        font-size: 11px;
-        color: #7c6a55;
-        margin-bottom: 2px;
-      }
-
-      .field-value {
-        font-size: 13px;
-        font-weight: 500;
-      }
-
-      .field-value.muted {
-        font-weight: 400;
-        color: #7c6a55;
-      }
-
-      .logo-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 6px;
-      }
-
-      .logo-box {
-        width: 52px;
-        height: 52px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #c9a574, #8c6845);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fffaf2;
-        font-size: 11px;
-        font-weight: 600;
-      }
-
-      .logo-box img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 12px;
-      }
-
-      .empty-state {
-        font-size: 12px;
-        color: #7c6a55;
-        text-align: center;
-        padding: 14px 0;
-      }
-
-      .listing-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 11px;
-        margin-top: 4px;
-      }
-
-      .listing-table th,
-      .listing-table td {
-        padding: 4px 6px;
-        border-bottom: 1px solid #efe2d3;
-      }
-
-      @media (max-width: 960px) {
-        .layout {
-          grid-template-columns: minmax(0, 1fr);
-        }
-
-        .detail-grid {
-          grid-template-columns: minmax(0, 1fr);
-        }
-      }
+      @media (max-width: 768px) { .page-header { flex-direction: column; } .detail-toolbar { flex-direction: column; align-items: stretch; } }
     </style>
   </head>
   <body>
-    <div class="page">
+    <div id="listView">
       <div class="page-header">
         <div>
-          <div class="page-title">Agent Management</div>
+          <h1>Agent Management</h1>
+          <div class="page-subtitle">Manage agent / agency accounts, licensing, performance, billing and compliance.</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn" type="button" onclick="exportCsv()"><i class="fas fa-file-export"></i> Export CSV</button>
         </div>
       </div>
 
-      <div id="listView">
-        <div class="metrics-grid" id="metricSummary"></div>
+      <section class="card">
+        <div class="card-title"><i class="fas fa-filter"></i> Filters</div>
+        <div class="filter-bar">
+          <div class="field-group"><label class="field-label" for="fStatus">Status</label><select id="fStatus" multiple size="4"><option value="Active">Active</option><option value="Pending">Pending</option><option value="Suspended">Suspended</option><option value="Deactivated">Deactivated</option></select></div>
+          <div class="field-group"><label class="field-label" for="fLicFrom">License Expiry — From</label><input id="fLicFrom" type="date" /></div>
+          <div class="field-group"><label class="field-label" for="fLicTo">License Expiry — To</label><input id="fLicTo" type="date" /></div>
+          <div class="field-group"><label class="field-label" for="fLicPreset">License Preset</label><select id="fLicPreset"><option value="">— All —</option><option value="expired">Expired</option><option value="30d">Expiring in 30d</option><option value="60d">Expiring in 60d</option><option value="90d">Expiring in 90d</option></select></div>
+          <div class="field-group"><label class="field-label" for="fPlan">Subscription Plan</label><select id="fPlan" multiple size="4"><option value="Free">Free</option><option value="Bronze">Bronze</option><option value="Silver">Silver</option><option value="Gold">Gold</option></select></div>
+          <div class="field-group"><label class="field-label">Response Rate (%)</label><div class="number-range"><input id="fRrMin" type="number" min="0" max="100" placeholder="Min %" /><span>–</span><input id="fRrMax" type="number" min="0" max="100" placeholder="Max %" /></div></div>
+          <div class="field-group"><label class="field-label" for="fRespTime">Response Time</label><select id="fRespTime"><option value="">— Any —</option><option value="2">≤ 2h</option><option value="24">≤ 24h</option><option value="over">&gt; 24h</option></select></div>
+          <div class="field-group"><label class="field-label" for="fUnpaid">Unpaid / Overdue</label><select id="fUnpaid"><option value="All">All</option><option value="Has Outstanding Balance">Has Outstanding Balance</option><option value="Overdue">Overdue</option><option value="No Issues">No Issues</option></select></div>
+          <div class="field-group"><label class="field-label">Violation Count</label><div class="number-range"><input id="fVioMin" type="number" min="0" placeholder="Min" /><span>–</span><input id="fVioMax" type="number" min="0" placeholder="Max" /></div></div>
+          <div class="field-group"><label class="field-label" for="fVioPreset">Or Bucket</label><select id="fVioPreset"><option value="">— Any —</option><option value="0">0</option><option value="1-2">1–2</option><option value="3-5">3–5</option><option value="5+">5+</option></select></div>
+          <div class="field-group"><label class="field-label">Active Listings</label><div class="number-range"><input id="fListMin" type="number" min="0" placeholder="Min" /><span>–</span><input id="fListMax" type="number" min="0" placeholder="Max" /></div></div>
+          <div class="field-group"><label class="field-label" for="fServiceArea">Service Area</label><select id="fServiceArea" multiple size="4"><option value="Tokyo">Tokyo</option><option value="Kanagawa">Kanagawa</option><option value="Osaka">Osaka</option><option value="Saitama">Saitama</option><option value="Chiba">Chiba</option><option value="Kyoto">Kyoto</option></select></div>
+          <div class="field-group"><label class="field-label" for="fLanguage">Language</label><select id="fLanguage" multiple size="4"><option value="Japanese">Japanese</option><option value="English">English</option><option value="Chinese (Simplified)">Chinese (S)</option><option value="Chinese (Traditional)">Chinese (T)</option><option value="Vietnamese">Vietnamese</option><option value="Korean">Korean</option><option value="Other">Other</option></select></div>
+          <div class="field-group"><label class="field-label" for="fSpecialism">Specialism</label><select id="fSpecialism" multiple size="4"><option value="Brokerage">Brokerage</option><option value="Buyouts">Buyouts</option><option value="Leasing">Leasing</option><option value="Property Management">Property Management</option><option value="Short Sales">Short Sales</option><option value="Inheritance">Inheritance</option><option value="Other">Other</option></select></div>
+          <div class="field-group"><label class="field-label" for="fAppraisal">Appraisal Participation</label><select id="fAppraisal"><option value="All">All</option><option value="Participating">Participating</option><option value="Not Participating">Not Participating</option></select></div>
+          <div class="field-group"><label class="field-label">Remaining Budget (¥)</label><div class="number-range"><input id="fBudgetMin" type="number" min="0" placeholder="Min ¥" /><span>–</span><input id="fBudgetMax" type="number" min="0" placeholder="Max ¥" /></div></div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" type="button" onclick="resetFilters()">Reset</button>
+          <button class="btn btn-primary" type="button" onclick="applyFilters()"><i class="fas fa-search"></i> Apply</button>
+        </div>
+      </section>
 
-        <div class="card">
-          <div class="filters">
-            <input
-              type="text"
-              id="searchInput"
-              placeholder="Search by agency, representative, city"
-            />
-            <select id="badgeFilter">
-              <option value="">All badges</option>
-              <option value="TOP Agent">TOP Agent</option>
-              <option value="Premium Agent">Premium Agent</option>
-              <option value="None">No badge</option>
-            </select>
-            <select id="cityFilter">
-              <option value="">All cities / areas</option>
-              <option value="Shinjuku">Shinjuku</option>
-              <option value="Shibuya">Shibuya</option>
-              <option value="Meguro">Meguro</option>
-              <option value="Sapporo">Sapporo</option>
-              <option value="Niseko">Niseko</option>
-              <option value="Nagoya">Nagoya</option>
-              <option value="Toyota">Toyota</option>
-            </select>
-            <select id="ratingFilter">
-              <option value="">Rating: all</option>
-              <option value="4">Rating ≥ 4.0</option>
-              <option value="4.5">Rating ≥ 4.5</option>
-            </select>
-            <select id="planFilter">
-              <option value="">All plans</option>
-              <option value="Basic Agent">Basic Agent</option>
-              <option value="Standard Agent">Standard Agent</option>
-              <option value="Premium Agent">Premium Agent</option>
-            </select>
-            <select id="subscriptionStatusFilter">
-              <option value="">Subscription: all</option>
-              <option value="Active">Active only</option>
-            </select>
-            <select id="listingsFilter" title="Active listings">
-              <option value="">All listing volumes</option>
-              <option value="0-10">1 – 10</option>
-              <option value="11-50">11 – 50</option>
-              <option value="51-100">51 – 100</option>
-              <option value="100+">100+</option>
-            </select>
-            <select id="establishedFilter" title="Established">
-              <option value="">All vintages</option>
-              <option value="before-2000">Before 2000</option>
-              <option value="2000-2010">2000 – 2010</option>
-              <option value="2010-2020">2010 – 2020</option>
-              <option value="2020+">2020 and newer</option>
-            </select>
-            <select id="reviewsFilter" title="Reviews">
-              <option value="">All review counts</option>
-              <option value="50+">50+ reviews</option>
-              <option value="20-50">20 – 50 reviews</option>
-              <option value="under-20">Under 20 reviews</option>
-            </select>
-            <select id="sortBy" title="Sort by">
-              <option value="rating-desc">Sort: Rating ↓</option>
-              <option value="sales-desc">Sort: Sales ↓</option>
-              <option value="listings-desc">Sort: Listings ↓</option>
-              <option value="reviews-desc">Sort: Reviews ↓</option>
-              <option value="agency-asc">Sort: Agency A→Z</option>
-              <option value="established-desc">Sort: Newest agency</option>
-            </select>
-            <button type="button" class="btn btn-ghost" id="resetFiltersBtn">
-              Reset
-            </button>
-          </div>
-
-          <table>
+      <section class="card">
+        <div class="results-header"><div class="results-count">Total: <strong id="resultCount">0</strong> agents</div></div>
+        <div class="data-table-wrap">
+          <table class="data-table">
             <thead>
               <tr>
                 <th>Agency</th>
-                <th>Primary city</th>
                 <th>Established date</th>
                 <th>Head office address</th>
                 <th>Badge</th>
                 <th>Rating</th>
-                <th>Reviews</th>
-                <th>Sales (12m)</th>
-                <th>Active listings</th>
-                <th>Members</th>
+                <th class="num">Reviews</th>
+                <th class="num">Members</th>
                 <th>Plan</th>
                 <th>Chat</th>
               </tr>
             </thead>
-            <tbody id="agencyTableBody"></tbody>
+            <tbody id="listBody"></tbody>
           </table>
-          <div class="empty-state" id="agencyEmpty" style="display: none">
-            No agencies match current filters.
+        </div>
+      </section>
+    </div>
+
+    <div id="detailView" class="hidden">
+      <div class="detail-toolbar">
+        <div class="detail-toolbar-left">
+          <button class="btn btn-ghost" type="button" onclick="showList()"><i class="fas fa-arrow-left"></i> Back to list</button>
+          <span class="mode-indicator" id="modeIndicator"><span class="dot"></span> <span id="modeLabel">View mode</span></span>
+        </div>
+        <div class="detail-toolbar-right" id="toolbarView">
+          <button class="btn" type="button" onclick="enterEditMode()"><i class="fas fa-edit"></i> Edit</button>
+          <button class="btn btn-warning" type="button" onclick="suspendAccount()"><i class="fas fa-ban"></i> Suspend</button>
+          <button class="btn btn-danger" type="button" onclick="deleteAccount()"><i class="fas fa-trash"></i> Delete account</button>
+          <button class="btn btn-star" type="button" onclick="saveAsLead()"><i class="fas fa-star"></i> Save as lead</button>
+        </div>
+        <div class="detail-toolbar-right hidden" id="toolbarEdit">
+          <button class="btn" type="button" onclick="cancelEdit()"><i class="fas fa-times"></i> Cancel</button>
+          <button class="btn btn-primary" type="button" onclick="saveChanges()"><i class="fas fa-check"></i> Save changes</button>
+        </div>
+      </div>
+
+      <div class="detail-hero">
+        <div class="detail-avatar" id="dAvatar">A</div>
+        <div class="detail-hero-info">
+          <h2 class="detail-name" id="dName">—</h2>
+          <div class="detail-meta">
+            <span id="dMetaId">—</span><span>·</span><span id="dMetaPlan">—</span><span>·</span><span id="dMetaStatus">—</span>
           </div>
         </div>
       </div>
 
-      <div id="detailView" style="display: none">
-        <div class="entity-toolbar">
-          <button type="button" class="entity-back-btn" id="backToListBtn">
-            <span aria-hidden="true">←</span> Back to agency list
-          </button>
-          <div class="entity-toolbar-right">
-            <button
-              type="button"
-              class="btn btn-ghost"
-              id="saveLeadAgentBtn"
-              title="Pin this agency to the admin Lead overview"
-            >
-              <span aria-hidden="true">★</span> Save as lead
-            </button>
-            <button
-              type="button"
-              class="btn btn-ghost"
-              id="unsaveLeadAgentBtn"
-              style="display: none"
-            >
-              <span aria-hidden="true">✕</span> Unsave lead
-            </button>
+      <div class="section-grid">
+        <section class="card" style="grid-column: 1 / -1">
+          <div class="card-title"><i class="fas fa-chart-line"></i> Section 1 — Engagement Analytics</div>
+          <div class="kpi-row">
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-sign-in-alt"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Total Logins</div><div class="kpi-tile-value" id="dTotalLogins">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-clock"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Last Login</div><div class="kpi-tile-value" id="dLastLogin" style="font-size:13px">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-hourglass-half"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Avg Session</div><div class="kpi-tile-value" id="dAvgSession">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-list"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Active Listings</div><div class="kpi-tile-value" id="dActiveListings">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-bookmark"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Saved Properties</div><div class="kpi-tile-value" id="dSavedProps">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-envelope-open"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Inquiries (30d)</div><div class="kpi-tile-value" id="dInqRecv30">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-building"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Properties Inq (30d)</div><div class="kpi-tile-value" id="dPropsInq30">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-handshake"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Closed Deals (30d)</div><div class="kpi-tile-value" id="dClosed30">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-file-signature"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Appraisal Req (30d)</div><div class="kpi-tile-value" id="dAppraisalReq30">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-reply"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Avg Resp Time</div><div class="kpi-tile-value" id="dAvgRespTime" style="font-size:13px">—</div></div></div>
           </div>
-        </div>
+        </section>
 
-        <div class="entity-hero">
-          <div class="entity-hero-avatar">
-            <div class="avatar-circle" id="heroAvatar">AG</div>
+        <section class="card">
+          <div class="card-title"><i class="fas fa-building"></i> Section 2 — Agency & Basic Information</div>
+          <div class="kv-grid" id="dBasicGrid"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-title"><i class="fas fa-trophy"></i> Section 3 — Performance & Analytics</div>
+          <div class="kv-grid" style="margin-bottom:12px">
+            <div class="kv"><span class="kv-label">Rating Score</span><span class="kv-value" id="dRating">—</span></div>
+            <div class="kv"><span class="kv-label">Total Review Count</span><span class="kv-value" id="dReviewCount">—</span></div>
+            <div class="kv"><span class="kv-label">Response Rate</span><span class="kv-value" id="dResponseRate">—</span></div>
+            <div class="kv"><span class="kv-label">Average Response Time</span><span class="kv-value" id="dAvgRespTime2">—</span></div>
+            <div class="kv"><span class="kv-label">Avg Active Listings (90d)</span><span class="kv-value" id="dAvgListings90">—</span></div>
+            <div class="kv"><span class="kv-label">Total Inquiries / CV (90d)</span><span class="kv-value" id="dInq90">—</span></div>
+            <div class="kv"><span class="kv-label">Total Closings (90d)</span><span class="kv-value" id="dClosings90">—</span></div>
+            <div class="kv"><span class="kv-label">Total Transaction Volume</span><span class="kv-value" id="dTxnVolume">—</span></div>
+            <div class="kv"><span class="kv-label">Average Closing Price</span><span class="kv-value" id="dAvgClosingPrice">—</span></div>
           </div>
-          <div class="entity-hero-info">
-            <h1 class="entity-hero-name" id="heroName">Select an agency</h1>
-            <div class="entity-hero-meta">
-              <span class="badge-soft" id="selectionStatus"
-                >No agency selected</span
-              >
-              <span class="entity-hero-sep">·</span>
-              <span class="entity-hero-email" id="heroSubline">—</span>
+          <div class="kv-label" style="margin-bottom:6px">Review Distribution</div>
+          <div id="dReviewDist"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-title"><i class="fas fa-award"></i> Section 4 — Badges</div>
+          <div class="kv-grid">
+            <div class="kv kv-full"><span class="kv-label">Current Badges</span><div class="chips" id="dBadges"></div></div>
+            <div class="kv kv-full">
+              <span class="kv-label">Grant Badge (Admin Only)</span>
+              <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
+                <select id="grantBadgeSel" style="max-width:200px"><option value="Top Agent">Top Agent</option><option value="Premium Agent">Premium Agent</option><option value="Other">Other</option></select>
+                <button class="btn btn-sm btn-primary" type="button" onclick="grantBadge()">Grant</button>
+              </div>
+            </div>
+            <div class="kv kv-full">
+              <span class="kv-label">Remove Badge (Admin Only)</span>
+              <div id="dRemoveBadges" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px"></div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div id="detailPanel">
-            <div class="detail-section">
-              <div class="detail-title">1. Agency (Main information)</div>
-              <div class="logo-wrapper">
-                <div class="logo-box" id="agencyLogoBox">AG</div>
-                <div>
-                  <div class="field-label">Agency name</div>
-                  <div class="field-value" id="detailAgencyName">–</div>
-                  <div class="field-label" style="margin-top: 4px">
-                    Established date
-                  </div>
-                  <div class="field-value muted" id="detailEstablished">–</div>
-                </div>
-              </div>
-              <div class="field-label">Agency description</div>
-              <div class="field-value muted" id="detailDescription">
-                Select an agency from the left to view full profile.
-              </div>
-            </div>
+        <section class="card">
+          <div class="card-title"><i class="fas fa-address-card"></i> Section 5 — Contact & Account Info</div>
+          <div class="kv-grid" id="dContactGrid"></div>
+        </section>
 
-            <div class="detail-section">
-              <div class="detail-title">2. Rating &amp; performance</div>
-              <div class="detail-grid">
-                <div>
-                  <div class="field-label">Average rating</div>
-                  <div class="field-value" id="detailAvgRating">–</div>
-                </div>
-                <div>
-                  <div class="field-label">Total reviews</div>
-                  <div class="field-value" id="detailTotalReviews">–</div>
-                </div>
-                <div>
-                  <div class="field-label">Sales (last 12 months)</div>
-                  <div class="field-value" id="detailSales12m">–</div>
-                </div>
-                <div>
-                  <div class="field-label">Total historical sales</div>
-                  <div class="field-value" id="detailTotalSales">–</div>
-                </div>
-                <div>
-                  <div class="field-label">Number of active listings</div>
-                  <div class="field-value" id="detailActiveListings">–</div>
-                </div>
-              </div>
-            </div>
+        <section class="card">
+          <div class="card-title"><i class="fas fa-briefcase"></i> Section 6 — Operations & Professional Services</div>
+          <div class="kv-grid" id="dOpsGrid"></div>
+        </section>
 
-            <div class="detail-section">
-              <div class="detail-title">3. Operational info</div>
-              <div class="detail-grid">
-                <div>
-                  <div class="field-label">Business hours</div>
-                  <div class="field-value muted" id="detailBusinessHours">
-                    –
-                  </div>
-                </div>
-                <div>
-                  <div class="field-label">Regular holidays</div>
-                  <div class="field-value muted" id="detailHolidays">–</div>
-                </div>
-                <div>
-                  <div class="field-label">Usual response time</div>
-                  <div class="field-value muted" id="detailResponseTime">–</div>
-                </div>
-              </div>
-            </div>
+        <section class="card">
+          <div class="card-title"><i class="fas fa-map-marker-alt"></i> Section 7 — Service Areas</div>
+          <div class="kv kv-full" id="dServiceArea"></div>
+        </section>
 
-            <div class="detail-section">
-              <div class="detail-title">4. Badge (TOP / Premium)</div>
-              <div class="detail-grid" style="align-items: center">
-                <div>
-                  <div class="field-label">Current badge</div>
-                  <div class="field-value" id="detailBadge">No badge</div>
-                </div>
-                <div>
-                  <div class="field-label">Assign / remove badge (Admin)</div>
-                  <div class="actions">
-                    <select id="badgeSelect" style="font-size: 11px">
-                      <option value="TOP Agent">TOP Agent</option>
-                      <option value="Premium Agent">Premium Agent</option>
-                    </select>
-                    <button
-                      type="button"
-                      class="btn btn-primary btn-sm"
-                      id="assignBadgeBtn"
-                    >
-                      Assign badge
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-ghost btn-sm"
-                      id="removeBadgeBtn"
-                    >
-                      Remove badge
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <section class="card">
+          <div class="card-title"><i class="fas fa-language"></i> Section 8 — Languages Supported</div>
+          <div class="kv kv-full" id="dLanguagesBox"></div>
+        </section>
 
-            <div class="detail-section">
-              <div class="detail-title">5. Specialties (Services)</div>
-              <div id="specialtiesContainer" class="field-value muted">–</div>
-            </div>
+        <section class="card" style="grid-column: 1 / -1">
+          <div class="card-title"><i class="fas fa-users"></i> Section 9 — Staff Information</div>
+          <div class="kv-grid" style="margin-bottom:12px">
+            <div class="kv"><span class="kv-label">Total Staff Count</span><span class="kv-value" id="dStaffCount">—</span></div>
+          </div>
+          <div class="mini-table-wrap">
+            <table class="mini-table">
+              <thead><tr><th>Photo</th><th>Name</th><th>Role</th><th>Bio</th><th>Business Hours</th></tr></thead>
+              <tbody id="dStaffList"></tbody>
+            </table>
+          </div>
+        </section>
 
-            <div class="detail-section">
-              <div class="detail-title">6. Service areas (Cities)</div>
-              <div class="field-label">Max 15 cities per agency</div>
-              <div id="serviceAreasContainer" class="field-value muted">–</div>
-            </div>
-
-            <div class="detail-section">
-              <div class="detail-title">7. Company profile (Legal)</div>
-              <div class="detail-grid">
-                <div>
-                  <div class="field-label">Representative name</div>
-                  <div class="field-value muted" id="detailRepName">–</div>
-                </div>
-                <div>
-                  <div class="field-label">License number</div>
-                  <div class="field-value muted" id="detailLicense">–</div>
-                </div>
-                <div>
-                  <div class="field-label">Head office address</div>
-                  <div class="field-value muted" id="detailHeadOffice">–</div>
-                </div>
-                <div>
-                  <div class="field-label">Real estate association</div>
-                  <div class="field-value muted" id="detailAssociation">–</div>
-                </div>
-                <div>
-                  <div class="field-label">Guaranty association</div>
-                  <div class="field-value muted" id="detailGuaranty">–</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="detail-section">
-              <div class="detail-title">8. Branches</div>
-              <div class="field-label">Branch list</div>
-              <div id="branchesContainer" class="field-value muted">–</div>
-            </div>
-
-            <div class="detail-section">
-              <div class="detail-title">9. Languages</div>
-              <div class="field-label">Supported languages (max 5)</div>
-              <div id="languagesContainer" class="field-value muted">–</div>
-            </div>
-
-            <div class="detail-section">
-              <div class="detail-title">10. Website</div>
-              <div class="field-value" id="detailWebsite">–</div>
-            </div>
-
-            <div class="detail-section">
-              <div class="detail-title">11. Team members</div>
-              <div class="field-label">Total members count</div>
-              <div class="field-value" id="detailMembers">–</div>
-              <table class="listing-table" style="margin-top: 4px">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Age</th>
-                    <th>Phone</th>
-                    <th>Role</th>
-                  </tr>
-                </thead>
-                <tbody id="membersTableBody"></tbody>
-              </table>
-            </div>
-
-            <div class="detail-section">
-              <div class="detail-title">12. Properties (Listing list)</div>
-              <table class="listing-table">
-                <thead>
-                  <tr>
-                    <th>Property title</th>
-                    <th>Location</th>
-                    <th>Price display</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Bedrooms</th>
-                    <th>Floor area</th>
-                    <th>Year built</th>
-                    <th>Days on platform</th>
-                  </tr>
-                </thead>
-                <tbody id="propertyTableBody"></tbody>
-              </table>
-            </div>
-
-            <div class="detail-section">
-              <div class="detail-title">
-                13. Ad performance &amp; subscription history
-              </div>
-              <div class="detail-grid">
-                <div>
-                  <div class="field-label">Subscription plan</div>
-                  <div class="field-value muted" id="detailPlan">–</div>
-                </div>
-                <div>
-                  <div class="field-label">Subscription status</div>
-                  <div class="field-value muted" id="detailPlanStatus">–</div>
-                </div>
-                <div>
-                  <div class="field-label">Subscription since</div>
-                  <div class="field-value muted" id="detailPlanSince">–</div>
-                </div>
-              </div>
-              <div class="detail-grid" style="margin-top: 6px">
-                <div>
-                  <div class="field-label">Total reports</div>
-                  <div class="field-value" id="detailReportsTotal">–</div>
-                </div>
-                <div>
-                  <div class="field-label">Reports deleted</div>
-                  <div class="field-value" id="detailReportsDeleted">–</div>
-                </div>
-                <div>
-                  <div class="field-label">Reports edited</div>
-                  <div class="field-value" id="detailReportsEdited">–</div>
-                </div>
+        <section class="card">
+          <div class="card-title"><i class="fas fa-gavel"></i> Section 10 — Licensing & Legal Information</div>
+          <div class="kv-grid">
+            <div class="kv"><span class="kv-label">Representative Name</span><span class="kv-value" id="dLicRep">—</span></div>
+            <div class="kv"><span class="kv-label">Real Estate License Number</span><span class="kv-value" id="dLicNo">—</span></div>
+            <div class="kv"><span class="kv-label">License Expiry Date</span><span class="kv-value" id="dLicExpiry">—</span></div>
+            <div class="kv"><span class="kv-label">Real Estate Association</span><span class="kv-value" id="dReAssoc">—</span></div>
+            <div class="kv"><span class="kv-label">Guarantee Association</span><span class="kv-value" id="dGuarAssoc">—</span></div>
+            <div class="kv kv-full"><span class="kv-label">Headquarters Address</span><span class="kv-value" id="dHqAddress">—</span></div>
+            <div class="kv kv-full">
+              <span class="kv-label">License Renewal History</span>
+              <div class="mini-table-wrap">
+                <table class="mini-table"><thead><tr><th>Renewal Date</th><th>Old Expiry</th><th>New Expiry</th></tr></thead><tbody id="dLicHistory"></tbody></table>
               </div>
             </div>
           </div>
-        </div>
+        </section>
+
+        <section class="card">
+          <div class="card-title"><i class="fas fa-code-branch"></i> Section 11 — Branch Information</div>
+          <div class="mini-table-wrap">
+            <table class="mini-table"><thead><tr><th>Branch Name</th><th>Branch Address</th></tr></thead><tbody id="dBranches"></tbody></table>
+          </div>
+        </section>
+
+        <section class="card" style="grid-column: 1 / -1">
+          <div class="card-title"><i class="fas fa-list"></i> Section 12 — Active Listings</div>
+          <div class="mini-table-wrap">
+            <table class="mini-table">
+              <thead><tr><th>Title</th><th>Location</th><th>Price (¥)</th><th>Category</th><th>Status</th><th>BR</th><th>Floor (m²)</th><th>Age (yr)</th><th>DoM</th><th>IMP</th><th>CL</th><th>CTR (%)</th><th>Keep</th><th>CV</th><th>CVR (%)</th></tr></thead>
+              <tbody id="dActiveList"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card" style="grid-column: 1 / -1">
+          <div class="card-title"><i class="fas fa-handshake"></i> Section 13 — Completed Transactions</div>
+          <div class="kv-grid" style="margin-bottom:12px">
+            <div class="kv"><span class="kv-label">Count — Last 12 months</span><span class="kv-value" id="dCount12m">—</span></div>
+            <div class="kv"><span class="kv-label">Count — All time</span><span class="kv-value" id="dCountAll">—</span></div>
+            <div class="kv"><span class="kv-label">Volume (¥) — Last 12 months</span><span class="kv-value" id="dVol12m">—</span></div>
+            <div class="kv"><span class="kv-label">Volume (¥) — All time</span><span class="kv-value" id="dVolAll">—</span></div>
+          </div>
+          <div class="kv-label" style="margin-bottom:6px">Completed Property List</div>
+          <div class="mini-table-wrap" style="margin-bottom:14px">
+            <table class="mini-table">
+              <thead><tr><th>Title</th><th>Location</th><th>Price (¥)</th><th>Category</th><th>Status</th><th>BR</th><th>Floor (m²)</th><th>Age (yr)</th><th>DoM</th><th>IMP</th><th>CL</th><th>CTR</th><th>Keep</th><th>CV</th><th>CVR</th></tr></thead>
+              <tbody id="dCompletedList"></tbody>
+            </table>
+          </div>
+          <div class="kv-label" style="margin-bottom:6px">Closing Notification History (Phase 2)</div>
+          <div class="mini-table-wrap">
+            <table class="mini-table"><thead><tr><th>Property</th><th>Agent</th><th>Closing Date</th><th>Approval Status</th></tr></thead><tbody id="dClosingNotif"></tbody></table>
+          </div>
+        </section>
+
+        <section class="card" style="grid-column: 1 / -1">
+          <div class="card-title"><i class="fas fa-credit-card"></i> Section 14 — Ads, Subscription & Billing</div>
+          <div class="kv-grid" style="margin-bottom:12px">
+            <div class="kv"><span class="kv-label">Plan Name</span><span class="kv-value" id="dPlanName">—</span></div>
+            <div class="kv"><span class="kv-label">Plan Status</span><span class="kv-value" id="dPlanStatus">—</span></div>
+            <div class="kv"><span class="kv-label">Contract Start Date</span><span class="kv-value" id="dContractStart">—</span></div>
+            <div class="kv"><span class="kv-label">Appraisal Monthly Budget</span><span class="kv-value" id="dApprBudget">—</span></div>
+            <div class="kv"><span class="kv-label">Appraisal Remaining Budget</span><span class="kv-value" id="dApprRemaining">—</span></div>
+            <div class="kv"><span class="kv-label">Total Spend (LTV)</span><span class="kv-value" id="dLtv">—</span></div>
+            <div class="kv"><span class="kv-label">Outstanding Balance</span><span class="kv-value" id="dOutstanding">—</span></div>
+            <div class="kv"><span class="kv-label">Payment Status</span><span class="kv-value" id="dPaymentStatus">—</span></div>
+          </div>
+          <div class="kv-label" style="margin-bottom:6px">Plan History</div>
+          <div class="mini-table-wrap" style="margin-bottom:14px">
+            <table class="mini-table"><thead><tr><th>Plan Name</th><th>Start Date</th><th>End Date</th><th>Amount (¥)</th><th>Status</th></tr></thead><tbody id="dPlanHistory"></tbody></table>
+          </div>
+          <div class="kv-label" style="margin-bottom:6px">Transaction History (Consolidated)</div>
+          <div class="mini-table-wrap" style="margin-bottom:14px">
+            <table class="mini-table"><thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Amount (¥)</th><th>Status</th></tr></thead><tbody id="dTxnHistory"></tbody></table>
+          </div>
+          <div class="kv-label" style="margin-bottom:6px">Delinquency History</div>
+          <div class="mini-table-wrap" style="margin-bottom:14px">
+            <table class="mini-table"><thead><tr><th>Date</th><th>Amount (¥)</th><th>Days Overdue</th><th>Resolution Date</th></tr></thead><tbody id="dDelinquency"></tbody></table>
+          </div>
+          <div class="kv-label" style="margin-bottom:6px">Refund History</div>
+          <div class="mini-table-wrap">
+            <table class="mini-table"><thead><tr><th>Date</th><th>Item</th><th>Refund Amount (¥)</th><th>Reason</th></tr></thead><tbody id="dRefundHistory"></tbody></table>
+          </div>
+        </section>
+
+        <section class="card" style="grid-column: 1 / -1">
+          <div class="card-title"><i class="fas fa-inbox"></i> Section 15 — Inquiry & Message History</div>
+          <div class="mini-table-wrap">
+            <table class="mini-table"><thead><tr><th>Property</th><th>DateTime</th><th>End-User ID (masked)</th><th>Message Status</th></tr></thead><tbody id="dInquiries"></tbody></table>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-title"><i class="fas fa-bell"></i> Section 16 — Notification Settings</div>
+          <div class="kv-grid" id="dNotifGrid"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-title"><i class="fas fa-lock"></i> Section 17 — Security</div>
+          <div class="kv-grid">
+            <div class="kv"><span class="kv-label">Account Lock Status</span><span class="kv-value" id="dLockStatus">—</span></div>
+            <div class="kv"><span class="kv-label">2FA Status</span><span class="kv-value" id="d2FA">—</span></div>
+            <div class="kv"><span class="kv-label">Last Password Change</span><span class="kv-value" id="dLastPwd">—</span></div>
+            <div class="kv"><span class="kv-label">Last Login Device</span><span class="kv-value" id="dLastDevice">—</span></div>
+            <div class="kv"><span class="kv-label">Failed Login Attempts (24h)</span><span class="kv-value" id="dFailedLogins">—</span></div>
+            <div class="kv kv-full"><span class="kv-label">Password Reset</span><div style="margin-top:4px"><button class="btn btn-sm btn-danger" type="button" onclick="resetPwd()"><i class="fas fa-key"></i> Reset password</button></div></div>
+            <div class="kv kv-full"><span class="kv-label">Login History</span>
+              <div class="mini-table-wrap"><table class="mini-table"><thead><tr><th>DateTime</th><th>Device Type</th><th>IP Address</th><th>Country</th></tr></thead><tbody id="dLoginHistory"></tbody></table></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" style="grid-column: 1 / -1">
+          <div class="card-title"><i class="fas fa-shield-alt"></i> Section 18 — Compliance & Safety</div>
+          <div class="kpi-row" style="margin-bottom:12px">
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-ban"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Suspension Count</div><div class="kpi-tile-value" id="dSuspCount">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-flag"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Valid Reports</div><div class="kpi-tile-value" id="dValidReports">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-circle-xmark"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Invalid Reports</div><div class="kpi-tile-value" id="dInvalidReports">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-list"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Total Reports</div><div class="kpi-tile-value" id="dTotalReports">—</div></div></div>
+            <div class="kpi-tile"><div class="kpi-tile-icon"><i class="fas fa-user-slash"></i></div><div class="kpi-tile-info"><div class="kpi-tile-label">Blocked Users</div><div class="kpi-tile-value" id="dBlockedCount">—</div></div></div>
+          </div>
+          <div class="kv-label" style="margin-bottom:6px">Report History</div>
+          <div class="mini-table-wrap" style="margin-bottom:14px">
+            <table class="mini-table"><thead><tr><th>Report Date</th><th>Content</th><th>Status</th></tr></thead><tbody id="dReportHistory"></tbody></table>
+          </div>
+          <div class="kv-label" style="margin-bottom:6px">Violation & Penalty History</div>
+          <div class="mini-table-wrap" style="margin-bottom:14px">
+            <table class="mini-table"><thead><tr><th>Date</th><th>Violation Type</th><th>Action Taken</th><th>Duration</th><th>Lifted Date</th></tr></thead><tbody id="dViolations"></tbody></table>
+          </div>
+          <div class="kv-label" style="margin-bottom:6px">Block History</div>
+          <div class="mini-table-wrap">
+            <table class="mini-table"><thead><tr><th>Blocked User ID (masked)</th><th>Block Date</th></tr></thead><tbody id="dBlockHistory"></tbody></table>
+          </div>
+        </section>
       </div>
+    </div>
 
     <script>
       const agents = [
-        {
-          id: 1,
-          agencyName: "Sakura Realty Co.",
-          agencyInitials: "SR",
-          logoUrl: "",
-          description:
-            "Mid-size agency based in Tokyo, focused on mid- to high-end apartments and investment units.",
-          establishedDate: "2010-03-15",
-          averageRating: 4.7,
-          totalReviews: 132,
-          salesLast12Months: 86,
-          totalHistoricalSales: 640,
-          activeListings: 112,
-          businessHours: "Mon-Fri, 9:30 - 18:30",
-          regularHolidays: "Sat afternoon, Sunday, national holidays",
-          usualResponseTime: "Within 2 business hours",
-          badge: "TOP Agent",
-          specialties: [
-            "Residential sales",
-            "Investment condos",
-            "Relocation support",
+        { id:"AG-00000001", company:"Yamada Estates Co., Ltd.", companyKata:"ヤマダエステーツ", invoiceNo:"T1234567890123",
+          establishment:"2010-04-01", repName:"Yamada Hiroshi", bizDesc:"Specialist in Tokyo central and Shibuya residential properties. 15+ years experience.", website:"https://yamada-estates.jp",
+          regDate:"2022-06-15 10:00 JST", withdrawal:"", logo:"yamada.png",
+          status:"Active", plan:"Gold", planStatus:"Active", contractStart:"2024-06-15",
+          totalLogins:1240, lastLogin:"2026-05-19 08:00 JST", avgSession:"6.2 min",
+          activeListings:48, savedProps:120, inqRecv30:85, propsInq30:32, closed30:6, apprReq30:15, avgRespTime:"3.4h",
+          rating:4.7, reviewCount:128, reviewDist:[2,4,12,46,64],
+          responseRate:92.4, avgListings90:46, inq90:240, closings90:18, txnVolume:850000000, avgClosingPrice:47000000,
+          badges:["Top Agent","Premium Agent"],
+          opEmail:"ops@yamada-estates.jp", inqEmail:"contact@yamada-estates.jp", inqEmailCc:"manager@yamada-estates.jp",
+          repPhone:"+81 3-1234-5678", pubPhone:"+81 3-1234-5679",
+          bizHours:"Mon–Fri 09:30–18:30", holidays:"Saturdays, Sundays, National Holidays", declaredResp:120,
+          specServices:["Brokerage","Leasing","Property Management"],
+          targetCities:["Tokyo","Kanagawa"], languages:["Japanese","English"],
+          staffCount:12,
+          staff:[
+            {photo:"hiroshi.png", name:"Yamada Hiroshi", role:"Manager", bio:"Founder, 20+ years.", hours:"Mon-Fri 09:00-18:00"},
+            {photo:"", name:"Tanaka Sora", role:"Agent", bio:"Shibuya specialist.", hours:"Mon-Sat 10:00-19:00"},
           ],
-          serviceAreas: [
-            "Shinjuku",
-            "Shibuya",
-            "Meguro",
-            "Setagaya",
-            "Kichijoji",
+          licRep:"Yamada Hiroshi", licNo:"Tokyo Gov (3) No. 12345", licExpiry:"2027-03-31",
+          reAssoc:"Real Estate Transaction Association of Japan", guarAssoc:"Real Estate Guarantee Center",
+          hqAddress:"1-2-3 Shibuya, Shibuya-ku, Tokyo 150-0002, Japan",
+          licHistory:[{date:"2024-03-31",old:"2024-03-31",new:"2027-03-31"}],
+          branches:[{name:"Shibuya Main", addr:"1-2-3 Shibuya, Shibuya-ku, Tokyo"},{name:"Shinjuku Branch", addr:"4-5-6 Nishi-Shinjuku, Shinjuku-ku, Tokyo"}],
+          activeList:[
+            {title:"Shibuya Sky Residence #1203", loc:"Shibuya, Tokyo", price:120000000, cat:"Apartment", status:"Active", br:"2BR", floor:62, age:5, dom:24, imp:5400, cl:480, ctr:8.9, keep:36, cv:18, cvr:3.8},
+            {title:"Aoyama Garden House", loc:"Minato, Tokyo", price:280000000, cat:"House", status:"Active", br:"4BR", floor:140, age:12, dom:60, imp:3200, cl:210, ctr:6.6, keep:22, cv:8, cvr:3.8},
           ],
-          representativeName: "Yamada Taro",
-          licenseNumber: "Tokyo(3) 12345",
-          headOfficeAddress:
-            "8F, Shinjuku Center Building, 1-1-4 Nishi-Shinjuku, Tokyo",
-          realEstateAssociation: "All Japan Real Estate Association",
-          guarantyAssociation: "Japan Real Estate Guarantee Association",
-          branches: [
-            {
-              name: "Shinjuku Main Branch",
-              address:
-                "8F, Shinjuku Center Building, 1-1-4 Nishi-Shinjuku, Tokyo",
-            },
-            {
-              name: "Kichijoji Branch",
-              address: "2-4-10 Kichijoji Honcho, Musashino-shi, Tokyo",
-            },
-          ],
-          languages: ["Japanese", "English", "Chinese"],
-          websiteUrl: "https://www.sakura-realty.jp",
-          totalMembersCount: 24,
-          listingStats: [
-            { type: "Buy", status: "Current", count: 78 },
-            { type: "Buy", status: "Sold", count: 410 },
-            { type: "Rent", status: "Current", count: 34 },
-            { type: "Rent", status: "Rented", count: 230 },
-          ],
-          propertyList: [
-            {
-              title: "2LDK condo near Shinjuku Gyoen",
-              location: "Shinjuku, Tokyo",
-              priceDisplay: "¥98,000,000",
-              type: "Buy",
-              status: "Current",
-              bedrooms: 2,
-              floorArea: "58 m²",
-              yearBuilt: 2012,
-              daysOnPlatform: 34,
-            },
-            {
-              title: "1LDK investment unit in Shibuya",
-              location: "Shibuya, Tokyo",
-              priceDisplay: "¥72,000,000",
-              type: "Buy",
-              status: "Current",
-              bedrooms: 1,
-              floorArea: "43 m²",
-              yearBuilt: 2015,
-              daysOnPlatform: 21,
-            },
-            {
-              title: "Studio rental near Meguro station",
-              location: "Meguro, Tokyo",
-              priceDisplay: "¥145,000 / month",
-              type: "Rent",
-              status: "Current",
-              bedrooms: 0,
-              floorArea: "27 m²",
-              yearBuilt: 2008,
-              daysOnPlatform: 12,
-            },
-          ],
-          teamMembers: [
-            {
-              name: "Yamada Taro",
-              role: "Representative director",
-              age: 45,
-              phone: "+81-3-1234-5678",
-            },
-            {
-              name: "Sato Mika",
-              role: "Senior agent",
-              age: 37,
-              phone: "+81-90-2345-6789",
-            },
-            {
-              name: "Kobayashi Ken",
-              role: "Leasing specialist",
-              age: 32,
-              phone: "+81-80-3456-7890",
-            },
-          ],
-          subscriptionPlan: "Premium Agent",
-          subscriptionStatus: "Active",
-          subscriptionSince: "2023-01-01",
-          adReportsTotal: 220,
-          adReportsDeleted: 14,
-          adReportsEdited: 46,
-        },
-        {
-          id: 2,
-          agencyName: "Hokkaido Homes",
-          agencyInitials: "HH",
-          logoUrl: "",
-          description:
-            "Boutique agency in Sapporo, focused on long-term rentals and seasonal rentals.",
-          establishedDate: "2016-07-01",
-          averageRating: 4.3,
-          totalReviews: 58,
-          salesLast12Months: 32,
-          totalHistoricalSales: 180,
-          activeListings: 54,
-          businessHours: "Mon-Sat, 10:00 - 19:00",
-          regularHolidays: "Wednesday",
-          usualResponseTime: "Same-day response",
-          badge: "Premium Agent",
-          specialties: [
-            "Holiday rentals",
-            "Snow resort properties",
-            "Property management",
-          ],
-          serviceAreas: ["Sapporo", "Otaru", "Niseko", "Asahikawa"],
-          representativeName: "Suzuki Hanako",
-          licenseNumber: "Hokkaido(1) 67890",
-          headOfficeAddress: "3-2-1 Kita, Chuo-ku, Sapporo-shi, Hokkaido",
-          realEstateAssociation: "Hokkaido Real Estate Association",
-          guarantyAssociation: "Hokkaido Guarantee Association",
-          branches: [
-            {
-              name: "Sapporo Head Office",
-              address: "3-2-1 Kita, Chuo-ku, Sapporo-shi, Hokkaido",
-            },
-          ],
-          languages: ["Japanese", "English"],
-          websiteUrl: "https://www.hokkaidohomes.jp",
-          totalMembersCount: 12,
-          listingStats: [
-            { type: "Buy", status: "Current", count: 18 },
-            { type: "Buy", status: "Sold", count: 60 },
-            { type: "Rent", status: "Current", count: 36 },
-            { type: "Rent", status: "Rented", count: 90 },
-          ],
-          propertyList: [
-            {
-              title: "Ski resort chalet near Niseko",
-              location: "Niseko, Hokkaido",
-              priceDisplay: "¥150,000 / month",
-              type: "Rent",
-              status: "Current",
-              bedrooms: 4,
-              floorArea: "120 m²",
-              yearBuilt: 2010,
-              daysOnPlatform: 45,
-            },
-            {
-              title: "3LDK house in central Sapporo",
-              location: "Chuo-ku, Sapporo",
-              priceDisplay: "¥52,000,000",
-              type: "Buy",
-              status: "Current",
-              bedrooms: 3,
-              floorArea: "95 m²",
-              yearBuilt: 2014,
-              daysOnPlatform: 30,
-            },
-            {
-              title: "1K apartment near Otaru canal",
-              location: "Otaru, Hokkaido",
-              priceDisplay: "¥68,000 / month",
-              type: "Rent",
-              status: "Rented",
-              bedrooms: 1,
-              floorArea: "30 m²",
-              yearBuilt: 2005,
-              daysOnPlatform: 75,
-            },
-          ],
-          teamMembers: [
-            {
-              name: "Suzuki Hanako",
-              role: "Founder",
-              age: 38,
-              phone: "+81-11-123-4567",
-            },
-            {
-              name: "Tanaka Kenta",
-              role: "Sales agent",
-              age: 34,
-              phone: "+81-90-1111-2222",
-            },
-          ],
-          subscriptionPlan: "Standard Agent",
-          subscriptionStatus: "Active",
-          subscriptionSince: "2024-04-10",
-          adReportsTotal: 96,
-          adReportsDeleted: 5,
-          adReportsEdited: 18,
-        },
-        {
-          id: 3,
-          agencyName: "Nagoya Estate",
-          agencyInitials: "NE",
-          logoUrl: "",
-          description:
-            "Agency in Nagoya, focused on townhouses and investment land in the Chubu area.",
-          establishedDate: "2012-11-20",
-          averageRating: 4.0,
-          totalReviews: 41,
-          salesLast12Months: 24,
-          totalHistoricalSales: 230,
-          activeListings: 39,
-          businessHours: "Mon-Fri, 9:00 - 18:00",
-          regularHolidays: "Sat, Sun",
-          usualResponseTime: "Within 1 business day",
-          badge: null,
-          specialties: ["Land sales", "Residential houses"],
-          serviceAreas: ["Nagoya", "Toyota", "Okazaki"],
-          representativeName: "Ito Shin",
-          licenseNumber: "Aichi(2) 34567",
-          headOfficeAddress: "1-2-3 Sakae, Naka-ku, Nagoya-shi, Aichi",
-          realEstateAssociation: "Aichi Real Estate Association",
-          guarantyAssociation: "Chubu Real Estate Guarantee",
-          branches: [],
-          languages: ["Japanese"],
-          websiteUrl: "https://www.nagoyaestate.jp",
-          totalMembersCount: 9,
-          listingStats: [
-            { type: "Buy", status: "Current", count: 28 },
-            { type: "Buy", status: "Sold", count: 150 },
-            { type: "Rent", status: "Current", count: 11 },
-            { type: "Rent", status: "Rented", count: 60 },
-          ],
-          propertyList: [
-            {
-              title: "Land plot near Nagoya station",
-              location: "Nakamura-ku, Nagoya",
-              priceDisplay: "¥85,000,000",
-              type: "Buy",
-              status: "Current",
-              bedrooms: 0,
-              floorArea: "165 m²",
-              yearBuilt: 0,
-              daysOnPlatform: 52,
-            },
-            {
-              title: "3-story house in Toyota city",
-              location: "Toyota, Aichi",
-              priceDisplay: "¥63,000,000",
-              type: "Buy",
-              status: "Sold",
-              bedrooms: 4,
-              floorArea: "110 m²",
-              yearBuilt: 2011,
-              daysOnPlatform: 90,
-            },
-          ],
-          teamMembers: [
-            {
-              name: "Ito Shin",
-              role: "Managing director",
-              age: 48,
-              phone: "+81-52-987-6543",
-            },
-            {
-              name: "Kato Airi",
-              role: "Sales agent",
-              age: 31,
-              phone: "+81-90-3333-4444",
-            },
-            {
-              name: "Fujita Ryo",
-              role: "Leasing agent",
-              age: 29,
-              phone: "+81-80-5555-6666",
-            },
-          ],
-          subscriptionPlan: "Basic Agent",
-          subscriptionStatus: "Active",
-          subscriptionSince: "2022-09-01",
-          adReportsTotal: 54,
-          adReportsDeleted: 2,
-          adReportsEdited: 9,
-        },
+          count12m:24, countAll:182, vol12m:980000000, volAll:7800000000,
+          completedList:[{title:"Roppongi Tower #2410", loc:"Minato, Tokyo", price:195000000, cat:"Apartment", status:"Closed", br:"3BR", floor:85, age:8, dom:42, imp:4200, cl:380, ctr:9.0, keep:28, cv:12, cvr:3.2}],
+          closingNotif:[],
+          appraisalBudget:500000, appraisalRemaining:280000, ltv:2400000, outstanding:0, paymentStatus:"Paid",
+          planHistory:[{name:"Silver",start:"2022-06-15",end:"2024-06-14",amount:840000,status:"Cancelled"},{name:"Gold",start:"2024-06-15",end:"—",amount:1560000,status:"Active"}],
+          txnHistory:[{date:"2026-05-01",type:"Subscription",desc:"Gold monthly",amount:130000,status:"Paid"},{date:"2026-04-15",type:"Appraisal Lead",desc:"Lead × 6",amount:48000,status:"Paid"}],
+          delinquency:[],
+          refundHistory:[],
+          inquiries:[{prop:"Shibuya Sky Residence #1203", at:"2026-05-15 10:00", uid:"USR-***45", status:"Replied"}],
+          quietStart:"22:00", quietEnd:"08:00", quietTz:"Asia/Tokyo",
+          lockStatus:"Normal", twoFa:true, lastPwd:"2026-03-01 10:00 JST", lastDevice:"Desktop", failedLogins:0,
+          loginHistory:[{at:"2026-05-19 08:00", device:"Desktop", ip:"203.0.113.10", country:"Japan"}],
+          suspCount:0, validReports:0, invalidReports:1, totalReports:1, blockedCount:0,
+          reportHistory:[{date:"2025-09-12", content:"Inaccurate listing photo", status:"Invalid"}],
+          violations:[], blockHistory:[] },
+        { id:"AG-00000002", company:"Osaka Premier Realty", companyKata:"オオサカプレミアリアルティ", invoiceNo:"T2345678901234",
+          establishment:"2015-09-10", repName:"Suzuki Akiko", bizDesc:"Osaka-area family residential specialists.", website:"",
+          regDate:"2023-02-20 11:30 JST", withdrawal:"", logo:"",
+          status:"Pending", plan:"Free", planStatus:"Active", contractStart:"2023-02-20",
+          totalLogins:34, lastLogin:"2026-05-12 14:00 JST", avgSession:"3.0 min",
+          activeListings:5, savedProps:18, inqRecv30:8, propsInq30:5, closed30:0, apprReq30:0, avgRespTime:"12h",
+          rating:0, reviewCount:0, reviewDist:[0,0,0,0,0],
+          responseRate:60, avgListings90:5, inq90:24, closings90:1, txnVolume:35000000, avgClosingPrice:35000000,
+          badges:[], opEmail:"ops@osakapremier.jp", inqEmail:"info@osakapremier.jp", inqEmailCc:"",
+          repPhone:"+81 6-1234-5678", pubPhone:"",
+          bizHours:"Mon-Fri 10:00-19:00", holidays:"Sundays", declaredResp:240,
+          specServices:["Brokerage"], targetCities:["Osaka"], languages:["Japanese"],
+          staffCount:3, staff:[{photo:"", name:"Suzuki Akiko", role:"Agent", bio:"", hours:"Mon-Fri 10:00-19:00"}],
+          licRep:"Suzuki Akiko", licNo:"Osaka Gov (1) No. 54321", licExpiry:"2026-06-30",
+          reAssoc:"All Japan Real Estate Federation", guarAssoc:"",
+          hqAddress:"1-2-3 Umeda, Kita-ku, Osaka 530-0001, Japan",
+          licHistory:[], branches:[], activeList:[],
+          count12m:1, countAll:1, vol12m:35000000, volAll:35000000,
+          completedList:[], closingNotif:[],
+          appraisalBudget:0, appraisalRemaining:0, ltv:0, outstanding:0, paymentStatus:"None",
+          planHistory:[{name:"Free",start:"2023-02-20",end:"—",amount:0,status:"Active"}],
+          txnHistory:[], delinquency:[], refundHistory:[], inquiries:[],
+          quietStart:"22:00", quietEnd:"07:00", quietTz:"Asia/Tokyo",
+          lockStatus:"Normal", twoFa:false, lastPwd:"2023-02-20 11:30 JST", lastDevice:"Mobile", failedLogins:1,
+          loginHistory:[{at:"2026-05-12 14:00", device:"Mobile", ip:"203.0.113.20", country:"Japan"}],
+          suspCount:0, validReports:0, invalidReports:0, totalReports:0, blockedCount:0,
+          reportHistory:[], violations:[], blockHistory:[] },
+        { id:"AG-00000003", company:"Shady Realty Co.", companyKata:"シャディーリアルティ", invoiceNo:"T3456789012345",
+          establishment:"2018-01-15", repName:"Unknown", bizDesc:"", website:"",
+          regDate:"2024-08-01 09:00 JST", withdrawal:"", logo:"",
+          status:"Suspended", plan:"Bronze", planStatus:"Suspended", contractStart:"2024-08-01",
+          totalLogins:120, lastLogin:"2026-02-14 22:00 JST", avgSession:"4.5 min",
+          activeListings:0, savedProps:5, inqRecv30:0, propsInq30:0, closed30:0, apprReq30:0, avgRespTime:"N/A",
+          rating:2.1, reviewCount:18, reviewDist:[8,5,3,2,0],
+          responseRate:35, avgListings90:8, inq90:18, closings90:0, txnVolume:0, avgClosingPrice:0,
+          badges:[], opEmail:"ops@shady.jp", inqEmail:"info@shady.jp", inqEmailCc:"",
+          repPhone:"+81 3-9999-0000", pubPhone:"",
+          bizHours:"—", holidays:"—", declaredResp:0,
+          specServices:["Other"], targetCities:["Tokyo"], languages:["Japanese"],
+          staffCount:2, staff:[{photo:"", name:"Unknown", role:"Agent", bio:"", hours:""}],
+          licRep:"Unknown", licNo:"—", licExpiry:"2025-12-31",
+          reAssoc:"", guarAssoc:"", hqAddress:"—",
+          licHistory:[], branches:[], activeList:[],
+          count12m:0, countAll:0, vol12m:0, volAll:0,
+          completedList:[], closingNotif:[],
+          appraisalBudget:0, appraisalRemaining:0, ltv:0, outstanding:148000, paymentStatus:"Overdue",
+          planHistory:[{name:"Bronze",start:"2024-08-01",end:"—",amount:148000,status:"Suspended"}],
+          txnHistory:[{date:"2026-02-01",type:"Subscription",desc:"Bronze monthly",amount:24800,status:"Overdue"}],
+          delinquency:[{date:"2026-02-15",amount:24800,days:90,resolution:""}],
+          refundHistory:[], inquiries:[],
+          quietStart:"00:00", quietEnd:"08:00", quietTz:"Asia/Tokyo",
+          lockStatus:"Locked", twoFa:false, lastPwd:"2024-08-01 09:00 JST", lastDevice:"Desktop", failedLogins:5,
+          loginHistory:[{at:"2026-02-14 22:00", device:"Desktop", ip:"203.0.113.99", country:"Japan"}],
+          suspCount:2, validReports:5, invalidReports:1, totalReports:6, blockedCount:3,
+          reportHistory:[{date:"2026-02-10", content:"Misleading listing description", status:"Valid"},{date:"2025-12-05", content:"Aggressive sales pressure", status:"Valid"}],
+          violations:[{date:"2026-02-15", type:"Repeated user complaints", action:"Suspension", duration:"30 days", lifted:""}],
+          blockHistory:[{uid:"USR-***12",at:"2026-02-14"}] },
       ];
 
-      let selectedId = null;
+      let filtered = agents.slice();
+      let currentAgent = null;
+      let originalAgent = null;
+      let editMode = false;
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+      const escAttr = (s) => esc(s).replace(/"/g,"&quot;");
+      const initials = (n) => n.split(/\s+/).slice(0,2).map(p=>p[0]).join("").toUpperCase();
+      function avatarImg(name, size=40, rounded=8) {
+        const init = (name || "?").split(/\s+/).slice(0,2).map(p=>p[0]||"").join("").toUpperCase();
+        const fs = size>=64?20:size>=48?15:size>=36?12:10;
+        return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:${rounded}px;background:linear-gradient(135deg,#c26b41,#a55232);color:#fffaf3;font-weight:700;font-size:${fs}px;flex-shrink:0;vertical-align:middle;box-shadow:0 2px 6px rgba(194,107,65,0.25)">${esc(init)}</span>`;
+      }
+      const getSel = (id) => Array.from($(id).selectedOptions).map(o=>o.value);
+      const fmtYen = (n) => n ? "¥ " + n.toLocaleString() : "—";
+      const fmtNum = (n) => n!=null ? n.toLocaleString() : "—";
+      const badgeStatus = (s) => `<span class="badge ${s==="Active"?"badge-active":s==="Pending"?"badge-pending":s==="Suspended"?"badge-suspended":"badge-deactivated"}">${s}</span>`;
+      const badgePlan = (p) => `<span class="badge ${p==='Gold'?'badge-gold':p==='Silver'?'badge-silver':p==='Bronze'?'badge-bronze':'badge-none'}">${p}</span>`;
+      const badgePlanStatus = (s) => `<span class="badge ${s==="Active"?"badge-active":s==="Suspended"?"badge-suspended":"badge-cancelled"}">${s}</span>`;
+      const badgePaid = (s) => `<span class="badge ${s==="Paid"?"badge-paid":s==="Pending"?"badge-pending":s==="Overdue"?"badge-overdue":"badge-none"}">${s}</span>`;
+      const badgeReport = (s) => `<span class="badge ${s==="Valid"?"badge-invalid":s==="Invalid"?"badge-deactivated":"badge-pending"}">${s}</span>`;
+      const badge2FA = (on) => on ? '<span class="badge badge-on">ON · Email OTP</span>' : '<span class="badge badge-off">OFF</span>';
+      const badgeLock = (s) => s==="Locked" ? '<span class="badge badge-locked">Locked</span>' : '<span class="badge badge-normal">Normal</span>';
+      const badgeMsgStatus = (s) => `<span class="badge ${s==='Replied'?'badge-active':s==='Read'?'badge-pending':'badge-off'}">${s}</span>`;
+      const badgeListStatus = (s) => `<span class="badge ${s==='Active'?'badge-active':s==='Closed'?'badge-deactivated':'badge-pending'}">${s}</span>`;
+      const stars = (r) => { const f=Math.floor(r), h=r-f>=0.5; return '★'.repeat(f) + (h?'½':'') + '☆'.repeat(5-f-(h?1:0)); };
+      const licExpiryBadge = (date) => {
+        if (!date) return '—';
+        const days = Math.ceil((new Date(date) - new Date()) / (1000*60*60*24));
+        if (days < 0) return `${date} <span class="badge badge-red">Expired</span>`;
+        if (days <= 90) return `${date} <span class="badge badge-warning">≤ 90 days</span>`;
+        return date;
+      };
 
-      function computeMetrics() {
-        const totalAgents = agents.length;
-        const topCount = agents.filter((a) => a.badge === "TOP Agent").length;
-        const premiumCount = agents.filter(
-          (a) => a.badge === "Premium Agent",
-        ).length;
-        return { totalAgents, topCount, premiumCount };
+      function renderList() {
+        const tbody = $("listBody");
+        $("resultCount").textContent = filtered.length;
+        if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted)">No agents match the filters.</td></tr>'; return; }
+        tbody.innerHTML = filtered.map(a=>`
+          <tr onclick="showDetail('${a.id}')">
+            <td><div style="display:flex;align-items:center;gap:10px">${avatarImg(a.company, 36, 8)}<div><strong>${esc(a.company)}</strong><br><span style="font-size:11px;color:var(--text-muted)">${a.id}</span></div></div></td>
+            <td>${esc(a.establishment)||"—"}</td>
+            <td style="white-space:normal;max-width:240px">${esc(a.hqAddress)||"—"}</td>
+            <td>${a.badges.length ? `<span class="badge badge-top">${esc(a.badges[0])}${a.badges.length>1?` +${a.badges.length-1}`:""}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
+            <td>${a.rating ? `<span class="star-display">${stars(a.rating)}</span> ${a.rating}` : '<span style="color:var(--text-muted)">—</span>'}</td>
+            <td class="num">${a.reviewCount}</td>
+            <td class="num">${a.staffCount}</td>
+            <td>${badgePlan(a.plan)}</td>
+            <td onclick="event.stopPropagation()">
+              <button class="btn-chat" type="button" onclick="openChat('${a.id}')" title="Chat with ${esc(a.company)}"><i class="fas fa-comment-dots"></i></button>
+            </td>
+          </tr>`).join("");
       }
 
-      function renderMetrics() {
-        const wrap = document.getElementById("metricSummary");
-        const { totalAgents, topCount, premiumCount } = computeMetrics();
-        wrap.innerHTML = "";
-        const items = [
-          {
-            label: "Total agencies",
-            value: totalAgents,
-            sub: "Number of agencies currently managed in the system",
-          },
-          {
-            label: "TOP Agents",
-            value: topCount,
-            sub: "Number of agencies with TOP Agent badge",
-          },
-          {
-            label: "Premium Agents",
-            value: premiumCount,
-            sub: "Number of agencies with Premium Agent badge",
-          },
-        ];
-        items.forEach((m) => {
-          const div = document.createElement("div");
-          div.className = "metric-card";
-          div.innerHTML = `
-            <div class="metric-label">${m.label}</div>
-            <div class="metric-value">${m.value}</div>
-            <div class="metric-sub">${m.sub}</div>
-          `;
-          wrap.appendChild(div);
-        });
-      }
-
-      function badgeClass(badge) {
-        if (badge === "TOP Agent") return "status-badge-top";
-        if (badge === "Premium Agent") return "status-badge-premium";
-        return "status-badge-none";
-      }
-
-      function badgeLabel(badge) {
-        if (!badge) return "No badge";
-        return badge;
-      }
-
-      function applyFilters(list) {
-        const keyword = document
-          .getElementById("searchInput")
-          .value.toLowerCase();
-        const badgeFilter = document.getElementById("badgeFilter").value;
-        const cityFilter = document.getElementById("cityFilter")
-          ? document.getElementById("cityFilter").value
-          : "";
-        const ratingFilter = document.getElementById("ratingFilter")
-          ? document.getElementById("ratingFilter").value
-          : "";
-        const planFilter = document.getElementById("planFilter")
-          ? document.getElementById("planFilter").value
-          : "";
-        const subscriptionStatusFilter = document.getElementById(
-          "subscriptionStatusFilter",
-        )
-          ? document.getElementById("subscriptionStatusFilter").value
-          : "";
-
-        return list.filter((a) => {
-          if (keyword) {
-            const text = `${a.agencyName} ${a.representativeName || ""} ${(
-              a.serviceAreas || []
-            ).join(" ")}`.toLowerCase();
-            if (!text.includes(keyword)) return false;
-          }
-          if (badgeFilter === "TOP Agent" && a.badge !== "TOP Agent")
-            return false;
-          if (badgeFilter === "Premium Agent" && a.badge !== "Premium Agent")
-            return false;
-          if (badgeFilter === "None" && a.badge) return false;
-
-          if (cityFilter) {
-            const areas = (a.serviceAreas || []).map((c) => c.toLowerCase());
-            if (!areas.some((c) => c.includes(cityFilter.toLowerCase()))) {
-              return false;
-            }
-          }
-
-          if (ratingFilter) {
-            const minRating = parseFloat(ratingFilter);
-            if (!Number.isNaN(minRating) && a.averageRating < minRating) {
-              return false;
-            }
-          }
-
-          if (planFilter && a.subscriptionPlan !== planFilter) {
-            return false;
-          }
-
-          if (
-            subscriptionStatusFilter &&
-            a.subscriptionStatus !== subscriptionStatusFilter
-          ) {
-            return false;
-          }
-
-          const listingsFilter =
-            document.getElementById("listingsFilter")?.value || "";
-          if (listingsFilter) {
-            const n = a.activeListings || 0;
-            if (listingsFilter === "0-10" && (n < 1 || n > 10)) return false;
-            if (listingsFilter === "11-50" && (n < 11 || n > 50)) return false;
-            if (listingsFilter === "51-100" && (n < 51 || n > 100))
-              return false;
-            if (listingsFilter === "100+" && n <= 100) return false;
-          }
-
-          const establishedFilter =
-            document.getElementById("establishedFilter")?.value || "";
-          if (establishedFilter) {
-            const y = parseInt((a.establishedDate || "").slice(0, 4), 10);
-            if (!isNaN(y)) {
-              if (establishedFilter === "before-2000" && y >= 2000)
-                return false;
-              if (
-                establishedFilter === "2000-2010" &&
-                (y < 2000 || y > 2010)
-              )
-                return false;
-              if (
-                establishedFilter === "2010-2020" &&
-                (y < 2010 || y > 2020)
-              )
-                return false;
-              if (establishedFilter === "2020+" && y < 2020) return false;
-            }
-          }
-
-          const reviewsFilter =
-            document.getElementById("reviewsFilter")?.value || "";
-          if (reviewsFilter) {
-            const rc = a.reviewCount || 0;
-            if (reviewsFilter === "50+" && rc < 50) return false;
-            if (reviewsFilter === "20-50" && (rc < 20 || rc > 50))
-              return false;
-            if (reviewsFilter === "under-20" && rc >= 20) return false;
-          }
-
+      function applyFilters() {
+        const st=getSel("fStatus"), pl=getSel("fPlan"), sa=getSel("fServiceArea"), lg=getSel("fLanguage"), sp=getSel("fSpecialism");
+        const lF=$("fLicFrom").value, lT=$("fLicTo").value, lP=$("fLicPreset").value;
+        const rrMin=$("fRrMin").value, rrMax=$("fRrMax").value, rt=$("fRespTime").value;
+        const up=$("fUnpaid").value;
+        const vMin=$("fVioMin").value, vMax=$("fVioMax").value, vP=$("fVioPreset").value;
+        const liMin=$("fListMin").value, liMax=$("fListMax").value;
+        const ap=$("fAppraisal").value, bMin=$("fBudgetMin").value, bMax=$("fBudgetMax").value;
+        const respHours = (s) => { const m=String(s).match(/(\d+(?:\.\d+)?)/); return m ? parseFloat(m[1]) : null; };
+        const today = new Date();
+        filtered = agents.filter(a=>{
+          if (st.length && !st.includes(a.status)) return false;
+          if (pl.length && !pl.includes(a.plan)) return false;
+          if (sa.length && !sa.some(c=>a.targetCities.includes(c))) return false;
+          if (lg.length && !lg.some(l=>a.languages.includes(l))) return false;
+          if (sp.length && !sp.some(s=>a.specServices.includes(s))) return false;
+          if (lF && new Date(a.licExpiry) < new Date(lF)) return false;
+          if (lT && new Date(a.licExpiry) > new Date(lT)) return false;
+          if (lP === "expired" && new Date(a.licExpiry) >= today) return false;
+          if (lP === "30d") { const d = (new Date(a.licExpiry)-today)/(1000*60*60*24); if (d<0||d>30) return false; }
+          if (lP === "60d") { const d = (new Date(a.licExpiry)-today)/(1000*60*60*24); if (d<0||d>60) return false; }
+          if (lP === "90d") { const d = (new Date(a.licExpiry)-today)/(1000*60*60*24); if (d<0||d>90) return false; }
+          if (rrMin!=="" && a.responseRate < +rrMin) return false;
+          if (rrMax!=="" && a.responseRate > +rrMax) return false;
+          if (rt) { const h=respHours(a.avgRespTime); if (h===null) return false; if (rt==="2" && h>2) return false; if (rt==="24" && h>24) return false; if (rt==="over" && h<=24) return false; }
+          if (up==="Has Outstanding Balance" && a.outstanding<=0) return false;
+          if (up==="Overdue" && a.paymentStatus!=="Overdue") return false;
+          if (up==="No Issues" && (a.outstanding>0 || a.paymentStatus==="Overdue")) return false;
+          if (vMin!=="" && a.totalReports < +vMin) return false;
+          if (vMax!=="" && a.totalReports > +vMax) return false;
+          if (vP==="0" && a.totalReports!==0) return false;
+          if (vP==="1-2" && (a.totalReports<1 || a.totalReports>2)) return false;
+          if (vP==="3-5" && (a.totalReports<3 || a.totalReports>5)) return false;
+          if (vP==="5+" && a.totalReports<5) return false;
+          if (liMin!=="" && a.activeListings < +liMin) return false;
+          if (liMax!=="" && a.activeListings > +liMax) return false;
+          if (ap==="Participating" && a.appraisalBudget<=0) return false;
+          if (ap==="Not Participating" && a.appraisalBudget>0) return false;
+          if (bMin!=="" && a.appraisalRemaining < +bMin) return false;
+          if (bMax!=="" && a.appraisalRemaining > +bMax) return false;
           return true;
-        }).sort(_agentSort);
-      }
-
-      function _agentSort(x, y) {
-        const sortBy =
-          document.getElementById("sortBy")?.value || "rating-desc";
-        const sorters = {
-          "rating-desc": (a, b) => (b.averageRating || 0) - (a.averageRating || 0),
-          "sales-desc": (a, b) =>
-            (b.salesLast12Months || 0) - (a.salesLast12Months || 0),
-          "listings-desc": (a, b) =>
-            (b.activeListings || 0) - (a.activeListings || 0),
-          "reviews-desc": (a, b) => (b.reviewCount || 0) - (a.reviewCount || 0),
-          "agency-asc": (a, b) =>
-            (a.agencyName || "").localeCompare(b.agencyName || ""),
-          "established-desc": (a, b) =>
-            (b.establishedDate || "").localeCompare(a.establishedDate || ""),
-        };
-        return (sorters[sortBy] || sorters["rating-desc"])(x, y);
-      }
-
-      function renderAgencyTable() {
-        const body = document.getElementById("agencyTableBody");
-        const empty = document.getElementById("agencyEmpty");
-        body.innerHTML = "";
-        const filtered = applyFilters(agents);
-        if (!filtered.length) {
-          empty.style.display = "block";
-          return;
-        }
-        empty.style.display = "none";
-
-        filtered.forEach((a) => {
-          const tr = document.createElement("tr");
-          if (a.id === selectedId) {
-            tr.classList.add("row-selected");
-          }
-          tr.innerHTML = `
-            <td>
-              <div style="font-weight:600;">${a.agencyName}</div>
-              <div style="font-size:10px;color:#7c6a55;">${
-                a.representativeName || ""
-              }</div>
-            </td>
-            <td>${
-              a.serviceAreas && a.serviceAreas.length ? a.serviceAreas[0] : "-"
-            }</td>
-            <td>${a.establishedDate || "-"}</td>
-            <td>${a.headOfficeAddress || "-"}</td>
-            <td>
-              <span class="status-pill ${badgeClass(a.badge)}">${badgeLabel(
-                a.badge,
-              )}</span>
-            </td>
-            <td>${a.averageRating.toFixed(1)}★</td>
-            <td>${a.totalReviews}</td>
-            <td>${a.salesLast12Months}</td>
-            <td>${a.activeListings}</td>
-            <td>${a.totalMembersCount ?? "-"}</td>
-            <td>${a.subscriptionPlan || "-"}</td>
-            <td>
-              <button
-                type="button"
-                class="btn btn-ghost btn-sm"
-                onclick="event.stopPropagation(); openChatForAgent(${a.id});"
-              >
-                Chat
-              </button>
-            </td>
-          `;
-          tr.addEventListener("click", () => openDetail(a.id));
-          body.appendChild(tr);
         });
+        renderList();
       }
 
-      function renderChips(list, containerId) {
-        const container = document.getElementById(containerId);
-        if (!list || !list.length) {
-          container.textContent = "–";
-          return;
-        }
-        container.innerHTML = list
-          .map((item) => `<span class="tag">${item}</span>`)
-          .join(" ");
+      function resetFilters() {
+        ["fStatus","fPlan","fServiceArea","fLanguage","fSpecialism"].forEach(id=>{Array.from($(id).options).forEach(o=>o.selected=false);});
+        ["fLicFrom","fLicTo","fRrMin","fRrMax","fVioMin","fVioMax","fListMin","fListMax","fBudgetMin","fBudgetMax"].forEach(id=>$(id).value="");
+        ["fLicPreset","fRespTime","fVioPreset"].forEach(id=>$(id).value="");
+        $("fUnpaid").value="All"; $("fAppraisal").value="All";
+        filtered = agents.slice();
+        renderList();
       }
 
-      function renderBranches(branches) {
-        const container = document.getElementById("branchesContainer");
-        if (!branches || !branches.length) {
-          container.textContent = "No branches registered.";
-          return;
+      function vField(value, field, type="text", options=null) {
+        if (!editMode) {
+          if (type === "array") return Array.isArray(value)&&value.length ? value.map(v=>`<span class="chip">${esc(v)}</span>`).join(" ") : "—";
+          return esc(value) || "—";
         }
-        container.innerHTML = branches
-          .map(
-            (b) =>
-              `<div class="field-value muted">• ${b.name} – ${b.address}</div>`,
-          )
-          .join("");
+        if (type === "select") {
+          const opts = options.map(o => `<option value="${escAttr(o)}" ${o===value?"selected":""}>${esc(o)}</option>`).join("");
+          return `<select class="edit-input" data-field="${field}">${opts}</select>`;
+        }
+        if (type === "textarea") return `<textarea class="edit-input" data-field="${field}">${esc(value)}</textarea>`;
+        if (type === "array") return `<input class="edit-input" type="text" value="${escAttr(Array.isArray(value)?value.join(", "):value)}" data-field="${field}" data-type="array" placeholder="Comma-separated">`;
+        if (type === "number") return `<input class="edit-input" type="number" value="${escAttr(value)}" data-field="${field}" data-type="num">`;
+        return `<input class="edit-input" type="text" value="${escAttr(value)}" data-field="${field}">`;
+      }
+      function kv(label, valHtml) { return `<div class="kv"><span class="kv-label">${label}</span><span class="kv-value">${valHtml}</span></div>`; }
+      function kvFull(label, valHtml) { return `<div class="kv kv-full"><span class="kv-label">${label}</span><span class="kv-value">${valHtml}</span></div>`; }
+
+      function renderEditableSections(a) {
+        $("dBasicGrid").innerHTML = [
+          kv("User ID (Auto-generated)", esc(a.id)),
+          kv("Registration / First Login", esc(a.regDate)),
+          kv("Logo Image", editMode ? vField(a.logo, "logo") : (avatarImg(a.company, 48, 10) + (a.logo ? `<span style="margin-left:10px;color:var(--text-muted);font-size:11px">${esc(a.logo)}</span>` : ""))),
+          kv("Company Name / Trade Name", vField(a.company, "company")),
+          kv("Company Name (Katakana)", vField(a.companyKata, "companyKata")),
+          kv("Invoice Registration Number", vField(a.invoiceNo, "invoiceNo")),
+          kv("Establishment Date", vField(a.establishment, "establishment")),
+          kv("Representative Name", vField(a.repName, "repName")),
+          kvFull("Business Description / Profile / Strengths", vField(a.bizDesc, "bizDesc", editMode?"textarea":"text")),
+          kvFull("Website URL", editMode ? vField(a.website, "website") : (a.website ? `<a href="${esc(a.website)}" target="_blank" rel="noopener">${esc(a.website)}</a>` : "—")),
+          kvFull("Withdrawal Date & Reason", esc(a.withdrawal) || "—"),
+        ].join("");
+
+        $("dContactGrid").innerHTML = [
+          kv("Operational Email Address", vField(a.opEmail, "opEmail")),
+          kv("Inquiry Email — Main", vField(a.inqEmail, "inqEmail")),
+          kv("Inquiry Email — CC", vField(a.inqEmailCc, "inqEmailCc")),
+          kv("Representative Phone Number", vField(a.repPhone, "repPhone")),
+          kv("Public Phone Number", vField(a.pubPhone, "pubPhone")),
+          kv("Registration / First Login", esc(a.regDate)),
+        ].join("");
+
+        $("dOpsGrid").innerHTML = [
+          kv("Business Hours", vField(a.bizHours, "bizHours")),
+          kv("Regular Holidays", vField(a.holidays, "holidays")),
+          kv("Average Response Time (min)", vField(a.declaredResp, "declaredResp", "number")),
+          kvFull("Specialized Services", vField(a.specServices, "specServices", "array")),
+        ].join("");
+
+        $("dServiceArea").innerHTML = `<span class="kv-label">Target Cities</span><span class="kv-value">${vField(a.targetCities, "targetCities", "array")}</span>`;
+        $("dLanguagesBox").innerHTML = `<span class="kv-label">Supported Languages</span><span class="kv-value">${vField(a.languages, "languages", "array")}</span>`;
+
+        $("dNotifGrid").innerHTML = [
+          kv("Quiet Hours — Start", vField(a.quietStart, "quietStart")),
+          kv("Quiet Hours — End", vField(a.quietEnd, "quietEnd")),
+          kv("Quiet Hours — Timezone", vField(a.quietTz, "quietTz")),
+        ].join("");
       }
 
-      function renderMembers(members) {
-        const body = document.getElementById("membersTableBody");
-        body.innerHTML = "";
-        if (!members || !members.length) {
-          const tr = document.createElement("tr");
-          tr.innerHTML =
-            '<td colspan="4" style="font-size:11px;color:#7c6a55;">No team member details available.</td>';
-          body.appendChild(tr);
-          return;
-        }
-        members.forEach((m) => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${m.name}</td>
-            <td>${m.age ?? "-"}</td>
-            <td>${m.phone || "-"}</td>
-            <td>${m.role || "-"}</td>
-          `;
-          body.appendChild(tr);
+      function showDetail(id) {
+        const a = agents.find(x=>x.id===id); if (!a) return;
+        currentAgent = a;
+        originalAgent = JSON.parse(JSON.stringify(a));
+        editMode = false;
+        renderDetail();
+        $("listView").classList.add("hidden"); $("detailView").classList.remove("hidden"); window.scrollTo(0,0);
+      }
+
+      function renderDetail() {
+        const a = currentAgent; if (!a) return;
+        $("toolbarView").classList.toggle("hidden", editMode);
+        $("toolbarEdit").classList.toggle("hidden", !editMode);
+        $("modeIndicator").classList.toggle("edit", editMode);
+        $("modeLabel").textContent = editMode ? "Edit mode" : "View mode";
+
+        $("dAvatar").textContent = initials(a.company);
+        $("dName").textContent = a.company;
+        $("dMetaId").textContent = a.id; $("dMetaPlan").innerHTML = badgePlan(a.plan); $("dMetaStatus").innerHTML = badgeStatus(a.status);
+
+        $("dTotalLogins").textContent = fmtNum(a.totalLogins); $("dLastLogin").textContent = a.lastLogin;
+        $("dAvgSession").textContent = a.avgSession; $("dActiveListings").textContent = a.activeListings;
+        $("dSavedProps").textContent = a.savedProps; $("dInqRecv30").textContent = a.inqRecv30;
+        $("dPropsInq30").textContent = a.propsInq30; $("dClosed30").textContent = a.closed30;
+        $("dAppraisalReq30").textContent = a.apprReq30; $("dAvgRespTime").textContent = a.avgRespTime;
+
+        renderEditableSections(a);
+
+        $("dRating").innerHTML = a.rating ? `<span class="star-display">${stars(a.rating)}</span> <strong>${a.rating}</strong> / 5.0` : "—";
+        $("dReviewCount").textContent = a.reviewCount; $("dResponseRate").textContent = a.responseRate.toFixed(1) + "%";
+        $("dAvgRespTime2").textContent = a.avgRespTime; $("dAvgListings90").textContent = a.avgListings90;
+        $("dInq90").textContent = a.inq90; $("dClosings90").textContent = a.closings90;
+        $("dTxnVolume").textContent = fmtYen(a.txnVolume); $("dAvgClosingPrice").textContent = fmtYen(a.avgClosingPrice);
+        const maxRev = Math.max(...a.reviewDist, 1);
+        $("dReviewDist").innerHTML = [5,4,3,2,1].map(s=>{
+          const c = a.reviewDist[s-1];
+          return `<div class="rating-bar"><span class="rating-bar-label">${s}★</span><div class="rating-bar-track"><div class="rating-bar-fill" style="width:${(c/maxRev)*100}%"></div></div><span class="rating-bar-count">${c}</span></div>`;
+        }).join("");
+
+        $("dBadges").innerHTML = a.badges.length ? a.badges.map(b=>`<span class="chip">${esc(b)}</span>`).join("") : '<em style="color:var(--text-muted)">None</em>';
+        $("dRemoveBadges").innerHTML = a.badges.length
+          ? a.badges.map((b,i)=>`<button class="btn btn-sm" type="button" onclick="removeBadge(${i})">Remove ${esc(b)}</button>`).join("")
+          : '<em style="color:var(--text-muted);font-size:12px">No badges to remove.</em>';
+
+        $("dStaffCount").textContent = a.staffCount;
+        $("dStaffList").innerHTML = a.staff.length
+          ? a.staff.map(s=>`<tr><td>${avatarImg(s.name, 32, 8)}</td><td>${esc(s.name)}</td><td>${esc(s.role)}</td><td>${esc(s.bio)||"—"}</td><td>${esc(s.hours)||"—"}</td></tr>`).join("")
+          : '<tr><td colspan="5" style="color:var(--text-muted)"><em>No staff registered.</em></td></tr>';
+
+        $("dLicRep").textContent = a.licRep; $("dLicNo").textContent = a.licNo;
+        $("dLicExpiry").innerHTML = licExpiryBadge(a.licExpiry);
+        $("dReAssoc").textContent = a.reAssoc || "—"; $("dGuarAssoc").textContent = a.guarAssoc || "—";
+        $("dHqAddress").textContent = a.hqAddress;
+        $("dLicHistory").innerHTML = a.licHistory.length
+          ? a.licHistory.map(h=>`<tr><td>${esc(h.date)}</td><td>${esc(h.old)}</td><td>${esc(h.new)}</td></tr>`).join("")
+          : '<tr><td colspan="3" style="color:var(--text-muted)"><em>No renewals.</em></td></tr>';
+
+        $("dBranches").innerHTML = a.branches.length
+          ? a.branches.map(b=>`<tr><td>${esc(b.name)}</td><td>${esc(b.addr)}</td></tr>`).join("")
+          : '<tr><td colspan="2" style="color:var(--text-muted)"><em>No branches.</em></td></tr>';
+
+        $("dActiveList").innerHTML = a.activeList.length
+          ? a.activeList.map(p=>`<tr><td>${esc(p.title)}</td><td>${esc(p.loc)}</td><td>${fmtYen(p.price)}</td><td>${esc(p.cat)}</td><td>${badgeListStatus(p.status)}</td><td>${esc(p.br)}</td><td>${p.floor}</td><td>${p.age}</td><td>${p.dom}</td><td>${fmtNum(p.imp)}</td><td>${fmtNum(p.cl)}</td><td>${p.ctr}</td><td>${p.keep}</td><td>${p.cv}</td><td>${p.cvr}</td></tr>`).join("")
+          : '<tr><td colspan="15" style="color:var(--text-muted)"><em>No active listings.</em></td></tr>';
+
+        $("dCount12m").textContent = a.count12m; $("dCountAll").textContent = a.countAll;
+        $("dVol12m").textContent = fmtYen(a.vol12m); $("dVolAll").textContent = fmtYen(a.volAll);
+        $("dCompletedList").innerHTML = a.completedList.length
+          ? a.completedList.map(p=>`<tr><td>${esc(p.title)}</td><td>${esc(p.loc)}</td><td>${fmtYen(p.price)}</td><td>${esc(p.cat)}</td><td>${badgeListStatus(p.status)}</td><td>${esc(p.br)}</td><td>${p.floor}</td><td>${p.age}</td><td>${p.dom}</td><td>${fmtNum(p.imp)}</td><td>${fmtNum(p.cl)}</td><td>${p.ctr}</td><td>${p.keep}</td><td>${p.cv}</td><td>${p.cvr}</td></tr>`).join("")
+          : '<tr><td colspan="15" style="color:var(--text-muted)"><em>No completed transactions.</em></td></tr>';
+        $("dClosingNotif").innerHTML = a.closingNotif.length
+          ? a.closingNotif.map(c=>`<tr><td>${esc(c.prop)}</td><td>${esc(c.agent)}</td><td>${esc(c.date)}</td><td><span class="badge badge-pending">${esc(c.status)}</span></td></tr>`).join("")
+          : '<tr><td colspan="4" style="color:var(--text-muted)"><em>No closing notifications (Phase 2).</em></td></tr>';
+
+        $("dPlanName").innerHTML = badgePlan(a.plan); $("dPlanStatus").innerHTML = badgePlanStatus(a.planStatus);
+        $("dContractStart").textContent = a.contractStart;
+        $("dApprBudget").textContent = fmtYen(a.appraisalBudget); $("dApprRemaining").textContent = fmtYen(a.appraisalRemaining);
+        $("dLtv").textContent = fmtYen(a.ltv); $("dOutstanding").textContent = fmtYen(a.outstanding);
+        $("dPaymentStatus").innerHTML = badgePaid(a.paymentStatus);
+        $("dPlanHistory").innerHTML = a.planHistory.length
+          ? a.planHistory.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.start)}</td><td>${esc(p.end)}</td><td>${fmtYen(p.amount)}</td><td>${badgePlanStatus(p.status)}</td></tr>`).join("")
+          : '<tr><td colspan="5" style="color:var(--text-muted)"><em>No plan history.</em></td></tr>';
+        $("dTxnHistory").innerHTML = a.txnHistory.length
+          ? a.txnHistory.map(t=>`<tr><td>${esc(t.date)}</td><td>${esc(t.type)}</td><td>${esc(t.desc)}</td><td>${fmtYen(t.amount)}</td><td>${badgePaid(t.status)}</td></tr>`).join("")
+          : '<tr><td colspan="5" style="color:var(--text-muted)"><em>No transactions.</em></td></tr>';
+        $("dDelinquency").innerHTML = a.delinquency.length
+          ? a.delinquency.map(d=>`<tr><td>${esc(d.date)}</td><td>${fmtYen(d.amount)}</td><td>${d.days}</td><td>${esc(d.resolution)||"—"}</td></tr>`).join("")
+          : '<tr><td colspan="4" style="color:var(--text-muted)"><em>No delinquency.</em></td></tr>';
+        $("dRefundHistory").innerHTML = a.refundHistory.length
+          ? a.refundHistory.map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.item)}</td><td>${fmtYen(r.amount)}</td><td>${esc(r.reason)}</td></tr>`).join("")
+          : '<tr><td colspan="4" style="color:var(--text-muted)"><em>No refunds.</em></td></tr>';
+
+        $("dInquiries").innerHTML = a.inquiries.length
+          ? a.inquiries.map(i=>`<tr><td>${esc(i.prop)}</td><td>${esc(i.at)}</td><td>${esc(i.uid)}</td><td>${badgeMsgStatus(i.status)}</td></tr>`).join("")
+          : '<tr><td colspan="4" style="color:var(--text-muted)"><em>No inquiries received.</em></td></tr>';
+
+        $("dLockStatus").innerHTML = badgeLock(a.lockStatus); $("d2FA").innerHTML = badge2FA(a.twoFa);
+        $("dLastPwd").textContent = a.lastPwd; $("dLastDevice").textContent = a.lastDevice;
+        $("dFailedLogins").textContent = a.failedLogins;
+        $("dLoginHistory").innerHTML = a.loginHistory.length
+          ? a.loginHistory.map(l=>`<tr><td>${esc(l.at)}</td><td>${esc(l.device)}</td><td>${esc(l.ip)}</td><td>${esc(l.country)}</td></tr>`).join("")
+          : '<tr><td colspan="4" style="color:var(--text-muted)"><em>No login history.</em></td></tr>';
+
+        $("dSuspCount").textContent = a.suspCount; $("dValidReports").textContent = a.validReports;
+        $("dInvalidReports").textContent = a.invalidReports; $("dTotalReports").textContent = a.totalReports;
+        $("dBlockedCount").textContent = a.blockedCount;
+        $("dReportHistory").innerHTML = a.reportHistory.length
+          ? a.reportHistory.map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.content)}</td><td>${badgeReport(r.status)}</td></tr>`).join("")
+          : '<tr><td colspan="3" style="color:var(--text-muted)"><em>No reports.</em></td></tr>';
+        $("dViolations").innerHTML = a.violations.length
+          ? a.violations.map(v=>`<tr><td>${esc(v.date)}</td><td>${esc(v.type)}</td><td>${esc(v.action)}</td><td>${esc(v.duration)}</td><td>${esc(v.lifted)||"—"}</td></tr>`).join("")
+          : '<tr><td colspan="5" style="color:var(--text-muted)"><em>No violations.</em></td></tr>';
+        $("dBlockHistory").innerHTML = a.blockHistory.length
+          ? a.blockHistory.map(b=>`<tr><td>${esc(b.uid)}</td><td>${esc(b.at)}</td></tr>`).join("")
+          : '<tr><td colspan="2" style="color:var(--text-muted)"><em>No blocks.</em></td></tr>';
+      }
+
+      function showList() {
+        if (editMode && !confirm("Discard unsaved changes?")) return;
+        editMode = false;
+        $("detailView").classList.add("hidden"); $("listView").classList.remove("hidden");
+      }
+      function enterEditMode() { editMode = true; renderDetail(); }
+      function cancelEdit() {
+        if (!confirm("Discard changes and return to view mode?")) return;
+        Object.assign(currentAgent, JSON.parse(JSON.stringify(originalAgent)));
+        editMode = false;
+        renderDetail();
+      }
+      function saveChanges() {
+        document.querySelectorAll("[data-field]").forEach(el => {
+          const f = el.dataset.field;
+          const t = el.dataset.type;
+          if (t === "num") currentAgent[f] = el.value === "" ? 0 : Number(el.value);
+          else if (t === "array") currentAgent[f] = el.value.split(",").map(s=>s.trim()).filter(Boolean);
+          else currentAgent[f] = el.value;
         });
+        originalAgent = JSON.parse(JSON.stringify(currentAgent));
+        editMode = false;
+        renderDetail();
+        renderList();
+        alert("Changes saved (demo).");
+      }
+      function suspendAccount() {
+        if (!currentAgent) return;
+        const next = currentAgent.status === "Suspended" ? "Active" : "Suspended";
+        if (!confirm(`${next === "Suspended" ? "Suspend" : "Re-activate"} ${currentAgent.id} (${currentAgent.company})?`)) return;
+        currentAgent.status = next; originalAgent.status = next;
+        renderDetail(); renderList();
+      }
+      function deleteAccount() {
+        if (!currentAgent) return;
+        if (!confirm(`PERMANENTLY delete ${currentAgent.id} (${currentAgent.company})? This cannot be undone.`)) return;
+        const idx = agents.findIndex(a => a.id === currentAgent.id);
+        if (idx >= 0) agents.splice(idx, 1);
+        filtered = filtered.filter(a => a.id !== currentAgent.id);
+        showList(); renderList();
+        alert("Agency deleted (demo).");
+      }
+      function saveAsLead() {
+        if (!currentAgent) return;
+        alert(`★ Saved as lead: ${currentAgent.company} (${currentAgent.id})\nLead group picker would open here.`);
+      }
+      function openChat(id) {
+        const a = agents.find(x=>x.id===id); if (!a) return;
+        alert(`Open chat with ${a.company} (${id}) — would navigate to Messages module.`);
+      }
+      function resetPwd() {
+        if (!currentAgent) return;
+        $("pwdSubject").textContent = `${currentAgent.id} · ${currentAgent.company} (${currentAgent.opEmail || currentAgent.inqEmail || ''})`;
+        $("pwdNew").value = ""; $("pwdConfirm").value = "";
+        $("pwdError").classList.remove("show");
+        $("pwdResetModal").classList.add("open");
+        setTimeout(()=>$("pwdNew").focus(), 50);
+      }
+      function closePwdResetModal() { $("pwdResetModal").classList.remove("open"); }
+      function submitPwdReset() {
+        const np = $("pwdNew").value, cp = $("pwdConfirm").value;
+        const err = $("pwdError");
+        if (!np || !cp) { err.textContent = "Both fields are required."; err.classList.add("show"); return; }
+        if (np.length < 8) { err.textContent = "Password must be at least 8 characters."; err.classList.add("show"); return; }
+        if (np !== cp) { err.textContent = "Passwords do not match."; err.classList.add("show"); return; }
+        closePwdResetModal();
+        alert(`Password reset for ${currentAgent.company}.\nAction recorded in Audit Logs.`);
+      }
+      function exportCsv() { alert(`Export ${filtered.length} filtered agent records as CSV (demo)`); }
+      function grantBadge() {
+        if (!currentAgent) return;
+        const b = $("grantBadgeSel").value;
+        if (currentAgent.badges.includes(b)) { alert(`${b} already granted.`); return; }
+        if (confirm(`Grant "${b}" to ${currentAgent.company}?`)) { currentAgent.badges.push(b); originalAgent.badges = [...currentAgent.badges]; renderDetail(); renderList(); }
+      }
+      function removeBadge(idx) {
+        if (!currentAgent) return;
+        const b = currentAgent.badges[idx];
+        if (confirm(`Remove "${b}" from ${currentAgent.company}?`)) { currentAgent.badges.splice(idx,1); originalAgent.badges = [...currentAgent.badges]; renderDetail(); renderList(); }
       }
 
-      function renderPropertyList(properties) {
-        const body = document.getElementById("propertyTableBody");
-        body.innerHTML = "";
-        if (!properties || !properties.length) {
-          const tr = document.createElement("tr");
-          tr.innerHTML =
-            '<td colspan="9" style="font-size:11px;color:#7c6a55;">No properties configured for this agency.</td>';
-          body.appendChild(tr);
-          return;
-        }
-        properties.forEach((p) => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${p.title}</td>
-            <td>${p.location}</td>
-            <td>${p.priceDisplay}</td>
-            <td>${p.type}</td>
-            <td>${p.status}</td>
-            <td>${p.bedrooms ?? "-"}</td>
-            <td>${p.floorArea || "-"}</td>
-            <td>${p.yearBuilt || "-"}</td>
-            <td>${p.daysOnPlatform ?? "-"}</td>
-          `;
-          body.appendChild(tr);
-        });
-      }
-
-      function openDetail(id) {
-        const listView = document.getElementById("listView");
-        const detailView = document.getElementById("detailView");
-        if (listView && detailView) {
-          listView.style.display = "none";
-          detailView.style.display = "block";
-        }
-        selectAgency(id);
-      }
-
-      function selectAgency(id) {
-        selectedId = id;
-        UX.markClean();
-        const a = agents.find((x) => x.id === id);
-        const statusChip = document.getElementById("selectionStatus");
-        const heroName = document.getElementById("heroName");
-        const heroSubline = document.getElementById("heroSubline");
-        const heroAvatar = document.getElementById("heroAvatar");
-        if (!a) {
-          statusChip.textContent = "No agency selected";
-          if (heroName) heroName.textContent = "Select an agency";
-          if (heroSubline) heroSubline.textContent = "—";
-          if (heroAvatar) heroAvatar.textContent = "AG";
-          document.getElementById("detailAgencyName").textContent = "–";
-          document.getElementById("detailEstablished").textContent = "–";
-          document.getElementById("detailDescription").textContent =
-            "Select an agency from the left to view full profile.";
-          document.getElementById("detailAvgRating").textContent = "–";
-          document.getElementById("detailTotalReviews").textContent = "–";
-          document.getElementById("detailSales12m").textContent = "–";
-          document.getElementById("detailTotalSales").textContent = "–";
-          document.getElementById("detailActiveListings").textContent = "–";
-          document.getElementById("detailBusinessHours").textContent = "–";
-          document.getElementById("detailHolidays").textContent = "–";
-          document.getElementById("detailResponseTime").textContent = "–";
-          document.getElementById("detailBadge").textContent = "No badge";
-          renderChips([], "specialtiesContainer");
-          renderChips([], "serviceAreasContainer");
-          renderBranches([]);
-          renderChips([], "languagesContainer");
-          document.getElementById("detailRepName").textContent = "–";
-          document.getElementById("detailLicense").textContent = "–";
-          document.getElementById("detailHeadOffice").textContent = "–";
-          document.getElementById("detailAssociation").textContent = "–";
-          document.getElementById("detailGuaranty").textContent = "–";
-          document.getElementById("detailWebsite").textContent = "–";
-          document.getElementById("detailMembers").textContent = "–";
-          renderMembers([]);
-          renderPropertyList([]);
-          document.getElementById("detailPlan").textContent = "–";
-          document.getElementById("detailPlanStatus").textContent = "–";
-          document.getElementById("detailPlanSince").textContent = "–";
-          document.getElementById("detailReportsTotal").textContent = "–";
-          document.getElementById("detailReportsDeleted").textContent = "–";
-          document.getElementById("detailReportsEdited").textContent = "–";
-          renderAgencyTable();
-          return;
-        }
-
-        statusChip.textContent = a.badge || a.subscriptionPlan || "Active";
-        if (heroName) heroName.textContent = a.agencyName;
-        if (heroSubline) {
-          const areas = (a.serviceAreas || []).slice(0, 2).join(", ") || "—";
-          heroSubline.textContent = areas;
-        }
-        if (heroAvatar) {
-          heroAvatar.textContent = (a.agencyName || "AG")
-            .split(/\s+/)
-            .filter(Boolean)
-            .map((w) => w[0])
-            .join("")
-            .slice(0, 2)
-            .toUpperCase();
-        }
-        document.getElementById("detailAgencyName").textContent = a.agencyName;
-        document.getElementById("detailEstablished").textContent =
-          a.establishedDate || "–";
-        document.getElementById("detailDescription").textContent =
-          a.description || "–";
-        document.getElementById("detailAvgRating").textContent =
-          `${a.averageRating.toFixed(1)}★`;
-        document.getElementById("detailTotalReviews").textContent =
-          a.totalReviews;
-        document.getElementById("detailSales12m").textContent =
-          a.salesLast12Months;
-        document.getElementById("detailTotalSales").textContent =
-          a.totalHistoricalSales;
-        document.getElementById("detailActiveListings").textContent =
-          a.activeListings;
-        document.getElementById("detailBusinessHours").textContent =
-          a.businessHours || "–";
-        document.getElementById("detailHolidays").textContent =
-          a.regularHolidays || "–";
-        document.getElementById("detailResponseTime").textContent =
-          a.usualResponseTime || "–";
-
-        const badgeEl = document.getElementById("detailBadge");
-        badgeEl.textContent = badgeLabel(a.badge);
-        badgeEl.className = `field-value status-pill ${badgeClass(a.badge)}`;
-        const badgeSelect = document.getElementById("badgeSelect");
-        if (badgeSelect) {
-          badgeSelect.value = a.badge || "TOP Agent";
-        }
-
-        renderChips(a.specialties || [], "specialtiesContainer");
-        renderChips(a.serviceAreas || [], "serviceAreasContainer");
-        renderBranches(a.branches || []);
-        renderChips(a.languages || [], "languagesContainer");
-
-        document.getElementById("detailRepName").textContent =
-          a.representativeName || "–";
-        document.getElementById("detailLicense").textContent =
-          a.licenseNumber || "–";
-        document.getElementById("detailHeadOffice").textContent =
-          a.headOfficeAddress || "–";
-        document.getElementById("detailAssociation").textContent =
-          a.realEstateAssociation || "–";
-        document.getElementById("detailGuaranty").textContent =
-          a.guarantyAssociation || "–";
-
-        const websiteEl = document.getElementById("detailWebsite");
-        if (a.websiteUrl) {
-          websiteEl.innerHTML = `<a href="${a.websiteUrl}" target="_blank" rel="noreferrer" style="color:#2f5aa8;text-decoration:underline;">${a.websiteUrl}</a>`;
-        } else {
-          websiteEl.textContent = "–";
-        }
-
-        document.getElementById("detailMembers").textContent =
-          a.totalMembersCount ?? "–";
-        renderMembers(a.teamMembers || []);
-        renderPropertyList(a.propertyList || []);
-
-        document.getElementById("detailPlan").textContent =
-          a.subscriptionPlan || "–";
-        document.getElementById("detailPlanStatus").textContent =
-          a.subscriptionStatus || "–";
-        document.getElementById("detailPlanSince").textContent =
-          a.subscriptionSince || "–";
-        document.getElementById("detailReportsTotal").textContent =
-          a.adReportsTotal ?? "–";
-        document.getElementById("detailReportsDeleted").textContent =
-          a.adReportsDeleted ?? "–";
-        document.getElementById("detailReportsEdited").textContent =
-          a.adReportsEdited ?? "–";
-
-        const logoBox = document.getElementById("agencyLogoBox");
-        if (logoBox) {
-          logoBox.textContent = a.agencyInitials || "AG";
-        }
-
-        renderAgencyTable();
-      }
-
-      function assignBadge() {
-        if (!selectedId) {
-          Toast.err("Select an agency first."); 
-          return;
-        }
-        const a = agents.find((x) => x.id === selectedId);
-        if (!a) return;
-        const badgeSelect = document.getElementById("badgeSelect");
-        if (!badgeSelect) return;
-        const value = badgeSelect.value;
-        a.badge = value;
-        selectAgency(a.id);
-        renderMetrics();
-        Toast.ok(`Badge "${value}" assigned to ${a.agencyName}`);
-      }
-
-      function removeBadge() {
-        if (!selectedId) {
-          alert("Select an agency first.");
-          return;
-        }
-        const a = agents.find((x) => x.id === selectedId);
-        if (!a) return;
-        if (!a.badge) {
-          Toast.info("This agency has no badge."); 
-          return;
-        }
-        a.badge = null;
-        selectAgency(a.id);
-        renderMetrics();
-        Toast.ok(`Badge removed from ${a.agencyName}`);
-      }
-
-      const LEAD_STORAGE_KEY = "yuushiAdminLeads";
-
-      function getStoredLeads() {
-        try {
-          const raw = window.localStorage.getItem(LEAD_STORAGE_KEY);
-          if (!raw) return [];
-          const parsed = JSON.parse(raw);
-          return Array.isArray(parsed) ? parsed : [];
-        } catch (e) {
-          console.error("Failed to read leads from storage", e);
-          return [];
-        }
-      }
-
-      function saveStoredLeads(list) {
-        try {
-          window.localStorage.setItem(LEAD_STORAGE_KEY, JSON.stringify(list));
-        } catch (e) {
-          console.error("Failed to write leads to storage", e);
-          Toast.err("Unable to save: localStorage blocked.");
-        }
-      }
-
-      function upsertLead(lead) {
-        const list = getStoredLeads();
-        const keyId = String(lead.id);
-        const idx = list.findIndex(
-          (l) =>
-            l && l.entityType === lead.entityType && String(l.id) === keyId,
-        );
-        const now = new Date().toISOString().slice(0, 10);
-        if (idx >= 0) {
-          list[idx] = { ...list[idx], ...lead, updatedDate: now };
-        } else {
-          list.push({ ...lead, createdDate: lead.createdDate || now });
-        }
-        saveStoredLeads(list);
-      }
-
-      function isLead(entityType, id) {
-        const all = getStoredLeads();
-        const keyId = String(id);
-        return all.some(
-          (l) => l && l.entityType === entityType && String(l.id) === keyId,
-        );
-      }
-
-      function updateLeadButtonsForAgent() {
-        const saveBtn = document.getElementById("saveLeadAgentBtn");
-        const unsaveBtn = document.getElementById("unsaveLeadAgentBtn");
-        if (!saveBtn || !unsaveBtn) return;
-        if (!selectedId) {
-          saveBtn.style.display = "inline-flex";
-          unsaveBtn.style.display = "none";
-          return;
-        }
-        if (isLead("agent", selectedId)) {
-          saveBtn.style.display = "none";
-          unsaveBtn.style.display = "inline-flex";
-        } else {
-          saveBtn.style.display = "inline-flex";
-          unsaveBtn.style.display = "none";
-        }
-      }
-
-      function removeLead(entityType, id) {
-        const all = getStoredLeads();
-        const keyId = String(id);
-        const filtered = all.filter(
-          (l) => !(l && l.entityType === entityType && String(l.id) === keyId),
-        );
-        saveStoredLeads(filtered);
-      }
-
-      function saveLeadFromAgent() {
-        if (!selectedId) {
-          Toast.err("Select an agency first."); 
-          return;
-        }
-        const a = agents.find((x) => x.id === selectedId);
-        if (!a) {
-          Toast.err("Agency not found."); 
-          return;
-        }
-
-        const primaryCity =
-          (a.serviceAreas && a.serviceAreas.length ? a.serviceAreas[0] : "") ||
-          "";
-
-        const lead = {
-          id: a.id,
-          entityType: "agent",
-          name: a.agencyName || "",
-          contactName: a.representativeName || "",
-          primaryCity,
-          badge: a.badge || "No badge",
-          subscriptionPlan: a.subscriptionPlan || "",
-          subscriptionStatus: a.subscriptionStatus || "",
-          salesLast12Months: a.salesLast12Months ?? null,
-          activeListings: a.activeListings ?? null,
-          leadStatus: "New",
-          source: "Agent Management",
-        };
-
-        upsertLead(lead);
-        Toast.ok("Saved as lead in admin overview");
-        updateLeadButtonsForAgent();
-      }
-
-      function unsaveLeadFromAgent() {
-        if (!selectedId) {
-          Toast.err("Select an agency first."); 
-          return;
-        }
-        removeLead("agent", selectedId);
-        Toast.ok("Lead removed");
-        updateLeadButtonsForAgent();
-      }
-
-      function openChatForAgent(id) {
-        const a = agents.find((x) => x.id === id);
-        if (!a) {
-          alert("Selected agency not found in current dataset.");
-          return;
-        }
-        const params = new URLSearchParams();
-        params.set("contactType", "agent");
-        params.set("name", a.agencyName || "");
-        params.set("company", a.agencyName || "");
-        window.location.href =
-          "../messagesupport/admin-messages.html?" + params.toString();
-      }
-
-      document.addEventListener("DOMContentLoaded", () => {
-        renderMetrics();
-        renderAgencyTable();
-        selectAgency(null);
-
-        [
-          "searchInput",
-          "badgeFilter",
-          "cityFilter",
-          "ratingFilter",
-          "planFilter",
-          "subscriptionStatusFilter",
-          "listingsFilter",
-          "establishedFilter",
-          "reviewsFilter",
-          "sortBy",
-        ].forEach((id) => {
-          const el = document.getElementById(id);
-          if (!el) return;
-          el.addEventListener("input", renderAgencyTable);
-          el.addEventListener("change", renderAgencyTable);
-        });
-        document
-          .getElementById("resetFiltersBtn")
-          ?.addEventListener("click", () => {
-            [
-              "searchInput",
-              "badgeFilter",
-              "cityFilter",
-              "ratingFilter",
-              "planFilter",
-              "subscriptionStatusFilter",
-              "listingsFilter",
-              "establishedFilter",
-              "reviewsFilter",
-            ].forEach((id) => {
-              const el = document.getElementById(id);
-              if (el) el.value = "";
-            });
-            const sb = document.getElementById("sortBy");
-            if (sb) sb.value = "rating-desc";
-            renderAgencyTable();
-          });
-
-        const backBtn = document.getElementById("backToListBtn");
-        if (backBtn) {
-          backBtn.addEventListener("click", () => {
-            UX.guard(() => {
-              const listView = document.getElementById("listView");
-              const detailView = document.getElementById("detailView");
-              if (listView && detailView) {
-                detailView.style.display = "none";
-                listView.style.display = "block";
-              }
-              selectedId = null;
-              selectAgency(null);
-            });
-          });
-        }
-
-        const assignBtn = document.getElementById("assignBadgeBtn");
-        if (assignBtn) {
-          assignBtn.addEventListener("click", assignBadge);
-        }
-        const removeBtn = document.getElementById("removeBadgeBtn");
-        if (removeBtn) {
-          removeBtn.addEventListener("click", removeBadge);
-        }
-
-        const saveLeadBtn = document.getElementById("saveLeadAgentBtn");
-        if (saveLeadBtn) {
-          saveLeadBtn.addEventListener("click", saveLeadFromAgent);
-        }
-
-        const unsaveLeadBtn = document.getElementById("unsaveLeadAgentBtn");
-        if (unsaveLeadBtn) {
-          unsaveLeadBtn.addEventListener("click", unsaveLeadFromAgent);
-        }
-
-        const params = new URLSearchParams(window.location.search);
-        const from = params.get("from");
-        const leadId = params.get("leadId");
-        if (from === "leads" && leadId) {
-          const match = agents.find((a) => String(a.id) === String(leadId));
-          if (match) {
-            openDetail(match.id);
-          }
-        }
-
-        // Initialize Save/Unsave button state
-        updateLeadButtonsForAgent();
-      });
+      renderList();
     </script>
-  <!-- ─────── UX KIT (toast · confirm · focus trap · dirty guard) ─────── -->
-<style id="uxKitStyle">
-  .ux-toast-wrap{position:fixed;right:18px;bottom:18px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-  .ux-toast{background:#fff;border:1px solid #e5d9c0;border-left:4px solid #c4a25f;border-radius:8px;padding:10px 14px;min-width:240px;max-width:380px;box-shadow:0 4px 16px rgba(0,0,0,.12);font-size:13px;color:#2c1810;display:flex;align-items:flex-start;gap:8px;animation:ux-slide .22s ease;pointer-events:auto}
-  .ux-toast.ok{border-left-color:#2d6a4f}
-  .ux-toast.err{border-left-color:#c41e3a}
-  .ux-toast.info{border-left-color:#1d4e89}
-  .ux-toast .x{margin-left:auto;cursor:pointer;color:#9d8777;background:none;border:none;font-size:14px;padding:0 4px;font-family:inherit}
-  .ux-toast .x:hover{color:#2c1810}
-  @keyframes ux-slide{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
 
-  .ux-modal{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35)}
-  .ux-modal.open{display:flex}
-  .ux-modal-box{background:#fff;border-radius:12px;padding:22px 24px;width:420px;max-width:90vw;box-shadow:0 10px 32px rgba(0,0,0,.22)}
-  .ux-modal-box h3{font-size:15px;font-weight:700;color:#2c1810;margin:0 0 8px}
-  .ux-modal-box p{font-size:13px;color:#6b5c4e;line-height:1.5;margin:0 0 18px;white-space:pre-line}
-  .ux-modal-actions{display:flex;gap:8px;justify-content:flex-end}
-  .ux-btn{padding:7px 16px;border-radius:6px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500;border:1.5px solid #e5d9c0;background:#fff;color:#2c1810}
-  .ux-btn:hover{background:#fdfaf6}
-  .ux-btn.primary{background:#c4a25f;border-color:#c4a25f;color:#fff}
-  .ux-btn.primary:hover{background:#b08d4a}
-  .ux-btn.danger{background:#c41e3a;border-color:#c41e3a;color:#fff}
-  .ux-btn.danger:hover{background:#a51730}
-
-  /* Required-field marker */
-  .ux-req::after, label.req::after, .req::after{content:" *";color:#c41e3a;font-weight:700}
-
-  /* Form section heading */
-  .ux-form-section{margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid #e5d9c0;font-size:11px;font-weight:700;color:#6b5c4e;text-transform:uppercase;letter-spacing:.5px}
-  .ux-form-section:first-child{margin-top:4px}
-
-  /* Inline field validation */
-  .ux-field-error{font-size:11px;color:#c41e3a;margin-top:2px;display:block}
-  .ux-invalid, input.ux-invalid, textarea.ux-invalid, select.ux-invalid{border-color:#c41e3a !important;box-shadow:0 0 0 2px rgba(196,30,58,.12)}
-
-  /* Dirty indicator pill */
-  .ux-dirty-pill{display:none;background:#fff3cd;color:#856404;font-size:11px;font-weight:600;padding:3px 10px;border-radius:10px;margin-left:8px;vertical-align:middle}
-  .ux-dirty .ux-dirty-pill{display:inline-block}
-</style>
-
-<div class="ux-toast-wrap" id="uxToastWrap" role="status" aria-live="polite"></div>
-<div class="ux-modal" id="uxConfirmModal" role="dialog" aria-modal="true" aria-labelledby="uxConfirmTitle">
-  <div class="ux-modal-box">
-    <h3 id="uxConfirmTitle">Confirm</h3>
-    <p id="uxConfirmMsg"></p>
-    <div class="ux-modal-actions">
-      <button type="button" class="ux-btn" id="uxConfirmCancel">Cancel</button>
-      <button type="button" class="ux-btn primary" id="uxConfirmOk">Confirm</button>
+    <!-- Password Reset Modal -->
+    <div id="pwdResetModal" class="modal-backdrop">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 class="modal-title"><i class="fas fa-key"></i> Reset password</h3>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="closePwdResetModal()" aria-label="Close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="warning-banner">
+            <i class="fas fa-triangle-exclamation"></i>
+            <div>
+              <strong>Force-reset password without email verification.</strong><br>
+              The account owner must use the new password to log in next time. This action is recorded in Audit Logs.
+            </div>
+          </div>
+          <div class="kv" style="margin-top:14px"><span class="kv-label">Subject account</span><span class="kv-value" id="pwdSubject">—</span></div>
+          <div class="modal-field"><label class="field-label" for="pwdNew">New password</label><input id="pwdNew" type="password" autocomplete="new-password" placeholder="Min 8 characters" /></div>
+          <div class="modal-field"><label class="field-label" for="pwdConfirm">Confirm new password</label><input id="pwdConfirm" type="password" autocomplete="new-password" /></div>
+          <div class="modal-error" id="pwdError"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" type="button" onclick="closePwdResetModal()">Cancel</button>
+          <button class="btn btn-primary-danger" type="button" onclick="submitPwdReset()"><i class="fas fa-key"></i> Reset password</button>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-
-<script>
-(function(){
-  if (window.UX) return; // idempotent
-  const wrap = document.getElementById('uxToastWrap');
-  const modal = document.getElementById('uxConfirmModal');
-  const titleEl = document.getElementById('uxConfirmTitle');
-  const msgEl = document.getElementById('uxConfirmMsg');
-  const okBtn = document.getElementById('uxConfirmOk');
-  const cancelBtn = document.getElementById('uxConfirmCancel');
-
-  // ──── Toast ────────────────────────────────────────────────────
-  function toast(msg, type){
-    if(!wrap) return;
-    const el = document.createElement('div');
-    el.className = 'ux-toast ' + (type || 'info');
-    const span = document.createElement('span');
-    span.textContent = msg || '';
-    const x = document.createElement('button');
-    x.className = 'x'; x.type = 'button'; x.setAttribute('aria-label','Dismiss');
-    x.textContent = '×';
-    x.addEventListener('click', () => el.remove());
-    el.appendChild(span); el.appendChild(x);
-    wrap.appendChild(el);
-    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 220); }, 3800);
-  }
-  window.Toast = {
-    show: toast,
-    ok:   (m) => toast(m, 'ok'),
-    err:  (m) => toast(m, 'err'),
-    info: (m) => toast(m, 'info'),
-  };
-
-  // ──── Confirm modal ───────────────────────────────────────────
-  let _onOk = null;
-  let _lastFocus = null;
-  function closeConfirm(){
-    modal.classList.remove('open');
-    _onOk = null;
-    if(_lastFocus && _lastFocus.focus) try { _lastFocus.focus(); } catch(e){}
-  }
-  okBtn.addEventListener('click', () => { const cb = _onOk; closeConfirm(); if(cb) cb(); });
-  cancelBtn.addEventListener('click', closeConfirm);
-  modal.addEventListener('click', (e) => { if(e.target === modal) closeConfirm(); });
-
-  function openConfirm(opts){
-    titleEl.textContent  = opts.title   || 'Confirm';
-    msgEl.textContent    = opts.message || 'Are you sure?';
-    okBtn.textContent    = opts.okLabel || 'Confirm';
-    cancelBtn.textContent= opts.cancelLabel || 'Cancel';
-    okBtn.className = 'ux-btn ' + (opts.danger ? 'danger' : 'primary');
-    _onOk = typeof opts.onConfirm === 'function' ? opts.onConfirm : null;
-    _lastFocus = document.activeElement;
-    modal.classList.add('open');
-    setTimeout(() => okBtn.focus(), 40);
-  }
-
-  window.UX = {
-    confirm: openConfirm,
-    toast,
-    // Run action only after confirming if dirty
-    guard(action){
-      if(!window.UX_dirty){ if(typeof action === 'function') action(); return; }
-      openConfirm({
-        title: 'Discard unsaved changes?',
-        message: 'You have edits that have not been saved. Leave anyway?',
-        okLabel: 'Discard',
-        danger: true,
-        onConfirm(){ window.UX_dirty = false; if(typeof action === 'function') action(); }
-      });
-    },
-    markClean(){ window.UX_dirty = false; document.body.classList.remove('ux-dirty'); },
-    markDirty(){ window.UX_dirty = true;  document.body.classList.add('ux-dirty'); },
-  };
-
-  // ──── Esc closes any open modal (built-in + page modals) ──────
-  document.addEventListener('keydown', (e) => {
-    if(e.key !== 'Escape') return;
-    if(modal.classList.contains('open')){ closeConfirm(); return; }
-    document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(m => {
-      const visible = getComputedStyle(m).display !== 'none' || m.classList.contains('show') || m.classList.contains('open');
-      if(!visible) return;
-      m.classList.remove('open','show','active');
-      m.style.display = 'none';
-    });
-  });
-
-  // ──── Backdrop click closes existing page modals ──────────────
-  document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(m => {
-    if(m.__uxBound) return; m.__uxBound = true;
-    m.addEventListener('click', (e) => {
-      if(e.target !== m) return;
-      m.classList.remove('open','show','active');
-      m.style.display = 'none';
-    });
-  });
-
-  // ──── Auto-track dirty on any [data-track-dirty] container ────
-  document.addEventListener('input', (e) => {
-    if(e.target.closest('[data-track-dirty]')) UX.markDirty();
-  });
-  document.addEventListener('change', (e) => {
-    if(e.target.closest('[data-track-dirty]')) UX.markDirty();
-  });
-  window.addEventListener('beforeunload', (e) => {
-    if(window.UX_dirty){ e.preventDefault(); e.returnValue = ''; }
-  });
-
-  // ──── Inline validation helper ────────────────────────────────
-  window.UX.validate = function(form){
-    let firstInvalid = null;
-    form.querySelectorAll('.ux-field-error').forEach(n => n.remove());
-    form.querySelectorAll('.ux-invalid').forEach(n => n.classList.remove('ux-invalid'));
-    form.querySelectorAll('[required]').forEach(field => {
-      const v = (field.value || '').trim();
-      let bad = !v;
-      if(!bad && field.type === 'email'){
-        bad = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-      }
-      if(bad){
-        field.classList.add('ux-invalid');
-        const note = document.createElement('span');
-        note.className = 'ux-field-error';
-        note.textContent = field.dataset.errorMsg ||
-          (field.type === 'email' ? 'Please enter a valid email.' : 'This field is required.');
-        if(field.parentNode) field.parentNode.insertBefore(note, field.nextSibling);
-        if(!firstInvalid) firstInvalid = field;
-      }
-    });
-    if(firstInvalid){ firstInvalid.focus(); return false; }
-    return true;
-  };
-})();
-</script>
-<!-- ─────── END UX KIT ─────── -->
-
-  <!-- ─────── SYSTEM VISUAL POLISH (CRUD forms) ─────── -->
-<style id="uxVisualPolish">
-  /* ========== Inputs & selects ========== */
-  body .card input[type="text"],
-  body .card input[type="email"],
-  body .card input[type="number"],
-  body .card input[type="tel"],
-  body .card input[type="url"],
-  body .card input[type="date"],
-  body .card input[type="time"],
-  body .card input[type="password"],
-  body .card select,
-  body .card textarea,
-  body .modal input[type="text"],
-  body .modal input[type="email"],
-  body .modal input[type="password"],
-  body .modal select,
-  body .modal textarea,
-  body .field-grid input,
-  body .field-grid select,
-  body .field-row input,
-  body .field-row select,
-  body .field-row textarea {
-    padding: 9px 12px !important;
-    border-radius: 8px !important;
-    border: 1px solid #ddcdb9 !important;
-    background: #fff !important;
-    font-size: 13px !important;
-    color: #2c1810 !important;
-    font-family: inherit !important;
-    transition: border-color .15s, box-shadow .15s, background .15s;
-    line-height: 1.4;
-  }
-  body .card input:hover:not(:disabled):not([readonly]),
-  body .card select:hover:not(:disabled),
-  body .card textarea:hover:not(:disabled):not([readonly]),
-  body .modal input:hover:not(:disabled):not([readonly]),
-  body .modal select:hover:not(:disabled),
-  body .modal textarea:hover:not(:disabled):not([readonly]) {
-    border-color: #c9b079 !important;
-  }
-  body .card input:focus,
-  body .card select:focus,
-  body .card textarea:focus,
-  body .modal input:focus,
-  body .modal select:focus,
-  body .modal textarea:focus {
-    outline: none !important;
-    border-color: #c4a25f !important;
-    box-shadow: 0 0 0 3px rgba(196, 162, 95, 0.18) !important;
-    background: #fff !important;
-  }
-  body input[readonly],
-  body input:disabled,
-  body select:disabled,
-  body textarea:disabled,
-  body textarea[readonly] {
-    background: #f7f0e0 !important;
-    color: #7c6a55 !important;
-    cursor: not-allowed !important;
-    border-color: #e8dcc2 !important;
-  }
-
-  /* ========== Labels ========== */
-  body .field-grid > div > label,
-  body .field-grid label,
-  body .field-row > label,
-  body .modal-field > label,
-  body .detail-field-label {
-    font-size: 11.5px !important;
-    color: #6b5c4e !important;
-    font-weight: 600 !important;
-    margin-bottom: 5px !important;
-    display: block;
-    letter-spacing: 0.01em;
-  }
-
-  /* ========== Detail sections (turn flat dividers into sub-cards) ========== */
-  body .detail-section,
-  body .detail-block {
-    background: #fff !important;
-    border: 1px solid #eadccd !important;
-    border-radius: 10px !important;
-    padding: 18px 20px !important;
-    margin-bottom: 14px !important;
-    box-shadow: 0 1px 2px rgba(60, 42, 15, 0.03);
-    position: relative;
-  }
-
-  /* Section heading with gold accent bar */
-  body .detail-section > .detail-title,
-  body .detail-section > .ux-form-section,
-  body .detail-block > .ux-form-section,
-  body .detail-section-title {
-    font-size: 13.5px !important;
-    font-weight: 700 !important;
-    color: #2c1810 !important;
-    margin: 0 0 14px !important;
-    padding: 0 0 10px !important;
-    border-bottom: 1px solid #f0e6d4 !important;
-    text-transform: none !important;
-    letter-spacing: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 10px !important;
-  }
-  body .detail-section > .detail-title::before,
-  body .detail-section > .ux-form-section::before,
-  body .detail-block > .ux-form-section::before,
-  body .detail-section-title::before {
-    content: "";
-    width: 3px;
-    height: 16px;
-    background: #c4a25f;
-    border-radius: 2px;
-    flex-shrink: 0;
-  }
-
-  /* ========== Field grids: rhythm ========== */
-  body .field-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 14px 18px !important;
-  }
-  @media (max-width: 760px) {
-    body .field-grid {
-      grid-template-columns: 1fr !important;
-    }
-  }
-  body .field-row {
-    margin-bottom: 12px !important;
-  }
-
-  /* ========== Buttons ========== */
-  body .btn,
-  body .ux-btn {
-    padding: 8px 16px !important;
-    font-size: 12px !important;
-    border-radius: 8px !important;
-    cursor: pointer;
-    font-family: inherit;
-    font-weight: 600;
-    transition: background 0.15s, border-color 0.15s, color 0.15s,
-      box-shadow 0.15s;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    line-height: 1.3;
-  }
-  body .btn-sm,
-  body .ux-btn.btn-sm {
-    padding: 5px 11px !important;
-    font-size: 11px !important;
-    border-radius: 6px !important;
-  }
-  body .btn-primary {
-    background: #c4a25f !important;
-    color: #fff !important;
-    border: 1.5px solid #c4a25f !important;
-  }
-  body .btn-primary:hover {
-    background: #b08d4a !important;
-    border-color: #b08d4a !important;
-  }
-  body .btn-ghost {
-    background: #fff !important;
-    color: #2c1810 !important;
-    border: 1.5px solid #e5d9c0 !important;
-  }
-  body .btn-ghost:hover {
-    background: #faf6ee !important;
-    border-color: #d4c3a0 !important;
-  }
-  body .btn-secondary {
-    background: #fff !important;
-    color: #2c1810 !important;
-    border: 1.5px solid #e5d9c0 !important;
-  }
-  body .btn-secondary:hover {
-    background: #faf6ee !important;
-  }
-  body .btn-danger {
-    background: #c41e3a !important;
-    color: #fff !important;
-    border: 1.5px solid #c41e3a !important;
-  }
-  body .btn-danger:hover {
-    background: #a51730 !important;
-    border-color: #a51730 !important;
-  }
-
-  /* ========== Detail / Edit page top header ========== */
-  body #detailView > .card:first-child > .card-header {
-    background: linear-gradient(135deg, #fdf8ee, #f7eddb) !important;
-    margin: -14px -16px 14px !important;
-    padding: 16px 20px !important;
-    border-radius: 10px 10px 0 0 !important;
-    border-bottom: 1px solid #eadccd !important;
-    align-items: center !important;
-  }
-
-  /* ========== Card refinements ========== */
-  body .card {
-    border-radius: 12px !important;
-    border: 1px solid #eadccd !important;
-    background: #fffaf2 !important;
-    box-shadow: 0 1px 3px rgba(60, 42, 15, 0.05) !important;
-    padding: 16px 18px 18px !important;
-  }
-
-  /* ========== Modal polish (page-native modals, not ux-modal) ========== */
-  body .modal-backdrop {
-    background: rgba(44, 24, 16, 0.45) !important;
-    backdrop-filter: blur(2px);
-  }
-  body .modal {
-    border-radius: 14px !important;
-    border: 1px solid #eadccd !important;
-    box-shadow: 0 16px 40px rgba(44, 24, 16, 0.25) !important;
-    padding: 22px 24px !important;
-    max-width: 480px !important;
-    width: calc(100% - 32px) !important;
-  }
-  body .modal-header {
-    margin-bottom: 14px !important;
-    padding-bottom: 12px !important;
-    border-bottom: 1px solid #f0e6d4;
-    align-items: center !important;
-  }
-  body .modal-title {
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    color: #2c1810 !important;
-  }
-  body .modal-field {
-    margin-bottom: 12px !important;
-  }
-  body .modal-footer {
-    margin-top: 16px !important;
-    padding-top: 14px !important;
-    border-top: 1px solid #f0e6d4;
-    display: flex !important;
-    gap: 8px !important;
-    justify-content: flex-end !important;
-  }
-
-  /* ========== Empty state ========== */
-  body .empty-state {
-    padding: 32px 20px !important;
-    color: #9a8466 !important;
-    font-size: 13px !important;
-  }
-  body #emptyDetail {
-    text-align: center;
-    padding: 60px 20px !important;
-    color: #9a8466 !important;
-  }
-
-  /* ========== Badges / status pills ========== */
-  body .status-pill,
-  body .badge {
-    padding: 3px 10px !important;
-    border-radius: 999px !important;
-    font-size: 10.5px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-  }
-  body .badge-soft {
-    background: #f1e4d4 !important;
-    color: #7b623f !important;
-  }
-
-  /* ========== Avatar wrapper ========== */
-  body .avatar-circle {
-    width: 36px !important;
-    height: 36px !important;
-    font-size: 12px !important;
-    background: linear-gradient(135deg, #c9a574, #8c6845) !important;
-  }
-
-  /* ========== KPI cards ========== */
-  body .kpi-card,
-  body .kcard {
-    background: #fff !important;
-    border-radius: 10px !important;
-    border: 1px solid #eadccd !important;
-    padding: 14px 16px !important;
-    transition: box-shadow 0.15s, transform 0.15s;
-  }
-  body .kpi-card:hover,
-  body .kcard:hover {
-    box-shadow: 0 4px 14px rgba(60, 42, 15, 0.08) !important;
-    transform: translateY(-1px);
-  }
-  body .kpi-value {
-    font-size: 22px !important;
-    font-weight: 700 !important;
-    color: #2c1810 !important;
-  }
-  body .kpi-label {
-    font-size: 10.5px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    color: #7c6a55 !important;
-  }
-
-  /* ========== Filter bar refinement ========== */
-  body .filters {
-    padding: 12px 14px !important;
-    background: #fff !important;
-    border: 1px solid #eadccd !important;
-    border-radius: 10px !important;
-    margin-bottom: 14px !important;
-    gap: 8px !important;
-  }
-  body .filters input[type="text"],
-  body .filters select {
-    border-radius: 999px !important;
-    padding: 7px 12px !important;
-    font-size: 12px !important;
-    background: #faf6ee !important;
-    border: 1px solid #e5d9c0 !important;
-  }
-  body .filters input[type="text"]:focus,
-  body .filters select:focus {
-    outline: none !important;
-    border-color: #c4a25f !important;
-    background: #fff !important;
-    box-shadow: 0 0 0 3px rgba(196, 162, 95, 0.18) !important;
-  }
-
-  /* ========== Table refinement ========== */
-  body table thead {
-    background: #f7eedb !important;
-  }
-  body table th {
-    padding: 10px 12px !important;
-    font-size: 10.5px !important;
-    color: #7c6a55 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    font-weight: 700 !important;
-  }
-  body table td {
-    padding: 11px 12px !important;
-    font-size: 12.5px !important;
-    color: #2c1810;
-  }
-  body tbody tr:hover td {
-    background: #fbf5e8 !important;
-  }
-
-  /* ========== Page header refinement ========== */
-  body .page-header .page-title {
-    font-size: 24px !important;
-    font-weight: 800 !important;
-    color: #2c1810 !important;
-    letter-spacing: -0.01em;
-  }
-  body .page-header .page-subtitle {
-    font-size: 13px !important;
-    color: #7c6a55 !important;
-    margin-top: 4px;
-  }
-
-  /* ========== Sticky form footer (auto-applied when a section has .save-bar class) ========== */
-  body .save-bar,
-  body .sticky-save-bar {
-    position: sticky;
-    bottom: 0;
-    background: linear-gradient(
-      to top,
-      #fffaf2 70%,
-      rgba(255, 250, 242, 0)
-    ) !important;
-    padding: 18px 0 10px !important;
-    display: flex !important;
-    gap: 10px !important;
-    justify-content: flex-end !important;
-    margin: 18px -20px -18px !important;
-    border-top: 1px solid #eadccd !important;
-    padding-left: 20px !important;
-    padding-right: 20px !important;
-    z-index: 5;
-  }
-
-  /* ========== Permission matrix (roles page) ========== */
-  body .permission-table {
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  body .permission-table thead {
-    background: #f7eedb !important;
-  }
-  body .matrix-indicator {
-    width: 22px !important;
-    height: 22px !important;
-    border-radius: 7px !important;
-    transition: transform 0.15s, background 0.15s;
-  }
-  body .matrix-indicator:hover {
-    transform: scale(1.1);
-  }
-  body .matrix-indicator.active {
-    background: #2d6a4f !important;
-    border-color: #2d6a4f !important;
-  }
-
-  /* ========== Role list items ========== */
-  body .role-item {
-    padding: 10px 12px !important;
-    border-radius: 10px !important;
-    margin-bottom: 8px !important;
-    border: 1px solid #eadccd !important;
-    background: #fff;
-    transition: all 0.15s;
-  }
-  body .role-item:hover {
-    background: #fdf6e6 !important;
-    border-color: #d4c3a0 !important;
-    transform: translateX(2px);
-  }
-  body .role-item.active {
-    background: linear-gradient(135deg, #fdf2d8, #f8e8c4) !important;
-    border-color: #c4a25f !important;
-    box-shadow: 0 2px 8px rgba(196, 162, 95, 0.18);
-  }
-  body .role-name {
-    font-size: 13.5px !important;
-    font-weight: 700 !important;
-    color: #2c1810;
-  }
-
-  /* ========== Pretty checkbox/toggle row ========== */
-  body input[type="checkbox"],
-  body input[type="radio"] {
-    accent-color: #c4a25f;
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-  }
-
-  /* ========== File upload area ========== */
-  body input[type="file"] {
-    padding: 6px 10px !important;
-    border: 1.5px dashed #d4c3a0 !important;
-    border-radius: 8px !important;
-    background: #faf6ee !important;
-    cursor: pointer;
-    font-size: 11.5px !important;
-  }
-  body input[type="file"]:hover {
-    border-color: #c4a25f !important;
-    background: #fdf8ee !important;
-  }
-
-  /* ========== Required asterisk styled ========== */
-  body label.req::after,
-  body .req::after {
-    margin-left: 4px;
-    color: #c41e3a;
-    font-weight: 800;
-  }
-</style>
-<!-- ─────── END VISUAL POLISH ─────── -->
-
-  <!-- ─────── Detail-view layout primitives ─────── -->
-<style id="uxDetailLayout">
-  /* Top toolbar: back button + secondary actions */
-  body .entity-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-  }
-  body .entity-toolbar-right {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  body .entity-back-btn {
-    background: none;
-    border: none;
-    color: #6b5c4e;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 6px 10px;
-    border-radius: 8px;
-    font-family: inherit;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: background 0.15s, color 0.15s;
-  }
-  body .entity-back-btn:hover {
-    background: #faf6ee;
-    color: #2c1810;
-  }
-  body .entity-back-btn span {
-    font-size: 16px;
-    line-height: 1;
-  }
-
-  /* Hero card: avatar + identity + status + primary actions */
-  body .entity-hero {
-    background: linear-gradient(135deg, #fffaf2 0%, #fcf4e6 100%);
-    border: 1px solid #eadccd;
-    border-radius: 14px;
-    padding: 22px 24px;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    box-shadow: 0 2px 6px rgba(60, 42, 15, 0.05);
-  }
-  body .entity-hero-avatar {
-    flex-shrink: 0;
-    position: relative;
-  }
-  body .entity-hero-avatar .avatar-circle {
-    width: 60px !important;
-    height: 60px !important;
-    font-size: 22px !important;
-    box-shadow: 0 2px 6px rgba(60, 42, 15, 0.18);
-  }
-  body .entity-hero-avatar img {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    object-fit: cover;
-    background: #ddd;
-  }
-  body .entity-hero-info {
-    flex: 1;
-    min-width: 0;
-  }
-  body .entity-hero-name {
-    font-size: 22px !important;
-    font-weight: 800 !important;
-    color: #2c1810 !important;
-    margin: 0 0 6px !important;
-    letter-spacing: -0.01em;
-    line-height: 1.2;
-  }
-  body .entity-hero-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    font-size: 12.5px;
-    color: #6b5c4e;
-  }
-  body .entity-hero-sep {
-    color: #c4a25f;
-  }
-  body .entity-hero-email {
-    color: #6b5c4e;
-    font-weight: 500;
-  }
-  body .entity-hero-actions {
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
-  /* Section sub-title (after main heading) */
-  body .detail-title .section-sub {
-    font-size: 11.5px;
-    font-weight: 500;
-    color: #9d8a72;
-    text-transform: none;
-    letter-spacing: 0;
-    margin-left: auto;
-  }
-
-  /* Settings block (subsection inside a section card) */
-  body .settings-block {
-    padding: 14px 0;
-    border-bottom: 1px dashed #f0e6d4;
-  }
-  body .settings-block:last-child {
-    border-bottom: none;
-    padding-bottom: 4px;
-  }
-  body .settings-block:first-child {
-    padding-top: 4px;
-  }
-  body .settings-block-title {
-    font-size: 12.5px;
-    font-weight: 700;
-    color: #2c1810;
-    margin-bottom: 8px;
-  }
-  body .settings-block-sub {
-    font-size: 11.5px;
-    color: #7c6a55;
-    margin-bottom: 10px;
-  }
-
-  /* Checkbox row: clean horizontal checkbox + label */
-  body .checkbox-row {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12.5px !important;
-    color: #2c1810 !important;
-    font-weight: 500 !important;
-    cursor: pointer;
-    padding: 6px 0;
-    margin: 0 !important;
-  }
-  body .checkbox-row input[type="checkbox"] {
-    margin: 0;
-    width: 16px;
-    height: 16px;
-  }
-  body .checkbox-row span {
-    line-height: 1.3;
-  }
-  body .checkbox-group {
-    display: flex;
-    gap: 18px;
-    flex-wrap: wrap;
-  }
-
-  /* Sticky save bar: bottom action zone */
-  body .sticky-save-bar {
-    position: sticky;
-    bottom: 0;
-    background: #fffaf2;
-    border: 1px solid #eadccd;
-    border-radius: 12px;
-    padding: 14px 18px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: flex-end;
-    margin-top: 16px;
-    box-shadow: 0 -4px 16px rgba(60, 42, 15, 0.06);
-    z-index: 5;
-  }
-  body .sticky-save-bar .save-bar-hint {
-    font-size: 11.5px;
-    color: #9d8a72;
-    margin-right: auto;
-    font-style: italic;
-  }
-  body .sticky-save-bar .btn {
-    padding: 9px 18px !important;
-    font-size: 13px !important;
-    font-weight: 600;
-  }
-  body .sticky-save-bar .btn-primary {
-    box-shadow: 0 2px 6px rgba(196, 162, 95, 0.32);
-  }
-
-  /* Entity form: reset wrapping that older .card forced */
-  body .entity-form {
-    margin: 0;
-  }
-  body .entity-form .detail-section {
-    margin-bottom: 14px !important;
-  }
-  body .entity-form .detail-section:last-child {
-    margin-bottom: 0 !important;
-  }
-
-  /* Detail section heading: allow flex layout for sub-title alignment */
-  body .detail-section > .detail-title {
-    flex-wrap: wrap;
-  }
-
-  /* Read-only info grid (definition list style) */
-  body .info-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px 24px;
-  }
-  body .info-row {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 8px 0;
-    border-bottom: 1px dashed #f0e6d4;
-  }
-  body .info-row.info-row-wide {
-    grid-column: 1 / -1;
-  }
-  body .info-row:last-child,
-  body .info-row:nth-last-child(2):not(.info-row-wide) {
-    border-bottom: none;
-  }
-  body .info-label {
-    font-size: 11px;
-    color: #9d8a72;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 700;
-  }
-  body .info-value {
-    font-size: 13.5px;
-    color: #2c1810;
-    font-weight: 500;
-    line-height: 1.5;
-  }
-
-  /* Mobile */
-  @media (max-width: 720px) {
-    body .entity-hero {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 14px;
-    }
-    body .entity-hero-actions {
-      width: 100%;
-      justify-content: stretch;
-    }
-    body .entity-hero-actions .btn {
-      flex: 1;
-    }
-    body .sticky-save-bar {
-      flex-wrap: wrap;
-    }
-    body .sticky-save-bar .save-bar-hint {
-      flex-basis: 100%;
-      margin-right: 0;
-      margin-bottom: 6px;
-    }
-  }
-</style>
-<!-- ─────── END detail-view extras ─────── -->
-
   </body>
 </html>
