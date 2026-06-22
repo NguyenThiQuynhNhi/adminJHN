@@ -1,1862 +1,1045 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin - Agent Agreements</title>
-    <style>
-      :root {
-        --bg-body: #f5f3ef;
-        --bg-card: #fffaf2;
-        --border-subtle: #eadccd;
-        --accent: #c26b41;
-        --accent-soft: #f3d7c6;
-        --text-main: #3b2f2a;
-        --text-muted: #7a6a5c;
-        --badge-green: #2f855a;
-        --badge-gray: #4a5568;
-        --badge-orange: #b7791f;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agreement Management</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-      * {
-        box-sizing: border-box;
-      }
+    :root {
+      --gold:       #8B7340;
+      --gold-light: #c9a85c;
+      --border:     #e0e0e0;
+      --bg:         #ffffff;
+      --text:       #1a1a1a;
+      --gray:       #888;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
 
-      body {
-        margin: 0;
-        padding: 20px 24px 32px;
-        font-family:
-          system-ui,
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
-          sans-serif;
-        background-color: var(--bg-body);
-        color: var(--text-main);
-      }
+    body {
+      font-family: var(--font);
+      background: #f5f5f5;
+      color: var(--text);
+      min-height: 100vh;
+    }
 
-      h1 {
-        margin: 0 0 4px;
-        font-size: 22px;
-        letter-spacing: 0.02em;
-      }
+    /* ── Topbar ── */
+    .topbar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 20px;
+      padding: 14px 32px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .icon-btn {
+      background: none; border: none; cursor: pointer;
+      padding: 4px; display: flex; align-items: center;
+      color: #555; transition: color .15s;
+    }
+    .icon-btn:hover { color: var(--text); }
+    .icon-btn svg { width: 22px; height: 22px; }
 
-      .page-subtitle {
-        margin: 0 0 16px;
-        font-size: 13px;
-        color: var(--text-muted);
-        max-width: 760px;
-      }
+    /* ── Views ── */
+    .view { display: none; }
+    .view.active { display: block; }
 
-      .layout-main {
-        display: grid;
-        grid-template-columns: minmax(0, 6fr) minmax(0, 7fr);
-        gap: 16px;
-        align-items: flex-start;
-      }
+    /* ════════════════════════════════════════
+       LIST VIEW
+    ════════════════════════════════════════ */
+    .list-page {
+      background: var(--bg);
+      min-height: calc(100vh - 53px);
+      padding: 28px 32px 48px;
+    }
+    .list-header {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 22px;
+    }
+    .page-title { font-size: 22px; font-weight: 700; }
 
-      .card {
-        background-color: var(--bg-card);
-        border-radius: 14px;
-        border: 1px solid var(--border-subtle);
-        padding: 14px 16px 16px;
-        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
-      }
+    .btn-add {
+      background: var(--gold); color: #fff; border: none;
+      border-radius: 8px; padding: 10px 28px;
+      font-size: 14px; font-weight: 500; cursor: pointer;
+      transition: filter .15s;
+    }
+    .btn-add:hover { filter: brightness(.9); }
 
-      .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        margin-bottom: 10px;
-      }
+    /* Filters */
+    .filters { display: flex; gap: 12px; margin-bottom: 20px; }
 
-      .card-title {
-        font-size: 14px;
-        font-weight: 600;
-      }
+    .search-wrap { position: relative; width: 260px; }
+    .search-wrap svg {
+      position: absolute; left: 12px; top: 50%;
+      transform: translateY(-50%); width: 15px; height: 15px;
+      color: #aaa; pointer-events: none;
+    }
+    .search-input {
+      width: 100%; padding: 9px 14px 9px 36px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: 13.5px; font-family: var(--font);
+      color: var(--text); outline: none; transition: border-color .15s;
+    }
+    .search-input::placeholder { color: #bbb; }
+    .search-input:focus { border-color: var(--gold-light); }
 
-      .card-subtitle {
-        font-size: 12px;
-        color: var(--text-muted);
-      }
+    .select-wrap { position: relative; width: 180px; }
+    .select-wrap svg {
+      position: absolute; right: 12px; top: 50%;
+      transform: translateY(-50%); width: 14px; height: 14px;
+      color: #888; pointer-events: none;
+    }
+    .filter-select {
+      width: 100%; padding: 9px 36px 9px 14px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: 13.5px; font-family: var(--font);
+      color: var(--text); background: var(--bg);
+      outline: none; appearance: none; cursor: pointer;
+    }
 
-      .toolbar-right {
-        display: flex;
-        gap: 6px;
-        align-items: center;
-      }
+    /* Table */
+    .table-wrap {
+      border: 1.5px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { border-bottom: 1.5px solid var(--border); }
+    th {
+      padding: 14px 18px; font-size: 13px; font-weight: 600;
+      color: var(--text); text-align: left; background: var(--bg);
+    }
+    .th-actions { text-align: right; padding-right: 20px; width: 90px; }
 
-      .toolbar-stack {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        margin-bottom: 8px;
-      }
+    .sort-icon {
+      display: inline-flex; flex-direction: column;
+      gap: 1px; vertical-align: middle; margin-left: 4px;
+    }
+    .sort-icon span { display: block; width: 0; height: 0; }
+    .sort-icon span:first-child {
+      border: 3.5px solid transparent; border-bottom-color: #aaa;
+    }
+    .sort-icon span:last-child {
+      border: 3.5px solid transparent; border-top-color: #aaa;
+    }
 
-      .btn {
-        border-radius: 999px;
-        border: 1px solid var(--border-subtle);
-        padding: 6px 11px;
-        font-size: 11px;
-        background-color: #fff;
-        cursor: pointer;
-        display: inline-flex;
-        gap: 4px;
-        align-items: center;
-        color: var(--text-main);
-      }
+    tbody tr {
+      border-bottom: 1px solid #f0f0f0; transition: background .1s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fafafa; }
+    td { padding: 16px 18px; font-size: 13.5px; vertical-align: middle; }
+    .empty-cell { text-align: center; color: var(--gray); padding: 28px 18px; }
 
-      .btn-primary {
-        background: linear-gradient(135deg, #c26b41, #a55232);
-        border-color: #a55232;
-        color: #fffaf3;
-      }
+    .row-actions {
+      display: flex; justify-content: flex-end;
+      gap: 10px; padding-right: 4px;
+    }
+    .action-btn {
+      background: none; border: none; cursor: pointer;
+      padding: 4px; display: flex; align-items: center;
+      color: #aaa; transition: color .15s;
+    }
+    .action-btn:hover { color: var(--gold); }
+    .action-btn.danger:hover { color: #c0392b; }
+    .action-btn svg { width: 17px; height: 17px; }
 
-      .btn-ghost {
-        background: transparent;
-      }
+    .table-footer {
+      padding: 13px 18px; font-size: 12.5px;
+      color: var(--gray); border-top: 1px solid #f0f0f0;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+    }
 
-      .btn:disabled {
-        opacity: 0.55;
-        cursor: default;
-      }
+    /* Pagination */
+    .pager { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .pg-btn {
+      min-width: 30px; height: 30px; padding: 0 9px;
+      border: 1px solid var(--border); background: #fff;
+      border-radius: 7px; font-size: 12.5px; font-family: var(--font);
+      color: var(--text); cursor: pointer;
+    }
+    .pg-btn:hover:not(:disabled) { background: #f5f1ea; }
+    .pg-btn.active { background: var(--gold); border-color: var(--gold); color: #fff; font-weight: 700; }
+    .pg-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .pg-ellipsis { padding: 0 4px; color: var(--gray); }
 
-      .badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 7px;
-        border-radius: 999px;
-        font-size: 10px;
-        font-weight: 500;
-        border: 1px solid transparent;
-        white-space: nowrap;
-      }
+    /* Badges */
+    .badge {
+      display: inline-block; padding: 3px 12px; border-radius: 20px;
+      font-size: 11.5px; font-weight: 600; letter-spacing: .2px;
+    }
+    .badge-published { background: #d4f0d4; color: #2a7a2a; }
+    .badge-draft     { background: #e8e8e8; color: #666; }
 
-      .badge-status-draft {
-        background: #f7f7f8;
-        color: var(--badge-gray);
-        border-color: #d2d6dc;
-      }
+    /* ════════════════════════════════════════
+       EDITOR VIEW (full-page)
+    ════════════════════════════════════════ */
+    #view-editor { min-height: calc(100vh - 53px); display: none; }
+    #view-editor.active {
+      display: flex; flex-direction: column;
+      background: var(--bg);
+    }
 
-      .badge-status-published {
-        background: #e6f6ef;
-        color: var(--badge-green);
-        border-color: #b7e4cc;
-      }
+    /* Editor header */
+    .editor-header {
+      display: flex; align-items: flex-start;
+      justify-content: space-between;
+      padding: 20px 28px 18px; flex-shrink: 0;
+    }
+    .editor-header-left { display: flex; align-items: flex-start; gap: 10px; }
+    .back-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 22px; color: #555; padding: 0 6px 0 0;
+      margin-top: 2px; line-height: 1; transition: color .15s;
+    }
+    .back-btn:hover { color: var(--text); }
+    .editor-title { font-size: 18px; font-weight: 700; }
+    .editor-subtitle { font-size: 13px; color: var(--gold); margin-top: 3px; }
 
-      .badge-status-pending {
-        background: #fff6e0;
-        color: var(--badge-orange);
-        border-color: #fbd38d;
-      }
+    .editor-actions { display: flex; align-items: center; gap: 10px; margin-top: 4px; position: relative; }
 
-      .badge-status-signed {
-        background: #e6fffa;
-        color: #2b6cb0;
-        border-color: #b2f5ea;
-      }
+    .btn {
+      border: none; border-radius: 8px; padding: 9px 20px;
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      transition: filter .15s;
+    }
+    .btn:hover { filter: brightness(.88); }
+    .btn-gray    { background: #5c5c5c; color: #fff; }
+    .btn-gray2   { background: #7a7a7a; color: #fff; }
+    .btn-gold    { background: var(--gold); color: #fff; }
+    .btn-gold:hover { filter: brightness(.9); }
 
-      .list-scroll {
-        max-height: 360px;
-        overflow: auto;
-      }
+    .more-dots {
+      background: none; border: none; cursor: pointer;
+      padding: 6px 8px; display: flex; flex-direction: column;
+      gap: 3px; align-items: center;
+    }
+    .more-dots span {
+      display: block; width: 4px; height: 4px;
+      background: #666; border-radius: 50%;
+    }
+    .more-menu {
+      position: absolute; top: 42px; right: 0; z-index: 20;
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.14);
+      min-width: 170px; padding: 6px; display: none;
+    }
+    .more-menu.open { display: block; }
+    .more-menu button {
+      width: 100%; text-align: left; background: none; border: none;
+      padding: 9px 12px; border-radius: 6px; font-size: 13px;
+      font-family: var(--font); color: var(--text); cursor: pointer;
+    }
+    .more-menu button:hover { background: #f5f1ea; }
+    .more-menu button.danger { color: #c0392b; }
 
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-      }
+    .editor-divider { height: 1px; background: #ebebeb; flex-shrink: 0; }
 
-      thead {
-        background: #f7efe6;
-      }
+    /* Editor body layout */
+    .editor-body {
+      display: flex; flex: 1; gap: 24px;
+      padding: 20px 28px 24px; overflow: hidden;
+    }
 
-      th,
-      td {
-        padding: 7px 8px;
-        text-align: left;
-        border-bottom: 1px solid #efe0d4;
-      }
+    /* Left: editor area */
+    .editor-main {
+      flex: 1; display: flex; flex-direction: column; min-width: 0;
+    }
 
-      th {
-        font-weight: 500;
-        font-size: 11px;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        white-space: nowrap;
-      }
+    .page-name-input {
+      width: 100%; padding: 12px 16px; margin-bottom: 14px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: 15px; font-family: var(--font); color: var(--text);
+      outline: none; transition: border-color .15s; flex-shrink: 0;
+    }
+    .page-name-input::placeholder { color: #ccc; }
+    .page-name-input:focus { border-color: var(--gold-light); }
 
-      tbody tr {
-        cursor: pointer;
-        transition: background 0.12s ease;
-      }
+    .editor-box {
+      flex: 1; display: flex; flex-direction: column;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      overflow: hidden; min-height: 0;
+    }
 
-      tbody tr:hover {
-        background-color: #f8f1ea;
-      }
+    /* Toolbar */
+    .toolbar {
+      display: flex; align-items: center; gap: 1px;
+      padding: 7px 10px; border-bottom: 1px solid var(--border);
+      flex-wrap: nowrap; background: var(--bg); flex-shrink: 0; overflow-x: auto;
+    }
+    .toolbar::-webkit-scrollbar { height: 0; }
 
-      tbody tr.selected-row {
-        background-color: #f1e3d5;
-      }
+    .tb {
+      background: none; border: none; cursor: pointer;
+      padding: 5px 6px; border-radius: 5px;
+      color: #333; display: flex; align-items: center;
+      gap: 3px; font-size: 12.5px; font-family: var(--font);
+      transition: background .12s; line-height: 1; flex-shrink: 0;
+    }
+    .tb:hover { background: #f0ece6; }
+    .tb.on    { background: #ede8e0; color: var(--gold); }
+    .tb svg   { width: 14px; height: 14px; }
+    .tb-sep   { width: 1px; height: 18px; background: #ddd; margin: 0 3px; flex-shrink: 0; }
 
-      .agreement-title-cell {
-        font-weight: 600;
-      }
+    .tb-select {
+      background: none; border: none; border-radius: 5px;
+      font-size: 12.5px; font-family: var(--font); color: #333;
+      padding: 5px 4px; cursor: pointer; outline: none; flex-shrink: 0;
+    }
+    .tb-select:hover { background: #f0ece6; }
 
-      .detail-layout {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
+    .color-box {
+      width: 13px; height: 13px; background: #1a1a1a;
+      border-radius: 2px; flex-shrink: 0;
+    }
+    .chevron-tiny {
+      width: 0; height: 0;
+      border-left: 3px solid transparent;
+      border-right: 3px solid transparent;
+      border-top: 4px solid #666;
+      flex-shrink: 0;
+    }
 
-      .detail-section-title {
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--text-muted);
-        margin-bottom: 4px;
-      }
+    /* Editable content */
+    .editor-content {
+      flex: 1; padding: 20px 22px; outline: none;
+      font-size: 14px; line-height: 1.75; color: var(--text);
+      overflow-y: auto;
+    }
+    .editor-content:empty::before {
+      content: attr(data-ph); color: #ccc; pointer-events: none;
+    }
+    .editor-content h1 { font-size: 19px; font-weight: 700; margin: 0 0 14px; }
+    .editor-content h2 { font-size: 16px; font-weight: 600; margin: 0 0 10px; }
+    .editor-content p  { margin: 0 0 14px; }
+    .editor-content ul,
+    .editor-content ol { margin: 0 0 14px; padding-left: 22px; }
+    .editor-content blockquote {
+      border-left: 3px solid var(--gold);
+      padding-left: 14px; color: #666; margin: 12px 0;
+    }
+    .editor-content code {
+      background: #f4f4f4; padding: 2px 5px;
+      border-radius: 3px; font-size: 12.5px;
+    }
+    .editor-content hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+    .editor-content img { max-width: 100%; display: block; margin: 12px 0; border-radius: 4px; }
 
-      .detail-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px 12px;
-        margin-bottom: 4px;
-      }
+    /* Right: info sidebar */
+    .editor-sidebar { width: 270px; flex-shrink: 0; }
 
-      .detail-field-label {
-        font-size: 11px;
-        color: var(--text-muted);
-        margin-bottom: 2px;
-      }
+    .sidebar-heading { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
 
-      .detail-input,
-      .detail-select,
-      textarea {
-        width: 100%;
-        border-radius: 9px;
-        border: 1px solid var(--border-subtle);
-        padding: 5px 8px;
-        font-size: 12px;
-        background-color: #fffcf7;
-        color: var(--text-main);
-        outline: none;
-      }
+    .info-row {
+      padding: 14px 0; border-bottom: 1px solid var(--border);
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { font-size: 12px; color: var(--gray); margin-bottom: 5px; }
+    .info-value { font-size: 13.5px; color: var(--text); }
+    .info-value.empty { color: #ccc; }
 
-      .detail-input:focus,
-      .detail-select:focus,
-      textarea:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
-      }
+    /* ── Toast ── */
+    .toast-wrap {
+      position: fixed; right: 18px; bottom: 18px; z-index: 9999;
+      display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+    }
+    .toast {
+      background: #fff; border: 1px solid var(--border);
+      border-left: 4px solid var(--gold); border-radius: 8px;
+      padding: 10px 14px; min-width: 220px; max-width: 360px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.12); font-size: 13px; color: var(--text);
+      pointer-events: auto; animation: toastIn .18s ease;
+    }
+    .toast.ok  { border-left-color: #2a7a2a; }
+    .toast.err { border-left-color: #c0392b; }
+    @keyframes toastIn { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
 
-      textarea {
-        min-height: 140px;
-        resize: vertical;
-        font-family: inherit;
-      }
-
-      .hint-text {
-        font-size: 11px;
-        color: var(--text-muted);
-      }
-
-      .filter-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin: 0;
-      }
-
-      .filter-input,
-      .filter-select {
-        border-radius: 999px;
-        border: 1px solid var(--border-subtle);
-        padding: 5px 10px;
-        font-size: 12px;
-        background-color: #fffcf7;
-        color: var(--text-main);
-        outline: none;
-      }
-
-      @media (max-width: 960px) {
-        .layout-main {
-          grid-template-columns: minmax(0, 1fr);
-        }
-      }
-    </style>
-    <style id="uxResponsiveSplitFix">
-/* Force stack 1 column: list full-width on top, detail below */
-.layout-main {
-  grid-template-columns: minmax(0, 1fr) !important;
-}
-/* Compact tightening for very narrow viewports */
-@media (max-width: 900px) {
-  .page {
-    padding: 16px !important;
-  }
-}
-</style>
-<style id="uxTableOverflowFix">
-/* Table overflow handling: keep text intact, only enable horizontal scroll on narrow viewport */
-@media (max-width: 1199px) {
-  table {
-    display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-}
-</style>
-  <style id="uxBaselinePolish">
-/* Baseline UI polish — applies only where file CSS doesn't override */
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-/* Pointer cursor on interactive */
-button, .btn, [role="button"], select,
-input[type="checkbox"], input[type="radio"], input[type="submit"],
-input[type="button"], a[href], label[for] {
-  cursor: pointer;
-}
-
-/* Disabled state */
-button:disabled, .btn:disabled, input:disabled, select:disabled, textarea:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/* Focus-visible outline (a11y) */
-button:focus-visible, .btn:focus-visible,
-a:focus-visible, [role="button"]:focus-visible,
-input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 2px solid #c4a25f;
-  outline-offset: 2px;
-}
-
-/* Inherit font family for form controls (fixes browser-default) */
-input, select, textarea, button {
-  font-family: inherit;
-}
-
-/* Responsive media */
-img, svg, video {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Subtle hover for buttons (only if no transition already set, gentle filter) */
-button:hover:not(:disabled), .btn:hover:not(:disabled) {
-  filter: brightness(0.96);
-  transition: filter 0.15s ease;
-}
-
-/* Smooth scrollbar on Webkit */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: #f5ece0;
-}
-::-webkit-scrollbar-thumb {
-  background: #d9c8b4;
-  border-radius: 6px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #c4a25f;
-}
-
-/* Selection highlight on-brand */
-::selection {
-  background: #c4a25f;
-  color: #fff;
-}
-
-/* HR baseline */
-hr {
-  border: none;
-  border-top: 1px solid #eadccd;
-  margin: 12px 0;
-}
-
-/* Anchor baseline color matches brand (no underline by default to match flat UI) */
-a {
-  color: #8a5a3b;
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
-</style>
+    /* ── Confirm modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 9000; display: none;
+      align-items: center; justify-content: center; background: rgba(0,0,0,.4);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #fff; border-radius: 12px; padding: 22px 24px;
+      width: 420px; max-width: 90vw; box-shadow: 0 10px 32px rgba(0,0,0,.22);
+    }
+    .modal-box h3 { font-size: 16px; font-weight: 700; margin: 0 0 8px; }
+    .modal-box p { font-size: 13.5px; color: #555; line-height: 1.5; margin: 0 0 18px; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn-danger { background: #c0392b; color: #fff; }
+  </style>
 </head>
-  <body>
-    <header>
-      <h1>Agreement management</h1>
-    </header>
+<body>
 
-    <main class="layout-main">
-      <!-- LEFT: Agreements list -->
-      <section class="card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">Agreement templates</div>
-          </div>
-          <div class="toolbar-right">
-            <button id="newAgreementBtn" class="btn" type="button">
-              New agreement
-            </button>
-          </div>
+<!-- ══ TOPBAR ══ -->
+<nav class="topbar">
+  <button class="icon-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    </svg>
+  </button>
+  <button class="icon-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+    </svg>
+  </button>
+</nav>
+
+<!-- ════════════════════════════════════════
+     VIEW: LIST
+════════════════════════════════════════ -->
+<div id="view-list" class="view active">
+  <div class="list-page">
+
+    <div class="list-header">
+      <h1 class="page-title">Agreement Management</h1>
+      <button class="btn-add" onclick="openNew()">Add</button>
+    </div>
+
+    <div class="filters">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input id="searchInput" class="search-input" type="text" placeholder="Search agreement by title" />
+      </div>
+      <div class="select-wrap">
+        <select id="statusFilter" class="filter-select">
+          <option value="">All status</option>
+          <option value="published">Published</option>
+          <option value="draft">Draft</option>
+        </select>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Title <span class="sort-icon"><span></span><span></span></span></th>
+            <th style="width:150px">Status <span class="sort-icon"><span></span><span></span></span></th>
+            <th style="width:190px">Last update <span class="sort-icon"><span></span><span></span></span></th>
+            <th style="width:150px">Agent Agreed</th>
+            <th class="th-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="agreementsTbody"></tbody>
+      </table>
+      <div class="table-footer">
+        <span id="agreementsCount">Showing 0 of 0 agreements</span>
+        <div class="pager" id="agreementsPager"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     VIEW: EDITOR (New + Edit)
+════════════════════════════════════════ -->
+<div id="view-editor" class="view">
+
+  <!-- Header -->
+  <div class="editor-header">
+    <div class="editor-header-left">
+      <button class="back-btn" onclick="goBack()">&#8249;</button>
+      <div>
+        <div class="editor-title" id="editorTitle">New Agreement</div>
+        <div class="editor-subtitle" id="editorSubtitle">Add a new agreement</div>
+      </div>
+    </div>
+    <div class="editor-actions" id="editorActions"></div>
+  </div>
+
+  <div class="editor-divider"></div>
+
+  <!-- Body -->
+  <div class="editor-body">
+
+    <!-- Left: editor -->
+    <div class="editor-main">
+      <input class="page-name-input" id="pageName" type="text" placeholder="Page name" />
+
+      <div class="editor-box">
+        <!-- Toolbar -->
+        <div class="toolbar">
+          <!-- Undo / Redo -->
+          <button class="tb" onclick="cmd('undo')" title="Undo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+          </button>
+          <button class="tb" onclick="cmd('redo')" title="Redo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>
+          </button>
+
+          <div class="tb-sep"></div>
+
+          <!-- Paragraph style -->
+          <select class="tb-select" onchange="applyBlockFormat(this.value); this.value='p'">
+            <option value="p">Normal text</option>
+            <option value="h1">Heading 1</option>
+            <option value="h2">Heading 2</option>
+            <option value="h3">Heading 3</option>
+          </select>
+
+          <div class="tb-sep"></div>
+
+          <!-- Lists dropdown hint -->
+          <button class="tb" title="List style">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+            <span class="chevron-tiny"></span>
+          </button>
+
+          <!-- Text color -->
+          <button class="tb" title="Text color">
+            <span class="color-box" id="colorSwatch"></span>
+            <span class="chevron-tiny"></span>
+          </button>
+
+          <div class="tb-sep"></div>
+
+          <!-- Bold -->
+          <button class="tb" id="tb-bold" onclick="toggleFmt('bold','tb-bold')" title="Bold"><b>B</b></button>
+          <!-- Italic -->
+          <button class="tb" id="tb-italic" onclick="toggleFmt('italic','tb-italic')" title="Italic"><i>I</i></button>
+          <!-- Underline -->
+          <button class="tb" id="tb-underline" onclick="toggleFmt('underline','tb-underline')" title="Underline"><u>U</u></button>
+          <!-- Strikethrough -->
+          <button class="tb" id="tb-strike" onclick="toggleFmt('strikeThrough','tb-strike')" title="Strikethrough"><s>S</s></button>
+          <!-- Inline code -->
+          <button class="tb" onclick="wrapCode()" title="Inline code">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+            </svg>
+          </button>
+          <!-- Highlight -->
+          <button class="tb" title="Highlight">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+          </button>
+
+          <div class="tb-sep"></div>
+
+          <!-- Bullet list -->
+          <button class="tb" onclick="cmd('insertUnorderedList')" title="Bullet list">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/>
+              <circle cx="4" cy="6" r="1" fill="currentColor" stroke="none"/>
+              <circle cx="4" cy="12" r="1" fill="currentColor" stroke="none"/>
+              <circle cx="4" cy="18" r="1" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+          <!-- Numbered list -->
+          <button class="tb" onclick="cmd('insertOrderedList')" title="Numbered list">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/>
+              <path d="M4 6h1v4" stroke="currentColor" stroke-width="1.8" fill="none"/>
+              <path d="M4 10H5" stroke="currentColor" stroke-width="1.8" fill="none"/>
+              <path d="M3 14h2v1l-2 2h2" stroke="currentColor" stroke-width="1.8" fill="none"/>
+            </svg>
+          </button>
+
+          <div class="tb-sep"></div>
+
+          <!-- Link -->
+          <button class="tb" onclick="insertLink()" title="Link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+          </button>
+          <!-- Image -->
+          <button class="tb" onclick="insertImg()" title="Image">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </button>
+          <!-- Code block -->
+          <button class="tb" title="Code block">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="18" rx="2"/>
+              <polyline points="8 10 4 14 8 18"/><polyline points="16 10 20 14 16 18"/>
+            </svg>
+          </button>
+          <!-- Blockquote -->
+          <button class="tb" onclick="cmd('formatBlock','blockquote')" title="Blockquote">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+              <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>
+            </svg>
+          </button>
+          <!-- Horizontal rule -->
+          <button class="tb" onclick="cmd('insertHorizontalRule')" title="Horizontal rule">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <line x1="2" y1="12" x2="22" y2="12"/>
+            </svg>
+          </button>
         </div>
 
-        <div class="toolbar-stack">
-          <div class="filter-row">
-            <select id="filterStatus" class="filter-select">
-              <option value="all">Status: All</option>
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-            </select>
-            <select id="filterAcceptance" class="filter-select" title="Agent acceptance">
-              <option value="">Acceptance: All</option>
-              <option value="all-signed">All agents signed</option>
-              <option value="partial">Partially signed</option>
-              <option value="none">None signed yet</option>
-            </select>
-            <select id="filterUpdated" class="filter-select" title="Last updated">
-              <option value="">Updated: Any time</option>
-              <option value="7d">Last 7 days</option>
-              <option value="30d">Last 30 days</option>
-              <option value="90d">Last 90 days</option>
-              <option value="older">Older than 90 days</option>
-            </select>
-            <select id="filterSentStatus" class="filter-select" title="Sent to agents">
-              <option value="">Sent: All</option>
-              <option value="sent">Sent</option>
-              <option value="not-sent">Not yet sent</option>
-            </select>
-            <select id="sortBy" class="filter-select" title="Sort by">
-              <option value="updated-desc">Sort: Updated ↓</option>
-              <option value="updated-asc">Sort: Updated ↑</option>
-              <option value="title-asc">Sort: Title A→Z</option>
-              <option value="acceptance-desc">Sort: Acceptance % ↓</option>
-              <option value="status-asc">Sort: Status</option>
-            </select>
-            <input
-              id="filterAgreementSearch"
-              class="filter-input"
-              type="text"
-              placeholder="Search agreement by title or body"
-            />
-            <button type="button" class="btn" id="resetAgreementFilters" style="background:#fff;border:1px solid #ddcdb9;color:#6b5c4e">
-              Reset
-            </button>
-          </div>
-        </div>
+        <!-- Content editable -->
+        <div
+          class="editor-content"
+          id="editorContent"
+          contenteditable="true"
+          data-ph="Your content page"
+          spellcheck="false"
+        ></div>
+      </div>
+    </div>
 
-        <div class="list-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Status</th>
-                <th>Last update</th>
-                <th>Agent agreed</th>
-              </tr>
-            </thead>
-            <tbody id="agreementsTbody"></tbody>
-          </table>
-        </div>
-      </section>
+    <!-- Right: sidebar -->
+    <div class="editor-sidebar">
+      <div class="sidebar-heading">Information</div>
 
-      <!-- RIGHT: Agreement editor -->
-      <section class="card">
-        <div class="detail-layout" id="emptyDetail">
-          <div class="card-title">Agreement detail</div>
-        </div>
+      <div class="info-row">
+        <div class="info-label">Status</div>
+        <div class="info-value" id="infoStatus"><span class="empty">-</span></div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Created</div>
+        <div class="info-value" id="infoCreated"><span class="empty">-</span></div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Last Update</div>
+        <div class="info-value" id="infoLastUpdate"><span class="empty">-</span></div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Agent Agreed</div>
+        <div class="info-value" id="infoAgreed"><span class="empty">-</span></div>
+      </div>
+    </div>
 
-        <div class="detail-layout" id="detailPanel" style="display: none">
-          <div class="card-header" style="padding: 0">
-            <div>
-              <div class="card-title" id="detailTitle"></div>
-              <div class="card-subtitle" id="detailMeta"></div>
-            </div>
-            <div class="toolbar-right">
-              <button
-                id="sendToAgentsBtn"
-                class="btn btn-primary"
-                type="button"
-              >
-                Send to agents
-              </button>
-              <button id="saveAgreementBtn" class="btn" type="button">
-                Save Draft
-              </button>
-            </div>
-          </div>
+  </div><!-- /.editor-body -->
+</div><!-- /#view-editor -->
 
-          <div data-track-dirty>
-            <div class="detail-section-title">Basic information</div>
-            <div class="detail-grid">
-              <div>
-                <div class="detail-field-label req">Title</div>
-                <input id="inputTitle" class="detail-input" type="text" required />
-              </div>
-            </div>
-
-            <div style="margin-top:14px">
-              <div class="detail-section-title req" style="display:flex;align-items:center;gap:6px">
-                Agreement body
-                <span class="ux-dirty-pill">Unsaved changes</span>
-              </div>
-              <textarea
-                id="inputBody"
-                required
-                placeholder="Write the agreement clauses here. Example sections: Purpose, Definitions, Agent obligations, Platform obligations, Confidentiality, Termination, Governing law..."
-              ></textarea>
-            </div>
-          </div>
-          <div class="hint-text" id="editabilityHint"></div>
-        </div>
-      </section>
-    </main>
-
-    <script>
-      // Demo seed data
-      const agreements = [
-        {
-          id: "code-of-conduct",
-          title: "Agent Code of Conduct",
-          status: "published",
-          effectiveFrom: "2026-03-15",
-          lastUpdatedAt: "2026-03-20 10:05",
-          lastSentAt: "2026-03-21 08:00",
-          body: "Defines expected behaviour when using the platform, communication standards, and rules for handling client data.",
-        },
-        {
-          id: "data-usage-policy",
-          title: "Data usage & privacy policy (Agents)",
-          status: "published",
-          effectiveFrom: "2026-02-01",
-          lastUpdatedAt: "2026-02-01 09:00",
-          lastSentAt: "2026-02-02 08:45",
-          body: "Explains how platform data may be accessed by agents and which logs are recorded for security and compliance.",
-        },
-        {
-          id: "new-feature-beta",
-          title: "Beta feature participation terms",
-          status: "draft",
-          effectiveFrom: "",
-          lastUpdatedAt: "2026-04-01 14:32",
-          lastSentAt: "",
-          body: "Draft: conditions for participating in limited beta features, including feedback loops and rollback scenarios.",
-        },
-      ];
-
-      const agents = [
-        { id: "AG-001", name: "Tokyo Prime Realty", office: "Tokyo" },
-        { id: "AG-002", name: "Osaka Investment Desk", office: "Osaka" },
-        { id: "AG-003", name: "Fukuoka Residential", office: "Fukuoka" },
-      ];
-
-      const acceptanceRecords = [
-        {
-          agreementId: "code-of-conduct",
-          agentId: "AG-001",
-          status: "signed",
-          signedAt: "2026-03-21 11:10",
-        },
-        {
-          agreementId: "code-of-conduct",
-          agentId: "AG-002",
-          status: "signed",
-          signedAt: "2026-03-22 09:05",
-        },
-        {
-          agreementId: "code-of-conduct",
-          agentId: "AG-003",
-          status: "pending",
-          signedAt: "",
-        },
-        {
-          agreementId: "data-usage-policy",
-          agentId: "AG-001",
-          status: "signed",
-          signedAt: "2026-02-02 10:00",
-        },
-        {
-          agreementId: "data-usage-policy",
-          agentId: "AG-002",
-          status: "pending",
-          signedAt: "",
-        },
-        {
-          agreementId: "data-usage-policy",
-          agentId: "AG-003",
-          status: "pending",
-          signedAt: "",
-        },
-      ];
-
-      let selectedAgreementId = null;
-
-      const els = {
-        agreementsTbody: document.getElementById("agreementsTbody"),
-        newAgreementBtn: document.getElementById("newAgreementBtn"),
-        emptyDetail: document.getElementById("emptyDetail"),
-        detailPanel: document.getElementById("detailPanel"),
-        detailTitle: document.getElementById("detailTitle"),
-        detailMeta: document.getElementById("detailMeta"),
-        inputTitle: document.getElementById("inputTitle"),
-        inputBody: document.getElementById("inputBody"),
-        saveAgreementBtn: document.getElementById("saveAgreementBtn"),
-        sendToAgentsBtn: document.getElementById("sendToAgentsBtn"),
-        filterStatus: document.getElementById("filterStatus"),
-        filterAgreementSearch: document.getElementById("filterAgreementSearch"),
-        editabilityHint: document.getElementById("editabilityHint"),
-      };
-
-      function getAgreementAcceptanceSummary(agreementId) {
-        const total = agents.length;
-        const signed = acceptanceRecords.filter(
-          (rec) => rec.agreementId === agreementId && rec.status === "signed",
-        ).length;
-        return `${signed}/${total}`;
-      }
-
-      function getLastUpdateLabel(agreement) {
-        if (agreement.lastSentAt) {
-          return `Sent ${agreement.lastSentAt}`;
-        }
-        if (agreement.lastUpdatedAt) {
-          return `Updated ${agreement.lastUpdatedAt}`;
-        }
-        return "-";
-      }
-
-      function _acceptanceStats(agreementId) {
-        const recs = acceptanceRecords.filter((r) => r.agreementId === agreementId);
-        const signed = recs.filter((r) => r.status === "signed").length;
-        const total = recs.length || agents.length;
-        return { signed, total, ratio: total ? signed / total : 0 };
-      }
-
-      function getFilteredAgreements() {
-        const statusFilter = els.filterStatus.value;
-        const keyword = els.filterAgreementSearch.value.trim().toLowerCase();
-        const acceptance =
-          document.getElementById("filterAcceptance")?.value || "";
-        const updated =
-          document.getElementById("filterUpdated")?.value || "";
-        const sentStatus =
-          document.getElementById("filterSentStatus")?.value || "";
-        const sortBy =
-          document.getElementById("sortBy")?.value || "updated-desc";
-
-        const now = new Date("2026-05-15T00:00:00");
-        const daysSince = (s) => {
-          if (!s) return Infinity;
-          const d = new Date(s.replace(" ", "T"));
-          return isNaN(d) ? Infinity : (now - d) / 86400000;
-        };
-
-        let result = agreements.filter((agreement) => {
-          if (statusFilter !== "all" && agreement.status !== statusFilter) {
-            return false;
-          }
-          if (
-            keyword &&
-            !(
-              agreement.title.toLowerCase().includes(keyword) ||
-              (agreement.body || "").toLowerCase().includes(keyword)
-            )
-          ) {
-            return false;
-          }
-          if (acceptance) {
-            const { ratio, signed, total } = _acceptanceStats(agreement.id);
-            if (acceptance === "all-signed" && (total === 0 || signed < total))
-              return false;
-            if (
-              acceptance === "partial" &&
-              (signed === 0 || signed === total)
-            )
-              return false;
-            if (acceptance === "none" && signed > 0) return false;
-          }
-          if (updated) {
-            const d = daysSince(agreement.lastUpdatedAt);
-            if (updated === "7d" && d > 7) return false;
-            if (updated === "30d" && d > 30) return false;
-            if (updated === "90d" && d > 90) return false;
-            if (updated === "older" && d <= 90) return false;
-          }
-          if (sentStatus) {
-            const sent = !!agreement.lastSentAt;
-            if (sentStatus === "sent" && !sent) return false;
-            if (sentStatus === "not-sent" && sent) return false;
-          }
-          return true;
-        });
-
-        const sorters = {
-          "updated-desc": (a, b) =>
-            (b.lastUpdatedAt || "").localeCompare(a.lastUpdatedAt || ""),
-          "updated-asc": (a, b) =>
-            (a.lastUpdatedAt || "").localeCompare(b.lastUpdatedAt || ""),
-          "title-asc": (a, b) => a.title.localeCompare(b.title),
-          "acceptance-desc": (a, b) =>
-            _acceptanceStats(b.id).ratio - _acceptanceStats(a.id).ratio,
-          "status-asc": (a, b) => a.status.localeCompare(b.status),
-        };
-        return [...result].sort(sorters[sortBy] || sorters["updated-desc"]);
-      }
-
-      function applyEditability(agreement) {
-        const isDraft = agreement.status === "draft";
-        els.inputTitle.disabled = !isDraft;
-        els.inputBody.disabled = !isDraft;
-        els.saveAgreementBtn.disabled = !isDraft;
-        els.sendToAgentsBtn.disabled = !isDraft;
-        els.editabilityHint.textContent = isDraft
-          ? "Draft can be edited."
-          : "Published agreements are read-only.";
-      }
-
-      function statusBadge(status) {
-        const span = document.createElement("span");
-        span.classList.add("badge");
-        if (status === "published") {
-          span.classList.add("badge-status-published");
-          span.textContent = "Published";
-        } else {
-          span.classList.add("badge-status-draft");
-          span.textContent = "Draft";
-        }
-        return span;
-      }
-
-      function acceptanceStatusBadge(status) {
-        const span = document.createElement("span");
-        span.classList.add("badge");
-        if (status === "signed") {
-          span.classList.add("badge-status-signed");
-          span.textContent = "Signed";
-        } else {
-          span.classList.add("badge-status-pending");
-          span.textContent = "Pending";
-        }
-        return span;
-      }
-
-      function renderAgreementsTable() {
-        els.agreementsTbody.innerHTML = "";
-
-        const filteredAgreements = getFilteredAgreements();
-        filteredAgreements.forEach((ag) => {
-          const tr = document.createElement("tr");
-          if (ag.id === selectedAgreementId) tr.classList.add("selected-row");
-
-          const tdTitle = document.createElement("td");
-          tdTitle.innerHTML = `<div class="agreement-title-cell">${ag.title}</div>`;
-
-          const tdStatus = document.createElement("td");
-          tdStatus.appendChild(statusBadge(ag.status));
-
-          const tdUpdated = document.createElement("td");
-          tdUpdated.textContent = getLastUpdateLabel(ag);
-
-          const tdAccepted = document.createElement("td");
-          tdAccepted.textContent = getAgreementAcceptanceSummary(ag.id);
-
-          tr.appendChild(tdTitle);
-          tr.appendChild(tdStatus);
-          tr.appendChild(tdUpdated);
-          tr.appendChild(tdAccepted);
-
-          tr.addEventListener("click", () => selectAgreement(ag.id));
-          els.agreementsTbody.appendChild(tr);
-        });
-      }
-
-      function selectAgreement(id) {
-        const doSelect = () => {
-          const ag = agreements.find((x) => x.id === id);
-          if (!ag) return;
-          selectedAgreementId = id;
-
-          els.emptyDetail.style.display = "none";
-          els.detailPanel.style.display = "";
-
-          els.detailTitle.textContent = ag.title;
-          els.detailMeta.textContent = `Status: ${ag.status} · ${getLastUpdateLabel(ag)}`;
-
-          els.inputTitle.value = ag.title;
-          els.inputBody.value = ag.body || "";
-          els.inputTitle.classList.remove("ux-invalid");
-          els.inputBody.classList.remove("ux-invalid");
-          applyEditability(ag);
-          UX.markClean();
-
-          renderAgreementsTable();
-        };
-        if (selectedAgreementId && selectedAgreementId !== id) {
-          UX.guard(doSelect);
-        } else {
-          doSelect();
-        }
-      }
-
-      function createNewAgreement() {
-        const now = new Date();
-        const id = `agreement-${now.getTime()}`;
-        const title = "New agent agreement";
-        const ag = {
-          id,
-          title,
-          status: "draft",
-          effectiveFrom: "",
-          lastUpdatedAt: new Date().toLocaleString("en-GB", { hour12: false }),
-          lastSentAt: "",
-          body: "",
-        };
-        agreements.unshift(ag);
-        renderAgreementsTable();
-        selectAgreement(id);
-      }
-
-      function saveAgreement() {
-        if (!selectedAgreementId) return;
-        const ag = agreements.find((x) => x.id === selectedAgreementId);
-        if (!ag) return;
-        if (ag.status !== "draft") return;
-
-        const title = els.inputTitle.value.trim();
-        const body = els.inputBody.value.trim();
-        if (!title) {
-          els.inputTitle.classList.add("ux-invalid");
-          els.inputTitle.focus();
-          Toast.err("Title is required.");
-          return;
-        }
-        els.inputTitle.classList.remove("ux-invalid");
-        if (!body) {
-          els.inputBody.classList.add("ux-invalid");
-          els.inputBody.focus();
-          Toast.err("Body cannot be empty.");
-          return;
-        }
-        els.inputBody.classList.remove("ux-invalid");
-
-        ag.title = title;
-        ag.body = body;
-        ag.lastUpdatedAt = new Date().toLocaleString("en-GB", {
-          hour12: false,
-        });
-
-        els.detailTitle.textContent = ag.title;
-        els.detailMeta.textContent = `Status: ${ag.status} · ${getLastUpdateLabel(ag)}`;
-        renderAgreementsTable();
-        UX.markClean();
-        Toast.ok("Draft saved");
-      }
-
-      function sendToAgents() {
-        if (!selectedAgreementId) return;
-        const ag = agreements.find((x) => x.id === selectedAgreementId);
-        if (!ag) return;
-        if (ag.status !== "draft") return;
-
-        UX.confirm({
-          title: "Publish to all agents?",
-          message:
-            "Once published, every agent will see a banner in their portal and must accept this version before continuing. This agreement will become read-only.",
-          okLabel: "Publish",
-          onConfirm() {
-            ag.status = "published";
-            ag.lastSentAt = new Date().toLocaleString("en-GB", { hour12: false });
-            ag.lastUpdatedAt = ag.lastSentAt;
-
-            els.detailMeta.textContent = `Status: ${ag.status} · ${getLastUpdateLabel(ag)}`;
-            applyEditability(ag);
-            renderAgreementsTable();
-            UX.markClean();
-            Toast.ok("Agreement published to agents");
-          },
-        });
-      }
-
-      function initEvents() {
-        els.newAgreementBtn.addEventListener("click", createNewAgreement);
-        els.saveAgreementBtn.addEventListener("click", saveAgreement);
-        els.sendToAgentsBtn.addEventListener("click", sendToAgents);
-        els.filterStatus.addEventListener("change", renderAgreementsTable);
-        els.filterAgreementSearch.addEventListener(
-          "input",
-          renderAgreementsTable,
-        );
-        ["filterAcceptance", "filterUpdated", "filterSentStatus", "sortBy"].forEach(
-          (id) => {
-            const el = document.getElementById(id);
-            if (el) el.addEventListener("change", renderAgreementsTable);
-          },
-        );
-        document
-          .getElementById("resetAgreementFilters")
-          ?.addEventListener("click", () => {
-            els.filterStatus.value = "all";
-            els.filterAgreementSearch.value = "";
-            ["filterAcceptance", "filterUpdated", "filterSentStatus"].forEach(
-              (id) => {
-                const el = document.getElementById(id);
-                if (el) el.value = "";
-              },
-            );
-            const sb = document.getElementById("sortBy");
-            if (sb) sb.value = "updated-desc";
-            renderAgreementsTable();
-          });
-      }
-
-      function init() {
-        renderAgreementsTable();
-        if (agreements.length) {
-          selectAgreement(agreements[0].id);
-        }
-        initEvents();
-      }
-
-      init();
-    </script>
-  <!-- ─────── UX KIT (toast · confirm · focus trap · dirty guard) ─────── -->
-<style id="uxKitStyle">
-  .ux-toast-wrap{position:fixed;right:18px;bottom:18px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-  .ux-toast{background:#fff;border:1px solid #e5d9c0;border-left:4px solid #c4a25f;border-radius:8px;padding:10px 14px;min-width:240px;max-width:380px;box-shadow:0 4px 16px rgba(0,0,0,.12);font-size:13px;color:#2c1810;display:flex;align-items:flex-start;gap:8px;animation:ux-slide .22s ease;pointer-events:auto}
-  .ux-toast.ok{border-left-color:#2d6a4f}
-  .ux-toast.err{border-left-color:#c41e3a}
-  .ux-toast.info{border-left-color:#1d4e89}
-  .ux-toast .x{margin-left:auto;cursor:pointer;color:#9d8777;background:none;border:none;font-size:14px;padding:0 4px;font-family:inherit}
-  .ux-toast .x:hover{color:#2c1810}
-  @keyframes ux-slide{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
-
-  .ux-modal{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35)}
-  .ux-modal.open{display:flex}
-  .ux-modal-box{background:#fff;border-radius:12px;padding:22px 24px;width:420px;max-width:90vw;box-shadow:0 10px 32px rgba(0,0,0,.22)}
-  .ux-modal-box h3{font-size:15px;font-weight:700;color:#2c1810;margin:0 0 8px}
-  .ux-modal-box p{font-size:13px;color:#6b5c4e;line-height:1.5;margin:0 0 18px;white-space:pre-line}
-  .ux-modal-actions{display:flex;gap:8px;justify-content:flex-end}
-  .ux-btn{padding:7px 16px;border-radius:6px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500;border:1.5px solid #e5d9c0;background:#fff;color:#2c1810}
-  .ux-btn:hover{background:#fdfaf6}
-  .ux-btn.primary{background:#c4a25f;border-color:#c4a25f;color:#fff}
-  .ux-btn.primary:hover{background:#b08d4a}
-  .ux-btn.danger{background:#c41e3a;border-color:#c41e3a;color:#fff}
-  .ux-btn.danger:hover{background:#a51730}
-
-  /* Required-field marker */
-  .ux-req::after, label.req::after, .req::after{content:" *";color:#c41e3a;font-weight:700}
-
-  /* Form section heading */
-  .ux-form-section{margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid #e5d9c0;font-size:11px;font-weight:700;color:#6b5c4e;text-transform:uppercase;letter-spacing:.5px}
-  .ux-form-section:first-child{margin-top:4px}
-
-  /* Inline field validation */
-  .ux-field-error{font-size:11px;color:#c41e3a;margin-top:2px;display:block}
-  .ux-invalid, input.ux-invalid, textarea.ux-invalid, select.ux-invalid{border-color:#c41e3a !important;box-shadow:0 0 0 2px rgba(196,30,58,.12)}
-
-  /* Dirty indicator pill */
-  .ux-dirty-pill{display:none;background:#fff3cd;color:#856404;font-size:11px;font-weight:600;padding:3px 10px;border-radius:10px;margin-left:8px;vertical-align:middle}
-  .ux-dirty .ux-dirty-pill{display:inline-block}
-</style>
-
-<div class="ux-toast-wrap" id="uxToastWrap" role="status" aria-live="polite"></div>
-<div class="ux-modal" id="uxConfirmModal" role="dialog" aria-modal="true" aria-labelledby="uxConfirmTitle">
-  <div class="ux-modal-box">
-    <h3 id="uxConfirmTitle">Confirm</h3>
-    <p id="uxConfirmMsg"></p>
-    <div class="ux-modal-actions">
-      <button type="button" class="ux-btn" id="uxConfirmCancel">Cancel</button>
-      <button type="button" class="ux-btn primary" id="uxConfirmOk">Confirm</button>
+<!-- Confirm modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box">
+    <h3 id="confirmTitle">Confirm</h3>
+    <p id="confirmMsg"></p>
+    <div class="modal-actions">
+      <button class="btn btn-gray" id="confirmCancel">Cancel</button>
+      <button class="btn btn-danger" id="confirmOk">Delete</button>
     </div>
   </div>
 </div>
 
+<div class="toast-wrap" id="toastWrap"></div>
+
 <script>
-(function(){
-  if (window.UX) return; // idempotent
-  const wrap = document.getElementById('uxToastWrap');
-  const modal = document.getElementById('uxConfirmModal');
-  const titleEl = document.getElementById('uxConfirmTitle');
-  const msgEl = document.getElementById('uxConfirmMsg');
-  const okBtn = document.getElementById('uxConfirmOk');
-  const cancelBtn = document.getElementById('uxConfirmCancel');
-
-  // ──── Toast ────────────────────────────────────────────────────
-  function toast(msg, type){
-    if(!wrap) return;
-    const el = document.createElement('div');
-    el.className = 'ux-toast ' + (type || 'info');
-    const span = document.createElement('span');
-    span.textContent = msg || '';
-    const x = document.createElement('button');
-    x.className = 'x'; x.type = 'button'; x.setAttribute('aria-label','Dismiss');
-    x.textContent = '×';
-    x.addEventListener('click', () => el.remove());
-    el.appendChild(span); el.appendChild(x);
-    wrap.appendChild(el);
-    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 220); }, 3800);
-  }
-  window.Toast = {
-    show: toast,
-    ok:   (m) => toast(m, 'ok'),
-    err:  (m) => toast(m, 'err'),
-    info: (m) => toast(m, 'info'),
-  };
-
-  // ──── Confirm modal ───────────────────────────────────────────
-  let _onOk = null;
-  let _lastFocus = null;
-  function closeConfirm(){
-    modal.classList.remove('open');
-    _onOk = null;
-    if(_lastFocus && _lastFocus.focus) try { _lastFocus.focus(); } catch(e){}
-  }
-  okBtn.addEventListener('click', () => { const cb = _onOk; closeConfirm(); if(cb) cb(); });
-  cancelBtn.addEventListener('click', closeConfirm);
-  modal.addEventListener('click', (e) => { if(e.target === modal) closeConfirm(); });
-
-  function openConfirm(opts){
-    titleEl.textContent  = opts.title   || 'Confirm';
-    msgEl.textContent    = opts.message || 'Are you sure?';
-    okBtn.textContent    = opts.okLabel || 'Confirm';
-    cancelBtn.textContent= opts.cancelLabel || 'Cancel';
-    okBtn.className = 'ux-btn ' + (opts.danger ? 'danger' : 'primary');
-    _onOk = typeof opts.onConfirm === 'function' ? opts.onConfirm : null;
-    _lastFocus = document.activeElement;
-    modal.classList.add('open');
-    setTimeout(() => okBtn.focus(), 40);
-  }
-
-  window.UX = {
-    confirm: openConfirm,
-    toast,
-    // Run action only after confirming if dirty
-    guard(action){
-      if(!window.UX_dirty){ if(typeof action === 'function') action(); return; }
-      openConfirm({
-        title: 'Discard unsaved changes?',
-        message: 'You have edits that have not been saved. Leave anyway?',
-        okLabel: 'Discard',
-        danger: true,
-        onConfirm(){ window.UX_dirty = false; if(typeof action === 'function') action(); }
-      });
+  /* ── Data model (in-memory demo) ─────────────────────────────────────── */
+  const agreements = [
+    {
+      id: "agent-code",
+      title: "Agent Code of Conduct",
+      status: "published",
+      created: "2025-05-25, 19:55",
+      lastUpdate: "2025-05-25, 19:55",
+      agreed: 1500,
+      total: 3000,
+      content:
+        "<h1>Agent Code of Conduct</h1><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quis lobortis nisl cursus bibendum sit nulla accumsan sodales ornare.</p><p>Rhoncus proin orci duis scelerisque molestie cursus tincidunt aliquam.</p>",
     },
-    markClean(){ window.UX_dirty = false; document.body.classList.remove('ux-dirty'); },
-    markDirty(){ window.UX_dirty = true;  document.body.classList.add('ux-dirty'); },
-  };
+    {
+      id: "data-usage",
+      title: "Data usage & privacy policy (Agents)",
+      status: "published",
+      created: "2025-05-25, 19:55",
+      lastUpdate: "2025-05-25, 19:55",
+      agreed: 2653,
+      total: 3000,
+      content:
+        "<h1>Data usage & privacy policy</h1><p>Explains how platform data may be accessed by agents and which logs are recorded for security and compliance.</p>",
+    },
+    {
+      id: "beta-terms",
+      title: "Beta feature participation terms",
+      status: "draft",
+      created: "2025-05-25, 19:55",
+      lastUpdate: "2025-05-25, 19:55",
+      agreed: 0,
+      total: 3,
+      content:
+        "<h1>Beta Feature Participation Terms</h1><p>By participating in the beta programme, you agree to provide feedback and keep features confidential until general availability.</p>",
+    },
+  ];
 
-  // ──── Esc closes any open modal (built-in + page modals) ──────
-  document.addEventListener('keydown', (e) => {
-    if(e.key !== 'Escape') return;
-    if(modal.classList.contains('open')){ closeConfirm(); return; }
-    document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(m => {
-      const visible = getComputedStyle(m).display !== 'none' || m.classList.contains('show') || m.classList.contains('open');
-      if(!visible) return;
-      m.classList.remove('open','show','active');
-      m.style.display = 'none';
+  // Deterministic filler so the dataset exceeds 50 rows (demo pagination).
+  (function seedFiller() {
+    const topics = [
+      "Commission schedule", "Listing quality standard", "Brand usage policy",
+      "Referral program terms", "Anti-fraud commitment", "Service-level agreement",
+      "Photography guidelines", "Lead handling rules", "Dispute resolution policy",
+      "Renewal & cancellation terms",
+    ];
+    for (let i = 1; i <= 56; i++) {
+      const isDraft = i % 3 === 0;
+      const day = String(1 + (i % 28)).padStart(2, "0");
+      const month = String(1 + (i % 4)).padStart(2, "0");
+      const stamp = `2026-${month}-${day}, ${String(8 + (i % 10)).padStart(2, "0")}:${String((i * 5) % 60).padStart(2, "0")}`;
+      const topic = topics[i % topics.length];
+      agreements.push({
+        id: `agreement-seed-${i}`,
+        title: `${topic} v${i}`,
+        status: isDraft ? "draft" : "published",
+        created: stamp,
+        lastUpdate: stamp,
+        agreed: isDraft ? 0 : (i * 37) % 3000,
+        total: isDraft ? 3 : 3000,
+        content: `<h1>${topic}</h1><p>Filler agreement template #${i} generated for pagination demo. Covers ${topic.toLowerCase()} terms for agents.</p>`,
+      });
+    }
+  })();
+
+  /* ── State ───────────────────────────────────────────────────────────── */
+  const PAGE_SIZE = 50;
+  let pageNum = 1;
+  let editId = null; // null = New mode, otherwise the agreement id being edited
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) =>
+    String(s ?? "").replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+    );
+  const now = () =>
+    new Date().toISOString().slice(0, 16).replace("T", ", ");
+
+  /* ── Toast ──────────────────────────────────────────────────────────── */
+  function toast(msg, kind) {
+    const el = document.createElement("div");
+    el.className = "toast " + (kind || "ok");
+    el.textContent = msg;
+    $("toastWrap").appendChild(el);
+    setTimeout(() => {
+      el.style.opacity = "0";
+      el.style.transition = "opacity .25s";
+      setTimeout(() => el.remove(), 260);
+    }, 3000);
+  }
+
+  /* ── Confirm modal ──────────────────────────────────────────────────── */
+  let _confirmCb = null;
+  function askConfirm(title, message, okLabel, cb) {
+    $("confirmTitle").textContent = title;
+    $("confirmMsg").textContent = message;
+    $("confirmOk").textContent = okLabel || "Delete";
+    _confirmCb = cb;
+    $("confirmModal").classList.add("open");
+  }
+  function closeConfirm() {
+    $("confirmModal").classList.remove("open");
+    _confirmCb = null;
+  }
+
+  /* ── View switching ─────────────────────────────────────────────────── */
+  function show(id) {
+    document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+    $(id).classList.add("active");
+  }
+  function goBack() {
+    closeMoreMenu();
+    show("view-list");
+    renderList();
+  }
+  window.goBack = goBack;
+
+  /* ── Badges / helpers ───────────────────────────────────────────────── */
+  function statusBadge(status) {
+    return status === "published"
+      ? '<span class="badge badge-published">PUBLISHED</span>'
+      : '<span class="badge badge-draft">DRAFT</span>';
+  }
+
+  /* ── List filtering + pagination ────────────────────────────────────── */
+  function getFiltered() {
+    const kw = $("searchInput").value.trim().toLowerCase();
+    const st = $("statusFilter").value;
+    return agreements.filter((a) => {
+      if (st && a.status !== st) return false;
+      if (kw && !a.title.toLowerCase().includes(kw)) return false;
+      return true;
     });
-  });
+  }
 
-  // ──── Backdrop click closes existing page modals ──────────────
-  document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(m => {
-    if(m.__uxBound) return; m.__uxBound = true;
-    m.addEventListener('click', (e) => {
-      if(e.target !== m) return;
-      m.classList.remove('open','show','active');
-      m.style.display = 'none';
+  function pageWindow(cur, pages) {
+    const out = [];
+    if (pages <= 7) { for (let i = 1; i <= pages; i++) out.push(i); return out; }
+    let s = Math.max(2, cur - 2), e = Math.min(pages - 1, cur + 2);
+    if (cur <= 4) { s = 2; e = 5; }
+    if (cur >= pages - 3) { s = pages - 4; e = pages - 1; }
+    out.push(1);
+    if (s > 2) out.push("…");
+    for (let i = s; i <= e; i++) out.push(i);
+    if (e < pages - 1) out.push("…");
+    out.push(pages);
+    return out;
+  }
+  function renderPager(total) {
+    const pagerEl = $("agreementsPager");
+    const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (total <= PAGE_SIZE) { pagerEl.innerHTML = ""; pagerEl.style.display = "none"; return; }
+    pagerEl.style.display = "flex";
+    let h = `<button type="button" class="pg-btn" ${pageNum === 1 ? "disabled" : ""} onclick="gotoPage(${pageNum - 1})">‹ Prev</button>`;
+    pageWindow(pageNum, pages).forEach((p) => {
+      h += p === "…"
+        ? `<span class="pg-ellipsis">…</span>`
+        : `<button type="button" class="pg-btn ${p === pageNum ? "active" : ""}" onclick="gotoPage(${p})">${p}</button>`;
     });
+    h += `<button type="button" class="pg-btn" ${pageNum === pages ? "disabled" : ""} onclick="gotoPage(${pageNum + 1})">Next ›</button>`;
+    pagerEl.innerHTML = h;
+  }
+  function gotoPage(p) { pageNum = p; renderList(); }
+  window.gotoPage = gotoPage;
+
+  function renderList() {
+    const tbody = $("agreementsTbody");
+    const filtered = getFiltered();
+    const total = filtered.length;
+    const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (pageNum > pages) pageNum = pages;
+    if (pageNum < 1) pageNum = 1;
+    const start = (pageNum - 1) * PAGE_SIZE;
+    const rows = filtered.slice(start, start + PAGE_SIZE);
+
+    $("agreementsCount").textContent = total === 0
+      ? "Showing 0 of 0 agreements"
+      : `Showing ${start + 1}–${start + rows.length} of ${total} agreements`;
+
+    if (!total) {
+      tbody.innerHTML = '<tr><td class="empty-cell" colspan="5">No agreements match the filters.</td></tr>';
+      renderPager(total);
+      return;
+    }
+
+    tbody.innerHTML = rows
+      .map(
+        (a) => `
+        <tr>
+          <td>${esc(a.title)}</td>
+          <td>${statusBadge(a.status)}</td>
+          <td>${esc(a.lastUpdate)}</td>
+          <td>${a.agreed}/${a.total}</td>
+          <td>
+            <div class="row-actions">
+              <button class="action-btn" title="Edit" onclick="openEdit('${a.id}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              <button class="action-btn danger" title="Delete" onclick="askDelete('${a.id}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>`,
+      )
+      .join("");
+    renderPager(total);
+  }
+
+  /* ── Sidebar ────────────────────────────────────────────────────────── */
+  function setSidebar(ag) {
+    const empty = '<span class="empty">-</span>';
+    $("infoStatus").innerHTML = ag ? statusBadge(ag.status) : empty;
+    $("infoCreated").innerHTML = ag && ag.created ? esc(ag.created) : empty;
+    $("infoLastUpdate").innerHTML = ag && ag.lastUpdate ? esc(ag.lastUpdate) : empty;
+    $("infoAgreed").innerHTML = ag ? `${ag.agreed}/${ag.total}` : empty;
+  }
+
+  /* ── Editor: New ────────────────────────────────────────────────────── */
+  function openNew() {
+    editId = null;
+    $("editorTitle").textContent = "New Agreement";
+    $("editorSubtitle").textContent = "Add a new agreement";
+    $("pageName").value = "";
+    $("editorContent").innerHTML = "";
+    $("editorActions").innerHTML = `
+      <button class="btn btn-gray" onclick="goBack()">Cancel</button>
+      <button class="btn btn-gray2" onclick="saveDraft()">Save Draft</button>
+      <button class="btn btn-gold" onclick="sendToAgents()">Send to agents</button>`;
+    setSidebar(null);
+    show("view-editor");
+    $("pageName").focus();
+  }
+  window.openNew = openNew;
+
+  /* ── Editor: Edit ───────────────────────────────────────────────────── */
+  function openEdit(id) {
+    const ag = agreements.find((a) => a.id === id);
+    if (!ag) return;
+    editId = id;
+    $("editorTitle").textContent = ag.title;
+    $("editorSubtitle").textContent = "Created: " + ag.created;
+    $("pageName").value = ag.title;
+    $("editorContent").innerHTML = ag.content || "";
+    $("editorActions").innerHTML = `
+      <button class="btn btn-gray" onclick="goBack()">Cancel</button>
+      <button class="btn btn-gold" onclick="saveChange()">Save Change</button>
+      <button class="more-dots" title="More" onclick="toggleMoreMenu(event)"><span></span><span></span><span></span></button>
+      <div class="more-menu" id="moreMenu">
+        ${ag.status === "draft" ? `<button onclick="sendToAgents()">Send to agents</button>` : ""}
+        <button class="danger" onclick="askDelete('${ag.id}')">Delete agreement</button>
+      </div>`;
+    setSidebar(ag);
+    show("view-editor");
+  }
+  window.openEdit = openEdit;
+
+  function toggleMoreMenu(e) {
+    e.stopPropagation();
+    $("moreMenu")?.classList.toggle("open");
+  }
+  function closeMoreMenu() {
+    $("moreMenu")?.classList.remove("open");
+  }
+  document.addEventListener("click", () => closeMoreMenu());
+
+  /* ── Save / send / delete ───────────────────────────────────────────── */
+  function readEditor() {
+    return {
+      title: $("pageName").value.trim(),
+      content: $("editorContent").innerHTML.trim(),
+    };
+  }
+
+  function saveDraft() {
+    const { title, content } = readEditor();
+    if (!title) { toast("Please enter a title.", "err"); $("pageName").focus(); return; }
+    const ag = {
+      id: "agreement-" + Date.now(),
+      title,
+      status: "draft",
+      created: now(),
+      lastUpdate: now(),
+      agreed: 0,
+      total: 3000,
+      content,
+    };
+    agreements.unshift(ag);
+    toast(`Draft "${title}" saved.`, "ok");
+    goBack();
+  }
+  window.saveDraft = saveDraft;
+
+  function saveChange() {
+    const ag = agreements.find((a) => a.id === editId);
+    if (!ag) return;
+    const { title, content } = readEditor();
+    if (!title) { toast("Please enter a title.", "err"); $("pageName").focus(); return; }
+    ag.title = title;
+    ag.content = content;
+    ag.lastUpdate = now();
+    toast("Agreement updated successfully.", "ok");
+    goBack();
+  }
+  window.saveChange = saveChange;
+
+  function sendToAgents() {
+    const { title, content } = readEditor();
+    if (!title) { toast("Please enter a title.", "err"); $("pageName").focus(); return; }
+    let ag = editId ? agreements.find((a) => a.id === editId) : null;
+    if (ag) {
+      ag.title = title;
+      ag.content = content;
+    } else {
+      ag = {
+        id: "agreement-" + Date.now(),
+        title,
+        status: "draft",
+        created: now(),
+        agreed: 0,
+        total: 3000,
+        content,
+      };
+      agreements.unshift(ag);
+    }
+    ag.status = "published";
+    ag.lastUpdate = now();
+    closeMoreMenu();
+    toast(`"${title}" sent to agents.`, "ok");
+    goBack();
+  }
+  window.sendToAgents = sendToAgents;
+
+  function askDelete(id) {
+    const ag = agreements.find((a) => a.id === id);
+    if (!ag) return;
+    closeMoreMenu();
+    askConfirm(
+      "Delete agreement?",
+      `Permanently delete "${ag.title}"? This action cannot be undone.`,
+      "Delete",
+      () => {
+        const idx = agreements.findIndex((a) => a.id === id);
+        if (idx >= 0) agreements.splice(idx, 1);
+        toast("Agreement deleted successfully.", "ok");
+        closeConfirm();
+        if ($("view-editor").classList.contains("active")) goBack();
+        else renderList();
+      },
+    );
+  }
+  window.askDelete = askDelete;
+
+  /* ── Rich-text toolbar ──────────────────────────────────────────────── */
+  function cmd(command, value) {
+    $("editorContent").focus();
+    document.execCommand(command, false, value || null);
+  }
+  window.cmd = cmd;
+  function toggleFmt(command, btnId) {
+    cmd(command);
+    $(btnId).classList.toggle("on", document.queryCommandState(command));
+  }
+  window.toggleFmt = toggleFmt;
+  function applyBlockFormat(tag) {
+    $("editorContent").focus();
+    document.execCommand("formatBlock", false, tag);
+  }
+  window.applyBlockFormat = applyBlockFormat;
+  function wrapCode() {
+    const sel = window.getSelection();
+    if (!sel.rangeCount || sel.isCollapsed) return;
+    try { sel.getRangeAt(0).surroundContents(document.createElement("code")); } catch (e) {}
+  }
+  window.wrapCode = wrapCode;
+  function insertLink() { const url = prompt("URL:"); if (url) cmd("createLink", url); }
+  window.insertLink = insertLink;
+  function insertImg() { const url = prompt("Image URL:"); if (url) cmd("insertImage", url); }
+  window.insertImg = insertImg;
+
+  /* ── Wiring ─────────────────────────────────────────────────────────── */
+  $("searchInput").addEventListener("input", () => { pageNum = 1; renderList(); });
+  $("statusFilter").addEventListener("change", () => { pageNum = 1; renderList(); });
+  $("confirmCancel").addEventListener("click", closeConfirm);
+  $("confirmOk").addEventListener("click", () => { if (_confirmCb) _confirmCb(); });
+  $("confirmModal").addEventListener("click", (e) => { if (e.target === $("confirmModal")) closeConfirm(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if ($("confirmModal").classList.contains("open")) closeConfirm();
+    else if ($("view-editor").classList.contains("active")) goBack();
   });
 
-  // ──── Auto-track dirty on any [data-track-dirty] container ────
-  document.addEventListener('input', (e) => {
-    if(e.target.closest('[data-track-dirty]')) UX.markDirty();
-  });
-  document.addEventListener('change', (e) => {
-    if(e.target.closest('[data-track-dirty]')) UX.markDirty();
-  });
-  window.addEventListener('beforeunload', (e) => {
-    if(window.UX_dirty){ e.preventDefault(); e.returnValue = ''; }
-  });
-
-  // ──── Inline validation helper ────────────────────────────────
-  window.UX.validate = function(form){
-    let firstInvalid = null;
-    form.querySelectorAll('.ux-field-error').forEach(n => n.remove());
-    form.querySelectorAll('.ux-invalid').forEach(n => n.classList.remove('ux-invalid'));
-    form.querySelectorAll('[required]').forEach(field => {
-      const v = (field.value || '').trim();
-      let bad = !v;
-      if(!bad && field.type === 'email'){
-        bad = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-      }
-      if(bad){
-        field.classList.add('ux-invalid');
-        const note = document.createElement('span');
-        note.className = 'ux-field-error';
-        note.textContent = field.dataset.errorMsg ||
-          (field.type === 'email' ? 'Please enter a valid email.' : 'This field is required.');
-        if(field.parentNode) field.parentNode.insertBefore(note, field.nextSibling);
-        if(!firstInvalid) firstInvalid = field;
-      }
-    });
-    if(firstInvalid){ firstInvalid.focus(); return false; }
-    return true;
-  };
-})();
+  renderList();
 </script>
-<!-- ─────── END UX KIT ─────── -->
 
-  <!-- ─────── SYSTEM VISUAL POLISH (CRUD forms) ─────── -->
-<style id="uxVisualPolish">
-  /* ========== Inputs & selects ========== */
-  body .card input[type="text"],
-  body .card input[type="email"],
-  body .card input[type="number"],
-  body .card input[type="tel"],
-  body .card input[type="url"],
-  body .card input[type="date"],
-  body .card input[type="time"],
-  body .card input[type="password"],
-  body .card select,
-  body .card textarea,
-  body .modal input[type="text"],
-  body .modal input[type="email"],
-  body .modal input[type="password"],
-  body .modal select,
-  body .modal textarea,
-  body .field-grid input,
-  body .field-grid select,
-  body .field-row input,
-  body .field-row select,
-  body .field-row textarea {
-    padding: 9px 12px !important;
-    border-radius: 8px !important;
-    border: 1px solid #ddcdb9 !important;
-    background: #fff !important;
-    font-size: 13px !important;
-    color: #2c1810 !important;
-    font-family: inherit !important;
-    transition: border-color .15s, box-shadow .15s, background .15s;
-    line-height: 1.4;
-  }
-  body .card input:hover:not(:disabled):not([readonly]),
-  body .card select:hover:not(:disabled),
-  body .card textarea:hover:not(:disabled):not([readonly]),
-  body .modal input:hover:not(:disabled):not([readonly]),
-  body .modal select:hover:not(:disabled),
-  body .modal textarea:hover:not(:disabled):not([readonly]) {
-    border-color: #c9b079 !important;
-  }
-  body .card input:focus,
-  body .card select:focus,
-  body .card textarea:focus,
-  body .modal input:focus,
-  body .modal select:focus,
-  body .modal textarea:focus {
-    outline: none !important;
-    border-color: #c4a25f !important;
-    box-shadow: 0 0 0 3px rgba(196, 162, 95, 0.18) !important;
-    background: #fff !important;
-  }
-  body input[readonly],
-  body input:disabled,
-  body select:disabled,
-  body textarea:disabled,
-  body textarea[readonly] {
-    background: #f7f0e0 !important;
-    color: #7c6a55 !important;
-    cursor: not-allowed !important;
-    border-color: #e8dcc2 !important;
-  }
-
-  /* ========== Labels ========== */
-  body .field-grid > div > label,
-  body .field-grid label,
-  body .field-row > label,
-  body .modal-field > label,
-  body .detail-field-label {
-    font-size: 11.5px !important;
-    color: #6b5c4e !important;
-    font-weight: 600 !important;
-    margin-bottom: 5px !important;
-    display: block;
-    letter-spacing: 0.01em;
-  }
-
-  /* ========== Detail sections (turn flat dividers into sub-cards) ========== */
-  body .detail-section,
-  body .detail-block {
-    background: #fff !important;
-    border: 1px solid #eadccd !important;
-    border-radius: 10px !important;
-    padding: 18px 20px !important;
-    margin-bottom: 14px !important;
-    box-shadow: 0 1px 2px rgba(60, 42, 15, 0.03);
-    position: relative;
-  }
-
-  /* Section heading with gold accent bar */
-  body .detail-section > .detail-title,
-  body .detail-section > .ux-form-section,
-  body .detail-block > .ux-form-section,
-  body .detail-section-title {
-    font-size: 13.5px !important;
-    font-weight: 700 !important;
-    color: #2c1810 !important;
-    margin: 0 0 14px !important;
-    padding: 0 0 10px !important;
-    border-bottom: 1px solid #f0e6d4 !important;
-    text-transform: none !important;
-    letter-spacing: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 10px !important;
-  }
-  body .detail-section > .detail-title::before,
-  body .detail-section > .ux-form-section::before,
-  body .detail-block > .ux-form-section::before,
-  body .detail-section-title::before {
-    content: "";
-    width: 3px;
-    height: 16px;
-    background: #c4a25f;
-    border-radius: 2px;
-    flex-shrink: 0;
-  }
-
-  /* ========== Field grids: rhythm ========== */
-  body .field-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 14px 18px !important;
-  }
-  @media (max-width: 760px) {
-    body .field-grid {
-      grid-template-columns: 1fr !important;
-    }
-  }
-  body .field-row {
-    margin-bottom: 12px !important;
-  }
-
-  /* ========== Buttons ========== */
-  body .btn,
-  body .ux-btn {
-    padding: 8px 16px !important;
-    font-size: 12px !important;
-    border-radius: 8px !important;
-    cursor: pointer;
-    font-family: inherit;
-    font-weight: 600;
-    transition: background 0.15s, border-color 0.15s, color 0.15s,
-      box-shadow 0.15s;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    line-height: 1.3;
-  }
-  body .btn-sm,
-  body .ux-btn.btn-sm {
-    padding: 5px 11px !important;
-    font-size: 11px !important;
-    border-radius: 6px !important;
-  }
-  body .btn-primary {
-    background: #c4a25f !important;
-    color: #fff !important;
-    border: 1.5px solid #c4a25f !important;
-  }
-  body .btn-primary:hover {
-    background: #b08d4a !important;
-    border-color: #b08d4a !important;
-  }
-  body .btn-ghost {
-    background: #fff !important;
-    color: #2c1810 !important;
-    border: 1.5px solid #e5d9c0 !important;
-  }
-  body .btn-ghost:hover {
-    background: #faf6ee !important;
-    border-color: #d4c3a0 !important;
-  }
-  body .btn-secondary {
-    background: #fff !important;
-    color: #2c1810 !important;
-    border: 1.5px solid #e5d9c0 !important;
-  }
-  body .btn-secondary:hover {
-    background: #faf6ee !important;
-  }
-  body .btn-danger {
-    background: #c41e3a !important;
-    color: #fff !important;
-    border: 1.5px solid #c41e3a !important;
-  }
-  body .btn-danger:hover {
-    background: #a51730 !important;
-    border-color: #a51730 !important;
-  }
-
-  /* ========== Detail / Edit page top header ========== */
-  body #detailView > .card:first-child > .card-header {
-    background: linear-gradient(135deg, #fdf8ee, #f7eddb) !important;
-    margin: -14px -16px 14px !important;
-    padding: 16px 20px !important;
-    border-radius: 10px 10px 0 0 !important;
-    border-bottom: 1px solid #eadccd !important;
-    align-items: center !important;
-  }
-
-  /* ========== Card refinements ========== */
-  body .card {
-    border-radius: 12px !important;
-    border: 1px solid #eadccd !important;
-    background: #fffaf2 !important;
-    box-shadow: 0 1px 3px rgba(60, 42, 15, 0.05) !important;
-    padding: 16px 18px 18px !important;
-  }
-
-  /* ========== Modal polish (page-native modals, not ux-modal) ========== */
-  body .modal-backdrop {
-    background: rgba(44, 24, 16, 0.45) !important;
-    backdrop-filter: blur(2px);
-  }
-  body .modal {
-    border-radius: 14px !important;
-    border: 1px solid #eadccd !important;
-    box-shadow: 0 16px 40px rgba(44, 24, 16, 0.25) !important;
-    padding: 22px 24px !important;
-    max-width: 480px !important;
-    width: calc(100% - 32px) !important;
-  }
-  body .modal-header {
-    margin-bottom: 14px !important;
-    padding-bottom: 12px !important;
-    border-bottom: 1px solid #f0e6d4;
-    align-items: center !important;
-  }
-  body .modal-title {
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    color: #2c1810 !important;
-  }
-  body .modal-field {
-    margin-bottom: 12px !important;
-  }
-  body .modal-footer {
-    margin-top: 16px !important;
-    padding-top: 14px !important;
-    border-top: 1px solid #f0e6d4;
-    display: flex !important;
-    gap: 8px !important;
-    justify-content: flex-end !important;
-  }
-
-  /* ========== Empty state ========== */
-  body .empty-state {
-    padding: 32px 20px !important;
-    color: #9a8466 !important;
-    font-size: 13px !important;
-  }
-  body #emptyDetail {
-    text-align: center;
-    padding: 60px 20px !important;
-    color: #9a8466 !important;
-  }
-
-  /* ========== Badges / status pills ========== */
-  body .status-pill,
-  body .badge {
-    padding: 3px 10px !important;
-    border-radius: 999px !important;
-    font-size: 10.5px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-  }
-  body .badge-soft {
-    background: #f1e4d4 !important;
-    color: #7b623f !important;
-  }
-
-  /* ========== Avatar wrapper ========== */
-  body .avatar-circle {
-    width: 36px !important;
-    height: 36px !important;
-    font-size: 12px !important;
-    background: linear-gradient(135deg, #c9a574, #8c6845) !important;
-  }
-
-  /* ========== KPI cards ========== */
-  body .kpi-card,
-  body .kcard {
-    background: #fff !important;
-    border-radius: 10px !important;
-    border: 1px solid #eadccd !important;
-    padding: 14px 16px !important;
-    transition: box-shadow 0.15s, transform 0.15s;
-  }
-  body .kpi-card:hover,
-  body .kcard:hover {
-    box-shadow: 0 4px 14px rgba(60, 42, 15, 0.08) !important;
-    transform: translateY(-1px);
-  }
-  body .kpi-value {
-    font-size: 22px !important;
-    font-weight: 700 !important;
-    color: #2c1810 !important;
-  }
-  body .kpi-label {
-    font-size: 10.5px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    color: #7c6a55 !important;
-  }
-
-  /* ========== Filter bar refinement ========== */
-  body .filters {
-    padding: 12px 14px !important;
-    background: #fff !important;
-    border: 1px solid #eadccd !important;
-    border-radius: 10px !important;
-    margin-bottom: 14px !important;
-    gap: 8px !important;
-  }
-  body .filters input[type="text"],
-  body .filters select {
-    border-radius: 999px !important;
-    padding: 7px 12px !important;
-    font-size: 12px !important;
-    background: #faf6ee !important;
-    border: 1px solid #e5d9c0 !important;
-  }
-  body .filters input[type="text"]:focus,
-  body .filters select:focus {
-    outline: none !important;
-    border-color: #c4a25f !important;
-    background: #fff !important;
-    box-shadow: 0 0 0 3px rgba(196, 162, 95, 0.18) !important;
-  }
-
-  /* ========== Table refinement ========== */
-  body table thead {
-    background: #f7eedb !important;
-  }
-  body table th {
-    padding: 10px 12px !important;
-    font-size: 10.5px !important;
-    color: #7c6a55 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    font-weight: 700 !important;
-  }
-  body table td {
-    padding: 11px 12px !important;
-    font-size: 12.5px !important;
-    color: #2c1810;
-  }
-  body tbody tr:hover td {
-    background: #fbf5e8 !important;
-  }
-
-  /* ========== Page header refinement ========== */
-  body .page-header .page-title {
-    font-size: 24px !important;
-    font-weight: 800 !important;
-    color: #2c1810 !important;
-    letter-spacing: -0.01em;
-  }
-  body .page-header .page-subtitle {
-    font-size: 13px !important;
-    color: #7c6a55 !important;
-    margin-top: 4px;
-  }
-
-  /* ========== Sticky form footer (auto-applied when a section has .save-bar class) ========== */
-  body .save-bar,
-  body .sticky-save-bar {
-    position: sticky;
-    bottom: 0;
-    background: linear-gradient(
-      to top,
-      #fffaf2 70%,
-      rgba(255, 250, 242, 0)
-    ) !important;
-    padding: 18px 0 10px !important;
-    display: flex !important;
-    gap: 10px !important;
-    justify-content: flex-end !important;
-    margin: 18px -20px -18px !important;
-    border-top: 1px solid #eadccd !important;
-    padding-left: 20px !important;
-    padding-right: 20px !important;
-    z-index: 5;
-  }
-
-  /* ========== Permission matrix (roles page) ========== */
-  body .permission-table {
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  body .permission-table thead {
-    background: #f7eedb !important;
-  }
-  body .matrix-indicator {
-    width: 22px !important;
-    height: 22px !important;
-    border-radius: 7px !important;
-    transition: transform 0.15s, background 0.15s;
-  }
-  body .matrix-indicator:hover {
-    transform: scale(1.1);
-  }
-  body .matrix-indicator.active {
-    background: #2d6a4f !important;
-    border-color: #2d6a4f !important;
-  }
-
-  /* ========== Role list items ========== */
-  body .role-item {
-    padding: 10px 12px !important;
-    border-radius: 10px !important;
-    margin-bottom: 8px !important;
-    border: 1px solid #eadccd !important;
-    background: #fff;
-    transition: all 0.15s;
-  }
-  body .role-item:hover {
-    background: #fdf6e6 !important;
-    border-color: #d4c3a0 !important;
-    transform: translateX(2px);
-  }
-  body .role-item.active {
-    background: linear-gradient(135deg, #fdf2d8, #f8e8c4) !important;
-    border-color: #c4a25f !important;
-    box-shadow: 0 2px 8px rgba(196, 162, 95, 0.18);
-  }
-  body .role-name {
-    font-size: 13.5px !important;
-    font-weight: 700 !important;
-    color: #2c1810;
-  }
-
-  /* ========== Pretty checkbox/toggle row ========== */
-  body input[type="checkbox"],
-  body input[type="radio"] {
-    accent-color: #c4a25f;
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-  }
-
-  /* ========== File upload area ========== */
-  body input[type="file"] {
-    padding: 6px 10px !important;
-    border: 1.5px dashed #d4c3a0 !important;
-    border-radius: 8px !important;
-    background: #faf6ee !important;
-    cursor: pointer;
-    font-size: 11.5px !important;
-  }
-  body input[type="file"]:hover {
-    border-color: #c4a25f !important;
-    background: #fdf8ee !important;
-  }
-
-  /* ========== Required asterisk styled ========== */
-  body label.req::after,
-  body .req::after {
-    margin-left: 4px;
-    color: #c41e3a;
-    font-weight: 800;
-  }
-</style>
-<!-- ─────── END VISUAL POLISH ─────── -->
-
-  <!-- ─────── Detail-view layout primitives ─────── -->
-<style id="uxDetailLayout">
-  /* Top toolbar: back button + secondary actions */
-  body .entity-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-  }
-  body .entity-toolbar-right {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  body .entity-back-btn {
-    background: none;
-    border: none;
-    color: #6b5c4e;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 6px 10px;
-    border-radius: 8px;
-    font-family: inherit;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: background 0.15s, color 0.15s;
-  }
-  body .entity-back-btn:hover {
-    background: #faf6ee;
-    color: #2c1810;
-  }
-  body .entity-back-btn span {
-    font-size: 16px;
-    line-height: 1;
-  }
-
-  /* Hero card: avatar + identity + status + primary actions */
-  body .entity-hero {
-    background: linear-gradient(135deg, #fffaf2 0%, #fcf4e6 100%);
-    border: 1px solid #eadccd;
-    border-radius: 14px;
-    padding: 22px 24px;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    box-shadow: 0 2px 6px rgba(60, 42, 15, 0.05);
-  }
-  body .entity-hero-avatar {
-    flex-shrink: 0;
-    position: relative;
-  }
-  body .entity-hero-avatar .avatar-circle {
-    width: 60px !important;
-    height: 60px !important;
-    font-size: 22px !important;
-    box-shadow: 0 2px 6px rgba(60, 42, 15, 0.18);
-  }
-  body .entity-hero-avatar img {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    object-fit: cover;
-    background: #ddd;
-  }
-  body .entity-hero-info {
-    flex: 1;
-    min-width: 0;
-  }
-  body .entity-hero-name {
-    font-size: 22px !important;
-    font-weight: 800 !important;
-    color: #2c1810 !important;
-    margin: 0 0 6px !important;
-    letter-spacing: -0.01em;
-    line-height: 1.2;
-  }
-  body .entity-hero-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    font-size: 12.5px;
-    color: #6b5c4e;
-  }
-  body .entity-hero-sep {
-    color: #c4a25f;
-  }
-  body .entity-hero-email {
-    color: #6b5c4e;
-    font-weight: 500;
-  }
-  body .entity-hero-actions {
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
-  /* Section sub-title (after main heading) */
-  body .detail-title .section-sub {
-    font-size: 11.5px;
-    font-weight: 500;
-    color: #9d8a72;
-    text-transform: none;
-    letter-spacing: 0;
-    margin-left: auto;
-  }
-
-  /* Settings block (subsection inside a section card) */
-  body .settings-block {
-    padding: 14px 0;
-    border-bottom: 1px dashed #f0e6d4;
-  }
-  body .settings-block:last-child {
-    border-bottom: none;
-    padding-bottom: 4px;
-  }
-  body .settings-block:first-child {
-    padding-top: 4px;
-  }
-  body .settings-block-title {
-    font-size: 12.5px;
-    font-weight: 700;
-    color: #2c1810;
-    margin-bottom: 8px;
-  }
-  body .settings-block-sub {
-    font-size: 11.5px;
-    color: #7c6a55;
-    margin-bottom: 10px;
-  }
-
-  /* Checkbox row: clean horizontal checkbox + label */
-  body .checkbox-row {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12.5px !important;
-    color: #2c1810 !important;
-    font-weight: 500 !important;
-    cursor: pointer;
-    padding: 6px 0;
-    margin: 0 !important;
-  }
-  body .checkbox-row input[type="checkbox"] {
-    margin: 0;
-    width: 16px;
-    height: 16px;
-  }
-  body .checkbox-row span {
-    line-height: 1.3;
-  }
-  body .checkbox-group {
-    display: flex;
-    gap: 18px;
-    flex-wrap: wrap;
-  }
-
-  /* Sticky save bar: bottom action zone */
-  body .sticky-save-bar {
-    position: sticky;
-    bottom: 0;
-    background: #fffaf2;
-    border: 1px solid #eadccd;
-    border-radius: 12px;
-    padding: 14px 18px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: flex-end;
-    margin-top: 16px;
-    box-shadow: 0 -4px 16px rgba(60, 42, 15, 0.06);
-    z-index: 5;
-  }
-  body .sticky-save-bar .save-bar-hint {
-    font-size: 11.5px;
-    color: #9d8a72;
-    margin-right: auto;
-    font-style: italic;
-  }
-  body .sticky-save-bar .btn {
-    padding: 9px 18px !important;
-    font-size: 13px !important;
-    font-weight: 600;
-  }
-  body .sticky-save-bar .btn-primary {
-    box-shadow: 0 2px 6px rgba(196, 162, 95, 0.32);
-  }
-
-  /* Entity form: reset wrapping that older .card forced */
-  body .entity-form {
-    margin: 0;
-  }
-  body .entity-form .detail-section {
-    margin-bottom: 14px !important;
-  }
-  body .entity-form .detail-section:last-child {
-    margin-bottom: 0 !important;
-  }
-
-  /* Detail section heading: allow flex layout for sub-title alignment */
-  body .detail-section > .detail-title {
-    flex-wrap: wrap;
-  }
-
-  /* Read-only info grid (definition list style) */
-  body .info-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px 24px;
-  }
-  body .info-row {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 8px 0;
-    border-bottom: 1px dashed #f0e6d4;
-  }
-  body .info-row.info-row-wide {
-    grid-column: 1 / -1;
-  }
-  body .info-row:last-child,
-  body .info-row:nth-last-child(2):not(.info-row-wide) {
-    border-bottom: none;
-  }
-  body .info-label {
-    font-size: 11px;
-    color: #9d8a72;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 700;
-  }
-  body .info-value {
-    font-size: 13.5px;
-    color: #2c1810;
-    font-weight: 500;
-    line-height: 1.5;
-  }
-
-  /* Mobile */
-  @media (max-width: 720px) {
-    body .entity-hero {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 14px;
-    }
-    body .entity-hero-actions {
-      width: 100%;
-      justify-content: stretch;
-    }
-    body .entity-hero-actions .btn {
-      flex: 1;
-    }
-    body .sticky-save-bar {
-      flex-wrap: wrap;
-    }
-    body .sticky-save-bar .save-bar-hint {
-      flex-basis: 100%;
-      margin-right: 0;
-      margin-bottom: 6px;
-    }
-  }
-</style>
-<!-- ─────── END detail-view extras ─────── -->
-
-  </body>
+</body>
 </html>

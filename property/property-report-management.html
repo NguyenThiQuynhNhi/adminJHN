@@ -3,768 +3,1116 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin - Property Report Management</title>
+    <title>Admin — Property Reports</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
     <style>
+      :root {
+        /* ===== YUUSHI unified gold/white design tokens ===== */
+        --bg-page: #f5f5f5;
+        --bg-card: #ffffff;
+        --bg-card-warm: #fffaf2;
+        --bg-row-hover: #faf6ee;
+        --bg-header-soft: #faf6ee;
+        --text-primary: #1a1a1a;
+        --text-muted: #7a6a5c;
+        --text-label: #888;
+        --text-link: #8a5a3b;
+        --border-default: #e0e0e0;
+        --border-warm: #eadccd;
+        --border-soft: #f0f0f0;
+        --color-primary: #8b7340;
+        --color-primary-hover: #6d5a32;
+        --color-primary-light: #c9a85c;
+        --status-success-text: #2a7a2a;
+        --status-success-bg: #d4f0d4;
+        --status-warning-text: #c87a2a;
+        --status-warning-bg: #fff3d4;
+        --status-danger-text: #b23b3b;
+        --status-danger-bg: #fbe9e9;
+        --status-neutral-text: #666;
+        --status-neutral-bg: #e8e8e8;
+        --r-sm: 6px;
+        --r-md: 8px;
+        --r-lg: 12px;
+        --r-full: 999px;
+        --shadow-card: 0 10px 30px rgba(115, 72, 39, 0.05);
+        --shadow-toast: 0 8px 24px rgba(0, 0, 0, 0.3);
+        --shadow-modal: 0 18px 50px rgba(59, 47, 42, 0.28);
+        --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+
+        /* ===== Local aliases repointed to the unified palette ===== */
+        --bg-body: var(--bg-page);
+        --border-subtle: var(--border-default);
+        --border-strong: var(--border-warm);
+        --accent: var(--color-primary);
+        --accent-dark: var(--color-primary-hover);
+        --accent-deep: var(--color-primary-hover);
+        --gold: var(--color-primary-light);
+        --text-main: var(--text-primary);
+        --text-dim: var(--text-label);
+        --badge-green: var(--status-success-text);
+        --badge-red: var(--status-danger-text);
+        --badge-gray: var(--status-neutral-text);
+        --badge-amber: var(--status-warning-text);
+        --badge-blue: var(--status-neutral-text);
+        --badge-purple: var(--color-primary);
+        --fs-h1: 22px;
+        --fs-card-title: 14px;
+        --fs-body: 13px;
+        --fs-small: 12px;
+        --fs-label: 11px;
+      }
       * {
         box-sizing: border-box;
       }
-
+      html,
       body {
         margin: 0;
-        font-family:
-          system-ui,
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
-          sans-serif;
-        background: #f5f3ef;
-        color: #2a2118;
+        padding: 0;
       }
-
-      .page {
-        padding: 24px 32px 32px;
+      body {
+        padding: clamp(16px, 2.5vw, 24px);
+        font-family: var(--font-stack);
+        background: var(--bg-body);
+        color: var(--text-main);
+        font-size: var(--fs-body);
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
       }
-
-      .page-header {
-        margin-bottom: 18px;
-      }
-
-      .page-title {
-        font-size: 22px;
+      h1 {
+        margin: 0 0 4px;
+        font-size: var(--fs-h1);
         font-weight: 700;
-        margin-bottom: 4px;
+        letter-spacing: 0.02em;
       }
-
       .page-subtitle {
+        margin: 0 0 16px;
+        font-size: var(--fs-small);
+        color: var(--text-muted);
+        max-width: 760px;
+      }
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      .page-header-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .card {
+        background: var(--bg-card);
+        border-radius: var(--r-lg);
+        border: 1px solid var(--border-default);
+        padding: 18px;
+        box-shadow: var(--shadow-card);
+        margin-bottom: 16px;
+      }
+      .card-title {
+        font-size: var(--fs-card-title);
+        font-weight: 600;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border-soft);
+      }
+      .card-title i {
+        color: var(--accent);
         font-size: 13px;
-        color: #7c6a55;
-        max-width: 720px;
+        width: 18px;
+        text-align: center;
+      }
+      .filter-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+        gap: 10px 12px;
+        align-items: end;
+      }
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+      }
+      .field-label {
+        font-size: var(--fs-label);
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      input,
+      select,
+      textarea {
+        border-radius: var(--r-md);
+        border: 1px solid var(--border-default);
+        padding: 8px 11px;
+        font-size: var(--fs-body);
+        background: var(--bg-card);
+        color: var(--text-main);
+        outline: none;
+        font-family: inherit;
+        width: 100%;
+        min-height: 36px;
+      }
+      textarea {
+        resize: vertical;
+        min-height: 70px;
+      }
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 2px rgba(139, 115, 64, 0.18);
+      }
+      .filter-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+      }
+      .btn {
+        border-radius: var(--r-md);
+        border: 1px solid var(--border-default);
+        padding: 8px 14px;
+        font-size: var(--fs-body);
+        background: var(--bg-card);
+        cursor: pointer;
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-main);
+        font-family: inherit;
+        font-weight: 500;
+        min-height: 36px;
+        transition:
+          background 0.15s,
+          transform 0.1s;
+      }
+      .btn:hover {
+        background: var(--bg-row-hover);
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn-primary {
+        background: linear-gradient(
+          135deg,
+          var(--color-primary),
+          var(--color-primary-hover)
+        );
+        border-color: var(--color-primary-hover);
+        color: #ffffff;
+      }
+      .btn-primary:hover {
+        background: linear-gradient(
+          135deg,
+          var(--color-primary-hover),
+          var(--color-primary-hover)
+        );
+      }
+      .btn-ghost {
+        background: transparent;
+        border-color: transparent;
+      }
+      .btn-ghost:hover {
+        background: var(--bg-row-hover);
+      }
+      .btn-sm {
+        padding: 5px 10px;
+        font-size: 12px;
+        min-height: 30px;
+      }
+      .btn-danger {
+        color: var(--status-danger-text);
+        border-color: var(--status-danger-bg);
+      }
+      .btn-danger:hover {
+        background: var(--status-danger-bg);
+      }
+      .btn-warning {
+        color: var(--status-warning-text);
+        border-color: var(--status-warning-bg);
+      }
+      .btn-warning:hover {
+        background: var(--status-warning-bg);
+      }
+      .btn-success {
+        color: var(--status-success-text);
+        border-color: var(--status-success-bg);
+      }
+      .btn-success:hover {
+        background: var(--status-success-bg);
       }
 
-      .pill {
-        margin-top: 6px;
-        padding: 4px 10px;
-        border-radius: 999px;
+      .data-table-wrap {
+        overflow-x: auto;
+      }
+      table.data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--fs-small);
+      }
+      .data-table thead {
+        background: var(--bg-header-soft);
+      }
+      .data-table th,
+      .data-table td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-soft);
+        vertical-align: middle;
+      }
+      .data-table th {
+        font-weight: 600;
+        font-size: var(--fs-label);
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      .data-table tbody tr {
+        cursor: pointer;
+        transition: background 0.12s;
+      }
+      .data-table tbody tr:hover {
+        background: var(--bg-row-hover);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: var(--r-full);
         font-size: 11px;
         font-weight: 600;
-        background: #efe3cf;
-        color: #7b623f;
-        display: inline-block;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+      .badge-pending {
+        background: var(--status-warning-bg);
+        color: var(--status-warning-text);
+      }
+      .badge-suspended {
+        background: var(--status-success-bg);
+        color: var(--status-success-text);
+      }
+      .badge-dismissed {
+        background: var(--status-danger-bg);
+        color: var(--status-danger-text);
+      }
+      .badge-individual {
+        background: var(--status-neutral-bg);
+        color: var(--status-neutral-text);
+      }
+      .badge-company {
+        background: var(--bg-card-warm);
+        color: var(--color-primary);
+        border-color: var(--border-warm);
+      }
+      .badge-reason {
+        background: var(--bg-card-warm);
+        color: var(--color-primary);
+        border-color: var(--border-warm);
       }
 
-      .layout {
-        display: grid;
-        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.1fr);
-        gap: 18px;
-      }
-
-      .card {
-        background: #fffaf2;
-        border-radius: 10px;
-        border: 1px solid #eadccd;
-        padding: 16px 18px 18px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-      }
-
-      .toolbar {
+      .results-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 10px;
-        margin-bottom: 10px;
-      }
-
-      .filters {
-        display: flex;
         flex-wrap: wrap;
         gap: 8px;
+        margin-bottom: 10px;
+      }
+      .results-count {
+        font-size: var(--fs-small);
+        color: var(--text-muted);
+      }
+      .results-count strong {
+        color: var(--text-main);
+      }
+
+      .pagination {
+        display: flex;
         align-items: center;
-      }
-
-      .filters input,
-      .filters select {
-        border-radius: 999px;
-        border: 1px solid #ddcdb9;
-        padding: 7px 12px;
-        font-size: 12px;
-        background: #fdf8f0;
-      }
-
-      .filters input[type="date"] {
-        padding-right: 10px;
-      }
-
-      .select-wrapper {
-        position: relative;
-        display: inline-flex;
-        align-items: center;
-      }
-
-      .select-wrapper select {
-        padding-right: 26px;
-      }
-
-      .select-wrapper::after {
-        content: "\25be";
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 9px;
-        color: #7c6a55;
-        pointer-events: none;
-      }
-
-      .btn {
-        border-radius: 999px;
-        border: none;
-        padding: 7px 14px;
-        font-size: 12px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
+        justify-content: center;
         gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 14px;
       }
-
-      .btn-primary {
-        background: #3a6b3c;
-        color: #fff;
+      .pagination.hidden {
+        display: none !important;
       }
-
-      .btn-secondary {
-        background: #f7efe4;
-        color: #6a5641;
-        border: 1px solid #ddcdb9;
-      }
-
-      .reset-icon {
-        width: 32px;
-        height: 32px;
-        border: 1px solid #ddcdb9;
-        border-radius: 50%;
+      .page-btn {
+        min-width: 34px;
+        min-height: 34px;
+        padding: 6px 10px;
+        border-radius: var(--r-md);
+        border: 1px solid var(--border-default);
+        background: var(--bg-card);
+        color: var(--text-main);
+        font-size: var(--fs-small);
+        font-family: inherit;
+        font-weight: 500;
+        cursor: pointer;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        color: #7c6a55;
-        background: #fffaf2;
-        cursor: pointer;
-        font-size: 13px;
+        gap: 5px;
+        transition: background 0.15s;
       }
-
-      .reset-icon:hover {
-        border-color: #ad986e;
-        color: #ad986e;
+      .page-btn:hover:not(:disabled):not(.active) {
+        background: var(--bg-row-hover);
       }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
+      .page-btn.active {
+        background: var(--gold);
+        border-color: var(--gold);
+        color: #ffffff;
+        cursor: default;
       }
-
-      thead {
-        background: #f1e4d4;
+      .page-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
       }
-
-      th,
-      td {
-        padding: 8px 6px;
-        border-bottom: 1px solid #efe2d3;
-        text-align: left;
-      }
-
-      th {
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.02em;
-        color: #7b623f;
-      }
-
-      tbody tr {
-        cursor: pointer;
-      }
-
-      tbody tr:hover {
-        background: #f8eee0;
-      }
-
-      tbody tr.selected {
-        background: #ede1cf;
-      }
-
-      .status-pill {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 7px;
-        border-radius: 999px;
-        font-size: 11px;
-      }
-
-      .status-pending {
-        background: #fff2cc;
-        color: #7b5b12;
-      }
-
-      .status-reviewing {
-        background: #e0ecff;
-        color: #264f96;
-      }
-
-      .status-resolved {
-        background: #e3f5e5;
-        color: #216234;
-      }
-
-      .status-rejected {
-        background: #f9e0dd;
-        color: #a13f3a;
-      }
-
-      .type-pill {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 7px;
-        border-radius: 999px;
-        font-size: 11px;
-        background: #efe3cf;
-        color: #7b623f;
-      }
-
-      .empty-state {
+      .page-ellipsis {
+        min-width: 24px;
         text-align: center;
-        font-size: 12px;
-        color: #7c6a55;
-        padding: 14px 0;
+        color: var(--text-muted);
+        font-size: var(--fs-small);
+        user-select: none;
       }
 
-      .detail-header-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 10px;
-      }
-
-      .detail-title {
-        font-size: 16px;
-        font-weight: 600;
-      }
-
-      .detail-meta {
-        font-size: 11px;
-        color: #7c6a55;
-      }
-
-      .detail-grid {
+      .kpi-row {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px 16px;
-        margin-top: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+        margin-bottom: 14px;
       }
-
-      .detail-block-title {
-        font-size: 12px;
-        font-weight: 600;
-        margin-top: 10px;
-        margin-bottom: 4px;
-        color: #4f3c2b;
+      .kpi {
+        background: var(--bg-card);
+        border: 1px solid var(--border-default);
+        border-radius: var(--r-lg);
+        padding: 14px;
+        box-shadow: var(--shadow-card);
       }
-
-      .detail-label {
+      .kpi-label {
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 5px;
+      }
+      .kpi-value {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--text-main);
+        line-height: 1.1;
+      }
+      .kpi-hint {
         font-size: 11px;
-        color: #7c6a55;
-        margin-bottom: 2px;
-      }
-
-      .detail-value {
-        font-size: 13px;
-        margin-bottom: 4px;
-      }
-
-      .detail-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 10px;
-      }
-
-      .btn-soft {
-        border-radius: 999px;
-        border: 1px solid #ddcdb9;
-        padding: 6px 11px;
-        font-size: 12px;
-        cursor: pointer;
-        background: #f7efe4;
-        color: #6a5641;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .btn-soft-primary {
-        background: #ad986e;
-        border-color: #ad986e;
-        color: #fffaf2;
-      }
-
-      .btn-soft-danger {
-        background: #f9e0dd;
-        border-color: #e4a89f;
-        color: #9b332c;
-      }
-
-      .attachments-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
+        color: var(--text-dim);
         margin-top: 4px;
       }
 
-      .attachment-pill {
-        padding: 5px 9px;
-        border-radius: 999px;
-        background: #f5ede0;
-        font-size: 11px;
-        color: #6a5641;
-        border: 1px solid #ddcdb9;
+      /* ===== Detail view ===== */
+      .detail-toolbar {
+        position: sticky;
+        top: 0;
+        background: var(--bg-body);
+        padding: 12px 0;
+        z-index: 5;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
       }
-
-      .audit-log {
-        margin-top: 8px;
-        max-height: 150px;
-        overflow-y: auto;
-        border-radius: 8px;
-        background: #fffdf8;
-        border: 1px dashed #e1d5c5;
-        padding: 8px 10px;
-        font-size: 11px;
+      .detail-toolbar-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
       }
-
-      .audit-item {
-        margin-bottom: 4px;
+      .detail-toolbar-right {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
       }
-
-      .audit-item span.time {
-        color: #8b6f47;
+      .detail-hero {
+        background: var(--bg-card-warm);
+        border-radius: var(--r-lg);
+        border: 1px solid var(--border-warm);
+        padding: 22px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        box-shadow: var(--shadow-card);
       }
-
-      .badge-status-inline {
-        font-size: 11px;
-        padding: 2px 7px;
-        border-radius: 999px;
-        background: #efe3cf;
-        color: #7b623f;
-        margin-left: 6px;
-      }
-
-      .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 10, 5, 0.35);
-        display: none;
+      .detail-thumb {
+        width: 76px;
+        height: 76px;
+        border-radius: var(--r-lg);
+        background: linear-gradient(
+          135deg,
+          var(--color-primary),
+          var(--color-primary-hover)
+        );
+        color: #ffffff;
+        display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 40;
+        font-size: 28px;
+        flex-shrink: 0;
+        box-shadow: 0 8px 20px rgba(139, 115, 64, 0.25);
+      }
+      .detail-hero-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .detail-name {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0 0 6px;
+        color: var(--text-main);
+      }
+      .detail-meta {
+        font-size: var(--fs-small);
+        color: var(--text-muted);
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .detail-id-pill {
+        font-family: ui-monospace, "Consolas", monospace;
+        font-size: 11px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-default);
+        padding: 2px 8px;
+        border-radius: var(--r-sm);
+        color: var(--text-muted);
       }
 
-      .modal {
-        width: 380px;
-        max-width: calc(100% - 32px);
-        background: #fffaf2;
-        border-radius: 12px;
-        border: 1px solid #eadccd;
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
-        padding: 16px 18px 14px;
+      .section-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+        gap: 14px;
       }
-
-      .modal-title {
-        font-size: 15px;
+      .kv-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+        gap: 12px 16px;
+      }
+      .kv {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+      }
+      .kv-label {
+        font-size: var(--fs-label);
         font-weight: 600;
-        margin-bottom: 4px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .kv-value {
+        font-size: var(--fs-body);
+        color: var(--text-main);
+        word-break: break-word;
+        min-height: 20px;
+      }
+      .kv-full {
+        grid-column: 1 / -1;
       }
 
-      .modal-subtitle {
-        font-size: 12px;
-        color: #7c6a55;
-        margin-bottom: 10px;
+      .description-box {
+        background: var(--bg-card-warm);
+        border: 1px solid var(--border-warm);
+        border-radius: var(--r-md);
+        padding: 12px 14px;
+        font-size: 13px;
+        color: var(--text-main);
+        line-height: 1.55;
+        white-space: pre-line;
       }
 
-      .modal-body {
+      .attach-list {
         display: flex;
         flex-direction: column;
         gap: 8px;
       }
-
-      .modal-body label {
-        font-size: 12px;
-        font-weight: 500;
-        color: #4f3c2b;
+      .attach-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        background: var(--bg-card-warm);
+        border: 1px solid var(--border-warm);
+        border-radius: var(--r-md);
+        font-size: 12.5px;
+      }
+      .attach-item .ico {
+        width: 32px;
+        height: 32px;
+        background: rgba(139, 115, 64, 0.12);
+        color: var(--color-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--r-sm);
+        flex-shrink: 0;
+      }
+      .attach-item .info {
+        flex: 1;
+        min-width: 0;
+      }
+      .attach-item .info .lbl {
+        font-weight: 600;
+        color: var(--text-main);
+      }
+      .attach-item .info .meta {
+        font-size: 11px;
+        color: var(--text-muted);
       }
 
-      .modal-body select,
-      .modal-body textarea {
-        width: 100%;
+      .audit-log {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        border-left: 2px solid var(--border-strong);
+        margin-left: 6px;
+        padding-left: 14px;
+      }
+      .audit-entry {
+        position: relative;
+        padding: 8px 0;
+        font-size: 12.5px;
+      }
+      .audit-entry::before {
+        content: "";
+        position: absolute;
+        left: -22px;
+        top: 12px;
+        width: 10px;
+        height: 10px;
+        background: var(--accent);
+        border: 2px solid var(--bg-card);
+        border-radius: 50%;
+      }
+      .audit-entry .when {
+        font-size: 11px;
+        color: var(--text-dim);
+        margin-bottom: 2px;
+      }
+      .audit-entry .what {
+        color: var(--text-main);
+      }
+      .audit-entry .who {
+        font-weight: 600;
+        color: var(--accent-deep);
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .alert {
+        padding: 10px 14px;
         border-radius: 8px;
-        border: 1px solid #ddcdb9;
-        padding: 7px 9px;
-        font-size: 12px;
-        background: #fffdf7;
+        font-size: 12.5px;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .alert i {
+        margin-top: 1px;
+      }
+      .alert.info {
+        background: var(--bg-card-warm);
+        border: 1px solid var(--border-warm);
+        color: var(--color-primary-hover);
+      }
+      .alert.warn {
+        background: var(--status-warning-bg);
+        border: 1px solid var(--status-warning-bg);
+        color: var(--status-warning-text);
+      }
+      .alert.danger {
+        background: var(--status-danger-bg);
+        border: 1px solid var(--status-danger-bg);
+        color: var(--status-danger-text);
+      }
+      .alert.success {
+        background: var(--status-success-bg);
+        border: 1px solid var(--status-success-bg);
+        color: var(--status-success-text);
       }
 
-      .modal-body textarea {
-        min-height: 70px;
-        resize: vertical;
+      /* ===== Toast ===== */
+      .toast-wrap {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast {
+        background: var(--text-primary);
+        color: #ffffff;
+        padding: 10px 14px;
+        border-radius: var(--r-md);
+        font-size: 13px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        box-shadow: var(--shadow-toast);
+        animation: toastIn 0.2s ease;
+        max-width: 360px;
+      }
+      .toast.success {
+        background: var(--status-success-text);
+      }
+      .toast.error {
+        background: var(--status-danger-text);
+      }
+      .toast.warn {
+        background: var(--status-warning-text);
+        color: #ffffff;
+      }
+      @keyframes toastIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
 
+      /* ===== Modal ===== */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(34, 24, 18, 0.48);
+        /* dim overlay */
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 100;
+      }
+      .modal-backdrop.open {
+        display: flex;
+      }
+      .modal-box {
+        width: 500px;
+        max-width: 100%;
+        background: var(--bg-card);
+        border-radius: var(--r-lg);
+        box-shadow: var(--shadow-modal);
+        display: flex;
+        flex-direction: column;
+        max-height: 90vh;
+      }
+      .modal-header {
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border-default);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modal-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .modal-body {
+        padding: 18px;
+        overflow: auto;
+      }
+      .modal-body label {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 4px;
+        margin-top: 12px;
+      }
+      .modal-body label:first-of-type {
+        margin-top: 0;
+      }
+      .modal-body .req::after {
+        content: " *";
+        color: var(--status-danger-text);
+      }
+      .modal-body .check-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .modal-body .check-row input {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--color-primary);
+        min-height: 0;
+        cursor: pointer;
+      }
+      .modal-body .check-row label {
+        margin: 0;
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 500;
+        font-size: 13px;
+        color: var(--text-main);
+        cursor: pointer;
+      }
       .modal-footer {
-        margin-top: 10px;
+        padding: 12px 18px;
+        border-top: 1px solid var(--border-default);
         display: flex;
         justify-content: flex-end;
         gap: 8px;
       }
 
-      .checkbox-row {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 12px;
-        color: #4f3c2b;
-        margin-top: 4px;
-      }
-
-      .checkbox-row input[type="checkbox"] {
-        accent-color: #ad986e;
-      }
-
-      .toast {
-        position: fixed;
-        right: 18px;
-        bottom: 18px;
-        background: #1b4332;
-        color: #ecfdf5;
-        padding: 9px 12px;
-        border-radius: 999px;
-        font-size: 12px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-        opacity: 0;
-        transform: translateY(10px);
-        pointer-events: none;
-        transition: all 0.2s ease;
-        z-index: 50;
-      }
-
-      .toast.show {
-        opacity: 1;
-        transform: translateY(0);
-      }
-
-      @media (max-width: 1024px) {
-        .layout {
-          grid-template-columns: minmax(0, 1fr);
+      @media (max-width: 768px) {
+        .page-header {
+          flex-direction: column;
+        }
+        .detail-toolbar {
+          flex-direction: column;
+          align-items: stretch;
         }
       }
     </style>
-    <style id="uxResponsiveSplitFix">
-/* Force stack 1 column: list full-width on top, detail below */
-.layout {
-  grid-template-columns: minmax(0, 1fr) !important;
-}
-/* Compact tightening for very narrow viewports */
-@media (max-width: 900px) {
-  .page {
-    padding: 16px !important;
-  }
-}
-</style>
-<style id="uxTableOverflowFix">
-/* Table overflow handling: keep text intact, only enable horizontal scroll on narrow viewport */
-@media (max-width: 1199px) {
-  table {
-    display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-}
-</style>
-  <style id="uxBaselinePolish">
-/* Baseline UI polish — applies only where file CSS doesn't override */
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-/* Pointer cursor on interactive */
-button, .btn, [role="button"], select,
-input[type="checkbox"], input[type="radio"], input[type="submit"],
-input[type="button"], a[href], label[for] {
-  cursor: pointer;
-}
-
-/* Disabled state */
-button:disabled, .btn:disabled, input:disabled, select:disabled, textarea:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/* Focus-visible outline (a11y) */
-button:focus-visible, .btn:focus-visible,
-a:focus-visible, [role="button"]:focus-visible,
-input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 2px solid #c4a25f;
-  outline-offset: 2px;
-}
-
-/* Inherit font family for form controls (fixes browser-default) */
-input, select, textarea, button {
-  font-family: inherit;
-}
-
-/* Responsive media */
-img, svg, video {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Subtle hover for buttons (only if no transition already set, gentle filter) */
-button:hover:not(:disabled), .btn:hover:not(:disabled) {
-  filter: brightness(0.96);
-  transition: filter 0.15s ease;
-}
-
-/* Smooth scrollbar on Webkit */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: #f5ece0;
-}
-::-webkit-scrollbar-thumb {
-  background: #d9c8b4;
-  border-radius: 6px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #c4a25f;
-}
-
-/* Selection highlight on-brand */
-::selection {
-  background: #c4a25f;
-  color: #fff;
-}
-
-/* HR baseline */
-hr {
-  border: none;
-  border-top: 1px solid #eadccd;
-  margin: 12px 0;
-}
-
-/* Anchor baseline color matches brand (no underline by default to match flat UI) */
-a {
-  color: #8a5a3b;
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
-</style>
-</head>
+  </head>
   <body>
-    <div class="page">
+    <!-- ================== LIST VIEW ================== -->
+    <div id="listView">
       <div class="page-header">
-        <div style="margin-bottom: 8px">
+        <div>
+          <h1>Property Reports</h1>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn" type="button" onclick="exportCsv()">
+            <i class="fas fa-file-export"></i> Export CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="kpi-row" id="kpiRow"></div>
+
+      <section class="card">
+        <div class="card-title"><i class="fas fa-filter"></i> Filters</div>
+        <div class="filter-bar">
+          <div class="field-group">
+            <label class="field-label" for="fStatus">Status</label>
+            <select id="fStatus" multiple size="3">
+              <option value="pending">Pending</option>
+              <option value="suspended">Suspended</option>
+              <option value="dismissed">Dismissed</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="fReason">Reason</label>
+            <select id="fReason">
+              <option value="">All reasons</option>
+              <option value="property_sold">Property sold</option>
+              <option value="incorrect_information">
+                Incorrect information
+              </option>
+              <option value="privacy_copyright">Privacy / copyright</option>
+              <option value="unauthorized_listing">Unauthorized listing</option>
+              <option value="unauthorized_images">Unauthorized images</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="fReporterType">Reporter type</label>
+            <select id="fReporterType">
+              <option value="">All</option>
+              <option value="individual">Individual</option>
+              <option value="company">Real-Estate Company</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="fFrom">Submitted from</label>
+            <input type="date" id="fFrom" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="fTo">Submitted to</label>
+            <input type="date" id="fTo" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="fSearch">Search</label>
+            <input
+              type="text"
+              id="fSearch"
+              placeholder="Property name, ID, reporter…"
+            />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" type="button" onclick="resetFilters()">
+            Reset
+          </button>
           <button
+            class="btn btn-primary"
             type="button"
-            class="btn btn-secondary"
-            onclick="window.location.href = 'property-list-oversight.html'"
+            onclick="applyFilters()"
           >
-            ← Back to Property List
+            <i class="fas fa-search"></i> Apply
           </button>
         </div>
-        <div class="page-title">Property Report Management</div>
-        <div class="page-subtitle">
-          Manage reports submitted by end users and agent companies. Reports are
-          review triggers only: issues must be resolved in the Property module,
-          then finalized here.
+      </section>
+
+      <section class="card">
+        <div class="results-header">
+          <div class="results-count" id="resultCount">Showing 0 of 0 reports</div>
         </div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Report ID</th>
+                <th>Property</th>
+                <th>Reason</th>
+                <th>Reporter</th>
+                <th>Submitted</th>
+                <th>Last Update</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="listBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="pagination"></div>
+      </section>
+    </div>
+
+    <!-- ================== DETAIL VIEW ================== -->
+    <div id="detailView" class="hidden">
+      <div class="detail-toolbar">
+        <div class="detail-toolbar-left">
+          <button class="btn btn-ghost" type="button" onclick="showList()">
+            <i class="fas fa-arrow-left"></i> Back to reports
+          </button>
+          <span class="badge" id="dStatusBadge"></span>
+        </div>
+        <div class="detail-toolbar-right" id="dActions"></div>
       </div>
 
-      <div class="layout">
-        <!-- LIST SIDE -->
-        <div class="card">
-          <div class="toolbar">
-            <div class="filters">
-              <div class="select-wrapper">
-                <select id="filterStatus">
-                  <option value="">Status: All</option>
-                  <option value="pending">Pending</option>
-                  <option value="reviewing">Reviewing</option>
-                  <option value="resolved">Resolved</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </div>
-              <div class="select-wrapper">
-                <select id="filterReason">
-                  <option value="">Reason: All</option>
-                  <option value="property_sold">Property sold</option>
-                  <option value="incorrect_information">
-                    Incorrect information
-                  </option>
-                  <option value="privacy_copyright">Privacy / copyright</option>
-                  <option value="unauthorized_listing">
-                    Unauthorized listing
-                  </option>
-                  <option value="unauthorized_images">
-                    Unauthorized images
-                  </option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div class="select-wrapper">
-                <select id="filterReporterType">
-                  <option value="">Reporter: All</option>
-                  <option value="individual">Individual</option>
-                  <option value="company">Company</option>
-                </select>
-              </div>
-              <input
-                type="text"
-                id="filterPropertyId"
-                placeholder="Property name or ID"
-              />
-              <input type="date" id="filterDateFrom" />
-              <input type="date" id="filterDateTo" />
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px">
-              <button class="btn btn-secondary" onclick="applyFilters()">
-                Apply
-              </button>
-              <div
-                class="reset-icon"
-                onclick="resetFilters()"
-                title="Reset filters"
-              >
-                &#x21bb;
-              </div>
-            </div>
-          </div>
-
-          <div style="overflow-x: auto; max-height: 520px">
-            <table>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Property</th>
-                  <th>Property type</th>
-                  <th>Reason</th>
-                  <th>Reporter</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody id="reportTableBody">
-                <tr>
-                  <td colspan="7" class="empty-state">No reports available.</td>
-                </tr>
-              </tbody>
-            </table>
+      <div class="detail-hero">
+        <div class="detail-thumb" id="dThumb"><i class="fas fa-flag"></i></div>
+        <div class="detail-hero-info">
+          <h2 class="detail-name" id="dPropertyTitle">—</h2>
+          <div class="detail-meta">
+            <span class="detail-id-pill" id="dReportId">R-—</span>
+            <span>·</span>
+            <span id="dPropertyId">—</span>
+            <span>·</span>
+            <span id="dPropertyOwner">—</span>
           </div>
         </div>
+        <button class="btn" type="button" onclick="openPropertyLink()">
+          <i class="fas fa-arrow-up-right-from-square"></i> Open property
+        </button>
+      </div>
 
-        <!-- DETAIL SIDE -->
-        <div class="card" id="detailCard">
-          <div class="detail-header-row">
-            <div>
-              <div class="detail-title" id="detailTitle">
-                No report selected
-              </div>
-              <div class="detail-meta" id="detailMeta">
-                Select a report from the list to view details.
-              </div>
-            </div>
-            <div id="detailStatus"></div>
-          </div>
+      <div id="dAlert"></div>
 
-          <div id="detailContent" style="font-size: 13px; color: #3f3225">
-            <!-- Filled by JS -->
+      <div class="section-grid">
+        <section class="card">
+          <div class="card-title">
+            <i class="fas fa-circle-info"></i> Report Information
           </div>
-        </div>
+          <div class="kv-grid" id="dReportInfo"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-title"><i class="fas fa-user"></i> Reporter</div>
+          <div class="kv-grid" id="dReporterInfo"></div>
+        </section>
+
+        <section class="card" style="grid-column: 1 / -1">
+          <div class="card-title">
+            <i class="fas fa-message"></i> Description from reporter
+          </div>
+          <div class="description-box" id="dDescription">—</div>
+        </section>
+
+        <section class="card" style="grid-column: 1 / -1">
+          <div class="card-title">
+            <i class="fas fa-paperclip"></i> Attachments &amp; Evidence
+          </div>
+          <div class="attach-list" id="dAttachments"></div>
+        </section>
+
+        <section class="card" style="grid-column: 1 / -1">
+          <div class="card-title">
+            <i class="fas fa-clock-rotate-left"></i> Audit log
+          </div>
+          <div class="audit-log" id="dAuditLog"></div>
+        </section>
       </div>
     </div>
 
-    <!-- Resolve Modal -->
-    <div class="modal-backdrop" id="resolveModal">
-      <div class="modal">
-        <div class="modal-title">Resolve Report</div>
-        <div class="modal-subtitle">
-          Confirm how this report was handled. Actual actions must be taken in
-          the Property module.
+    <!-- ================== SUSPEND MODAL ================== -->
+    <div class="modal-backdrop" id="suspendModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <i class="fas fa-lock" style="color: var(--badge-green)"></i>
+            Suspend listing — apply action
+          </h3>
+          <button
+            class="btn btn-ghost btn-sm"
+            type="button"
+            onclick="closeModal('suspendModal')"
+          >
+            <i class="fas fa-times"></i>
+          </button>
         </div>
         <div class="modal-body">
-          <div>
-            <label for="resolveAction" class="req">Action taken</label>
-            <select id="resolveAction" required>
-              <option value="">Select an action…</option>
-              <option value="suspend_listing">Suspend listing</option>
-              <option value="contacted_agent">Contacted agent</option>
-              <option value="no_issue_found">No issue found</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <div class="checkbox-row" style="margin-top: 12px">
-            <input type="checkbox" id="resolveNotify" />
-            <label for="resolveNotify">Notify reporter via email</label>
+          <label for="suspendNote">Note</label>
+          <textarea
+            id="suspendNote"
+            placeholder="Additional context for the audit log…"
+          ></textarea>
+          <div class="check-row">
+            <input type="checkbox" id="suspendNotify" checked />
+            <label for="suspendNotify"
+              >Notify reporter &amp; listing owner via email</label
+            >
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary" onclick="closeResolveModal()">
+          <button
+            class="btn"
+            type="button"
+            onclick="closeModal('suspendModal')"
+          >
             Cancel
           </button>
-          <button class="btn btn-primary" onclick="confirmResolve()">
-            Confirm resolve
+          <button
+            class="btn btn-success"
+            type="button"
+            onclick="confirmSuspend()"
+          >
+            <i class="fas fa-lock"></i> Confirm &amp; suspend
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Reject Modal -->
-    <div class="modal-backdrop" id="rejectModal">
-      <div class="modal">
-        <div class="modal-title">Reject Report</div>
-        <div class="modal-subtitle">
-          Provide a reason why this report is not accepted.
+    <!-- ================== DISMISS MODAL ================== -->
+    <div class="modal-backdrop" id="dismissModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <i class="fas fa-circle-xmark" style="color: var(--badge-red)"></i>
+            Dismiss report
+          </h3>
+          <button
+            class="btn btn-ghost btn-sm"
+            type="button"
+            onclick="closeModal('dismissModal')"
+          >
+            <i class="fas fa-times"></i>
+          </button>
         </div>
         <div class="modal-body">
-          <div>
-            <label for="rejectReason" class="req">Reject reason</label>
-            <select id="rejectReason" required>
-              <option value="">Select a reason…</option>
-              <option value="invalid_report">Invalid report</option>
-              <option value="not_enough_evidence">Not enough evidence</option>
-              <option value="duplicate">Duplicate</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
+          <label class="req" for="dismissReason">Dismiss reason</label>
+          <select id="dismissReason">
+            <option value="">Select a reason…</option>
+            <option value="invalid_report">Invalid report</option>
+            <option value="not_enough_evidence">Not enough evidence</option>
+            <option value="no_issue_found">No issue found</option>
+            <option value="duplicate">Duplicate of another report</option>
+            <option value="out_of_scope">Out of platform scope</option>
+            <option value="other">Other</option>
+          </select>
+          <label for="dismissNote">Note to reporter</label>
+          <textarea
+            id="dismissNote"
+            placeholder="Explanation visible to the reporter…"
+          ></textarea>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary" onclick="closeRejectModal()">
+          <button class="btn" type="button" onclick="closeModal('dismissModal')">
             Cancel
           </button>
-          <button class="btn btn-soft-danger" onclick="confirmReject()">
-            Confirm reject
+          <button
+            class="btn btn-danger"
+            type="button"
+            onclick="confirmDismiss()"
+          >
+            <i class="fas fa-circle-xmark"></i> Confirm dismiss
           </button>
         </div>
       </div>
     </div>
 
-    <div class="toast" id="toast"></div>
+    <div class="toast-wrap" id="toastWrap"></div>
 
     <script>
-      const currentAdmin = "Admin Tanaka";
+      // ========================================================================
+      // CONSTANTS
+      // ========================================================================
+      const REASON_LABEL = {
+        property_sold: "Property sold",
+        incorrect_information: "Incorrect information",
+        privacy_copyright: "Privacy / copyright",
+        unauthorized_listing: "Unauthorized listing",
+        unauthorized_images: "Unauthorized images",
+        other: "Other",
+      };
+      const STATUS_LABEL = {
+        pending: "Pending",
+        suspended: "Suspended",
+        dismissed: "Dismissed",
+      };
+      const DISMISS_REASON_LABEL = {
+        invalid_report: "Invalid report",
+        not_enough_evidence: "Not enough evidence",
+        duplicate: "Duplicate of another report",
+        no_issue_found: "No issue found",
+        out_of_scope: "Out of platform scope",
+        other: "Other",
+      };
+      const CURRENT_ADMIN = "Admin Tanaka";
 
+      // ========================================================================
+      // MOCK DATA
+      // ========================================================================
       const reports = [
         {
           id: "R-2024-0001",
@@ -777,10 +1125,14 @@ a:hover {
           reporterPhone: "+81-90-1234-5678",
           reason: "incorrect_information",
           description:
-            "The floor area listed seems different from what the agent told me.",
+            "The floor area listed seems different from what the agent told me. The ad shows 95 m² but during my site visit the agent confirmed only 82 m². Please verify and update the listing.",
           attachments: [
-            { type: "image", label: "Listing screenshot" },
-            { type: "link", label: "External listing", url: "#" },
+            { type: "image", label: "Listing screenshot", size: "412 KB" },
+            {
+              type: "link",
+              label: "External listing on partner site",
+              url: "https://example.com",
+            },
           ],
           status: "pending",
           createdAt: "2024-03-10T10:30:00",
@@ -790,7 +1142,7 @@ a:hover {
               at: "2024-03-10T10:30:00",
               by: "System",
               action: "created",
-              detail: "Report submitted by end user.",
+              detail: "Submitted by Jack Miller — Report received.",
             },
           ],
         },
@@ -805,25 +1157,29 @@ a:hover {
           reporterPhone: "+81-3-5555-0000",
           reason: "unauthorized_listing",
           description:
-            "This listing reuses our exclusive property photos without permission.",
+            "This listing reuses our exclusive property photos without permission. We hold the original copyright for these images (registered 2023-09-15). Please take down the listing.",
           attachments: [
-            { type: "image", label: "Original marketing material" },
+            {
+              type: "image",
+              label: "Original marketing material",
+              size: "1.2 MB",
+            },
+            {
+              type: "doc",
+              label: "Copyright registration certificate.pdf",
+              size: "284 KB",
+            },
           ],
-          status: "reviewing",
+          status: "pending",
           createdAt: "2024-03-12T09:10:00",
-          updatedAt: "2024-03-13T14:22:00",
+          updatedAt: "2024-03-12T09:10:00",
           auditLog: [
             {
               at: "2024-03-12T09:10:00",
               by: "System",
               action: "created",
-              detail: "Report submitted by company.",
-            },
-            {
-              at: "2024-03-13T14:22:00",
-              by: "Admin Sato",
-              action: "status_changed",
-              detail: "Status changed to reviewing.",
+              detail:
+                "Submitted by Tokyo Realty Compliance Team — Report received.",
             },
           ],
         },
@@ -838,9 +1194,11 @@ a:hover {
           reporterPhone: "+81-80-5555-8888",
           reason: "property_sold",
           description:
-            "The agent said this property is already sold but still shown as available.",
+            "The agent told me this property is already sold but it is still shown as available on the site, leading to confusion.",
           attachments: [],
-          status: "resolved",
+          status: "suspended",
+          suspendNote:
+            "Confirmed with agent — property closed deal on 2024-03-07. Listing suspended.",
           createdAt: "2024-03-08T16:05:00",
           updatedAt: "2024-03-09T11:40:00",
           auditLog: [
@@ -848,13 +1206,14 @@ a:hover {
               at: "2024-03-08T16:05:00",
               by: "System",
               action: "created",
-              detail: "Report submitted by end user.",
+              detail: "Submitted by Emma Wilson — Report received.",
             },
             {
               at: "2024-03-09T11:40:00",
               by: "Admin Tanaka",
-              action: "resolved",
-              detail: "Listing suspended. Reporter notified.",
+              action: "suspended",
+              detail:
+                "Suspended by Admin Tanaka — Listing suspended. Reporter notified.",
             },
           ],
         },
@@ -870,8 +1229,12 @@ a:hover {
           reason: "unauthorized_images",
           description:
             "Images appear copied from our previous campaign without license.",
-          attachments: [{ type: "link", label: "Evidence folder", url: "#" }],
-          status: "rejected",
+          attachments: [
+            { type: "link", label: "Evidence folder (Google Drive)", url: "#" },
+          ],
+          status: "dismissed",
+          dismissReason: "duplicate",
+          dismissNote: "Same case as R-2024-0002. Already under review there.",
           createdAt: "2024-03-01T11:00:00",
           updatedAt: "2024-03-02T15:30:00",
           auditLog: [
@@ -879,1406 +1242,642 @@ a:hover {
               at: "2024-03-01T11:00:00",
               by: "System",
               action: "created",
-              detail: "Report submitted by company.",
+              detail: "Submitted by Legal Dept, Osaka Homes — Report received.",
             },
             {
               at: "2024-03-02T15:30:00",
               by: "Admin Sato",
-              action: "rejected",
-              detail: "Duplicate of existing case.",
+              action: "dismissed",
+              detail:
+                "Dismissed by Admin Sato — Reason: Duplicate of another report. No action on listing. Reporter notified.",
+            },
+          ],
+        },
+        {
+          id: "R-2024-0005",
+          propertyId: "P-2014",
+          propertyTitle: "Minami-Aoyama Penthouse",
+          propertyOwner: "Yamada Hiroshi (ABC Realty)",
+          reporterType: "individual",
+          reporterName: "Lee Min-jun",
+          reporterEmail: "minjun.lee@example.com",
+          reporterPhone: "+82-10-2345-6789",
+          reason: "privacy_copyright",
+          description:
+            "The listing photo shows my apartment's interior — I'm the previous tenant and never gave permission to use these photos for marketing.",
+          attachments: [
+            {
+              type: "image",
+              label: "Original photo with timestamp",
+              size: "2.4 MB",
+            },
+          ],
+          status: "pending",
+          createdAt: "2024-03-15T14:20:00",
+          updatedAt: "2024-03-15T14:20:00",
+          auditLog: [
+            {
+              at: "2024-03-15T14:20:00",
+              by: "System",
+              action: "created",
+              detail: "Submitted by Lee Min-jun — Report received.",
             },
           ],
         },
       ];
 
-      let filteredReports = [...reports];
-      let selectedReportId = null;
+      // ------------------------------------------------------------------
+      // Deterministic filler so the list always has >= 60 reports for the
+      // universal 50/page pagination. The five hand-written examples above
+      // are kept as-is; these padded rows use fixed, realistic values.
+      // ------------------------------------------------------------------
+      (function seedReports() {
+        const TITLES = [
+          ["Studio in Nakano", "Tokyo Realty Co."],
+          ["Riverside Condo in Kyoto", "Kyoto Estate KK"],
+          ["Townhouse in Sapporo", "Hokkaido Homes"],
+          ["Seaside Villa in Fukuoka", "Kyushu Living Ltd."],
+          ["Compact Flat in Nagoya", "Chubu Property Group"],
+          ["Garden House in Kobe", "Kansai Realty"],
+          ["Modern Loft in Sendai", "Tohoku Homes KK"],
+          ["Hillside Cottage in Nara", "Nara Estate Co."],
+          ["City Apartment in Hiroshima", "Setouchi Realty"],
+          ["Renovated Machiya in Kanazawa", "Hokuriku Homes"],
+          ["Mountain Cabin in Nagano", "Alps Property"],
+          ["Bayfront Suite in Yokohama", "Yokohama Living KK"],
+        ];
+        const REASONS = [
+          "property_sold",
+          "incorrect_information",
+          "privacy_copyright",
+          "unauthorized_listing",
+          "unauthorized_images",
+          "other",
+        ];
+        const STATUSES = ["pending", "suspended", "dismissed"];
+        const REPORTERS = [
+          ["individual", "Sophie Turner", "sophie.turner@example.com", "+81-90-1111-2222"],
+          ["company", "Compliance Team", "compliance@example.jp", "+81-3-4444-5555"],
+          ["individual", "Kenji Watanabe", "kenji.w@example.com", "+81-80-7777-8888"],
+          ["company", "Legal Department", "legal@example.jp", "+81-6-2222-3333"],
+          ["individual", "Maria Garcia", "maria.g@example.com", "+34-600-123-456"],
+        ];
+        const DESCRIPTIONS = [
+          "The information shown in this listing does not match what I observed on site. Please review the details.",
+          "These photos appear to be reused from another listing without authorization. Kindly investigate.",
+          "I was told this property is no longer available, yet it still shows as active on the platform.",
+          "Privacy concern: the listing exposes details that should not be public. Please look into it.",
+          "This listing seems to have been posted without proper authorization from the owner.",
+        ];
+        const target = 60;
+        const startCount = reports.length;
+        const startNum = startCount + 1;
+        for (let i = 0; i < target - startCount; i++) {
+          const n = startNum + i;
+          const idNum = String(n).padStart(4, "0");
+          const [title, owner] = TITLES[i % TITLES.length];
+          const reason = REASONS[i % REASONS.length];
+          const status = STATUSES[i % STATUSES.length];
+          const [rType, rName, rEmail, rPhone] =
+            REPORTERS[i % REPORTERS.length];
+          // Deterministic descending dates: spread across 2024.
+          const day = ((i * 7) % 27) + 1;
+          const month = ((i * 3) % 12) + 1;
+          const created = `2024-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}T${String(8 + (i % 10)).padStart(2, "0")}:${String((i * 5) % 60).padStart(2, "0")}:00`;
+          const updated =
+            status === "pending"
+              ? created
+              : `2024-${String(month).padStart(2, "0")}-${String(Math.min(day + 1, 28)).padStart(2, "0")}T12:00:00`;
+          const audit = [
+            {
+              at: created,
+              by: "System",
+              action: "created",
+              detail: `Submitted by ${rName} — Report received.`,
+            },
+          ];
+          const rec = {
+            id: `R-2024-${idNum}`,
+            propertyId: `P-${2100 + n}`,
+            propertyTitle: title,
+            propertyOwner: owner,
+            reporterType: rType,
+            reporterName: rType === "company" ? `${owner} ${rName}` : rName,
+            reporterEmail: rEmail,
+            reporterPhone: rPhone,
+            reason,
+            description: DESCRIPTIONS[i % DESCRIPTIONS.length],
+            attachments:
+              i % 3 === 0
+                ? [
+                    {
+                      type: "image",
+                      label: "Listing screenshot",
+                      size: "320 KB",
+                    },
+                  ]
+                : [],
+            status,
+            createdAt: created,
+            updatedAt: updated,
+            auditLog: audit,
+          };
+          if (status === "suspended") {
+            rec.suspendNote = "Reviewed and confirmed — listing suspended.";
+            audit.push({
+              at: updated,
+              by: "Admin Tanaka",
+              action: "suspended",
+              detail:
+                "Suspended by Admin Tanaka — Listing suspended. Reporter notified.",
+            });
+          } else if (status === "dismissed") {
+            rec.dismissReason = "no_issue_found";
+            rec.dismissNote = "Reviewed — no issue found with the listing.";
+            audit.push({
+              at: updated,
+              by: "Admin Sato",
+              action: "dismissed",
+              detail:
+                "Dismissed by Admin Sato — Reason: No issue found. No action on listing. Reporter notified.",
+            });
+          }
+          reports.push(rec);
+        }
+      })();
 
-      function formatDate(dateStr) {
-        if (!dateStr) return "-";
-        const d = new Date(dateStr);
-        if (Number.isNaN(d.getTime())) return dateStr;
+      // ========================================================================
+      // STATE + HELPERS
+      // ========================================================================
+      const PAGE_SIZE = 50;
+      let filtered = reports.slice();
+      let currentPage = 1;
+      let currentReport = null;
+
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      const escAttr = (s) => esc(s).replace(/"/g, "&quot;");
+
+      function fmtDate(s) {
+        if (!s) return "—";
+        const d = new Date(s);
+        if (Number.isNaN(d.getTime())) return s;
         return d.toLocaleDateString("en-GB", {
           year: "numeric",
           month: "short",
           day: "2-digit",
         });
       }
-
-      function reasonLabel(reason, reporterType) {
-        const map = {
-          property_sold: "Property sold",
-          incorrect_information: "Incorrect information",
-          privacy_copyright: "Privacy / copyright",
-          unauthorized_listing: "Unauthorized listing",
-          unauthorized_images: "Unauthorized images",
-          other: "Other",
-        };
-        return map[reason] || reason || "-";
+      function fmtDateTime(s) {
+        if (!s) return "—";
+        const d = new Date(s);
+        if (Number.isNaN(d.getTime())) return s;
+        return d.toLocaleString("en-GB", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        });
+      }
+      function badgeStatus(s) {
+        return `<span class="badge badge-${s}">${STATUS_LABEL[s] || s}</span>`;
+      }
+      function badgeReporter(t) {
+        return t === "company"
+          ? '<span class="badge badge-company"><i class="fas fa-building"></i> Real-Estate Company</span>'
+          : '<span class="badge badge-individual"><i class="fas fa-user"></i> Individual</span>';
+      }
+      function badgeReason(r) {
+        return `<span class="badge badge-reason">${REASON_LABEL[r] || r}</span>`;
       }
 
-      function statusClass(status) {
+      function toast(msg, kind) {
+        const wrap = $("toastWrap");
+        const el = document.createElement("div");
+        el.className = "toast " + (kind || "success");
+        el.innerHTML = `<i class="fas fa-${kind === "error" ? "circle-exclamation" : kind === "warn" ? "triangle-exclamation" : "circle-check"}"></i> ${esc(msg)}`;
+        wrap.appendChild(el);
+        setTimeout(() => {
+          el.style.opacity = "0";
+          el.style.transform = "translateY(8px)";
+          el.style.transition = "all 0.2s";
+        }, 2400);
+        setTimeout(() => el.remove(), 2700);
+      }
+
+      // ========================================================================
+      // LIST RENDER
+      // ========================================================================
+      function renderKpi() {
+        const counts = { pending: 0, suspended: 0, dismissed: 0 };
+        reports.forEach((r) => {
+          counts[r.status] = (counts[r.status] || 0) + 1;
+        });
+        $("kpiRow").innerHTML = `
+          <div class="kpi"><div class="kpi-label">Pending</div><div class="kpi-value" style="color:var(--badge-amber)">${counts.pending}</div><div class="kpi-hint">Awaiting admin action</div></div>
+          <div class="kpi"><div class="kpi-label">Suspended</div><div class="kpi-value" style="color:var(--badge-green)">${counts.suspended}</div><div class="kpi-hint">Listing suspended</div></div>
+          <div class="kpi"><div class="kpi-label">Dismissed</div><div class="kpi-value" style="color:var(--badge-red)">${counts.dismissed}</div><div class="kpi-hint">Report closed, no action</div></div>
+          <div class="kpi"><div class="kpi-label">Total Reports</div><div class="kpi-value">${reports.length}</div><div class="kpi-hint">All time</div></div>
+        `;
+      }
+
+      function renderList() {
+        const total = filtered.length;
+        const tbody = $("listBody");
+
+        // Clamp the current page to the available range.
+        const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        if (!total) {
+          $("resultCount").textContent = "Showing 0 of 0 reports";
+          tbody.innerHTML =
+            '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted)">No reports match the filters.</td></tr>';
+          renderPagination(0, totalPages);
+          return;
+        }
+
+        const startIdx = (currentPage - 1) * PAGE_SIZE;
+        const endIdx = Math.min(startIdx + PAGE_SIZE, total);
+        $("resultCount").textContent =
+          `Showing ${startIdx + 1}–${endIdx} of ${total} reports`;
+
+        const pageRows = filtered.slice(startIdx, endIdx);
+        tbody.innerHTML = pageRows
+          .map(
+            (r) => `
+          <tr onclick="showDetail('${r.id}')">
+            <td><strong>${esc(r.id)}</strong></td>
+            <td>
+              <div style="font-weight:600">${esc(r.propertyTitle)}</div>
+              <div style="font-size:11px;color:var(--text-muted)">${esc(r.propertyId)}</div>
+            </td>
+            <td>${badgeReason(r.reason)}</td>
+            <td>${badgeReporter(r.reporterType)}<br><span style="font-size:11px;color:var(--text-muted)">${esc(r.reporterName)}</span></td>
+            <td>${fmtDate(r.createdAt)}</td>
+            <td>${fmtDate(r.updatedAt)}</td>
+            <td>${badgeStatus(r.status)}</td>
+            <td><button class="btn btn-sm btn-ghost" type="button" title="Open property detail" onclick="event.stopPropagation();openPropertyTab('${escAttr(r.propertyId)}')"><i class="fas fa-arrow-up-right-from-square"></i></button></td>
+          </tr>`,
+          )
+          .join("");
+
+        renderPagination(total, totalPages);
+      }
+
+      // Build the page number sequence: always show first & last, current
+      // and its neighbours, with "…" gaps. Capped to keep it compact (<= 7
+      // numbered buttons before ellipses kick in).
+      function pageNumbers(current, totalPages) {
+        if (totalPages <= 7) {
+          return Array.from({ length: totalPages }, (_, i) => i + 1);
+        }
+        const pages = new Set([1, totalPages, current]);
+        if (current - 1 > 1) pages.add(current - 1);
+        if (current + 1 < totalPages) pages.add(current + 1);
+        const sorted = Array.from(pages).sort((a, b) => a - b);
+        const out = [];
+        let prev = 0;
+        sorted.forEach((p) => {
+          if (prev && p - prev > 1) out.push("…");
+          out.push(p);
+          prev = p;
+        });
+        return out;
+      }
+
+      function renderPagination(total, totalPages) {
+        const wrap = $("pagination");
+        // Hidden whenever everything fits on a single page (<= 50 rows).
+        if (total <= PAGE_SIZE) {
+          wrap.innerHTML = "";
+          wrap.classList.add("hidden");
+          return;
+        }
+        wrap.classList.remove("hidden");
+        let html = "";
+        html += `<button class="page-btn" type="button" ${currentPage === 1 ? "disabled" : ""} onclick="goToPage(${currentPage - 1})"><i class="fas fa-chevron-left"></i> Previous</button>`;
+        pageNumbers(currentPage, totalPages).forEach((p) => {
+          if (p === "…") {
+            html += '<span class="page-ellipsis">…</span>';
+          } else {
+            html += `<button class="page-btn ${p === currentPage ? "active" : ""}" type="button" onclick="goToPage(${p})">${p}</button>`;
+          }
+        });
+        html += `<button class="page-btn" type="button" ${currentPage === totalPages ? "disabled" : ""} onclick="goToPage(${currentPage + 1})">Next <i class="fas fa-chevron-right"></i></button>`;
+        wrap.innerHTML = html;
+      }
+
+      function goToPage(p) {
+        currentPage = p;
+        renderList();
+        window.scrollTo(0, 0);
+      }
+      window.goToPage = goToPage;
+
+      function applyFilters() {
+        const statuses = Array.from($("fStatus").selectedOptions).map(
+          (o) => o.value,
+        );
+        const reason = $("fReason").value;
+        const reporterType = $("fReporterType").value;
+        const from = $("fFrom").value;
+        const to = $("fTo").value;
+        const q = $("fSearch").value.toLowerCase().trim();
+        filtered = reports.filter((r) => {
+          if (statuses.length && !statuses.includes(r.status)) return false;
+          if (reason && r.reason !== reason) return false;
+          if (reporterType && r.reporterType !== reporterType) return false;
+          if (from && new Date(r.createdAt) < new Date(from)) return false;
+          if (to && new Date(r.createdAt) > new Date(to + "T23:59:59"))
+            return false;
+          if (q) {
+            const blob = [
+              r.id,
+              r.propertyId,
+              r.propertyTitle,
+              r.reporterName,
+              r.propertyOwner,
+            ]
+              .join(" ")
+              .toLowerCase();
+            if (!blob.includes(q)) return false;
+          }
+          return true;
+        });
+        currentPage = 1;
+        renderList();
+      }
+      function resetFilters() {
+        Array.from($("fStatus").options).forEach((o) => (o.selected = false));
+        $("fReason").value = "";
+        $("fReporterType").value = "";
+        $("fFrom").value = "";
+        $("fTo").value = "";
+        $("fSearch").value = "";
+        filtered = reports.slice();
+        currentPage = 1;
+        renderList();
+      }
+
+      function exportCsv() {
+        toast(`Export ${filtered.length} filtered reports as CSV.`);
+      }
+
+      // ========================================================================
+      // DETAIL RENDER
+      // ========================================================================
+      function showDetail(id) {
+        const r = reports.find((x) => x.id === id);
+        if (!r) return;
+        currentReport = r;
+        renderDetail();
+        $("listView").classList.add("hidden");
+        $("detailView").classList.remove("hidden");
+        window.scrollTo(0, 0);
+      }
+      function showList() {
+        $("detailView").classList.add("hidden");
+        $("listView").classList.remove("hidden");
+        currentReport = null;
+      }
+      window.showDetail = showDetail;
+      window.showList = showList;
+
+      function attachIcon(t) {
         return (
           {
-            pending: "status-pending",
-            reviewing: "status-reviewing",
-            resolved: "status-resolved",
-            rejected: "status-rejected",
-          }[status] || ""
+            image: "fa-image",
+            doc: "fa-file-lines",
+            link: "fa-link",
+            video: "fa-video",
+          }[t] || "fa-paperclip"
+        );
+      }
+      function attachLabel(t) {
+        return (
+          {
+            image: "Image",
+            doc: "Document",
+            link: "External link",
+            video: "Video",
+          }[t] || "Attachment"
         );
       }
 
-      function renderTable() {
-        const tbody = document.getElementById("reportTableBody");
-        const totalEl = document.getElementById("totalReportsCount");
-        if (!tbody) return;
-
-        tbody.innerHTML = "";
-
-        if (!filteredReports.length) {
-          tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No reports match current filters.</td></tr>`;
-          if (totalEl) totalEl.textContent = reports.length.toString();
-          return;
-        }
-
-        if (totalEl) totalEl.textContent = reports.length.toString();
-
-        filteredReports.forEach((rep, index) => {
-          const tr = document.createElement("tr");
-          tr.dataset.id = rep.id;
-          if (rep.id === selectedReportId) tr.classList.add("selected");
-
-          tr.innerHTML = `
-            <td>${index + 1}</td>
-            <td>${rep.propertyTitle || rep.propertyId}</td>
-            <td><span class="type-pill">${
-              rep.reporterType === "company"
-                ? "Real Estate Company"
-                : "Individual"
-            }</span></td>
-            <td>${reasonLabel(rep.reason, rep.reporterType)}</td>
-            <td>${
-              rep.reporterType === "company"
-                ? "Real Estate Company"
-                : "Individual"
-            }</td>
-            <td>${formatDate(rep.createdAt)}</td>
-            <td><span class="status-pill ${statusClass(rep.status)}">${
-              rep.status.charAt(0).toUpperCase() + rep.status.slice(1)
-            }</span></td>
-          `;
-
-          tr.addEventListener("click", () => {
-            selectReport(rep.id);
-          });
-
-          tbody.appendChild(tr);
-        });
-      }
-
-      function applyFilters() {
-        const status = document.getElementById("filterStatus").value;
-        const reason = document.getElementById("filterReason").value;
-        const reporterType =
-          document.getElementById("filterReporterType").value;
-        const propertyId = document
-          .getElementById("filterPropertyId")
-          .value.trim()
-          .toLowerCase();
-        const from = document.getElementById("filterDateFrom").value;
-        const to = document.getElementById("filterDateTo").value;
-
-        filteredReports = reports.filter((r) => {
-          if (status && r.status !== status) return false;
-          if (reason && r.reason !== reason) return false;
-          if (reporterType && r.reporterType !== reporterType) return false;
-          if (
-            propertyId &&
-            !r.propertyId.toLowerCase().includes(propertyId) &&
-            !r.propertyTitle.toLowerCase().includes(propertyId)
-          )
-            return false;
-
-          if (from) {
-            const dFrom = new Date(from);
-            const dCreated = new Date(r.createdAt);
-            if (dCreated < dFrom) return false;
-          }
-
-          if (to) {
-            const dTo = new Date(to);
-            const dCreated = new Date(r.createdAt);
-            if (dCreated > dTo) return false;
-          }
-
-          return true;
-        });
-
-        selectedReportId = filteredReports.length
-          ? filteredReports[0].id
-          : null;
-        renderTable();
-        renderDetail();
-      }
-
-      function resetFilters() {
-        document.getElementById("filterStatus").value = "";
-        document.getElementById("filterReason").value = "";
-        document.getElementById("filterReporterType").value = "";
-        document.getElementById("filterPropertyId").value = "";
-        document.getElementById("filterDateFrom").value = "";
-        document.getElementById("filterDateTo").value = "";
-        filteredReports = [...reports];
-        selectedReportId = filteredReports.length
-          ? filteredReports[0].id
-          : null;
-        renderTable();
-        renderDetail();
-      }
-
-      function selectReport(id) {
-        selectedReportId = id;
-        renderTable();
-        renderDetail();
-      }
-
-      function currentReport() {
-        return reports.find((r) => r.id === selectedReportId) || null;
-      }
-
       function renderDetail() {
-        const rep = currentReport();
-        const titleEl = document.getElementById("detailTitle");
-        const metaEl = document.getElementById("detailMeta");
-        const statusEl = document.getElementById("detailStatus");
-        const contentEl = document.getElementById("detailContent");
+        const r = currentReport;
+        if (!r) return;
 
-        if (!rep) {
-          if (titleEl) titleEl.textContent = "No report selected";
-          if (metaEl)
-            metaEl.textContent =
-              "Select a report from the list to view details.";
-          if (statusEl) statusEl.innerHTML = "";
-          if (contentEl) contentEl.innerHTML = "";
+        $("dStatusBadge").outerHTML =
+          `<span class="badge badge-${r.status}" id="dStatusBadge">${STATUS_LABEL[r.status]}</span>`;
+        $("dPropertyTitle").textContent = r.propertyTitle;
+        $("dReportId").textContent = r.id;
+        $("dPropertyId").textContent = r.propertyId;
+        $("dPropertyOwner").textContent = "Owner: " + r.propertyOwner;
+
+        // Actions toolbar — depends on status
+        const actions = $("dActions");
+        if (r.status === "pending") {
+          actions.innerHTML = `
+            <button class="btn btn-success" type="button" onclick="openModal('suspendModal')" title="Suspend the listing — hide from public view"><i class="fas fa-lock"></i> Suspend listing</button>
+            <button class="btn btn-danger" type="button" onclick="openModal('dismissModal')" title="Close report without action on listing"><i class="fas fa-circle-xmark"></i> Dismiss report</button>`;
+        } else {
+          actions.innerHTML = `
+            <span style="font-size:12px;color:var(--text-muted);align-self:center">
+              <i class="fas fa-lock"></i>
+            </span>`;
+        }
+
+        // Status-driven alert banners removed (status pill + Report Information
+        // card already convey status/reason — see "Business rules" in handoff).
+        $("dAlert").innerHTML = "";
+
+        // Report Info card
+        $("dReportInfo").innerHTML = `
+          <div class="kv"><span class="kv-label">Reason</span><div class="kv-value">${badgeReason(r.reason)}</div></div>
+          <div class="kv"><span class="kv-label">Status</span><div class="kv-value">${badgeStatus(r.status)}</div></div>
+          <div class="kv"><span class="kv-label">Submitted</span><div class="kv-value">${fmtDateTime(r.createdAt)}</div></div>
+          <div class="kv"><span class="kv-label">Last update</span><div class="kv-value">${fmtDateTime(r.updatedAt)}</div></div>
+        `;
+
+        // Reporter Info card
+        $("dReporterInfo").innerHTML = `
+          <div class="kv"><span class="kv-label">Type</span><div class="kv-value">${badgeReporter(r.reporterType)}</div></div>
+          <div class="kv"><span class="kv-label">Name</span><div class="kv-value"><strong>${esc(r.reporterName)}</strong></div></div>
+          <div class="kv"><span class="kv-label">Email</span><div class="kv-value"><a href="mailto:${escAttr(r.reporterEmail)}" style="color:var(--accent)">${esc(r.reporterEmail)}</a></div></div>
+          <div class="kv"><span class="kv-label">Phone</span><div class="kv-value">${esc(r.reporterPhone)}</div></div>
+        `;
+
+        // Description
+        $("dDescription").textContent = r.description || "—";
+
+        // Attachments
+        const att = $("dAttachments");
+        if (!r.attachments || !r.attachments.length) {
+          att.innerHTML =
+            '<div style="color:var(--text-muted);font-size:12.5px;font-style:italic;padding:8px">No attachments provided by the reporter.</div>';
+        } else {
+          att.innerHTML = r.attachments
+            .map(
+              (a) => `
+            <div class="attach-item">
+              <div class="ico"><i class="fas ${attachIcon(a.type)}"></i></div>
+              <div class="info">
+                <div class="lbl">${esc(a.label)}</div>
+                <div class="meta">${attachLabel(a.type)}${a.size ? " · " + esc(a.size) : ""}${a.url ? ' · <a href="' + escAttr(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent)">Open in new tab ↗</a>' : ""}</div>
+              </div>
+              <button class="btn btn-sm" type="button" onclick="toast('Download ' + ${JSON.stringify(a.label)})"><i class="fas fa-download"></i> Download</button>
+            </div>`,
+            )
+            .join("");
+        }
+
+        // Audit log
+        $("dAuditLog").innerHTML =
+          (r.auditLog || [])
+            .slice()
+            .reverse()
+            .map(
+              (e) => `
+          <div class="audit-entry">
+            <div class="when">${fmtDateTime(e.at)}</div>
+            <div class="what"><span class="who">${esc(e.by)}</span> · ${esc(e.detail)}</div>
+          </div>`,
+            )
+            .join("") ||
+          '<div style="color:var(--text-muted);font-size:12.5px;font-style:italic">No audit entries yet.</div>';
+      }
+
+      // ========================================================================
+      // ACTIONS
+      // ========================================================================
+      function nowIso() {
+        return new Date().toISOString().slice(0, 19);
+      }
+
+      function openModal(id) {
+        $(id).classList.add("open");
+      }
+      function closeModal(id) {
+        $(id).classList.remove("open");
+      }
+      window.openModal = openModal;
+      window.closeModal = closeModal;
+
+      // Close (without confirming) via backdrop click or Escape key, in
+      // addition to the header "X" and "Cancel" buttons. Applies to both the
+      // Suspend and Dismiss modals.
+      ["suspendModal", "dismissModal"].forEach((id) => {
+        const backdrop = $(id);
+        if (!backdrop) return;
+        backdrop.addEventListener("mousedown", (e) => {
+          if (e.target === backdrop) closeModal(id);
+        });
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        ["suspendModal", "dismissModal"].forEach((id) => {
+          const backdrop = $(id);
+          if (backdrop && backdrop.classList.contains("open")) closeModal(id);
+        });
+      });
+
+      function confirmSuspend() {
+        if (!currentReport) return;
+        const note = $("suspendNote").value.trim();
+        const notify = $("suspendNotify").checked;
+        currentReport.status = "suspended";
+        currentReport.suspendNote = note;
+        currentReport.updatedAt = nowIso();
+        currentReport.auditLog.push({
+          at: currentReport.updatedAt,
+          by: CURRENT_ADMIN,
+          action: "suspended",
+          detail: `Suspended by ${CURRENT_ADMIN} — Listing suspended. Reporter notified.${note ? " " + note : ""}`,
+        });
+        closeModal("suspendModal");
+        $("suspendNote").value = "";
+        $("suspendNotify").checked = true;
+        renderDetail();
+        renderKpi();
+        applyFilters();
+        toast(
+          `${currentReport.id} resolved — listing suspended.${notify ? " Email sent." : ""}`,
+        );
+      }
+
+      function confirmDismiss() {
+        if (!currentReport) return;
+        const reason = $("dismissReason").value;
+        const note = $("dismissNote").value.trim();
+        if (!reason) {
+          toast("Please select a dismiss reason.", "error");
           return;
         }
-
-        if (titleEl) titleEl.textContent = `${rep.propertyTitle || "Property"}`;
-        if (metaEl) metaEl.textContent = `${rep.propertyId} • Report ${rep.id}`;
-
-        if (statusEl) {
-          statusEl.innerHTML = `<span class="status-pill ${statusClass(
-            rep.status,
-          )}">${
-            rep.status.charAt(0).toUpperCase() + rep.status.slice(1)
-          }</span>`;
-        }
-
-        const attachmentsHtml =
-          rep.attachments && rep.attachments.length
-            ? `<div class="attachments-list">${rep.attachments
-                .map((a, idx) => {
-                  const label = a.label || `${a.type} ${idx + 1}`;
-                  if (a.url) {
-                    return `<a href="${a.url}" target="_blank" class="attachment-pill">${label}</a>`;
-                  }
-                  return `<span class="attachment-pill">${label}</span>`;
-                })
-                .join("")}</div>`
-            : '<div class="detail-value" style="color:#7c6a55;">No attachments</div>';
-
-        const auditHtml =
-          rep.auditLog && rep.auditLog.length
-            ? rep.auditLog
-                .map(
-                  (l) =>
-                    `<div class="audit-item"><span class="time">${formatDate(
-                      l.at,
-                    )}</span> 
-                      
-                      
-                      — <strong>${l.by}</strong>: ${l.action} (${l.detail})</div>`,
-                )
-                .join("")
-            : '<div class="audit-item" style="color:#7c6a55;">No audit entries.</div>';
-
-        if (contentEl) {
-          contentEl.innerHTML = `
-            <div class="detail-block-title">Property</div>
-            <div class="detail-grid">
-              <div>
-                <div class="detail-label">Property ID</div>
-                <div class="detail-value">${rep.propertyId}</div>
-              </div>
-              <div>
-                <div class="detail-label">Owner</div>
-                <div class="detail-value">${rep.propertyOwner || "-"}</div>
-              </div>
-            </div>
-
-            <div class="detail-block-title">Reporter</div>
-            <div class="detail-grid">
-              <div>
-                <div class="detail-label">Type</div>
-                <div class="detail-value">$${
-                  rep.reporterType === "company" ? "Company" : "Individual"
-                }</div>
-              </div>
-              <div>
-                <div class="detail-label">Name</div>
-                <div class="detail-value">${rep.reporterName}</div>
-              </div>
-              <div>
-                <div class="detail-label">Email</div>
-                <div class="detail-value">${rep.reporterEmail || "-"}</div>
-              </div>
-              <div>
-                <div class="detail-label">Phone</div>
-                <div class="detail-value">${rep.reporterPhone || "-"}</div>
-              </div>
-            </div>
-
-            <div class="detail-block-title">Report content</div>
-            <div class="detail-label">Reason</div>
-            <div class="detail-value">${reasonLabel(
-              rep.reason,
-              rep.reporterType,
-            )}</div>
-            <div class="detail-label">Description</div>
-            <div class="detail-value">${
-              rep.description ||
-              '<span style="color:#7c6a55;">(no description)</span>'
-            }</div>
-            <div class="detail-label">Attachments</div>
-            ${attachmentsHtml}
-
-            <div class="detail-block-title">System</div>
-            <div class="detail-grid">
-              <div>
-                <div class="detail-label">Status</div>
-                <div class="detail-value">${
-                  rep.status.charAt(0).toUpperCase() + rep.status.slice(1)
-                }</div>
-              </div>
-              <div>
-                <div class="detail-label">Created at</div>
-                <div class="detail-value">${formatDate(rep.createdAt)}</div>
-              </div>
-              <div>
-                <div class="detail-label">Last updated</div>
-                <div class="detail-value">${formatDate(rep.updatedAt)}</div>
-              </div>
-            </div>
-
-            <div class="detail-actions">
-              <button class="btn-soft" onclick="goToProperty()">View Property Detail</button>
-              <button class="btn-soft-primary" onclick="openResolveModal()">Resolve</button>
-              <button class="btn-soft-danger" onclick="openRejectModal()">Reject</button>
-            </div>
-
-            <div class="detail-block-title" style="margin-top:14px;">Audit log</div>
-            <div class="audit-log">${auditHtml}</div>
-          `;
-        }
-      }
-
-      function ensureFlowAllowed(targetStatus) {
-        const rep = currentReport();
-        if (!rep) return false;
-        if (targetStatus === "reviewing") {
-          if (rep.status !== "pending") {
-            showToast("Can only mark 'pending' reports as reviewing.");
-            return false;
-          }
-          return true;
-        }
-        if (targetStatus === "resolved" || targetStatus === "rejected") {
-          if (rep.status === targetStatus) {
-            showToast(`Report is already ${targetStatus}.`);
-            return false;
-          }
-          if (rep.status === "pending") {
-            // Auto-move pending reports into reviewing as part of the
-            // resolution flow, and log this review step.
-            rep.status = "reviewing";
-            rep.updatedAt = new Date().toISOString();
-            rep.auditLog.push({
-              at: rep.updatedAt,
-              by: currentAdmin,
-              action: "status_changed",
-              detail: "Status auto-changed to reviewing before resolution.",
-            });
-            renderTable();
-            renderDetail();
-          }
-          return true;
-        }
-        return true;
-      }
-
-      function markReviewing() {
-        if (!ensureFlowAllowed("reviewing")) return;
-        const rep = currentReport();
-        if (!rep) return;
-        rep.status = "reviewing";
-        rep.updatedAt = new Date().toISOString();
-        rep.auditLog.push({
-          at: rep.updatedAt,
-          by: currentAdmin,
-          action: "status_changed",
-          detail: "Status changed to reviewing.",
+        currentReport.status = "dismissed";
+        currentReport.dismissReason = reason;
+        currentReport.dismissNote = note;
+        currentReport.updatedAt = nowIso();
+        currentReport.auditLog.push({
+          at: currentReport.updatedAt,
+          by: CURRENT_ADMIN,
+          action: "dismissed",
+          detail: `Dismissed by ${CURRENT_ADMIN} — Reason: ${DISMISS_REASON_LABEL[reason]}. No action on listing. Reporter notified.${note ? " " + note : ""}`,
         });
-        renderTable();
+        closeModal("dismissModal");
+        $("dismissReason").value = "";
+        $("dismissNote").value = "";
         renderDetail();
-        showToast("Report marked as reviewing.");
+        renderKpi();
+        applyFilters();
+        toast(`${currentReport.id} dismissed. Reporter notified.`, "warn");
       }
 
-      function goToProperty() {
-        const rep = currentReport();
-        if (!rep) return;
-        // Navigation only, actual suspend/delete is done in Property module.
-        const url = `property-detail-view.html?propertyId=${encodeURIComponent(
-          rep.propertyId,
-        )}`;
+      function openPropertyLink() {
+        if (!currentReport) return;
+        const url = `property-detail-view.html?propertyId=${encodeURIComponent(currentReport.propertyId)}`;
+        try {
+          if (window.parent && window.parent !== window) {
+            const frame = window.parent.document.getElementById("contentFrame");
+            if (frame) {
+              frame.src = "property/" + url;
+              return;
+            }
+          }
+        } catch (e) {}
         window.open(url, "_blank");
       }
 
-      function openResolveModal() {
-        if (!ensureFlowAllowed("resolved")) return;
-        const modal = document.getElementById("resolveModal");
-        if (!modal) return;
-        document.getElementById("resolveAction").value = "";
-        document.getElementById("resolveNotify").checked = false;
-        modal.style.display = "flex";
+      function openPropertyTab(propertyId) {
+        const url = `property/property-list-oversight.html?propertyId=${encodeURIComponent(propertyId)}`;
+        window.open(url, "_blank");
       }
 
-      function closeResolveModal() {
-        const modal = document.getElementById("resolveModal");
-        if (modal) modal.style.display = "none";
-      }
+      // expose action handlers used by inline onclick
+      window.confirmSuspend = confirmSuspend;
+      window.confirmDismiss = confirmDismiss;
+      window.openPropertyLink = openPropertyLink;
+      window.openPropertyTab = openPropertyTab;
+      window.applyFilters = applyFilters;
+      window.resetFilters = resetFilters;
+      window.exportCsv = exportCsv;
 
-      function confirmResolve() {
-        const rep = currentReport();
-        if (!rep) return;
-        const actionEl = document.getElementById("resolveAction");
-        const action = actionEl.value;
-        const notify = document.getElementById("resolveNotify").checked;
-        if (!action) {
-          actionEl.classList.add("ux-invalid");
-          actionEl.focus();
-          showToast("Select an action taken before resolving.");
-          return;
-        }
-        actionEl.classList.remove("ux-invalid");
-        rep.status = "resolved";
-        rep.updatedAt = new Date().toISOString();
-        rep.auditLog.push({
-          at: rep.updatedAt,
-          by: currentAdmin,
-          action: "resolved",
-          detail: `${action} | notify=${notify ? "yes" : "no"}`,
-        });
-        closeResolveModal();
-        renderTable();
-        renderDetail();
-        if (notify) {
-          showToast("Report resolved and notification would be sent.");
-        } else {
-          showToast("Report resolved.");
-        }
-      }
-
-      function openRejectModal() {
-        if (!ensureFlowAllowed("rejected")) return;
-        const modal = document.getElementById("rejectModal");
-        if (!modal) return;
-        document.getElementById("rejectReason").value = "";
-        modal.style.display = "flex";
-      }
-
-      function closeRejectModal() {
-        const modal = document.getElementById("rejectModal");
-        if (modal) modal.style.display = "none";
-      }
-
-      function confirmReject() {
-        const rep = currentReport();
-        if (!rep) return;
-        const reasonEl = document.getElementById("rejectReason");
-        const reason = reasonEl.value;
-        if (!reason) {
-          reasonEl.classList.add("ux-invalid");
-          reasonEl.focus();
-          showToast("Select a reject reason.");
-          return;
-        }
-        reasonEl.classList.remove("ux-invalid");
-        rep.status = "rejected";
-        rep.updatedAt = new Date().toISOString();
-        rep.auditLog.push({
-          at: rep.updatedAt,
-          by: currentAdmin,
-          action: "rejected",
-          detail: `${reason}`,
-        });
-        closeRejectModal();
-        renderTable();
-        renderDetail();
-        showToast("Report rejected.");
-      }
-
-      function showToast(msg) {
-        // Prefer the UX kit toast if available, else fall back to the
-        // original demo toast element.
-        if (window.Toast && typeof window.Toast.info === "function") {
-          window.Toast.info(msg);
-          return;
-        }
-        const el = document.getElementById("toast");
-        if (!el) return;
-        el.textContent = msg;
-        el.classList.add("show");
-        clearTimeout(showToast._timer);
-        showToast._timer = setTimeout(() => {
-          el.classList.remove("show");
-        }, 2600);
-      }
-
-      document.addEventListener("DOMContentLoaded", () => {
-        filteredReports = [...reports];
-        selectedReportId = filteredReports.length
-          ? filteredReports[0].id
-          : null;
-        renderTable();
-        renderDetail();
-      });
+      // ========================================================================
+      // INIT
+      // ========================================================================
+      renderKpi();
+      renderList();
     </script>
-  <!-- ─────── UX KIT (toast · confirm · focus trap · dirty guard) ─────── -->
-<style id="uxKitStyle">
-  .ux-toast-wrap{position:fixed;right:18px;bottom:18px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-  .ux-toast{background:#fff;border:1px solid #e5d9c0;border-left:4px solid #c4a25f;border-radius:8px;padding:10px 14px;min-width:240px;max-width:380px;box-shadow:0 4px 16px rgba(0,0,0,.12);font-size:13px;color:#2c1810;display:flex;align-items:flex-start;gap:8px;animation:ux-slide .22s ease;pointer-events:auto}
-  .ux-toast.ok{border-left-color:#2d6a4f}
-  .ux-toast.err{border-left-color:#c41e3a}
-  .ux-toast.info{border-left-color:#1d4e89}
-  .ux-toast .x{margin-left:auto;cursor:pointer;color:#9d8777;background:none;border:none;font-size:14px;padding:0 4px;font-family:inherit}
-  .ux-toast .x:hover{color:#2c1810}
-  @keyframes ux-slide{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
-
-  .ux-modal{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35)}
-  .ux-modal.open{display:flex}
-  .ux-modal-box{background:#fff;border-radius:12px;padding:22px 24px;width:420px;max-width:90vw;box-shadow:0 10px 32px rgba(0,0,0,.22)}
-  .ux-modal-box h3{font-size:15px;font-weight:700;color:#2c1810;margin:0 0 8px}
-  .ux-modal-box p{font-size:13px;color:#6b5c4e;line-height:1.5;margin:0 0 18px;white-space:pre-line}
-  .ux-modal-actions{display:flex;gap:8px;justify-content:flex-end}
-  .ux-btn{padding:7px 16px;border-radius:6px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500;border:1.5px solid #e5d9c0;background:#fff;color:#2c1810}
-  .ux-btn:hover{background:#fdfaf6}
-  .ux-btn.primary{background:#c4a25f;border-color:#c4a25f;color:#fff}
-  .ux-btn.primary:hover{background:#b08d4a}
-  .ux-btn.danger{background:#c41e3a;border-color:#c41e3a;color:#fff}
-  .ux-btn.danger:hover{background:#a51730}
-
-  /* Required-field marker */
-  .ux-req::after, label.req::after, .req::after{content:" *";color:#c41e3a;font-weight:700}
-
-  /* Form section heading */
-  .ux-form-section{margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid #e5d9c0;font-size:11px;font-weight:700;color:#6b5c4e;text-transform:uppercase;letter-spacing:.5px}
-  .ux-form-section:first-child{margin-top:4px}
-
-  /* Inline field validation */
-  .ux-field-error{font-size:11px;color:#c41e3a;margin-top:2px;display:block}
-  .ux-invalid, input.ux-invalid, textarea.ux-invalid, select.ux-invalid{border-color:#c41e3a !important;box-shadow:0 0 0 2px rgba(196,30,58,.12)}
-
-  /* Dirty indicator pill */
-  .ux-dirty-pill{display:none;background:#fff3cd;color:#856404;font-size:11px;font-weight:600;padding:3px 10px;border-radius:10px;margin-left:8px;vertical-align:middle}
-  .ux-dirty .ux-dirty-pill{display:inline-block}
-</style>
-
-<div class="ux-toast-wrap" id="uxToastWrap" role="status" aria-live="polite"></div>
-<div class="ux-modal" id="uxConfirmModal" role="dialog" aria-modal="true" aria-labelledby="uxConfirmTitle">
-  <div class="ux-modal-box">
-    <h3 id="uxConfirmTitle">Confirm</h3>
-    <p id="uxConfirmMsg"></p>
-    <div class="ux-modal-actions">
-      <button type="button" class="ux-btn" id="uxConfirmCancel">Cancel</button>
-      <button type="button" class="ux-btn primary" id="uxConfirmOk">Confirm</button>
-    </div>
-  </div>
-</div>
-
-<script>
-(function(){
-  if (window.UX) return; // idempotent
-  const wrap = document.getElementById('uxToastWrap');
-  const modal = document.getElementById('uxConfirmModal');
-  const titleEl = document.getElementById('uxConfirmTitle');
-  const msgEl = document.getElementById('uxConfirmMsg');
-  const okBtn = document.getElementById('uxConfirmOk');
-  const cancelBtn = document.getElementById('uxConfirmCancel');
-
-  // ──── Toast ────────────────────────────────────────────────────
-  function toast(msg, type){
-    if(!wrap) return;
-    const el = document.createElement('div');
-    el.className = 'ux-toast ' + (type || 'info');
-    const span = document.createElement('span');
-    span.textContent = msg || '';
-    const x = document.createElement('button');
-    x.className = 'x'; x.type = 'button'; x.setAttribute('aria-label','Dismiss');
-    x.textContent = '×';
-    x.addEventListener('click', () => el.remove());
-    el.appendChild(span); el.appendChild(x);
-    wrap.appendChild(el);
-    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 220); }, 3800);
-  }
-  window.Toast = {
-    show: toast,
-    ok:   (m) => toast(m, 'ok'),
-    err:  (m) => toast(m, 'err'),
-    info: (m) => toast(m, 'info'),
-  };
-
-  // ──── Confirm modal ───────────────────────────────────────────
-  let _onOk = null;
-  let _lastFocus = null;
-  function closeConfirm(){
-    modal.classList.remove('open');
-    _onOk = null;
-    if(_lastFocus && _lastFocus.focus) try { _lastFocus.focus(); } catch(e){}
-  }
-  okBtn.addEventListener('click', () => { const cb = _onOk; closeConfirm(); if(cb) cb(); });
-  cancelBtn.addEventListener('click', closeConfirm);
-  modal.addEventListener('click', (e) => { if(e.target === modal) closeConfirm(); });
-
-  function openConfirm(opts){
-    titleEl.textContent  = opts.title   || 'Confirm';
-    msgEl.textContent    = opts.message || 'Are you sure?';
-    okBtn.textContent    = opts.okLabel || 'Confirm';
-    cancelBtn.textContent= opts.cancelLabel || 'Cancel';
-    okBtn.className = 'ux-btn ' + (opts.danger ? 'danger' : 'primary');
-    _onOk = typeof opts.onConfirm === 'function' ? opts.onConfirm : null;
-    _lastFocus = document.activeElement;
-    modal.classList.add('open');
-    setTimeout(() => okBtn.focus(), 40);
-  }
-
-  window.UX = {
-    confirm: openConfirm,
-    toast,
-    // Run action only after confirming if dirty
-    guard(action){
-      if(!window.UX_dirty){ if(typeof action === 'function') action(); return; }
-      openConfirm({
-        title: 'Discard unsaved changes?',
-        message: 'You have edits that have not been saved. Leave anyway?',
-        okLabel: 'Discard',
-        danger: true,
-        onConfirm(){ window.UX_dirty = false; if(typeof action === 'function') action(); }
-      });
-    },
-    markClean(){ window.UX_dirty = false; document.body.classList.remove('ux-dirty'); },
-    markDirty(){ window.UX_dirty = true;  document.body.classList.add('ux-dirty'); },
-  };
-
-  // ──── Esc closes any open modal (built-in + page modals) ──────
-  document.addEventListener('keydown', (e) => {
-    if(e.key !== 'Escape') return;
-    if(modal.classList.contains('open')){ closeConfirm(); return; }
-    document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(m => {
-      const visible = getComputedStyle(m).display !== 'none' || m.classList.contains('show') || m.classList.contains('open');
-      if(!visible) return;
-      m.classList.remove('open','show','active');
-      m.style.display = 'none';
-    });
-  });
-
-  // ──── Backdrop click closes existing page modals ──────────────
-  document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(m => {
-    if(m.__uxBound) return; m.__uxBound = true;
-    m.addEventListener('click', (e) => {
-      if(e.target !== m) return;
-      m.classList.remove('open','show','active');
-      m.style.display = 'none';
-    });
-  });
-
-  // ──── Auto-track dirty on any [data-track-dirty] container ────
-  document.addEventListener('input', (e) => {
-    if(e.target.closest('[data-track-dirty]')) UX.markDirty();
-  });
-  document.addEventListener('change', (e) => {
-    if(e.target.closest('[data-track-dirty]')) UX.markDirty();
-  });
-  window.addEventListener('beforeunload', (e) => {
-    if(window.UX_dirty){ e.preventDefault(); e.returnValue = ''; }
-  });
-
-  // ──── Inline validation helper ────────────────────────────────
-  window.UX.validate = function(form){
-    let firstInvalid = null;
-    form.querySelectorAll('.ux-field-error').forEach(n => n.remove());
-    form.querySelectorAll('.ux-invalid').forEach(n => n.classList.remove('ux-invalid'));
-    form.querySelectorAll('[required]').forEach(field => {
-      const v = (field.value || '').trim();
-      let bad = !v;
-      if(!bad && field.type === 'email'){
-        bad = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-      }
-      if(bad){
-        field.classList.add('ux-invalid');
-        const note = document.createElement('span');
-        note.className = 'ux-field-error';
-        note.textContent = field.dataset.errorMsg ||
-          (field.type === 'email' ? 'Please enter a valid email.' : 'This field is required.');
-        if(field.parentNode) field.parentNode.insertBefore(note, field.nextSibling);
-        if(!firstInvalid) firstInvalid = field;
-      }
-    });
-    if(firstInvalid){ firstInvalid.focus(); return false; }
-    return true;
-  };
-})();
-</script>
-<!-- ─────── END UX KIT ─────── -->
-
-<!-- ─────── SYSTEM VISUAL POLISH (CRUD forms) ─────── -->
-<style id="uxVisualPolish">
-  /* ========== Inputs & selects ========== */
-  body .card input[type="text"],
-  body .card input[type="email"],
-  body .card input[type="number"],
-  body .card input[type="tel"],
-  body .card input[type="url"],
-  body .card input[type="date"],
-  body .card input[type="time"],
-  body .card input[type="password"],
-  body .card select,
-  body .card textarea,
-  body .modal input[type="text"],
-  body .modal input[type="email"],
-  body .modal input[type="password"],
-  body .modal select,
-  body .modal textarea,
-  body .field-grid input,
-  body .field-grid select,
-  body .field-row input,
-  body .field-row select,
-  body .field-row textarea {
-    padding: 9px 12px !important;
-    border-radius: 8px !important;
-    border: 1px solid #ddcdb9 !important;
-    background: #fff !important;
-    font-size: 13px !important;
-    color: #2c1810 !important;
-    font-family: inherit !important;
-    transition: border-color .15s, box-shadow .15s, background .15s;
-    line-height: 1.4;
-  }
-  body .card input:hover:not(:disabled):not([readonly]),
-  body .card select:hover:not(:disabled),
-  body .card textarea:hover:not(:disabled):not([readonly]),
-  body .modal input:hover:not(:disabled):not([readonly]),
-  body .modal select:hover:not(:disabled),
-  body .modal textarea:hover:not(:disabled):not([readonly]) {
-    border-color: #c9b079 !important;
-  }
-  body .card input:focus,
-  body .card select:focus,
-  body .card textarea:focus,
-  body .modal input:focus,
-  body .modal select:focus,
-  body .modal textarea:focus {
-    outline: none !important;
-    border-color: #c4a25f !important;
-    box-shadow: 0 0 0 3px rgba(196, 162, 95, 0.18) !important;
-    background: #fff !important;
-  }
-  body input[readonly],
-  body input:disabled,
-  body select:disabled,
-  body textarea:disabled,
-  body textarea[readonly] {
-    background: #f7f0e0 !important;
-    color: #7c6a55 !important;
-    cursor: not-allowed !important;
-    border-color: #e8dcc2 !important;
-  }
-
-  /* ========== Labels ========== */
-  body .field-grid > div > label,
-  body .field-grid label,
-  body .field-row > label,
-  body .modal-field > label,
-  body .detail-field-label {
-    font-size: 11.5px !important;
-    color: #6b5c4e !important;
-    font-weight: 600 !important;
-    margin-bottom: 5px !important;
-    display: block;
-    letter-spacing: 0.01em;
-  }
-
-  /* ========== Detail sections (turn flat dividers into sub-cards) ========== */
-  body .detail-section,
-  body .detail-block {
-    background: #fff !important;
-    border: 1px solid #eadccd !important;
-    border-radius: 10px !important;
-    padding: 18px 20px !important;
-    margin-bottom: 14px !important;
-    box-shadow: 0 1px 2px rgba(60, 42, 15, 0.03);
-    position: relative;
-  }
-
-  /* Section heading with gold accent bar */
-  body .detail-section > .detail-title,
-  body .detail-section > .ux-form-section,
-  body .detail-block > .ux-form-section,
-  body .detail-section-title {
-    font-size: 13.5px !important;
-    font-weight: 700 !important;
-    color: #2c1810 !important;
-    margin: 0 0 14px !important;
-    padding: 0 0 10px !important;
-    border-bottom: 1px solid #f0e6d4 !important;
-    text-transform: none !important;
-    letter-spacing: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 10px !important;
-  }
-  body .detail-section > .detail-title::before,
-  body .detail-section > .ux-form-section::before,
-  body .detail-block > .ux-form-section::before,
-  body .detail-section-title::before {
-    content: "";
-    width: 3px;
-    height: 16px;
-    background: #c4a25f;
-    border-radius: 2px;
-    flex-shrink: 0;
-  }
-
-  /* ========== Field grids: rhythm ========== */
-  body .field-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 14px 18px !important;
-  }
-  @media (max-width: 760px) {
-    body .field-grid {
-      grid-template-columns: 1fr !important;
-    }
-  }
-  body .field-row {
-    margin-bottom: 12px !important;
-  }
-
-  /* ========== Buttons ========== */
-  body .btn,
-  body .ux-btn {
-    padding: 8px 16px !important;
-    font-size: 12px !important;
-    border-radius: 8px !important;
-    cursor: pointer;
-    font-family: inherit;
-    font-weight: 600;
-    transition: background 0.15s, border-color 0.15s, color 0.15s,
-      box-shadow 0.15s;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    line-height: 1.3;
-  }
-  body .btn-sm,
-  body .ux-btn.btn-sm {
-    padding: 5px 11px !important;
-    font-size: 11px !important;
-    border-radius: 6px !important;
-  }
-  body .btn-primary {
-    background: #c4a25f !important;
-    color: #fff !important;
-    border: 1.5px solid #c4a25f !important;
-  }
-  body .btn-primary:hover {
-    background: #b08d4a !important;
-    border-color: #b08d4a !important;
-  }
-  body .btn-ghost {
-    background: #fff !important;
-    color: #2c1810 !important;
-    border: 1.5px solid #e5d9c0 !important;
-  }
-  body .btn-ghost:hover {
-    background: #faf6ee !important;
-    border-color: #d4c3a0 !important;
-  }
-  body .btn-secondary {
-    background: #fff !important;
-    color: #2c1810 !important;
-    border: 1.5px solid #e5d9c0 !important;
-  }
-  body .btn-secondary:hover {
-    background: #faf6ee !important;
-  }
-  body .btn-danger {
-    background: #c41e3a !important;
-    color: #fff !important;
-    border: 1.5px solid #c41e3a !important;
-  }
-  body .btn-danger:hover {
-    background: #a51730 !important;
-    border-color: #a51730 !important;
-  }
-
-  /* ========== Detail / Edit page top header ========== */
-  body #detailView > .card:first-child > .card-header {
-    background: linear-gradient(135deg, #fdf8ee, #f7eddb) !important;
-    margin: -14px -16px 14px !important;
-    padding: 16px 20px !important;
-    border-radius: 10px 10px 0 0 !important;
-    border-bottom: 1px solid #eadccd !important;
-    align-items: center !important;
-  }
-
-  /* ========== Card refinements ========== */
-  body .card {
-    border-radius: 12px !important;
-    border: 1px solid #eadccd !important;
-    background: #fffaf2 !important;
-    box-shadow: 0 1px 3px rgba(60, 42, 15, 0.05) !important;
-    padding: 16px 18px 18px !important;
-  }
-
-  /* ========== Modal polish (page-native modals, not ux-modal) ========== */
-  body .modal-backdrop {
-    background: rgba(44, 24, 16, 0.45) !important;
-    backdrop-filter: blur(2px);
-  }
-  body .modal {
-    border-radius: 14px !important;
-    border: 1px solid #eadccd !important;
-    box-shadow: 0 16px 40px rgba(44, 24, 16, 0.25) !important;
-    padding: 22px 24px !important;
-    max-width: 480px !important;
-    width: calc(100% - 32px) !important;
-  }
-  body .modal-header {
-    margin-bottom: 14px !important;
-    padding-bottom: 12px !important;
-    border-bottom: 1px solid #f0e6d4;
-    align-items: center !important;
-  }
-  body .modal-title {
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    color: #2c1810 !important;
-  }
-  body .modal-field {
-    margin-bottom: 12px !important;
-  }
-  body .modal-footer {
-    margin-top: 16px !important;
-    padding-top: 14px !important;
-    border-top: 1px solid #f0e6d4;
-    display: flex !important;
-    gap: 8px !important;
-    justify-content: flex-end !important;
-  }
-
-  /* ========== Empty state ========== */
-  body .empty-state {
-    padding: 32px 20px !important;
-    color: #9a8466 !important;
-    font-size: 13px !important;
-  }
-  body #emptyDetail {
-    text-align: center;
-    padding: 60px 20px !important;
-    color: #9a8466 !important;
-  }
-
-  /* ========== Badges / status pills ========== */
-  body .status-pill,
-  body .badge {
-    padding: 3px 10px !important;
-    border-radius: 999px !important;
-    font-size: 10.5px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-  }
-  body .badge-soft {
-    background: #f1e4d4 !important;
-    color: #7b623f !important;
-  }
-
-  /* ========== Avatar wrapper ========== */
-  body .avatar-circle {
-    width: 36px !important;
-    height: 36px !important;
-    font-size: 12px !important;
-    background: linear-gradient(135deg, #c9a574, #8c6845) !important;
-  }
-
-  /* ========== KPI cards ========== */
-  body .kpi-card,
-  body .kcard {
-    background: #fff !important;
-    border-radius: 10px !important;
-    border: 1px solid #eadccd !important;
-    padding: 14px 16px !important;
-    transition: box-shadow 0.15s, transform 0.15s;
-  }
-  body .kpi-card:hover,
-  body .kcard:hover {
-    box-shadow: 0 4px 14px rgba(60, 42, 15, 0.08) !important;
-    transform: translateY(-1px);
-  }
-  body .kpi-value {
-    font-size: 22px !important;
-    font-weight: 700 !important;
-    color: #2c1810 !important;
-  }
-  body .kpi-label {
-    font-size: 10.5px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    color: #7c6a55 !important;
-  }
-
-  /* ========== Filter bar refinement ========== */
-  body .filters {
-    padding: 12px 14px !important;
-    background: #fff !important;
-    border: 1px solid #eadccd !important;
-    border-radius: 10px !important;
-    margin-bottom: 14px !important;
-    gap: 8px !important;
-  }
-  body .filters input[type="text"],
-  body .filters select {
-    border-radius: 999px !important;
-    padding: 7px 12px !important;
-    font-size: 12px !important;
-    background: #faf6ee !important;
-    border: 1px solid #e5d9c0 !important;
-  }
-  body .filters input[type="text"]:focus,
-  body .filters select:focus {
-    outline: none !important;
-    border-color: #c4a25f !important;
-    background: #fff !important;
-    box-shadow: 0 0 0 3px rgba(196, 162, 95, 0.18) !important;
-  }
-
-  /* ========== Table refinement ========== */
-  body table thead {
-    background: #f7eedb !important;
-  }
-  body table th {
-    padding: 10px 12px !important;
-    font-size: 10.5px !important;
-    color: #7c6a55 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    font-weight: 700 !important;
-  }
-  body table td {
-    padding: 11px 12px !important;
-    font-size: 12.5px !important;
-    color: #2c1810;
-  }
-  body tbody tr:hover td {
-    background: #fbf5e8 !important;
-  }
-
-  /* ========== Page header refinement ========== */
-  body .page-header .page-title {
-    font-size: 24px !important;
-    font-weight: 800 !important;
-    color: #2c1810 !important;
-    letter-spacing: -0.01em;
-  }
-  body .page-header .page-subtitle {
-    font-size: 13px !important;
-    color: #7c6a55 !important;
-    margin-top: 4px;
-  }
-
-  /* ========== Sticky form footer (auto-applied when a section has .save-bar class) ========== */
-  body .save-bar,
-  body .sticky-save-bar {
-    position: sticky;
-    bottom: 0;
-    background: linear-gradient(
-      to top,
-      #fffaf2 70%,
-      rgba(255, 250, 242, 0)
-    ) !important;
-    padding: 18px 0 10px !important;
-    display: flex !important;
-    gap: 10px !important;
-    justify-content: flex-end !important;
-    margin: 18px -20px -18px !important;
-    border-top: 1px solid #eadccd !important;
-    padding-left: 20px !important;
-    padding-right: 20px !important;
-    z-index: 5;
-  }
-
-  /* ========== Permission matrix (roles page) ========== */
-  body .permission-table {
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  body .permission-table thead {
-    background: #f7eedb !important;
-  }
-  body .matrix-indicator {
-    width: 22px !important;
-    height: 22px !important;
-    border-radius: 7px !important;
-    transition: transform 0.15s, background 0.15s;
-  }
-  body .matrix-indicator:hover {
-    transform: scale(1.1);
-  }
-  body .matrix-indicator.active {
-    background: #2d6a4f !important;
-    border-color: #2d6a4f !important;
-  }
-
-  /* ========== Role list items ========== */
-  body .role-item {
-    padding: 10px 12px !important;
-    border-radius: 10px !important;
-    margin-bottom: 8px !important;
-    border: 1px solid #eadccd !important;
-    background: #fff;
-    transition: all 0.15s;
-  }
-  body .role-item:hover {
-    background: #fdf6e6 !important;
-    border-color: #d4c3a0 !important;
-    transform: translateX(2px);
-  }
-  body .role-item.active {
-    background: linear-gradient(135deg, #fdf2d8, #f8e8c4) !important;
-    border-color: #c4a25f !important;
-    box-shadow: 0 2px 8px rgba(196, 162, 95, 0.18);
-  }
-  body .role-name {
-    font-size: 13.5px !important;
-    font-weight: 700 !important;
-    color: #2c1810;
-  }
-
-  /* ========== Pretty checkbox/toggle row ========== */
-  body input[type="checkbox"],
-  body input[type="radio"] {
-    accent-color: #c4a25f;
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-  }
-
-  /* ========== File upload area ========== */
-  body input[type="file"] {
-    padding: 6px 10px !important;
-    border: 1.5px dashed #d4c3a0 !important;
-    border-radius: 8px !important;
-    background: #faf6ee !important;
-    cursor: pointer;
-    font-size: 11.5px !important;
-  }
-  body input[type="file"]:hover {
-    border-color: #c4a25f !important;
-    background: #fdf8ee !important;
-  }
-
-  /* ========== Required asterisk styled ========== */
-  body label.req::after,
-  body .req::after {
-    margin-left: 4px;
-    color: #c41e3a;
-    font-weight: 800;
-  }
-</style>
-<!-- ─────── END VISUAL POLISH ─────── -->
-
-<!-- ─────── Detail-view layout primitives ─────── -->
-<style id="uxDetailLayout">
-  /* Top toolbar: back button + secondary actions */
-  body .entity-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-  }
-  body .entity-toolbar-right {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  body .entity-back-btn {
-    background: none;
-    border: none;
-    color: #6b5c4e;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 6px 10px;
-    border-radius: 8px;
-    font-family: inherit;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: background 0.15s, color 0.15s;
-  }
-  body .entity-back-btn:hover {
-    background: #faf6ee;
-    color: #2c1810;
-  }
-  body .entity-back-btn span {
-    font-size: 16px;
-    line-height: 1;
-  }
-
-  /* Hero card: avatar + identity + status + primary actions */
-  body .entity-hero {
-    background: linear-gradient(135deg, #fffaf2 0%, #fcf4e6 100%);
-    border: 1px solid #eadccd;
-    border-radius: 14px;
-    padding: 22px 24px;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    box-shadow: 0 2px 6px rgba(60, 42, 15, 0.05);
-  }
-  body .entity-hero-avatar {
-    flex-shrink: 0;
-    position: relative;
-  }
-  body .entity-hero-avatar .avatar-circle {
-    width: 60px !important;
-    height: 60px !important;
-    font-size: 22px !important;
-    box-shadow: 0 2px 6px rgba(60, 42, 15, 0.18);
-  }
-  body .entity-hero-avatar img {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    object-fit: cover;
-    background: #ddd;
-  }
-  body .entity-hero-info {
-    flex: 1;
-    min-width: 0;
-  }
-  body .entity-hero-name {
-    font-size: 22px !important;
-    font-weight: 800 !important;
-    color: #2c1810 !important;
-    margin: 0 0 6px !important;
-    letter-spacing: -0.01em;
-    line-height: 1.2;
-  }
-  body .entity-hero-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    font-size: 12.5px;
-    color: #6b5c4e;
-  }
-  body .entity-hero-sep {
-    color: #c4a25f;
-  }
-  body .entity-hero-email {
-    color: #6b5c4e;
-    font-weight: 500;
-  }
-  body .entity-hero-actions {
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
-  /* Section sub-title (after main heading) */
-  body .detail-title .section-sub {
-    font-size: 11.5px;
-    font-weight: 500;
-    color: #9d8a72;
-    text-transform: none;
-    letter-spacing: 0;
-    margin-left: auto;
-  }
-
-  /* Settings block (subsection inside a section card) */
-  body .settings-block {
-    padding: 14px 0;
-    border-bottom: 1px dashed #f0e6d4;
-  }
-  body .settings-block:last-child {
-    border-bottom: none;
-    padding-bottom: 4px;
-  }
-  body .settings-block:first-child {
-    padding-top: 4px;
-  }
-  body .settings-block-title {
-    font-size: 12.5px;
-    font-weight: 700;
-    color: #2c1810;
-    margin-bottom: 8px;
-  }
-  body .settings-block-sub {
-    font-size: 11.5px;
-    color: #7c6a55;
-    margin-bottom: 10px;
-  }
-
-  /* Checkbox row: clean horizontal checkbox + label */
-  body .checkbox-row {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12.5px !important;
-    color: #2c1810 !important;
-    font-weight: 500 !important;
-    cursor: pointer;
-    padding: 6px 0;
-    margin: 0 !important;
-  }
-  body .checkbox-row input[type="checkbox"] {
-    margin: 0;
-    width: 16px;
-    height: 16px;
-  }
-  body .checkbox-row span {
-    line-height: 1.3;
-  }
-  body .checkbox-group {
-    display: flex;
-    gap: 18px;
-    flex-wrap: wrap;
-  }
-
-  /* Sticky save bar: bottom action zone */
-  body .sticky-save-bar {
-    position: sticky;
-    bottom: 0;
-    background: #fffaf2;
-    border: 1px solid #eadccd;
-    border-radius: 12px;
-    padding: 14px 18px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: flex-end;
-    margin-top: 16px;
-    box-shadow: 0 -4px 16px rgba(60, 42, 15, 0.06);
-    z-index: 5;
-  }
-  body .sticky-save-bar .save-bar-hint {
-    font-size: 11.5px;
-    color: #9d8a72;
-    margin-right: auto;
-    font-style: italic;
-  }
-  body .sticky-save-bar .btn {
-    padding: 9px 18px !important;
-    font-size: 13px !important;
-    font-weight: 600;
-  }
-  body .sticky-save-bar .btn-primary {
-    box-shadow: 0 2px 6px rgba(196, 162, 95, 0.32);
-  }
-
-  /* Entity form: reset wrapping that older .card forced */
-  body .entity-form {
-    margin: 0;
-  }
-  body .entity-form .detail-section {
-    margin-bottom: 14px !important;
-  }
-  body .entity-form .detail-section:last-child {
-    margin-bottom: 0 !important;
-  }
-
-  /* Detail section heading: allow flex layout for sub-title alignment */
-  body .detail-section > .detail-title {
-    flex-wrap: wrap;
-  }
-
-  /* Read-only info grid (definition list style) */
-  body .info-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px 24px;
-  }
-  body .info-row {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 8px 0;
-    border-bottom: 1px dashed #f0e6d4;
-  }
-  body .info-row.info-row-wide {
-    grid-column: 1 / -1;
-  }
-  body .info-row:last-child,
-  body .info-row:nth-last-child(2):not(.info-row-wide) {
-    border-bottom: none;
-  }
-  body .info-label {
-    font-size: 11px;
-    color: #9d8a72;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 700;
-  }
-  body .info-value {
-    font-size: 13.5px;
-    color: #2c1810;
-    font-weight: 500;
-    line-height: 1.5;
-  }
-
-  /* Mobile */
-  @media (max-width: 720px) {
-    body .entity-hero {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 14px;
-    }
-    body .entity-hero-actions {
-      width: 100%;
-      justify-content: stretch;
-    }
-    body .entity-hero-actions .btn {
-      flex: 1;
-    }
-    body .sticky-save-bar {
-      flex-wrap: wrap;
-    }
-    body .sticky-save-bar .save-bar-hint {
-      flex-basis: 100%;
-      margin-right: 0;
-      margin-bottom: 6px;
-    }
-  }
-</style>
-<!-- ─────── END detail-view extras ─────── -->
-
   </body>
 </html>

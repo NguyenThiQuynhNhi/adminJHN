@@ -1,0 +1,793 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CRM — YUUSHI Agent</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --bg-body: #f5f0e8;
+        --bg-card: #ffffff;
+        --bg-alt: #fdf9f3;
+        --border-subtle: #eadccd;
+        --border-strong: #d9c8b4;
+        --accent: #c4714a;
+        --accent-dark: #a55232;
+        --accent-soft: #fef1e6;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+        --text-dim: #9b8568;
+        --badge-green: #2f855a;
+        --badge-red: #c53030;
+        --badge-amber: #b7791f;
+        --badge-blue: #2c5282;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg-body); color: var(--text-main);
+        font-size: 13px; line-height: 1.5;
+        padding: clamp(16px, 2.5vw, 24px);
+        -webkit-font-smoothing: antialiased;
+      }
+      h1 { margin: 0 0 4px; font-size: 22px; font-weight: 700; }
+      .page-header {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        margin-bottom: 14px; gap: 12px; flex-wrap: wrap;
+      }
+      .page-sub { font-size: 12.5px; color: var(--text-muted); }
+      .tabs {
+        display: flex; gap: 4px; border-bottom: 1px solid var(--border-subtle);
+        margin-bottom: 18px;
+      }
+      .tab {
+        background: transparent; border: 0; padding: 10px 18px;
+        font-family: inherit; font-size: 13.5px; font-weight: 600;
+        color: var(--text-muted); cursor: pointer;
+        border-bottom: 3px solid transparent; margin-bottom: -1px;
+      }
+      .tab:hover { color: var(--text-main); }
+      .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+      input, select, textarea {
+        border-radius: 8px; border: 1px solid var(--border-subtle);
+        padding: 8px 11px; font-size: 13px; background: #fff;
+        color: var(--text-main); outline: none; font-family: inherit;
+        width: 100%; min-height: 36px;
+      }
+      input:focus, select:focus, textarea:focus {
+        border-color: var(--accent); box-shadow: 0 0 0 2px rgba(196, 113, 74, 0.18);
+      }
+      .btn {
+        border-radius: 8px; border: 1px solid var(--border-strong);
+        padding: 8px 14px; font-size: 13px; background: #fff;
+        cursor: pointer; display: inline-flex; gap: 6px;
+        align-items: center; justify-content: center;
+        color: var(--text-main); font-family: inherit; font-weight: 500;
+        min-height: 36px;
+      }
+      .btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        border-color: var(--accent-dark); color: #fffaf3;
+      }
+      .btn-primary:hover { color: #fffaf3; }
+      .btn-sm { padding: 5px 10px; font-size: 11.5px; min-height: 28px; }
+      .btn-danger { color: var(--badge-red); border-color: #fbcaca; }
+
+      .toolbar {
+        display: flex; gap: 8px; align-items: center;
+        margin-bottom: 12px; flex-wrap: wrap;
+      }
+      .toolbar .right { margin-left: auto; display: flex; gap: 8px; }
+
+      .card {
+        background: var(--bg-card); border: 1px solid var(--border-subtle);
+        border-radius: 12px; padding: 18px;
+        box-shadow: 0 4px 12px rgba(115, 72, 39, 0.04);
+      }
+
+      /* ====== Kanban ====== */
+      .kanban {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+      @media (max-width: 880px) {
+        .kanban { grid-template-columns: 1fr; }
+      }
+      .kanban-col {
+        background: var(--bg-card); border: 1px solid var(--border-subtle);
+        border-radius: 12px; padding: 12px;
+        min-height: 400px;
+        box-shadow: 0 4px 12px rgba(115, 72, 39, 0.04);
+        transition: background 0.15s, border-color 0.15s;
+      }
+      .kanban-col.drop-hover {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+      }
+      .kanban-head {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 4px 8px 10px; border-bottom: 1px solid #f5ece0;
+        margin-bottom: 10px;
+        font-size: 12.5px; font-weight: 700; color: var(--text-main);
+        text-transform: uppercase; letter-spacing: 0.04em;
+      }
+      .kanban-head .col-todo { color: var(--badge-blue); }
+      .kanban-head .col-prog { color: var(--badge-amber); }
+      .kanban-head .col-done { color: var(--badge-green); }
+      .kanban-count {
+        background: #f3ece1; color: var(--text-muted);
+        padding: 1px 8px; border-radius: 999px;
+        font-size: 11px; font-weight: 700;
+      }
+      .task-card {
+        background: var(--bg-alt); border: 1px solid var(--border-subtle);
+        border-radius: 10px; padding: 12px; margin-bottom: 8px;
+        cursor: grab;
+        transition: transform 0.1s, box-shadow 0.15s;
+      }
+      .task-card:hover {
+        box-shadow: 0 4px 10px rgba(115, 72, 39, 0.08);
+      }
+      .task-card:active {
+        cursor: grabbing;
+        transform: scale(0.98);
+      }
+      .task-card.dragging {
+        opacity: 0.4;
+      }
+      .task-title {
+        font-size: 13px; font-weight: 700; margin-bottom: 4px;
+      }
+      .task-meta {
+        font-size: 11.5px; color: var(--text-muted);
+        display: flex; align-items: center; gap: 5px;
+        margin-bottom: 3px;
+      }
+      .task-meta i { color: var(--text-dim); width: 11px; text-align: center; font-size: 10px; }
+      .task-meta.overdue { color: var(--badge-red); font-weight: 600; }
+      .task-meta.overdue i { color: var(--badge-red); }
+      .task-foot {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-top: 8px;
+      }
+      .priority {
+        font-size: 10px; padding: 2px 7px; border-radius: 999px;
+        font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      }
+      .p-high { background: #fde8e8; color: var(--badge-red); border: 1px solid #fbcaca; }
+      .p-med { background: #fff6e0; color: var(--badge-amber); border: 1px solid #fbd38d; }
+      .p-low { background: #f7f7f8; color: #4a5568; border: 1px solid #d2d6dc; }
+
+      /* ====== Calendar ====== */
+      .view-toggle {
+        display: inline-flex; border: 1px solid var(--border-subtle);
+        border-radius: 8px; overflow: hidden; background: #fff;
+      }
+      .view-toggle button {
+        background: transparent; border: 0;
+        padding: 7px 12px; font-family: inherit; font-size: 12px;
+        font-weight: 600; color: var(--text-muted); cursor: pointer;
+      }
+      .view-toggle button.active {
+        background: var(--accent); color: #fff;
+      }
+
+      .calendar {
+        width: 100%; border-collapse: collapse;
+      }
+      .calendar th, .calendar td {
+        border: 1px solid var(--border-subtle);
+        padding: 8px;
+        vertical-align: top;
+        height: 90px;
+        width: calc(100% / 7);
+      }
+      .calendar th {
+        background: var(--bg-alt); height: auto;
+        font-size: 11px; text-transform: uppercase;
+        color: var(--text-muted); font-weight: 700;
+        letter-spacing: 0.04em; text-align: center;
+      }
+      .cal-day {
+        font-size: 11.5px; font-weight: 600; color: var(--text-main);
+        margin-bottom: 4px;
+      }
+      .cal-day.today {
+        background: var(--accent); color: #fff;
+        border-radius: 50%; width: 22px; height: 22px;
+        display: inline-flex; align-items: center; justify-content: center;
+      }
+      .cal-day.other { color: var(--text-dim); }
+      .cal-event {
+        font-size: 10.5px; padding: 2px 5px;
+        border-radius: 4px; margin-bottom: 2px;
+        background: var(--accent-soft); color: var(--accent-dark);
+        border-left: 3px solid var(--accent);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        cursor: pointer;
+      }
+      .cal-event.confirmed { background: #e6f6ef; color: var(--badge-green); border-left-color: var(--badge-green); }
+      .cal-event.pending { background: #fff6e0; color: var(--badge-amber); border-left-color: var(--badge-amber); }
+      .cal-event.completed { background: #f3f3f5; color: #4a5568; border-left-color: #4a5568; }
+
+      /* Table */
+      table.data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+      .data-table thead { background: var(--bg-alt); }
+      .data-table th, .data-table td {
+        padding: 10px 12px; text-align: left;
+        border-bottom: 1px solid #f5ece0;
+      }
+      .data-table th {
+        font-size: 11px; font-weight: 700; color: var(--text-muted);
+        text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
+      }
+      .data-table tbody tr:hover { background: var(--bg-alt); }
+      .badge {
+        font-size: 10.5px; padding: 3px 8px; border-radius: 999px;
+        font-weight: 700; border: 1px solid transparent; white-space: nowrap;
+      }
+      .b-scheduled { background: #fff6e0; color: var(--badge-amber); border-color: #fbd38d; }
+      .b-completed { background: #e6f6ef; color: var(--badge-green); border-color: #b7e4cc; }
+      .b-cancelled { background: #fde8e8; color: var(--badge-red); border-color: #fbcaca; }
+
+      /* Activity timeline */
+      .activity-log {
+        border-left: 2px solid var(--border-strong);
+        margin-left: 6px; padding-left: 14px;
+      }
+      .activity-entry {
+        position: relative; padding: 10px 0; font-size: 13px;
+      }
+      .activity-entry::before {
+        content: ""; position: absolute; left: -22px; top: 14px;
+        width: 12px; height: 12px;
+        border: 2px solid var(--bg-card); border-radius: 50%;
+      }
+      .activity-entry.viewing::before { background: var(--badge-blue); }
+      .activity-entry.task::before { background: var(--badge-green); }
+      .activity-entry.call::before { background: var(--accent); }
+      .activity-entry.email::before { background: var(--badge-amber); }
+      .activity-when { font-size: 11px; color: var(--text-dim); margin-bottom: 3px; }
+      .activity-what .who { font-weight: 700; color: var(--accent-dark); }
+      .activity-what .target { color: var(--accent); font-weight: 600; }
+
+      /* Modal */
+      .modal-backdrop {
+        position: fixed; inset: 0; background: rgba(34, 24, 18, 0.5);
+        display: none; align-items: center; justify-content: center;
+        z-index: 200; padding: 16px;
+      }
+      .modal-backdrop.open { display: flex; }
+      .modal-box {
+        background: #fff; border-radius: 14px;
+        width: 480px; max-width: 100%; max-height: 90vh;
+        display: flex; flex-direction: column;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
+      }
+      .modal-header {
+        padding: 14px 18px; border-bottom: 1px solid var(--border-subtle);
+        display: flex; justify-content: space-between; align-items: center;
+      }
+      .modal-header h3 { margin: 0; font-size: 15px; font-weight: 700; }
+      .modal-body { padding: 18px; overflow: auto; }
+      .modal-footer {
+        padding: 12px 18px; border-top: 1px solid var(--border-subtle);
+        display: flex; justify-content: flex-end; gap: 8px;
+      }
+      .form-label {
+        display: block; font-size: 11px; font-weight: 700;
+        color: var(--text-muted); text-transform: uppercase;
+        letter-spacing: 0.04em; margin-bottom: 4px; margin-top: 12px;
+      }
+      .form-label:first-child { margin-top: 0; }
+      .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+      .toast-wrap {
+        position: fixed; bottom: 20px; right: 20px;
+        z-index: 999; display: flex; flex-direction: column; gap: 8px;
+      }
+      .toast {
+        background: var(--text-main); color: #fffaf3;
+        padding: 10px 14px; border-radius: 8px; font-size: 13px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      }
+      .toast.success { background: var(--badge-green); }
+    </style>
+  </head>
+  <body>
+    <div class="page-header">
+      <div>
+        <h1>CRM</h1>
+        <div class="page-sub">
+          Manage your tasks, schedule viewings, and review activity log
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('tasks')">
+        <i class="fas fa-list-check"></i> Tasks
+      </button>
+      <button class="tab" onclick="switchTab('viewings')">
+        <i class="fas fa-calendar-check"></i> Viewings
+      </button>
+      <button class="tab" onclick="switchTab('log')">
+        <i class="fas fa-clock-rotate-left"></i> Activity Log
+      </button>
+    </div>
+
+    <!-- ===== TAB 1: TASKS ===== -->
+    <div id="tabTasks">
+      <div class="toolbar">
+        <span style="font-size:12.5px;color:var(--text-muted)"><strong id="taskTotal">5</strong> tasks across 3 columns · drag to move</span>
+        <div class="right">
+          <button class="btn btn-primary" onclick="openTaskModal()"><i class="fas fa-plus"></i> Add Task</button>
+        </div>
+      </div>
+
+      <div class="kanban" id="kanban">
+        <div class="kanban-col" data-status="todo" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'todo')">
+          <div class="kanban-head"><span class="col-todo">📋 To Do</span><span class="kanban-count" id="cntTodo">0</span></div>
+          <div class="col-body" id="colTodo"></div>
+        </div>
+        <div class="kanban-col" data-status="prog" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'prog')">
+          <div class="kanban-head"><span class="col-prog">🔧 In Progress</span><span class="kanban-count" id="cntProg">0</span></div>
+          <div class="col-body" id="colProg"></div>
+        </div>
+        <div class="kanban-col" data-status="done" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'done')">
+          <div class="kanban-head"><span class="col-done">✅ Done</span><span class="kanban-count" id="cntDone">0</span></div>
+          <div class="col-body" id="colDone"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB 2: VIEWINGS ===== -->
+    <div id="tabViewings" style="display: none">
+      <div class="toolbar">
+        <div class="view-toggle">
+          <button class="active" onclick="setViewMode('list', this)">📋 List</button>
+          <button onclick="setViewMode('cal', this)">📅 Calendar</button>
+        </div>
+        <div class="right">
+          <button class="btn btn-primary" onclick="openViewingModal()"><i class="fas fa-plus"></i> Schedule Viewing</button>
+        </div>
+      </div>
+
+      <div id="viewList" class="card" style="padding: 0; overflow: hidden">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date &amp; Time</th>
+              <th>Property</th>
+              <th>Client</th>
+              <th>Phone</th>
+              <th>Status</th>
+              <th>Notes</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="viewBody"></tbody>
+        </table>
+      </div>
+
+      <div id="viewCal" class="card" style="display: none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <button class="btn btn-sm"><i class="fas fa-chevron-left"></i></button>
+          <h3 style="margin:0;font-size:15px">May 2026</h3>
+          <button class="btn btn-sm"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <table class="calendar" id="calTable"></table>
+      </div>
+    </div>
+
+    <!-- ===== TAB 3: ACTIVITY LOG ===== -->
+    <div id="tabLog" style="display: none">
+      <div class="toolbar">
+        <select id="logFilter" onchange="renderLog()" style="max-width:160px">
+          <option value="">All activities</option>
+          <option value="viewing">Viewings</option>
+          <option value="task">Tasks</option>
+          <option value="call">Calls</option>
+          <option value="email">Emails</option>
+        </select>
+        <input type="date" id="logFrom" style="max-width:160px" onchange="renderLog()" />
+        <span style="font-size:12px;color:var(--text-muted)">→</span>
+        <input type="date" id="logTo" style="max-width:160px" onchange="renderLog()" />
+        <div class="right">
+          <button class="btn" onclick="exportCsv()"><i class="fas fa-file-export"></i> Export CSV</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="activity-log" id="logList"></div>
+      </div>
+    </div>
+
+    <!-- ===== TASK MODAL ===== -->
+    <div class="modal-backdrop" id="taskModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3><i class="fas fa-plus" style="color:var(--accent)"></i> New Task</h3>
+          <button class="btn btn-sm" onclick="closeTaskModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label">Title *</label>
+          <input id="tTitle" type="text" placeholder="e.g. Follow up with Sato Hiroshi" />
+          <div class="form-row">
+            <div>
+              <label class="form-label">Due Date *</label>
+              <input id="tDue" type="date" />
+            </div>
+            <div>
+              <label class="form-label">Priority</label>
+              <select id="tPri">
+                <option value="med">Medium</option>
+                <option value="high">High</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+          </div>
+          <label class="form-label">Related Property</label>
+          <select id="tProp">
+            <option value="">— None —</option>
+            <option>Roppongi Hills 2LDK</option>
+            <option>Shinjuku Studio</option>
+            <option>Minami-Aoyama Penthouse</option>
+            <option>Daikanyama 1LDK</option>
+            <option>Azabu-Juban Tower 2LDK</option>
+          </select>
+          <label class="form-label">Related Client</label>
+          <input id="tClient" type="text" placeholder="e.g. Sato Hiroshi" />
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeTaskModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="saveTask()"><i class="fas fa-check"></i> Save Task</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== VIEWING MODAL ===== -->
+    <div class="modal-backdrop" id="viewModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3><i class="fas fa-calendar-plus" style="color:var(--accent)"></i> Schedule Viewing</h3>
+          <button class="btn btn-sm" onclick="closeViewingModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label">Property *</label>
+          <select id="vProp">
+            <option>Roppongi Hills 2LDK</option>
+            <option>Shinjuku Studio</option>
+            <option>Minami-Aoyama Penthouse</option>
+            <option>Daikanyama 1LDK</option>
+            <option>Azabu-Juban Tower 2LDK</option>
+          </select>
+          <div class="form-row">
+            <div>
+              <label class="form-label">Client Name *</label>
+              <input id="vClient" type="text" />
+            </div>
+            <div>
+              <label class="form-label">Phone</label>
+              <input id="vPhone" type="text" placeholder="+81-90-…" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div>
+              <label class="form-label">Date *</label>
+              <input id="vDate" type="date" />
+            </div>
+            <div>
+              <label class="form-label">Time *</label>
+              <input id="vTime" type="time" />
+            </div>
+          </div>
+          <label class="form-label">Notes</label>
+          <textarea id="vNotes" rows="3" placeholder="Optional notes for this viewing…"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeViewingModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="saveViewing()"><i class="fas fa-check"></i> Schedule</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+      const TASKS = [
+        { id: "T1", title: "Follow up with Sato Hiroshi", due: "2026-05-28", overdue: false, prop: "Roppongi Hills 2LDK", client: "Sato Hiroshi", pri: "high", status: "todo" },
+        { id: "T2", title: "Prepare floor plan PDF", due: "2026-05-30", overdue: false, prop: "Minami-Aoyama Penthouse", client: "Kim Soo-yeon", pri: "med", status: "todo" },
+        { id: "T3", title: "Call back Yamada Yuki", due: "2026-05-26", overdue: true, prop: "Daikanyama 1LDK", client: "Yamada Yuki", pri: "high", status: "prog" },
+        { id: "T4", title: "Photo retake at Shinjuku Studio", due: "2026-06-02", overdue: false, prop: "Shinjuku Studio", client: "", pri: "low", status: "prog" },
+        { id: "T5", title: "Send signed contract to Tanaka Family", due: "2026-05-24", overdue: false, prop: "Minato Mirai Bay Condo", client: "Tanaka Family", pri: "high", status: "done" },
+      ];
+
+      const VIEWINGS = [
+        { id: "V1", date: "2026-05-27", time: "16:00", prop: "Shinjuku Studio", client: "Sato Hiroshi", phone: "+81-90-1111-2222", status: "scheduled", notes: "Buyer is local, has financing pre-approved." },
+        { id: "V2", date: "2026-05-28", time: "10:00", prop: "Roppongi Hills 2LDK", client: "Yamada Yuki", phone: "+81-90-3333-4444", status: "scheduled", notes: "First-time buyer, bring brochure." },
+        { id: "V3", date: "2026-05-28", time: "14:00", prop: "Daikanyama 1LDK", client: "Lee Min-jun", phone: "+81-80-5555-6666", status: "scheduled", notes: "Will confirm 1 day prior." },
+        { id: "V4", date: "2026-05-24", time: "11:00", prop: "Minato Mirai Bay Condo", client: "Tanaka Family", phone: "+81-90-9999-0000", status: "completed", notes: "Closed deal! Contract sent." },
+      ];
+
+      const LOG = [
+        { kind: "viewing", at: "2026-05-24 11:30", text: 'Viewing completed with <span class="who">Tanaka Family</span> at <span class="target">Minato Mirai Bay Condo</span>' },
+        { kind: "task", at: "2026-05-24 14:20", text: 'Task <span class="target">"Send signed contract to Tanaka Family"</span> marked complete' },
+        { kind: "call", at: "2026-05-24 16:00", text: 'Call logged with <span class="who">Kim Soo-yeon</span> regarding <span class="target">Minami-Aoyama Penthouse</span>' },
+        { kind: "email", at: "2026-05-25 09:15", text: 'Email sent to <span class="who">Lee Min-jun</span> re: <span class="target">Daikanyama 1LDK viewing confirmation</span>' },
+        { kind: "viewing", at: "2026-05-25 14:00", text: 'Viewing scheduled with <span class="who">Yamada Yuki</span> at <span class="target">Roppongi Hills 2LDK</span>' },
+        { kind: "call", at: "2026-05-25 17:30", text: 'Call logged with <span class="who">Sato Hiroshi</span> regarding inquiry follow-up' },
+        { kind: "task", at: "2026-05-26 09:00", text: 'Task <span class="target">"Photo retake at Shinjuku Studio"</span> moved to In Progress' },
+        { kind: "email", at: "2026-05-26 11:45", text: 'Email sent to <span class="who">Sato Hiroshi</span> re: <span class="target">property availability</span>' },
+        { kind: "viewing", at: "2026-05-26 15:00", text: 'Viewing rescheduled with <span class="who">Kim Soo-yeon</span> at <span class="target">Minami-Aoyama Penthouse</span>' },
+        { kind: "task", at: "2026-05-27 08:30", text: 'New task added: <span class="target">"Follow up with Sato Hiroshi"</span>' },
+      ];
+
+      function esc(s) {
+        return String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]
+        );
+      }
+
+      // ============ Kanban ============
+      function renderKanban() {
+        const cols = { todo: [], prog: [], done: [] };
+        TASKS.forEach((t) => cols[t.status].push(t));
+        document.getElementById("cntTodo").textContent = cols.todo.length;
+        document.getElementById("cntProg").textContent = cols.prog.length;
+        document.getElementById("cntDone").textContent = cols.done.length;
+        document.getElementById("taskTotal").textContent = TASKS.length;
+        const cardHtml = (t) => `
+          <div class="task-card" draggable="true" data-id="${t.id}"
+            ondragstart="onDragStart(event,'${t.id}')"
+            ondragend="onDragEnd(event)">
+            <div class="task-title">${esc(t.title)}</div>
+            <div class="task-meta ${t.overdue ? "overdue" : ""}"><i class="fas fa-calendar"></i> Due: ${esc(t.due)}${t.overdue ? " (overdue)" : ""}</div>
+            ${t.prop ? `<div class="task-meta"><i class="fas fa-house-chimney"></i> ${esc(t.prop)}</div>` : ""}
+            ${t.client ? `<div class="task-meta"><i class="fas fa-user"></i> ${esc(t.client)}</div>` : ""}
+            <div class="task-foot">
+              <span class="priority p-${t.pri}">${t.pri}</span>
+              <button class="btn btn-sm btn-danger" onclick="delTask('${t.id}')" style="padding:2px 6px;font-size:10px;min-height:0"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>`;
+        document.getElementById("colTodo").innerHTML = cols.todo.map(cardHtml).join("");
+        document.getElementById("colProg").innerHTML = cols.prog.map(cardHtml).join("");
+        document.getElementById("colDone").innerHTML = cols.done.map(cardHtml).join("");
+      }
+
+      let dragId = null;
+      function onDragStart(e, id) { dragId = id; e.target.classList.add("dragging"); }
+      function onDragEnd(e) { e.target.classList.remove("dragging"); }
+      function onDragOver(e) { e.preventDefault(); e.currentTarget.classList.add("drop-hover"); }
+      function onDragLeave(e) { e.currentTarget.classList.remove("drop-hover"); }
+      function onDrop(e, status) {
+        e.preventDefault();
+        e.currentTarget.classList.remove("drop-hover");
+        if (!dragId) return;
+        const t = TASKS.find((x) => x.id === dragId);
+        if (t) t.status = status;
+        dragId = null;
+        renderKanban();
+        toast(`Moved to ${status === "todo" ? "To Do" : status === "prog" ? "In Progress" : "Done"}`);
+      }
+      window.onDragStart = onDragStart;
+      window.onDragEnd = onDragEnd;
+      window.onDragOver = onDragOver;
+      window.onDragLeave = onDragLeave;
+      window.onDrop = onDrop;
+
+      function delTask(id) {
+        if (!confirm("Delete this task?")) return;
+        const idx = TASKS.findIndex((t) => t.id === id);
+        if (idx >= 0) TASKS.splice(idx, 1);
+        renderKanban();
+        toast("Task deleted", "success");
+      }
+      window.delTask = delTask;
+
+      function openTaskModal() { document.getElementById("taskModal").classList.add("open"); }
+      function closeTaskModal() { document.getElementById("taskModal").classList.remove("open"); }
+      window.openTaskModal = openTaskModal;
+      window.closeTaskModal = closeTaskModal;
+      function saveTask() {
+        const title = document.getElementById("tTitle").value.trim();
+        const due = document.getElementById("tDue").value;
+        if (!title || !due) { toast("Title and due date required", "success"); return; }
+        TASKS.push({
+          id: "T" + (TASKS.length + 100),
+          title, due,
+          overdue: new Date(due) < new Date(),
+          prop: document.getElementById("tProp").value,
+          client: document.getElementById("tClient").value,
+          pri: document.getElementById("tPri").value,
+          status: "todo",
+        });
+        ["tTitle", "tDue", "tProp", "tClient"].forEach(id => document.getElementById(id).value = "");
+        closeTaskModal();
+        renderKanban();
+        toast("Task added");
+      }
+      window.saveTask = saveTask;
+
+      // ============ Viewings ============
+      function statusBadge(s) {
+        return `<span class="badge b-${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</span>`;
+      }
+      function renderViewings() {
+        document.getElementById("viewBody").innerHTML = VIEWINGS.map(v => `
+          <tr>
+            <td><strong>${esc(v.date)}</strong><div style="font-size:11px;color:var(--text-muted)">${esc(v.time)}</div></td>
+            <td>${esc(v.prop)}</td>
+            <td>${esc(v.client)}</td>
+            <td style="font-size:11.5px;color:var(--text-muted)">${esc(v.phone)}</td>
+            <td>${statusBadge(v.status)}</td>
+            <td style="font-size:12px;color:var(--text-muted);max-width:200px">${esc(v.notes)}</td>
+            <td style="text-align:right;white-space:nowrap">
+              <button class="btn btn-sm" onclick="vAct('edit','${v.id}')" title="Edit"><i class="fas fa-pen"></i></button>
+              ${v.status === "scheduled" ? `<button class="btn btn-sm" onclick="markComplete('${v.id}')" title="Mark complete"><i class="fas fa-check"></i></button>` : ""}
+              ${v.status === "scheduled" ? `<button class="btn btn-sm btn-danger" onclick="cancelView('${v.id}')" title="Cancel"><i class="fas fa-times"></i></button>` : ""}
+            </td>
+          </tr>`
+        ).join("");
+      }
+      function vAct(k, id) { toast(`${k} → ${id} (demo)`); }
+      function markComplete(id) {
+        const v = VIEWINGS.find((x) => x.id === id);
+        if (v) { v.status = "completed"; renderViewings(); renderCal(); toast("Marked complete", "success"); }
+      }
+      function cancelView(id) {
+        if (!confirm("Cancel this viewing?")) return;
+        const v = VIEWINGS.find((x) => x.id === id);
+        if (v) { v.status = "cancelled"; renderViewings(); renderCal(); toast("Cancelled"); }
+      }
+      window.vAct = vAct;
+      window.markComplete = markComplete;
+      window.cancelView = cancelView;
+
+      function setViewMode(mode, btn) {
+        document.querySelectorAll(".view-toggle button").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("viewList").style.display = mode === "list" ? "" : "none";
+        document.getElementById("viewCal").style.display = mode === "cal" ? "" : "none";
+        if (mode === "cal") renderCal();
+      }
+      window.setViewMode = setViewMode;
+
+      function openViewingModal() { document.getElementById("viewModal").classList.add("open"); }
+      function closeViewingModal() { document.getElementById("viewModal").classList.remove("open"); }
+      window.openViewingModal = openViewingModal;
+      window.closeViewingModal = closeViewingModal;
+      function saveViewing() {
+        const prop = document.getElementById("vProp").value;
+        const client = document.getElementById("vClient").value.trim();
+        const date = document.getElementById("vDate").value;
+        const time = document.getElementById("vTime").value;
+        if (!client || !date || !time) { toast("Client, date, and time required"); return; }
+        VIEWINGS.push({
+          id: "V" + (VIEWINGS.length + 100),
+          date, time, prop, client,
+          phone: document.getElementById("vPhone").value,
+          status: "scheduled",
+          notes: document.getElementById("vNotes").value,
+        });
+        ["vClient", "vPhone", "vDate", "vTime", "vNotes"].forEach(id => document.getElementById(id).value = "");
+        closeViewingModal();
+        renderViewings();
+        renderCal();
+        toast("Viewing scheduled");
+      }
+      window.saveViewing = saveViewing;
+
+      function renderCal() {
+        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const year = 2026, month = 4;
+        const first = new Date(year, month, 1);
+        const last = new Date(year, month + 1, 0);
+        const startWeekday = first.getDay();
+        const daysInMonth = last.getDate();
+        const cells = [];
+        const prevLast = new Date(year, month, 0).getDate();
+        for (let i = startWeekday - 1; i >= 0; i--) cells.push({ day: prevLast - i, other: true });
+        for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, other: false });
+        while (cells.length % 7 !== 0) cells.push({ day: cells.length - daysInMonth - startWeekday + 1, other: true });
+
+        const evMap = {};
+        VIEWINGS.forEach((v) => {
+          const [_y, _m, _d] = v.date.split("-").map(Number);
+          if (_y === year && _m - 1 === month) {
+            (evMap[_d] = evMap[_d] || []).push(v);
+          }
+        });
+
+        let html = "<thead><tr>" + days.map((d) => `<th>${d}</th>`).join("") + "</tr></thead><tbody>";
+        const today = new Date();
+        const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+        for (let i = 0; i < cells.length; i += 7) {
+          html += "<tr>";
+          for (let j = 0; j < 7; j++) {
+            const c = cells[i + j];
+            const isToday = !c.other && isCurrentMonth && today.getDate() === c.day;
+            const evs = c.other ? [] : (evMap[c.day] || []);
+            html += `<td><div class="cal-day ${c.other ? "other" : ""} ${isToday ? "today" : ""}">${c.day}</div>`;
+            evs.forEach((v) => {
+              html += `<div class="cal-event ${v.status}" title="${esc(v.prop)} - ${esc(v.client)}">${esc(v.time)} ${esc(v.client.split(" ")[0])}</div>`;
+            });
+            html += "</td>";
+          }
+          html += "</tr>";
+        }
+        html += "</tbody>";
+        document.getElementById("calTable").innerHTML = html;
+      }
+
+      // ============ Activity Log ============
+      function renderLog() {
+        const k = document.getElementById("logFilter").value;
+        const from = document.getElementById("logFrom").value;
+        const to = document.getElementById("logTo").value;
+        const list = LOG.filter((e) => {
+          if (k && e.kind !== k) return false;
+          const d = e.at.split(" ")[0];
+          if (from && d < from) return false;
+          if (to && d > to) return false;
+          return true;
+        });
+        document.getElementById("logList").innerHTML = list.length
+          ? list.map((e) => `
+            <div class="activity-entry ${e.kind}">
+              <div class="activity-when"><i class="fas fa-clock" style="font-size:9px;margin-right:3px"></i>${esc(e.at)} · ${esc(e.kind)}</div>
+              <div class="activity-what">${e.text}</div>
+            </div>`
+          ).join("")
+          : '<div style="text-align:center;padding:32px;color:var(--text-muted)">No activities match the filter.</div>';
+      }
+      window.renderLog = renderLog;
+
+      function exportCsv() {
+        const k = document.getElementById("logFilter").value;
+        const rows = LOG.filter(e => !k || e.kind === k);
+        const csv = ["Time,Kind,Description", ...rows.map(e => `"${e.at}","${e.kind}","${e.text.replace(/<[^>]+>/g, "").replace(/"/g, '""')}"`)].join("\n");
+        const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "activity-log.csv";
+        a.click();
+        URL.revokeObjectURL(a.href);
+        toast("CSV exported");
+      }
+      window.exportCsv = exportCsv;
+
+      // ============ Tabs ============
+      function switchTab(t) {
+        document.querySelectorAll(".tab").forEach((el) => el.classList.remove("active"));
+        const idx = { tasks: 0, viewings: 1, log: 2 }[t];
+        document.querySelectorAll(".tab")[idx].classList.add("active");
+        document.getElementById("tabTasks").style.display = t === "tasks" ? "" : "none";
+        document.getElementById("tabViewings").style.display = t === "viewings" ? "" : "none";
+        document.getElementById("tabLog").style.display = t === "log" ? "" : "none";
+      }
+      window.switchTab = switchTab;
+
+      function toast(msg, kind) {
+        const wrap = document.getElementById("toastWrap");
+        const el = document.createElement("div");
+        el.className = "toast " + (kind || "success");
+        el.textContent = msg;
+        wrap.appendChild(el);
+        setTimeout(() => el.remove(), 2400);
+      }
+
+      renderKanban();
+      renderViewings();
+      renderLog();
+    </script>
+  </body>
+</html>

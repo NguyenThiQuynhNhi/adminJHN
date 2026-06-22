@@ -98,20 +98,87 @@ a:hover {
   text-decoration: underline;
 }
 </style>
+  <style id="faqPaneScoped">
+/* Scoped polish for the FAQ pane — fixes cramped cells & action buttons */
+.table-wrap table th,
+.table-wrap table td {
+  padding: 12px 14px;
+  vertical-align: middle;
+}
+
+/* Action cell: consistent button sizing, comfortable gap so ✎/🗑 don't touch */
+.table-wrap table td .btn.btn-ghost {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: #fff;
+  color: #8b7340;
+}
+.table-wrap table td .btn.btn-ghost:hover {
+  border-color: #c4a25f;
+  background: #f9f4ea;
+}
+.table-wrap table td .btn.btn-ghost.btn-danger {
+  color: #b23a3a;
+}
+.table-wrap table td .btn.btn-ghost.btn-danger:hover {
+  border-color: #d08a8a;
+  background: #fbf0f0;
+}
+
+/* Up/Down reorder buttons */
+.faq-order-btns {
+  display: inline-flex;
+  gap: 4px;
+}
+.faq-order-btns .icon-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+  border: 1px solid #eadccd;
+  border-radius: 6px;
+  background: #fff;
+  color: #8b7340;
+  cursor: pointer;
+}
+.faq-order-btns .icon-btn:hover:not(:disabled) {
+  border-color: #c4a25f;
+  background: #f9f4ea;
+}
+.faq-order-btns .icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+</style>
 </head>
   <body>
     <div class="cms-filter-bar">
+      <button class="btn btn-primary" type="button" onclick="openFaqEditor()">New FAQ</button>
       <input
+        id="faqSearchInput"
         type="text"
         class="cms-filter-input"
         placeholder="Search FAQ question"
       />
-      <select class="filter-select">
+      <select id="faqStatusFilter" class="filter-select">
         <option value="all">All status</option>
         <option value="published">Published</option>
         <option value="draft">Draft</option>
       </select>
     </div>
+
+    <div id="faqResultCount" class="list-result-count"></div>
 
     <div class="table-wrap">
       <table>
@@ -124,135 +191,177 @@ a:hover {
             <th></th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <td>How do I book a viewing?</td>
-            <td>
-              <span class="badge badge-success">Published</span>
-            </td>
-            <td>Anna</td>
-            <td><button class="icon-btn icon-btn--drag">☰</button></td>
-            <td
-              style="
-                text-align: right;
-                display: flex;
-                gap: 6px;
-                justify-content: flex-end;
-              "
-            >
-              <button class="btn btn-ghost" type="button" title="Edit FAQ">
-                ✎
-              </button>
-              <button
-                class="btn btn-ghost btn-danger"
-                type="button"
-                title="Delete FAQ"
-                onclick="
-                  if (confirm('Delete this FAQ?')) alert('Deleted');
-                "
-              >
-                🗑
-              </button>
-            </td>
-          </tr>
-          <tr>
-            <td>How are yields calculated?</td>
-            <td>
-              <span class="badge badge-success">Published</span>
-            </td>
-            <td>John Doe</td>
-            <td><button class="icon-btn icon-btn--drag">☰</button></td>
-            <td
-              style="
-                text-align: right;
-                display: flex;
-                gap: 6px;
-                justify-content: flex-end;
-              "
-            >
-              <button class="btn btn-ghost" type="button" title="Edit FAQ">
-                ✎
-              </button>
-              <button
-                class="btn btn-ghost btn-danger"
-                type="button"
-                title="Delete FAQ"
-                onclick="
-                  if (confirm('Delete this FAQ?')) alert('Deleted');
-                "
-              >
-                🗑
-              </button>
-            </td>
-          </tr>
-          <tr>
-            <td>What fees are associated with buying?</td>
-            <td>
-              <span class="badge badge-warning">Draft</span>
-            </td>
-            <td>John Doe</td>
-            <td><button class="icon-btn icon-btn--drag">☰</button></td>
-            <td
-              style="
-                text-align: right;
-                display: flex;
-                gap: 6px;
-                justify-content: flex-end;
-              "
-            >
-              <button class="btn btn-ghost" type="button" title="Edit FAQ">
-                ✎
-              </button>
-              <button
-                class="btn btn-ghost btn-danger"
-                type="button"
-                title="Delete FAQ"
-                onclick="
-                  if (confirm('Delete this FAQ?')) alert('Deleted');
-                "
-              >
-                🗑
-              </button>
-            </td>
-          </tr>
-          <tr>
-            <td>How do I list my property?</td>
-            <td>
-              <span class="badge badge-warning">Draft</span>
-            </td>
-            <td>Michael</td>
-            <td><button class="icon-btn icon-btn--drag">☰</button></td>
-            <td
-              style="
-                text-align: right;
-                display: flex;
-                gap: 6px;
-                justify-content: flex-end;
-              "
-            >
-              <button class="btn btn-ghost" type="button" title="Edit FAQ">
-                ✎
-              </button>
-              <button
-                class="btn btn-ghost btn-danger"
-                type="button"
-                title="Delete FAQ"
-                onclick="
-                  if (confirm('Delete this FAQ?')) alert('Deleted');
-                "
-              >
-                🗑
-              </button>
-            </td>
-          </tr>
-        </tbody>
+        <tbody id="faqTableBody"></tbody>
       </table>
     </div>
 
-    <div style="margin-top: 10px" class="cms-inline-actions">
-      <button class="btn btn-primary" type="button" onclick="openFaqEditor()">
-        New FAQ
-      </button>
-    </div>
+    <div id="faqPagination" class="pagination"></div>
+
+
+    <script>
+      (function () {
+        const FAQ_PAGE_SIZE = 50;
+        let faqPage = 1;
+
+        function getRecords() {
+          if (typeof window.getFaqRecords === "function") {
+            return window.getFaqRecords();
+          }
+          return [];
+        }
+
+        function getFilters() {
+          const search = (
+            document.getElementById("faqSearchInput")?.value || ""
+          )
+            .trim()
+            .toLowerCase();
+          const status =
+            document.getElementById("faqStatusFilter")?.value || "all";
+          return { search, status, active: !!(search || status !== "all") };
+        }
+
+        function renderFaqTable() {
+          const tbody = document.getElementById("faqTableBody");
+          if (!tbody) return;
+          const records = getRecords();
+          const { search, status, active } = getFilters();
+
+          const filtered = records.filter((r) => {
+            if (status !== "all" && r.status !== status) return false;
+            if (!search) return true;
+            const hay = [r.question, r.answer, r.author]
+              .join(" ")
+              .toLowerCase();
+            return hay.includes(search);
+          });
+
+          const total = filtered.length;
+          const pages = Math.max(1, Math.ceil(total / FAQ_PAGE_SIZE));
+          if (faqPage > pages) faqPage = pages;
+          const startIdx = (faqPage - 1) * FAQ_PAGE_SIZE;
+          const pageRows = filtered.slice(startIdx, startIdx + FAQ_PAGE_SIZE);
+
+          const countEl = document.getElementById("faqResultCount");
+          if (countEl) {
+            countEl.textContent =
+              total === 0
+                ? "Showing 0 FAQs"
+                : "Showing " +
+                  (startIdx + 1) +
+                  "–" +
+                  (startIdx + pageRows.length) +
+                  " of " +
+                  total +
+                  " FAQs";
+          }
+
+          // Reorder uses the full (unfiltered) record array index, so Up/Down
+          // moves the item within the master order. Disabled while filtering.
+          tbody.innerHTML = pageRows
+            .map((r) => {
+              const masterIdx = records.indexOf(r);
+              const isFirst = masterIdx === 0;
+              const isLast = masterIdx === records.length - 1;
+              const disable = active;
+              const badgeCls =
+                r.status === "published" ? "badge-success" : "badge-warning";
+              const badgeLabel =
+                r.status === "published" ? "Published" : "Draft";
+              return `
+                <tr>
+                  <td>${r.question}</td>
+                  <td><span class="badge ${badgeCls}">${badgeLabel}</span></td>
+                  <td>${r.author || "—"}</td>
+                  <td>
+                    <span class="faq-order-btns">
+                      <button class="icon-btn" type="button" title="Move up" data-up="${r.faqId}" ${isFirst || disable ? "disabled" : ""}>↑</button>
+                      <button class="icon-btn" type="button" title="Move down" data-down="${r.faqId}" ${isLast || disable ? "disabled" : ""}>↓</button>
+                    </span>
+                  </td>
+                  <td
+                    style="
+                      text-align: right;
+                      display: flex;
+                      gap: 6px;
+                      justify-content: flex-end;
+                    "
+                  >
+                    <button class="btn btn-ghost" type="button" title="Edit FAQ" data-edit="${r.faqId}">✎</button>
+                    <button class="btn btn-ghost btn-danger" type="button" title="Delete FAQ" data-del="${r.faqId}">🗑</button>
+                  </td>
+                </tr>
+              `;
+            })
+            .join("");
+
+          tbody.querySelectorAll("[data-edit]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const id = btn.getAttribute("data-edit");
+              if (typeof window.openFaqEditor === "function")
+                window.openFaqEditor(id);
+            });
+          });
+          tbody.querySelectorAll("[data-del]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const id = btn.getAttribute("data-del");
+              if (typeof window.deleteFaqById === "function")
+                window.deleteFaqById(id);
+            });
+          });
+          tbody.querySelectorAll("[data-up]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              moveFaq(btn.getAttribute("data-up"), -1);
+            });
+          });
+          tbody.querySelectorAll("[data-down]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              moveFaq(btn.getAttribute("data-down"), 1);
+            });
+          });
+
+          if (typeof window.renderPagination === "function") {
+            window.renderPagination(
+              document.getElementById("faqPagination"),
+              total,
+              faqPage,
+              FAQ_PAGE_SIZE,
+              (go) => {
+                faqPage = go;
+                renderFaqTable();
+              },
+            );
+          }
+        }
+
+        function moveFaq(faqId, dir) {
+          const records = getRecords();
+          const idx = records.findIndex((r) => r.faqId === faqId);
+          if (idx < 0) return;
+          const swap = idx + dir;
+          if (swap < 0 || swap >= records.length) return;
+          const tmp = records[idx];
+          records[idx] = records[swap];
+          records[swap] = tmp;
+          renderFaqTable();
+        }
+
+        ["faqSearchInput", "faqStatusFilter"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) {
+            const reset = () => {
+              faqPage = 1;
+              renderFaqTable();
+            };
+            el.addEventListener("input", reset);
+            el.addEventListener("change", reset);
+          }
+        });
+
+        // Expose so the hub (save / delete cascade) can refresh the table.
+        window.renderFaqTable = renderFaqTable;
+        renderFaqTable();
+      })();
+    </script>
   </body>
 </html>

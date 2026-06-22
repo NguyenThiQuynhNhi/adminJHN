@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Messages — YUUSHI Support Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+      :root {
+        --nav-bg: #1a2744; --nav-bg-hover: #243454; --nav-sub-bg: #14213a; --nav-text: #c8d1e0; --nav-text-muted: #7b8aa3;
+        --accent: #c4714a; --accent-dark: #a55232; --accent-soft: #fef1e6;
+        --bg-body: #f5f0e8; --bg-card: #fff; --bg-alt: #faf6f0;
+        --border-subtle: #eadccd; --border-strong: #d9c8b4;
+        --text-main: #3b2f2a; --text-muted: #7a6a5c; --text-dim: #9b8568;
+        --green: #2f855a; --green-soft: #e6f6ef; --amber: #b7791f; --amber-soft: #fff6e0;
+        --red: #c53030; --red-soft: #fde8e8; --blue: #2c5282; --blue-soft: #e0f2fe;
+        --purple: #6b46c1; --purple-soft: #f3e8ff; --dgreen: #15803d; --grey: #6b7280; --grey-soft: #f3f4f6;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; }
+      body { font-family: Arial, "Segoe UI", system-ui, sans-serif; background: var(--bg-body); color: var(--text-main); font-size: 13px; line-height: 1.5; display: flex; }
+      a { color: inherit; text-decoration: none; }
+      .sidebar { width: 248px; min-width: 248px; height: 100vh; background: var(--nav-bg); color: var(--nav-text); overflow-y: auto; flex-shrink: 0; }
+      .sb-logo { padding: 18px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 11px; }
+      .sb-logo-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--accent); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 17px; }
+      .sb-logo-text .t1 { font-size: 16px; font-weight: 700; color: #fff; display: block; }
+      .sb-logo-text .t2 { font-size: 10.5px; color: var(--nav-text-muted); }
+      .sb-item { display: flex; align-items: center; gap: 11px; padding: 11px 20px; color: var(--nav-text); font-size: 13.5px; cursor: pointer; border-left: 3px solid transparent; }
+      .sb-item:hover { background: var(--nav-bg-hover); color: #fff; }
+      .sb-item.active { background: var(--nav-bg-hover); color: #fff; font-weight: 600; border-left-color: var(--accent); }
+      .sb-item i { width: 18px; text-align: center; font-size: 14px; }
+      .sb-item.active i { color: var(--accent); }
+      .sb-subnav { background: var(--nav-sub-bg); }
+      .sb-sub { display: block; padding: 8px 20px 8px 52px; color: var(--nav-text); font-size: 12.5px; cursor: pointer; }
+      .sb-sub:hover { color: #fff; background: var(--nav-bg-hover); }
+      .sb-sub.active { color: var(--accent); font-weight: 600; }
+      .main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+      .topbar { height: 58px; flex-shrink: 0; background: #fff; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; padding: 0 24px; }
+      .breadcrumb { font-size: 15px; font-weight: 700; flex: 1; }
+      .acct-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; }
+      .content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+      .btn { border-radius: 7px; border: 1px solid var(--border-strong); padding: 8px 14px; font-size: 13px; background: #fff; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; justify-content: center; color: var(--text-main); font-family: inherit; font-weight: 600; min-height: 36px; }
+      .btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-dark); }
+      .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); border-color: var(--accent-dark); color: #fff; }
+      .btn-primary:hover { color: #fff; }
+      .btn-sm { padding: 5px 9px; min-height: 28px; font-size: 11.5px; }
+      input, select, textarea { border-radius: 7px; border: 1px solid var(--border-subtle); padding: 8px 11px; font-size: 13px; background: #fff; outline: none; font-family: inherit; width: 100%; min-height: 36px; }
+      input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+      h2 { font-size: 20px; font-weight: 700; }
+      .sub { font-size: 13px; color: var(--text-muted); }
+      .badge { font-size: 10px; padding: 3px 8px; border-radius: 999px; font-weight: 700; border: 1px solid transparent; text-transform: uppercase; letter-spacing: 0.03em; }
+
+      /* ===== Inbox 3-col ===== */
+      .inbox { display: grid; grid-template-columns: 200px 320px 1fr; flex: 1; overflow: hidden; }
+      @media (max-width: 1000px) { .inbox { grid-template-columns: 0 280px 1fr; } .folders { display: none; } }
+      .folders { border-right: 1px solid var(--border-subtle); background: var(--bg-card); overflow-y: auto; padding: 12px 0; }
+      .folder { display: flex; align-items: center; justify-content: space-between; padding: 9px 18px; cursor: pointer; font-size: 13px; }
+      .folder:hover { background: var(--bg-alt); }
+      .folder.active { background: var(--accent-soft); color: var(--accent-dark); font-weight: 700; border-left: 3px solid var(--accent); padding-left: 15px; }
+      .folder .cnt { font-size: 11px; background: var(--grey-soft); color: var(--text-muted); padding: 1px 7px; border-radius: 999px; font-weight: 700; }
+      .folder.active .cnt { background: var(--accent); color: #fff; }
+      .folder .cnt.unread { background: var(--accent); color: #fff; }
+      .conv-list { border-right: 1px solid var(--border-subtle); background: var(--bg-card); overflow-y: auto; display: flex; flex-direction: column; }
+      .conv-toolbar { padding: 10px; border-bottom: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 8px; position: sticky; top: 0; background: var(--bg-card); z-index: 2; }
+      .conv-filters { display: flex; gap: 4px; }
+      .cf-pill { font-size: 11px; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--border-subtle); cursor: pointer; background: 0; font-weight: 600; color: var(--text-muted); }
+      .cf-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+      .conv-item { padding: 11px 14px; border-bottom: 1px solid #f5ece0; cursor: pointer; display: flex; gap: 10px; }
+      .conv-item:hover { background: var(--bg-alt); }
+      .conv-item.active { background: var(--accent-soft); border-left: 3px solid var(--accent); padding-left: 11px; }
+      .conv-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--blue); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+      .conv-avatar.admin { background: var(--nav-bg); }
+      .conv-body { flex: 1; min-width: 0; }
+      .conv-top { display: flex; justify-content: space-between; gap: 6px; }
+      .conv-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .conv-time { font-size: 10.5px; color: var(--text-dim); white-space: nowrap; }
+      .conv-preview { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .conv-tag { font-size: 9.5px; padding: 1px 7px; border-radius: 4px; background: var(--accent-soft); color: var(--accent-dark); font-weight: 600; margin-top: 3px; display: inline-block; }
+      .unread-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+      .chat { display: flex; flex-direction: column; overflow: hidden; background: var(--bg-alt); }
+      .chat-header { padding: 12px 18px; border-bottom: 1px solid var(--border-subtle); background: #fff; display: flex; align-items: center; gap: 12px; }
+      .chat-header .ttl { font-size: 14px; font-weight: 700; }
+      .chat-header .meta { font-size: 11.5px; color: var(--text-muted); }
+      .chat-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+      .translate-toggle { display: flex; align-items: center; gap: 6px; font-size: 11.5px; cursor: pointer; padding: 5px 9px; border-radius: 7px; border: 1px solid var(--border-subtle); background: #fff; }
+      .translate-toggle.on { background: var(--green-soft); border-color: #b7e4cc; color: var(--green); font-weight: 700; }
+      .chat-msgs { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+      .msg { max-width: 70%; padding: 10px 13px; border-radius: 14px; font-size: 13px; line-height: 1.5; }
+      .msg.client { background: #ece6dd; align-self: flex-start; border-bottom-left-radius: 4px; }
+      .msg.agent { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+      .msg-time { font-size: 10px; opacity: 0.7; margin-top: 4px; display: block; }
+      .msg-sys { align-self: center; font-size: 11px; color: var(--text-dim); font-style: italic; padding: 4px 0; }
+      .msg-file { display: flex; align-items: center; gap: 8px; padding: 6px; background: rgba(255,255,255,0.5); border-radius: 8px; margin-top: 4px; font-size: 12px; }
+      .chat-quick { padding: 8px 16px; border-top: 1px solid var(--border-subtle); background: var(--bg-alt); display: flex; gap: 6px; flex-wrap: wrap; }
+      .qr { font-size: 11.5px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border-subtle); background: #fff; cursor: pointer; }
+      .qr:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-dark); }
+      .chat-compose { padding: 12px 16px; border-top: 1px solid var(--border-subtle); background: #fff; }
+      .compose-row { display: flex; gap: 8px; align-items: flex-end; }
+      .compose-row textarea { min-height: 40px; max-height: 120px; resize: none; }
+      .translate-status { font-size: 11px; color: var(--green); margin-bottom: 6px; }
+      .empty-chat { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); }
+      .empty-chat i { font-size: 42px; color: var(--text-dim); margin-bottom: 10px; }
+
+      /* ===== Generic page content (campaigns/templates/analytics) ===== */
+      .page { flex: 1; overflow-y: auto; padding: 22px 26px; }
+      .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 16px; }
+      .tab { background: 0; border: 0; padding: 9px 16px; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+      .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+      .card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 18px; margin-bottom: 14px; }
+      .card-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid #f5ece0; margin-bottom: 14px; }
+      .card-title { font-size: 14px; font-weight: 700; display: flex; gap: 8px; align-items: center; }
+      .card-title i { color: var(--accent); }
+      table.data { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+      .data thead { background: var(--bg-alt); }
+      .data th, .data td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #f5ece0; }
+      .data th { font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+      .data tbody tr:hover { background: var(--bg-alt); }
+      .b-onetime { background: var(--blue-soft); color: var(--blue); border:1px solid #bee3f8; }
+      .b-drip { background: var(--purple-soft); color: var(--purple); border:1px solid #ddd6fe; }
+      .b-automated { background: var(--green-soft); color: var(--green); border:1px solid #b7e4cc; }
+      .b-draft { background: var(--grey-soft); color: var(--grey); border:1px solid #d1d5db; }
+      .b-scheduled { background: var(--amber-soft); color: var(--amber); border:1px solid #fbd38d; }
+      .b-active { background: var(--green-soft); color: var(--green); border:1px solid #b7e4cc; }
+      .b-paused { background: var(--grey-soft); color: var(--grey); border:1px solid #d1d5db; }
+      .b-completed { background: #bbf7d0; color: var(--dgreen); border:1px solid #86efac; }
+      .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+      .kpi { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px; }
+      .kpi-label { font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+      .kpi-value { font-size: 22px; font-weight: 800; margin-top: 5px; }
+      .kpi-trend { font-size: 11px; color: var(--green); margin-top: 3px; }
+      .chart-wrap { height: 260px; }
+      .date-tabs { display: inline-flex; border: 1px solid var(--border-subtle); border-radius: 7px; overflow: hidden; }
+      .date-tabs button { background: 0; border: 0; padding: 7px 13px; font-family: inherit; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-right: 1px solid var(--border-subtle); }
+      .date-tabs button:last-child { border-right: 0; }
+      .date-tabs button.active { background: var(--accent); color: #fff; }
+
+      /* Campaign builder */
+      .builder { display: grid; grid-template-columns: 180px 1fr; gap: 14px; }
+      .blocks-palette { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 12px; height: fit-content; }
+      .block-chip { padding: 10px; border: 1px dashed var(--border-strong); border-radius: 8px; margin-bottom: 8px; cursor: grab; font-size: 12px; font-weight: 600; background: var(--bg-alt); display: flex; align-items: center; gap: 8px; }
+      .block-chip:hover { border-color: var(--accent); color: var(--accent-dark); }
+      .canvas { background: var(--bg-card); border: 2px dashed var(--border-strong); border-radius: 10px; padding: 14px; min-height: 300px; }
+      .canvas.drag-over { border-color: var(--accent); background: var(--accent-soft); }
+      .canvas-block { border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px; margin-bottom: 10px; background: #fff; position: relative; }
+      .cb-head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+      .cb-head .drag { cursor: grab; }
+      .cb-head .tools { margin-left: auto; display: flex; gap: 4px; }
+      .cb-head .tools button { background: 0; border: 0; cursor: pointer; color: var(--text-muted); font-size: 12px; padding: 2px 4px; }
+      .cb-head .tools button:hover { color: var(--accent); }
+      .step-card { border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px; margin-bottom: 10px; background: var(--bg-alt); }
+      .radio-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+      .radio-card { border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px; cursor: pointer; }
+      .radio-card.selected { border-color: var(--accent); background: var(--accent-soft); }
+      .radio-card .t { font-weight: 700; font-size: 13px; }
+      .radio-card .d { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+      .fl { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin: 12px 0 5px; }
+      .builder-steps { display: flex; gap: 4px; margin-bottom: 16px; }
+      .bstep { flex: 1; text-align: center; padding: 8px; border-radius: 7px; font-size: 11.5px; font-weight: 600; background: var(--bg-alt); color: var(--text-muted); cursor: pointer; }
+      .bstep.active { background: var(--accent); color: #fff; }
+
+      .tmpl-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
+      @media (max-width: 700px) { .tmpl-grid { grid-template-columns: 1fr; } .builder { grid-template-columns: 1fr; } }
+      .tmpl-card { border: 1px solid var(--border-subtle); border-radius: 10px; padding: 14px; background: #fff; }
+      .tmpl-card .tn { font-size: 14px; font-weight: 700; }
+      .tmpl-badges { display: flex; gap: 5px; margin: 6px 0; flex-wrap: wrap; }
+      .mini-badge { font-size: 10px; padding: 2px 7px; border-radius: 4px; background: var(--bg-alt); color: var(--text-muted); border: 1px solid var(--border-subtle); }
+      .tmpl-snippet { font-size: 12px; color: var(--text-muted); margin: 6px 0; }
+      .tmpl-cats { display: flex; flex-direction: column; gap: 2px; }
+      .tmpl-cat { padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 12.5px; }
+      .tmpl-cat:hover { background: var(--bg-alt); }
+      .tmpl-cat.active { background: var(--accent-soft); color: var(--accent-dark); font-weight: 700; }
+
+      .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 200; display: none; align-items: center; justify-content: center; padding: 16px; }
+      .modal-backdrop.open { display: flex; }
+      .modal-box { background: #fff; border-radius: 12px; width: 520px; max-width: 100%; max-height: 92vh; display: flex; flex-direction: column; }
+      .modal-header { padding: 14px 18px; border-bottom: 1px solid var(--border-subtle); font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+      .modal-body { padding: 18px; overflow: auto; }
+      .modal-footer { padding: 12px 18px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 8px; }
+      .toast-wrap { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+      .toast { background: var(--green); color: #fff; padding: 10px 14px; border-radius: 7px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+      .toast.info { background: var(--blue); }
+      .hidden { display: none !important; }
+          /* ===== Admin-style beige sidebar (sync) ===== */
+      .sidebar { background: #f8f4ed !important; color: #4a3f35 !important; border-right: 1px solid #e5d9c0; }
+      .sb-logo { border-bottom: 1px solid #e5d9c0 !important; }
+      .sb-logo-icon { background: #1a1a1a !important; color: #fff !important; }
+      .sb-logo-text, .sb-logo-text .t1 { color: #1a1a1a !important; }
+      .sb-logo-text .t2 { color: #8b6f47 !important; }
+      .sb-item { color: #4a3f35 !important; }
+      .sb-item:hover { background: #f0e6d2 !important; color: #1a1a1a !important; }
+      .sb-item.active { background: #ede4d0 !important; color: #1a1a1a !important; border-left-color: #c4a25f !important; }
+      .sb-item.active i { color: #c26b41 !important; }
+      .sb-subnav { background: #efe6d4 !important; }
+      .sb-sub { color: #6b5a48 !important; }
+      .sb-sub:hover { background: #f0e6d2 !important; color: #1a1a1a !important; }
+      .sb-sub.active { color: #c26b41 !important; }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main">
+      <header class="topbar"><div class="breadcrumb" id="bc">Messages · Inbox (Customers)</div><div style="margin-left:auto"><span class="acct-avatar">YT</span></div></header>
+      <div class="content" id="content"></div>
+    </main>
+
+    <!-- Template editor modal -->
+    <div class="modal-backdrop" id="tmplModal">
+      <div class="modal-box">
+        <div class="modal-header"><span>Create Template</span><button class="btn btn-sm" onclick="closeM('tmplModal')"><i class="fas fa-times"></i></button></div>
+        <div class="modal-body">
+          <label class="fl">Template Name *</label><input />
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div><label class="fl">Category *</label><select><option>Tax Advisory</option><option>Legal Services</option><option>Property Management</option><option>Insurance</option><option>Mortgage Brokerage</option></select></div>
+            <div><label class="fl">Scenario *</label><select><option>Initial Consultation</option><option>Service Proposals</option><option>Completion Notifications</option><option>Periodic Reports</option><option>Seasonal Greetings</option></select></div>
+          </div>
+          <label class="fl">Subject</label><input />
+          <label class="fl">Body * <span style="font-weight:400;text-transform:none;color:var(--text-dim)">— tokens: [Customer_Name] [Company_Name] [Service_Name] [Date]</span></label>
+          <textarea style="min-height:120px"></textarea>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div><label class="fl">Language</label><select><option>Japanese</option><option>English</option></select></div>
+            <div><label class="fl">Visibility</label><select><option>Save as Private</option><option>Share with team</option></select></div>
+          </div>
+        </div>
+        <div class="modal-footer"><button class="btn" onclick="closeM('tmplModal')">Cancel</button><button class="btn btn-primary" onclick="closeM('tmplModal');toast('Template saved')">Save Template</button></div>
+      </div>
+    </div>
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+      const SCREENS = [
+        { id: "inboxCust", label: "Inbox (Customers)", icon: "fa-inbox" },
+        { id: "inboxAdmin", label: "Inbox (Admin)", icon: "fa-shield-halved" },
+        { id: "campaigns", label: "Campaigns", icon: "fa-bullhorn" },
+        { id: "templates", label: "Templates", icon: "fa-file-lines" },
+        { id: "analytics", label: "Analytics", icon: "fa-chart-line" },
+      ];
+      const SB_ITEMS = [
+        { id: "dashboard", label: "Dashboard", icon: "fa-gauge-high", href: "index.html" },
+        { id: "profile", label: "My Profile &amp; Services", icon: "fa-id-card-clip", href: "profile.html" },
+        { id: "customers", label: "Leads &amp; Customers", icon: "fa-users", href: "customers.html" },
+        { id: "needs", label: "Needs Search", icon: "fa-magnifying-glass", href: "needs-search.html" },
+        { id: "messages", label: "Messages", icon: "fa-comments", href: "messages.html" },
+        { id: "advertising", label: "Advertising", icon: "fa-rectangle-ad", href: "billing.html#ads" },
+        { id: "articles", label: "Content &amp; Articles", icon: "fa-newspaper", href: "articles.html" },
+        { id: "billing", label: "Subscription &amp; Billing", icon: "fa-credit-card", href: "billing.html" },
+        { id: "settings", label: "Settings", icon: "fa-gear", href: "profile.html#settings" },
+      ];
+      let screen = "inboxCust";
+      function renderSidebar() {
+        document.getElementById("sidebar").innerHTML = `<div class="sb-logo"><div class="sb-logo-icon">Y</div><div class="sb-logo-text"><span class="t1">YUUSHI</span><span class="t2">Support Portal</span></div></div>
+          <nav>${SB_ITEMS.map(i => {
+            let h = `<a class="sb-item ${i.id === "messages" ? "active" : ""}" href="${i.href}"><i class="fas ${i.icon}"></i> ${i.label}</a>`;
+            if (i.id === "messages") h += `<div class="sb-subnav">${SCREENS.map(s => `<a class="sb-sub ${s.id === screen ? "active" : ""}" onclick="go('${s.id}')">› ${s.label}</a>`).join("")}</div>`;
+            return h;
+          }).join("")}</nav>`;
+      }
+      function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);}
+
+      // ===== Conversation data =====
+      const CONVS = [
+        { id: "c1", initials: "T.K.", uid: "2841", admin: false, tag: "Tax Advice inquiry", unread: 2, last: "Thank you, that's very helpful!", time: "10m", msgs: [
+          { from: "client", t: "Hi, I saw your tax advisory service. I inherited a property and need help.", time: "Today 09:10" },
+          { from: "agent", t: "Hello! Thank you for reaching out. I'd be glad to help with inheritance tax. Could you share the property location and approximate value?", time: "Today 09:20" },
+          { from: "client", t: "It's a condo in Minato-ku, about ¥80M.", time: "Today 09:45" },
+          { from: "sys", t: "Translation enabled" },
+          { from: "client", t: "Thank you, that's very helpful!", time: "Today 10:02" },
+        ]},
+        { id: "c2", initials: "S.M.", uid: "3120", admin: false, tag: "Legal inquiry", unread: 0, last: "I'll send the documents tomorrow.", time: "2h", msgs: [
+          { from: "agent", t: "Happy to review your contract. Please send the documents when ready.", time: "Yesterday 16:00" },
+          { from: "client", t: "I'll send the documents tomorrow.", time: "Yesterday 16:30" },
+        ]},
+        { id: "c3", initials: "L.M.", uid: "3044", admin: false, tag: "Proposal response", unread: 1, last: "User accepted your proposal", time: "1d", msgs: [
+          { from: "sys", t: "User accepted your proposal" },
+          { from: "client", t: "Hello, I accepted your proposal. When can we start?", time: "Yesterday 11:00" },
+        ]},
+      ];
+      const ADMIN_CONVS = [
+        { id: "a1", initials: "YA", uid: "ADMIN", admin: true, tag: "Account", unread: 1, last: "Your article has been approved.", time: "5h", readonly: true, msgs: [
+          { from: "client", t: "Your article '2026 Property Tax Changes Explained' has been approved and is now live on the platform.", time: "Today 08:00" },
+        ]},
+        { id: "a2", initials: "YA", uid: "ADMIN", admin: true, tag: "Policy", unread: 0, last: "Updated advertising terms effective June 1.", time: "3d", readonly: true, msgs: [
+          { from: "client", t: "Please note our advertising terms have been updated, effective June 1, 2026. Review them in your account settings.", time: "May 24 10:00" },
+        ]},
+        { id: "a3", initials: "YA", uid: "ADMIN", admin: true, tag: "Support", unread: 0, last: "How can we help with your verification?", time: "1w", readonly: false, msgs: [
+          { from: "client", t: "We received your inquiry about business verification. How can we help?", time: "May 20 14:00" },
+          { from: "agent", t: "Thank you. I wanted to confirm my CPA license was received correctly.", time: "May 20 15:00" },
+          { from: "client", t: "Confirmed — your license is verified. No further action needed.", time: "May 20 15:30" },
+        ]},
+      ];
+      let curConv = null, translateOn = false, isAdminInbox = false;
+
+      function renderInbox(admin) {
+        isAdminInbox = admin;
+        const convs = admin ? ADMIN_CONVS : CONVS;
+        const folders = admin
+          ? [["all", "All Messages", convs.length], ["unread", "Unread", convs.filter(c=>c.unread).length], ["approval", "Approval Notices", 1], ["policy", "Policy Updates", 1]]
+          : [["all", "All Messages", convs.length], ["unread", "Unread", convs.filter(c=>c.unread).length], ["inquiries", "Customer Inquiries", 2], ["proposals", "Proposal Responses", 1], ["archived", "Archived", 0], ["spam", "Spam", 0]];
+        document.getElementById("content").innerHTML = `
+          <div class="inbox">
+            <div class="folders">${folders.map((f,i)=>`<div class="folder ${i===0?"active":""}" onclick="this.parentNode.querySelectorAll('.folder').forEach(x=>x.classList.remove('active'));this.classList.add('active')"><span>${f[1]}</span><span class="cnt ${f[0]==='unread'?'unread':''}">${f[2]}</span></div>`).join("")}</div>
+            <div class="conv-list">
+              <div class="conv-toolbar">
+                <input placeholder="🔍 Search ${admin ? "admin messages" : "by initials, User #ID"}" oninput="filterConv(this.value)" />
+                <div class="conv-filters">${(admin?["All","Unread","Read"]:["All","Unread","With proposals","Archived"]).map((p,i)=>`<button class="cf-pill ${i===0?"active":""}" onclick="this.parentNode.querySelectorAll('.cf-pill').forEach(x=>x.classList.remove('active'));this.classList.add('active')">${p}</button>`).join("")}</div>
+              </div>
+              <div id="convItems"></div>
+            </div>
+            <div class="chat" id="chatPane"><div class="empty-chat"><i class="fas fa-comments"></i><div><strong>Select a conversation</strong></div></div></div>
+          </div>`;
+        renderConvItems(convs);
+      }
+      function renderConvItems(convs) {
+        document.getElementById("convItems").innerHTML = convs.map(c => `
+          <div class="conv-item ${curConv===c.id?"active":""}" onclick="openConv('${c.id}')">
+            <div class="conv-avatar ${c.admin?"admin":""}">${c.admin?'<i class="fas fa-shield-halved"></i>':esc(c.initials)}</div>
+            <div class="conv-body">
+              <div class="conv-top"><span class="conv-name">${c.admin?"YUUSHI Admin":esc(c.initials)+" · User #"+esc(c.uid)}</span><span class="conv-time">${c.time}</span></div>
+              <div class="conv-preview">${esc(c.last)}</div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span class="conv-tag">${esc(c.tag)}</span>${c.unread?`<span class="unread-dot">${c.unread}</span>`:""}</div>
+            </div>
+          </div>`).join("");
+      }
+      function filterConv(q) {
+        const convs = (isAdminInbox?ADMIN_CONVS:CONVS).filter(c => (c.initials+" "+c.uid+" "+c.tag+" "+c.last).toLowerCase().includes(q.toLowerCase()));
+        renderConvItems(convs);
+      }
+      window.filterConv = filterConv;
+      function openConv(id) {
+        curConv = id;
+        const convs = isAdminInbox ? ADMIN_CONVS : CONVS;
+        const c = convs.find(x => x.id === id); c.unread = 0;
+        renderConvItems(convs);
+        const readonly = c.readonly;
+        document.getElementById("chatPane").innerHTML = `
+          <div class="chat-header">
+            <div class="conv-avatar ${c.admin?"admin":""}">${c.admin?'<i class="fas fa-shield-halved"></i>':esc(c.initials)}</div>
+            <div><div class="ttl">${c.admin?"YUUSHI Admin":esc(c.initials)+" · User #"+esc(c.uid)}</div><div class="meta">Related: ${esc(c.tag)} · <a style="color:var(--accent)">View ${c.admin?"notice":"need"}</a></div></div>
+            <div class="chat-actions">
+              <button class="translate-toggle ${translateOn?"on":""}" id="trToggle" onclick="toggleTranslate()">🌐 ${translateOn?"ON":"OFF"}</button>
+              <button class="btn btn-sm" onclick="toast('Archived','info')"><i class="fas fa-box-archive"></i></button>
+              ${!c.admin?`<button class="btn btn-sm" onclick="toast('Reported','info')"><i class="fas fa-flag"></i></button>`:""}
+            </div>
+          </div>
+          <div class="chat-msgs" id="chatMsgs">${renderMsgs(c)}</div>
+          ${readonly ? `<div style="padding:14px 16px;border-top:1px solid var(--border-subtle);background:#fff;text-align:center;color:var(--text-muted);font-size:12.5px"><i class="fas fa-lock"></i> This is a system message and cannot be replied to.</div>` : `
+          <div class="chat-quick">
+            <button class="qr" onclick="quick('Thank you for your inquiry.')">Thank you for your inquiry</button>
+            <button class="qr" onclick="quick('I\\'ll get back to you shortly.')">I'll get back to you shortly</button>
+            <button class="qr" onclick="quick('Could we schedule a consultation?')">Could we schedule a consultation?</button>
+          </div>
+          <div class="chat-compose">
+            ${translateOn?`<div class="translate-status">🌐 Translating to English</div>`:""}
+            <div class="compose-row">
+              <button class="btn btn-sm" onclick="toast('Attach file (max 20MB)','info')"><i class="fas fa-paperclip"></i></button>
+              <textarea id="msgInput" placeholder="Type a message…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
+              <button class="btn btn-primary" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+          </div>`}`;
+        const m = document.getElementById("chatMsgs"); m.scrollTop = m.scrollHeight;
+      }
+      window.openConv = openConv;
+      function renderMsgs(c) {
+        return c.msgs.map(m => m.from === "sys"
+          ? `<div class="msg-sys">— ${esc(m.t)} —</div>`
+          : `<div class="msg ${m.from}">${esc(m.t)}<span class="msg-time">${esc(m.time||"")}${m.from==="agent"?' ✓✓':''}</span></div>`).join("");
+      }
+      function toggleTranslate() { translateOn = !translateOn; openConv(curConv); toast(translateOn?"Auto-translate ON":"Auto-translate OFF","info"); }
+      window.toggleTranslate = toggleTranslate;
+      function quick(t) { document.getElementById("msgInput").value = t; document.getElementById("msgInput").focus(); }
+      window.quick = quick;
+      function sendMsg() {
+        const inp = document.getElementById("msgInput"); const t = inp.value.trim(); if (!t) return;
+        const convs = isAdminInbox ? ADMIN_CONVS : CONVS;
+        const c = convs.find(x => x.id === curConv);
+        const now = new Date(); c.msgs.push({ from: "agent", t, time: "Today " + String(now.getHours()).padStart(2,"0") + ":" + String(now.getMinutes()).padStart(2,"0") }); c.last = t;
+        inp.value = ""; document.getElementById("chatMsgs").innerHTML = renderMsgs(c);
+        const m = document.getElementById("chatMsgs"); m.scrollTop = m.scrollHeight;
+        renderConvItems(convs);
+      }
+      window.sendMsg = sendMsg;
+
+      // ===== Campaigns =====
+      const CAMPS = [
+        { name: "Spring Tax Season Reminder", type: "onetime", status: "completed", recipients: 142, sent: 142, open: "48%", click: "12%", created: "2026-03-01" },
+        { name: "New Client Welcome Series", type: "drip", status: "active", recipients: 38, sent: 76, open: "61%", click: "23%", created: "2026-04-15" },
+        { name: "Proposal Follow-up Auto", type: "automated", status: "active", recipients: 0, sent: 24, open: "55%", click: "18%", created: "2026-05-02" },
+      ];
+      function renderCampaigns() {
+        const TL = { onetime: "One-time", drip: "Drip", automated: "Automated" };
+        const SL = { draft: "Draft", scheduled: "Scheduled", active: "Active", paused: "Paused", completed: "Completed" };
+        document.getElementById("content").innerHTML = `<div class="page">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div><h2>Campaigns</h2><div class="sub">Bulk and automated message distribution</div></div><button class="btn btn-primary" onclick="openBuilder()"><i class="fas fa-plus"></i> Create Campaign</button></div>
+          <div class="tabs"><button class="tab active">Active Campaigns</button><button class="tab">All Campaigns</button></div>
+          <div class="card" style="padding:0;overflow:hidden">
+            <table class="data"><thead><tr><th>Campaign Name</th><th>Type</th><th>Status</th><th>Recipients</th><th>Sent</th><th>Open Rate</th><th>Click Rate</th><th>Created</th><th style="text-align:right">Actions</th></tr></thead>
+            <tbody>${CAMPS.map(c=>`<tr>
+              <td><strong>${esc(c.name)}</strong></td>
+              <td><span class="badge b-${c.type}">${TL[c.type]}</span></td>
+              <td><span class="badge b-${c.status}">${SL[c.status]}</span></td>
+              <td>${c.recipients||"—"}</td><td>${c.sent}</td><td>${c.open}</td><td>${c.click}</td><td>${c.created}</td>
+              <td style="text-align:right;white-space:nowrap"><button class="btn btn-sm" title="View"><i class="fas fa-eye"></i></button> <button class="btn btn-sm" title="Edit"><i class="fas fa-pen"></i></button> <button class="btn btn-sm" title="Pause"><i class="fas fa-pause"></i></button> <button class="btn btn-sm" title="Duplicate"><i class="fas fa-copy"></i></button></td>
+            </tr>`).join("")}</tbody></table>
+          </div>
+        </div>`;
+      }
+      let builderStep = 1, campType = "onetime";
+      function openBuilder() {
+        builderStep = 1;
+        document.getElementById("content").innerHTML = `<div class="page" id="builderPage"></div>`;
+        renderBuilder();
+      }
+      window.openBuilder = openBuilder;
+      function renderBuilder() {
+        const steps = ["Setup", "Audience", "Message", "Schedule", "Review"];
+        let body = "";
+        if (builderStep === 1) body = `
+          <label class="fl">Campaign Name *</label><input id="campName" placeholder="e.g. Summer Tax Tips" />
+          <label class="fl">Type *</label>
+          <div class="radio-cards">
+            <div class="radio-card ${campType==='onetime'?'selected':''}" onclick="setCampType('onetime')"><div class="t">One-time send</div><div class="d">Send once to a selected audience at a specific time</div></div>
+            <div class="radio-card ${campType==='drip'?'selected':''}" onclick="setCampType('drip')"><div class="t">Drip campaign</div><div class="d">Send a sequence over multiple days</div></div>
+            <div class="radio-card ${campType==='automated'?'selected':''}" onclick="setCampType('automated')"><div class="t">Automated trigger</div><div class="d">Send when a specific event occurs</div></div>
+          </div>
+          <label class="fl">Notification Method *</label>
+          <div style="display:flex;gap:14px"><label style="font-size:13px"><input type="radio" name="notif" checked> In-site chat only</label><label style="font-size:13px"><input type="radio" name="notif"> Email only</label><label style="font-size:13px"><input type="radio" name="notif"> Both</label></div>`;
+        else if (builderStep === 2) body = `
+          <label class="fl">Segment Type *</label>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <label style="font-size:13px"><input type="radio" name="seg" checked> All customers (8)</label>
+            <label style="font-size:13px"><input type="radio" name="seg"> By status</label>
+            <label style="font-size:13px"><input type="radio" name="seg"> By inquiry type</label>
+            <label style="font-size:13px"><input type="radio" name="seg"> By location</label>
+            <label style="font-size:13px"><input type="radio" name="seg"> By last contact date</label>
+            <label style="font-size:13px"><input type="radio" name="seg"> Individual selection</label>
+          </div>
+          <div style="background:var(--accent-soft);border:1px solid #fcd9bf;border-radius:8px;padding:10px;margin-top:12px;font-size:12.5px"><i class="fas fa-users" style="color:var(--accent)"></i> Estimated reach: <strong>~8 customers</strong> will receive this</div>
+          <label style="font-size:13px;display:flex;gap:6px;align-items:center;margin-top:12px;color:var(--text-muted)"><input type="checkbox" checked disabled> Exclude unsubscribed (cannot be disabled)</label>`;
+        else if (builderStep === 3) body = `
+          ${campType === "automated" ? `
+            <label class="fl">Trigger Event</label><select><option>New inquiry received</option><option>Proposal accepted</option><option>Service completed</option><option>No response for X days</option><option>Custom</option></select>
+            <label class="fl">Action Delay</label><select><option>Immediately</option><option>After X hours</option><option>After X days</option></select>` : ""}
+          ${campType === "drip" ? `
+            <div class="step-card"><strong>Step 1 — Immediate (Day 0)</strong><div style="margin-top:8px">${blockBuilder()}</div></div>
+            <div class="step-card"><strong>Step 2 — Day +3</strong> <button class="btn btn-sm" style="float:right" onclick="toast('Step removed','info')">× Delete</button><div style="margin-top:8px;font-size:12px;color:var(--text-muted)">Message builder…</div></div>
+            <button class="btn" onclick="toast('Step added')"><i class="fas fa-plus"></i> Add step</button>` : `
+            <label class="fl">Subject Line *</label><input placeholder="For email delivery" />
+            <label class="fl">Message Body * <button class="btn btn-sm" style="float:right" onclick="toast('Template library (demo)','info')"><i class="fas fa-file-lines"></i> Use Template</button></label>
+            ${blockBuilder()}`}`;
+        else if (builderStep === 4) body = campType === "onetime" ? `
+          <label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="sendNow" onchange="document.getElementById('schedPick').style.display=this.checked?'none':'block'"> Send immediately</label>
+          <div id="schedPick"><label class="fl">Schedule Date &amp; Time</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><input type="date" /><input type="time" /></div><div style="font-size:11.5px;color:var(--text-muted);margin-top:6px">Timezone: JST (Japan Standard Time)</div></div>` : `
+          <div style="background:var(--bg-alt);border-radius:8px;padding:16px;font-size:13px;text-align:center;color:var(--text-muted)">${campType === "drip" ? "Drip campaigns send based on the day offsets you configured in Step 3." : "Automated campaigns send when the trigger event fires."}</div>`;
+        else body = `
+          <div style="background:var(--bg-alt);border-radius:10px;padding:16px">
+            <div style="font-size:15px;font-weight:700;margin-bottom:10px">Campaign Summary</div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5ece0"><span style="color:var(--text-muted)">Name</span><strong>${esc(document.getElementById("campName")?.value||"New Campaign")}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5ece0"><span style="color:var(--text-muted)">Type</span><strong>${campType}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5ece0"><span style="color:var(--text-muted)">Audience</span><strong>~8 customers</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0"><span style="color:var(--text-muted)">Channel</span><strong>In-site chat</strong></div>
+          </div>
+          <button class="btn" style="margin-top:12px" onclick="toast('Preview (demo)','info')"><i class="fas fa-eye"></i> Preview message</button>`;
+
+        document.getElementById("builderPage").innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><h2>Campaign Builder</h2><div class="sub">Step ${builderStep} of 5 — ${steps[builderStep-1]}</div></div><button class="btn" onclick="renderCampaigns()"><i class="fas fa-times"></i> Cancel</button></div>
+          <div class="builder-steps">${steps.map((s,i)=>`<div class="bstep ${i+1===builderStep?"active":""}" onclick="builderStep=${i+1};renderBuilder()">${i+1}. ${s}</div>`).join("")}</div>
+          <div class="card">${body}</div>
+          <div style="display:flex;justify-content:space-between">
+            <button class="btn" ${builderStep===1?'style="visibility:hidden"':''} onclick="builderStep--;renderBuilder()">‹ Back</button>
+            ${builderStep===5?`<button class="btn btn-primary" onclick="renderCampaigns();toast('Campaign launched!')"><i class="fas fa-rocket"></i> Launch Campaign</button>`:`<button class="btn btn-primary" onclick="builderStep++;renderBuilder()">Next ›</button>`}
+          </div>`;
+        bindDnd();
+      }
+      window.renderBuilder = renderBuilder;
+      function setCampType(t){campType=t;renderBuilder();}
+      window.setCampType=setCampType;
+      function blockBuilder() {
+        return `<div class="builder">
+          <div class="blocks-palette">
+            <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">Blocks</div>
+            <div class="block-chip" draggable="true" data-block="text"><i class="fas fa-font"></i> Text</div>
+            <div class="block-chip" draggable="true" data-block="image"><i class="fas fa-image"></i> Image</div>
+            <div class="block-chip" draggable="true" data-block="button"><i class="fas fa-square"></i> Button</div>
+            <div class="block-chip" draggable="true" data-block="divider"><i class="fas fa-minus"></i> Divider</div>
+            <div class="block-chip" draggable="true" data-block="greeting"><i class="fas fa-hand"></i> Greeting [Name]</div>
+          </div>
+          <div class="canvas" id="canvas">
+            <div class="canvas-block"><div class="cb-head"><i class="fas fa-grip-vertical drag"></i> Greeting <div class="tools"><button>✏</button><button>🗑</button></div></div>Hi [Customer_Name],</div>
+            <div class="canvas-block"><div class="cb-head"><i class="fas fa-grip-vertical drag"></i> Text <div class="tools"><button>✏</button><button>↑</button><button>↓</button><button>🗑</button></div></div>Thank you for choosing our services...</div>
+            <div style="text-align:center;color:var(--text-dim);font-size:12px;padding:10px">Drag blocks here to build your message</div>
+          </div>
+        </div>`;
+      }
+      function bindDnd() {
+        const canvas = document.getElementById("canvas"); if (!canvas) return;
+        document.querySelectorAll(".block-chip").forEach(chip => {
+          chip.addEventListener("dragstart", e => e.dataTransfer.setData("block", chip.dataset.block));
+        });
+        canvas.addEventListener("dragover", e => { e.preventDefault(); canvas.classList.add("drag-over"); });
+        canvas.addEventListener("dragleave", () => canvas.classList.remove("drag-over"));
+        canvas.addEventListener("drop", e => {
+          e.preventDefault(); canvas.classList.remove("drag-over");
+          const b = e.dataTransfer.getData("block");
+          const labels = { text: "Text", image: "Image", button: "Button", divider: "Divider", greeting: "Greeting" };
+          const div = document.createElement("div"); div.className = "canvas-block";
+          div.innerHTML = `<div class="cb-head"><i class="fas fa-grip-vertical drag"></i> ${labels[b]} <div class="tools"><button onclick="this.closest('.canvas-block').remove()">🗑</button></div></div>${b === "divider" ? "<hr>" : b === "button" ? "[ Button text → URL ]" : b === "greeting" ? "Hi [Customer_Name]," : "New " + labels[b] + " content…"}`;
+          canvas.appendChild(div); toast(labels[b] + " block added");
+        });
+      }
+
+      // ===== Templates =====
+      const TEMPLATES = [
+        { name: "Inheritance Tax Welcome", cat: "Tax Advisory", scen: "Initial Consultation", lang: "EN", snippet: "Thank you for your interest in our inheritance tax services. We offer a free initial consultation..." },
+        { name: "相続税のご相談", cat: "Tax Advisory", scen: "Initial Consultation", lang: "JP", snippet: "この度はお問い合わせいただきありがとうございます。初回相談は無料です..." },
+        { name: "Service Proposal Standard", cat: "Tax Advisory", scen: "Service Proposals", lang: "EN", snippet: "Based on your requirements, I propose a comprehensive tax advisory package covering..." },
+        { name: "Filing Completion Notice", cat: "Tax Advisory", scen: "Completion Notifications", lang: "EN", snippet: "Your tax filing has been completed and submitted to the tax office. Reference number..." },
+        { name: "Year-End Greeting", cat: "Tax Advisory", scen: "Seasonal Greetings", lang: "JP", snippet: "本年も大変お世話になりました。来年もよろしくお願いいたします..." },
+      ];
+      function renderTemplates() {
+        document.getElementById("content").innerHTML = `<div class="page">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><h2>Template Library</h2><div class="sub">Reusable message templates</div></div><button class="btn btn-primary" onclick="document.getElementById('tmplModal').classList.add('open')"><i class="fas fa-plus"></i> Create Template</button></div>
+          <div style="display:grid;grid-template-columns:200px 1fr;gap:16px">
+            <div class="card">
+              <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">By Category</div>
+              <div class="tmpl-cats">${["All categories","Tax Advisory","Legal Services","Property Management","Insurance","Mortgage Brokerage","Cleaning & Maintenance"].map((c,i)=>`<div class="tmpl-cat ${i===0?"active":""}" onclick="this.closest('.tmpl-cats').querySelectorAll('.tmpl-cat').forEach(x=>x.classList.remove('active'));this.classList.add('active')">${c}</div>`).join("")}</div>
+              <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin:14px 0 8px">By Scenario</div>
+              <div class="tmpl-cats">${["Initial Consultation","Service Proposals","Completion Notifications","Periodic Reports","Regulatory Updates","Seasonal Greetings"].map(c=>`<div class="tmpl-cat" onclick="this.closest('.tmpl-cats').querySelectorAll('.tmpl-cat').forEach(x=>x.classList.remove('active'));this.classList.add('active')">${c}</div>`).join("")}</div>
+            </div>
+            <div class="tmpl-grid">${TEMPLATES.map(t=>`<div class="tmpl-card">
+              <div class="tn">${esc(t.name)}</div>
+              <div class="tmpl-badges"><span class="mini-badge">${t.cat}</span><span class="mini-badge">${t.scen}</span><span class="mini-badge">${t.lang}</span></div>
+              <div class="tmpl-snippet">${esc(t.snippet)}</div>
+              <div style="display:flex;gap:5px"><button class="btn btn-sm btn-primary" onclick="toast('Template applied')">Use</button><button class="btn btn-sm" onclick="toast('Preview (demo)','info')">Preview</button><button class="btn btn-sm" onclick="document.getElementById('tmplModal').classList.add('open')">Edit</button><button class="btn btn-sm" onclick="toast('Duplicated')">Duplicate</button></div>
+            </div>`).join("")}</div>
+          </div>
+        </div>`;
+      }
+
+      // ===== Analytics =====
+      let perfChart = null;
+      function renderAnalytics() {
+        document.getElementById("content").innerHTML = `<div class="page">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><h2>Messaging Analytics</h2><div class="sub">Performance across campaigns</div></div>
+            <div class="date-tabs"><button class="active">This Week</button><button>This Month</button><button>Last 3 Months</button><button>Custom</button></div></div>
+          <div class="kpi-row">
+            <div class="kpi"><div class="kpi-label">Messages Sent</div><div class="kpi-value">242</div></div>
+            <div class="kpi"><div class="kpi-label">Open Rate</div><div class="kpi-value">54%</div><div class="kpi-trend">▲ +6%</div></div>
+            <div class="kpi"><div class="kpi-label">Click Rate</div><div class="kpi-value">18%</div><div class="kpi-trend">▲ +2%</div></div>
+            <div class="kpi"><div class="kpi-label">Replies Received</div><div class="kpi-value">37</div></div>
+            <div class="kpi"><div class="kpi-label">Unsubscribes</div><div class="kpi-value" style="color:var(--red)">3</div></div>
+          </div>
+          <div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-chart-area"></i> Sent vs Opens vs Clicks</div></div><div class="chart-wrap"><canvas id="msgChart"></canvas></div></div>
+          <div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-table"></i> Campaign Performance</div></div>
+            <table class="data"><thead><tr><th>Campaign</th><th>Type</th><th>Sent</th><th>Delivered</th><th>Opened</th><th>Clicked</th><th>Replied</th><th>Open%</th><th>Click%</th><th>Unsub</th></tr></thead>
+            <tbody>
+              <tr><td>Spring Tax Season Reminder</td><td>One-time</td><td>142</td><td>140</td><td>67</td><td>17</td><td>12</td><td>48%</td><td>12%</td><td>2</td></tr>
+              <tr><td>New Client Welcome Series</td><td>Drip</td><td>76</td><td>76</td><td>46</td><td>17</td><td>18</td><td>61%</td><td>23%</td><td>1</td></tr>
+              <tr><td>Proposal Follow-up Auto</td><td>Automated</td><td>24</td><td>24</td><td>13</td><td>4</td><td>7</td><td>55%</td><td>18%</td><td>0</td></tr>
+            </tbody></table>
+          </div>
+          <div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-link"></i> URL Click Tracking</div></div>
+            <table class="data"><thead><tr><th>URL</th><th>Campaign</th><th>Total Clicks</th><th>Unique Clicks</th><th>Last Clicked</th></tr></thead>
+            <tbody>
+              <tr><td>yamamoto-tax.jp/inheritance</td><td>Spring Tax Season</td><td>34</td><td>28</td><td>2026-05-25</td></tr>
+              <tr><td>yamamoto-tax.jp/book</td><td>Welcome Series</td><td>21</td><td>19</td><td>2026-05-26</td></tr>
+            </tbody></table>
+          </div>
+          <div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-user-slash"></i> Unsubscribe Management</div></div>
+            <table class="data"><thead><tr><th>Customer Ref#</th><th>Unsubscribed</th><th>Reason</th><th style="text-align:right">Actions</th></tr></thead>
+            <tbody>
+              <tr><td>CUS-20260008</td><td>2026-05-20</td><td>Too many emails</td><td style="text-align:right"><button class="btn btn-sm" onclick="toast('Viewed','info')">View</button></td></tr>
+              <tr><td>CUS-20260011</td><td>2026-05-18</td><td>—</td><td style="text-align:right"><button class="btn btn-sm" onclick="toast('Viewed','info')">View</button></td></tr>
+              <tr><td>CUS-20260014</td><td>2026-05-15</td><td>No longer needed</td><td style="text-align:right"><button class="btn btn-sm" onclick="toast('Viewed','info')">View</button></td></tr>
+            </tbody></table>
+            <div style="font-size:11.5px;color:var(--text-muted);margin-top:10px"><i class="fas fa-circle-info"></i> Unsubscribed customers are automatically excluded from all campaigns and cannot be manually overridden.</div>
+          </div>
+        </div>`;
+        setTimeout(() => {
+          const ctx = document.getElementById("msgChart"); if (!ctx) return;
+          if (perfChart) perfChart.destroy();
+          perfChart = new Chart(ctx, {
+            type: "line",
+            data: { labels: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"], datasets: [
+              { label: "Sent", data: [30,42,38,55,48,18,11], borderColor: "#c4714a", backgroundColor: "rgba(196,113,74,0.12)", fill: true, tension: 0.35 },
+              { label: "Opens", data: [16,24,20,30,26,9,6], borderColor: "#2c5282", backgroundColor: "rgba(44,82,130,0.12)", fill: true, tension: 0.35 },
+              { label: "Clicks", data: [5,8,6,11,9,3,2], borderColor: "#2f855a", backgroundColor: "rgba(47,133,90,0.12)", fill: true, tension: 0.35 },
+            ]},
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } }, scales: { y: { beginAtZero: true } } },
+          });
+        }, 50);
+      }
+
+      function go(id) {
+        screen = id;
+        document.querySelector(".breadcrumb").textContent = "Messages · " + SCREENS.find(s => s.id === id).label;
+        renderSidebar();
+        curConv = null;
+        if (id === "inboxCust") renderInbox(false);
+        else if (id === "inboxAdmin") renderInbox(true);
+        else if (id === "campaigns") renderCampaigns();
+        else if (id === "templates") renderTemplates();
+        else if (id === "analytics") renderAnalytics();
+      }
+      window.go = go;
+      function closeM(id){document.getElementById(id).classList.remove("open");}
+      window.closeM=closeM;
+      function toast(msg,kind){const el=document.createElement("div");el.className="toast "+(kind||"");el.textContent=msg;document.getElementById("toastWrap").appendChild(el);setTimeout(()=>el.remove(),3000);}
+      window.toast=toast;
+      document.querySelectorAll(".modal-backdrop").forEach(b=>b.addEventListener("click",e=>{if(e.target===b)b.classList.remove("open");}));
+      renderSidebar();
+      go("inboxCust");
+    </script>
+  </body>
+</html>

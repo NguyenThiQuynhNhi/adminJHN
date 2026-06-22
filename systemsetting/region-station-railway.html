@@ -3,839 +3,1244 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin - Region / Station / Railway Master Data</title>
+    <title>Master Data — Region &amp; Station</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
     <style>
       :root {
-        --bg-body: #f5f3ef;
-        --bg-card: #fffaf2;
-        --border-subtle: #eadccd;
-        --accent: #c26b41;
-        --text-main: #3b2f2a;
+        --bg-body: #f5f5f5;
+        --bg-card: #ffffff;
+        --panel: #ffffff;
+        --border-subtle: #e0e0e0;
+        --accent: #8B7340;
+        --accent-dark: #6d5a32;
+        --gold: #c9a85c;
+        --text-main: #1a1a1a;
         --text-muted: #7a6a5c;
+        --badge-green: #2f855a;
+        --badge-gray: #4a5568;
+        --badge-amber: #b7791f;
+        --badge-blue: #2b6cb0;
       }
-
       * {
         box-sizing: border-box;
       }
-
       body {
         margin: 0;
-        padding: 20px 24px 32px;
+        padding: 20px 24px 36px;
         font-family:
           system-ui,
           -apple-system,
-          BlinkMacSystemFont,
           "Segoe UI",
           sans-serif;
-        background-color: var(--bg-body);
+        background: var(--bg-body);
         color: var(--text-main);
       }
-
       h1 {
         margin: 0 0 4px;
         font-size: 22px;
         letter-spacing: 0.02em;
       }
-
       .page-subtitle {
-        margin: 0 0 16px;
-        font-size: 13px;
-        color: var(--text-muted);
-      }
-
-      .settings-shell {
-        max-width: 1200px;
-        margin: 24px auto;
-        padding: 0 16px 24px;
-      }
-
-      .settings-header {
-        margin-bottom: 16px;
-      }
-
-      .settings-header-title {
-        font-size: 22px;
-        font-weight: 700;
-        color: var(--text-main);
-        margin-bottom: 4px;
-      }
-
-      .settings-header-sub {
+        margin: 0;
         font-size: 13px;
         color: var(--text-muted);
         max-width: 720px;
       }
-
-      .settings-layout {
-        margin-top: 20px;
-        border-radius: 14px;
-        overflow: hidden;
-        background: var(--bg-card);
-        border: 1px solid var(--border-subtle);
-        min-height: 520px;
-      }
-
-      .settings-content-wrap {
-        padding: 20px 20px 26px;
-        background: #f3eee5;
-      }
-
-      .setting-pane-title {
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 4px;
-      }
-
-      .setting-pane-desc {
-        font-size: 13px;
-        color: var(--text-muted);
-        margin-bottom: 18px;
-        max-width: 720px;
-      }
-
-      .settings-card {
-        background: var(--bg-card);
-        border-radius: 12px;
-        border: 1px solid var(--border-subtle);
-        padding: 12px 14px 10px;
-        margin-bottom: 12px;
-      }
-
-      .settings-card-title {
-        font-size: 14px;
-        font-weight: 600;
-        margin-bottom: 8px;
-      }
-
-      .setting-row {
+      .page-head {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
         gap: 16px;
-        padding: 10px 0;
-        border-top: 1px solid #efe0d4;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
       }
 
-      .setting-info {
-        flex: 1 1 auto;
+      /* buttons (portal pattern) */
+      .btn {
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 8px 14px;
+        font-size: 12px;
+        background: #fff;
+        cursor: pointer;
+        color: var(--text-main);
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        font-family: inherit;
+        font-weight: 600;
+        transition: filter 0.15s;
+      }
+      .btn:hover:not(:disabled) {
+        filter: brightness(0.97);
+      }
+      .btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        border-color: var(--accent-dark);
+        color: #fffaf3;
+      }
+      .btn-gold {
+        background: linear-gradient(135deg, var(--gold), #8B7340);
+        border-color: #8B7340;
+        color: #fffaf3;
+      }
+      .btn-ghost {
+        background: transparent;
+      }
+      .btn-danger {
+        background: #fff5f5;
+        border-color: #feb2b2;
+        color: #c53030;
+      }
+      .btn-sm {
+        padding: 4px 10px;
+        font-size: 11px;
       }
 
-      .setting-name {
+      /* layout */
+      .rs-layout {
+        display: grid;
+        grid-template-columns: 230px minmax(0, 1fr);
+        gap: 16px;
+        align-items: start;
+      }
+      @media (max-width: 820px) {
+        .rs-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
+      }
+      .card-pad {
+        padding: 14px 16px 16px;
+      }
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+
+      /* left nav */
+      .nav-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--text-main);
+        border: 1px solid transparent;
+        background: #fff;
+        transition:
+          background 0.12s,
+          border-color 0.12s;
+      }
+      .nav-item:hover {
+        background: #faf6ee;
+      }
+      .nav-item.active {
+        background: linear-gradient(135deg, #faf6ee, #f3ead2);
+        border-color: var(--gold);
+        font-weight: 700;
+      }
+      .nav-item i {
+        width: 18px;
+        text-align: center;
+        color: var(--accent);
+      }
+      .nav-item .nav-count {
+        margin-left: auto;
+        font-size: 11px;
+        color: var(--text-muted);
+        background: #faf6ee;
+        border-radius: 999px;
+        padding: 1px 8px;
+      }
+
+      /* sync banner */
+      .sync-banner {
+        display: none;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+        background: #fff6e0;
+        border: 1px solid #fbd38d;
+        color: #8a6d2f;
+        border-radius: 10px;
+        padding: 11px 14px;
         font-size: 13px;
         font-weight: 600;
-        margin-bottom: 4px;
+      }
+      .sync-banner.show {
+        display: flex;
+      }
+      .sync-banner .spin {
+        animation: spin 0.9s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
       }
 
-      .setting-desc {
+      .level-head {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+      .level-title {
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .level-context {
         font-size: 12px;
         color: var(--text-muted);
       }
 
-      .setting-control {
-        width: 220px;
-        flex-shrink: 0;
+      /* search & filter bar */
+      .rs-filter {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .rs-search {
+        position: relative;
+        flex: 1;
+        min-width: 200px;
+        max-width: 340px;
+      }
+      .rs-search i {
+        position: absolute;
+        left: 11px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+      .rs-search input {
+        width: 100%;
+        height: 34px;
+        padding: 0 10px 0 32px;
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+        font-size: 12.5px;
+        background: #ffffff;
+        color: var(--text-main);
+        font-family: inherit;
+        outline: none;
+      }
+      .rs-search input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(139, 115, 64, 0.18);
+      }
+      .rs-filter select {
+        height: 34px;
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+        padding: 0 10px;
+        font-size: 12.5px;
+        background: #ffffff;
+        color: var(--text-main);
+        font-family: inherit;
+        cursor: pointer;
+      }
+      .rs-filter select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(139, 115, 64, 0.18);
+        outline: none;
+      }
+      .rs-count {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-bottom: 10px;
       }
 
-      .btn {
-        padding: 7px 12px;
-        border-radius: 999px;
+      /* parent selector bar */
+      .parent-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: center;
+        margin-bottom: 12px;
+        padding: 10px 12px;
+        background: #faf6ee;
         border: 1px solid var(--border-subtle);
-        background: #fffaf2;
-        color: var(--text-main);
-        font-size: 12px;
-        cursor: pointer;
+        border-radius: 10px;
+      }
+      .pb-group {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        gap: 4px;
+        gap: 6px;
       }
-
-      .btn-secondary {
-        background: #f7efe4;
-      }
-
-      .btn-primary {
-        background: #3a6b3c;
-        border-color: #3a6b3c;
-        color: #fffaf2;
-      }
-
-      .btn-text {
-        border: none;
-        background: transparent;
-        padding: 0;
+      .pb-label {
         font-size: 12px;
-        color: #6b4f2c;
+        font-weight: 700;
+        color: var(--text-muted);
+      }
+      .parent-bar select {
+        height: 34px;
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+        padding: 0 10px;
+        font-size: 12.5px;
+        background: #ffffff;
+        color: var(--text-main);
+        font-family: inherit;
         cursor: pointer;
       }
+      .parent-bar select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(139, 115, 64, 0.18);
+        outline: none;
+      }
 
-      .table-mini {
+      /* table (portal pattern) */
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 12px;
+        font-size: 12.5px;
       }
-
-      .table-mini th,
-      .table-mini td {
-        padding: 6px 8px;
-        border-bottom: 1px solid #efe0d4;
+      thead {
+        background: #faf6ee;
+      }
+      th,
+      td {
+        padding: 9px 10px;
         text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+        vertical-align: middle;
       }
-
-      .table-mini th {
+      th {
         font-weight: 600;
         font-size: 11px;
         color: var(--text-muted);
         text-transform: uppercase;
         letter-spacing: 0.04em;
+        white-space: nowrap;
       }
-
-      .table-wrap {
+      tbody tr:hover {
+        background: #fafafa;
+      }
+      .name-jp {
+        font-weight: 600;
+      }
+      .cell-input {
+        width: 100%;
+        min-width: 110px;
+        border: 1px solid var(--border-subtle);
         border-radius: 8px;
-        border: 1px solid #efe0d4;
-        overflow: hidden;
-        background: #fffaf2;
+        padding: 5px 8px;
+        font-size: 12.5px;
+        background: #ffffff;
+        color: var(--text-main);
+        font-family: inherit;
+        outline: none;
+      }
+      .cell-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(139, 115, 64, 0.18);
+      }
+      .row-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .col-actions {
+        text-align: right;
+        white-space: nowrap;
+      }
+      .empty-state {
+        text-align: center;
+        color: var(--text-muted);
+        padding: 26px;
       }
 
+      /* badges (portal pattern) */
       .badge {
         display: inline-flex;
         align-items: center;
-        padding: 2px 7px;
+        gap: 4px;
+        padding: 3px 9px;
         border-radius: 999px;
-        font-size: 10px;
+        font-size: 10.5px;
         font-weight: 600;
         border: 1px solid transparent;
+        white-space: nowrap;
       }
-
-      .badge-success {
-        background: #e0f6df;
+      .badge-google {
+        background: #ebf3ff;
+        color: var(--badge-blue);
+        border-color: #bcd6f5;
+      }
+      .badge-edited {
+        background: #fff6e0;
+        color: var(--badge-amber);
+        border-color: #fbd38d;
+      }
+      .badge-auto {
+        background: #e6f6ef;
+        color: var(--badge-green);
         border-color: #b7e4cc;
-        color: #276749;
+      }
+      .badge-locked {
+        background: #f1efea;
+        color: var(--badge-gray);
+        border-color: #d6cdbd;
       }
 
-      .badge-gray {
-        background: #f4f1eb;
-        border-color: #ddd0c0;
-        color: #6b5a4a;
-      }
-
-      .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(25, 13, 0, 0.45);
-        display: none;
+      /* toggle switch (portal pattern) */
+      .switch {
+        position: relative;
+        display: inline-flex;
         align-items: center;
-        justify-content: center;
-        z-index: 999;
-      }
-
-      .modal-backdrop.open {
-        display: flex;
-      }
-
-      .modal-shell {
-        width: 880px;
-        max-width: 95%;
-        max-height: 90vh;
-        background: var(--bg-card);
-        border-radius: 10px;
-        box-shadow: 0 16px 40px rgba(37, 24, 12, 0.4);
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-      }
-
-      .modal-header {
-        padding: 12px 16px;
-        border-bottom: 1px solid var(--border-subtle);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        background: #f7efe4;
-      }
-
-      .modal-header-main {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .modal-title {
-        font-size: 15px;
-        font-weight: 600;
-        color: var(--text-main);
-      }
-
-      .modal-subtitle {
+        gap: 8px;
+        cursor: pointer;
         font-size: 11px;
         color: var(--text-muted);
-        margin-top: 2px;
+      }
+      .switch input {
+        display: none;
+      }
+      .switch .slider {
+        width: 38px;
+        height: 20px;
+        border-radius: 999px;
+        background: #d6cdbd;
+        position: relative;
+        transition: background 0.15s;
+        flex-shrink: 0;
+      }
+      .switch .slider::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #fff;
+        transition: transform 0.15s;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+      }
+      .switch input:checked + .slider {
+        background: var(--badge-green);
+      }
+      .switch input:checked + .slider::after {
+        transform: translateX(18px);
+      }
+      .switch.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
 
-      .modal-close-btn {
-        border: none;
-        background: transparent;
-        cursor: pointer;
+      /* toast */
+      .toast-wrap {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        z-index: 1200;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast {
+        background: #2f2a24;
+        color: #fff;
+        border-left: 4px solid var(--gold);
+        padding: 11px 15px;
+        border-radius: 9px;
+        font-size: 13px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        display: flex;
+        gap: 9px;
+        align-items: center;
+        max-width: 360px;
+      }
+      .toast.ok {
+        border-left-color: var(--badge-green);
+      }
+      .toast.err {
+        border-left-color: #c53030;
+      }
+
+      /* modal (in-page confirmation) */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 1300;
+        background: rgba(43, 32, 26, 0.45);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .modal-overlay.show {
+        display: flex;
+      }
+      .modal {
+        background: var(--panel);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(43, 32, 26, 0.28);
+        width: 100%;
+        max-width: 420px;
+        overflow: hidden;
+      }
+      .modal-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 16px 18px 0;
+      }
+      .modal-head i {
         font-size: 18px;
-        line-height: 1;
-        color: var(--text-muted);
+        color: var(--accent);
       }
-
+      .modal-head.danger i {
+        color: var(--badge-amber);
+      }
+      .modal-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-main);
+      }
       .modal-body {
-        padding: 12px 16px 10px;
-        overflow: auto;
-        font-size: 12px;
-        background: #f5f1e9;
+        padding: 10px 18px 18px;
+        font-size: 13px;
+        color: var(--text-muted);
+        line-height: 1.5;
       }
-
-      .modal-footer {
-        padding: 10px 16px 12px;
-        border-top: 1px solid var(--border-subtle);
+      .modal-foot {
         display: flex;
         justify-content: flex-end;
         gap: 8px;
-        background: #f7efe4;
-      }
-
-      .modal-two-column {
-        display: grid;
-        grid-template-columns: 260px 1fr;
-        gap: 12px;
-      }
-
-      .filter-input {
-        min-width: 150px;
-        padding: 6px 8px;
-        border-radius: 6px;
-        border: 1px solid var(--border-subtle);
-        font-size: 12px;
-        background: #fffaf2;
-      }
-
-      @media (max-width: 960px) {
-        .modal-two-column {
-          grid-template-columns: minmax(0, 1fr);
-        }
+        padding: 0 18px 18px;
       }
     </style>
-    <style id="uxTableOverflowFix">
-/* Table overflow handling: keep text intact, only enable horizontal scroll on narrow viewport */
-@media (max-width: 1199px) {
-  table {
-    display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-}
-</style>
-  <style id="uxBaselinePolish">
-/* Baseline UI polish — applies only where file CSS doesn't override */
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-/* Pointer cursor on interactive */
-button, .btn, [role="button"], select,
-input[type="checkbox"], input[type="radio"], input[type="submit"],
-input[type="button"], a[href], label[for] {
-  cursor: pointer;
-}
-
-/* Disabled state */
-button:disabled, .btn:disabled, input:disabled, select:disabled, textarea:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/* Focus-visible outline (a11y) */
-button:focus-visible, .btn:focus-visible,
-a:focus-visible, [role="button"]:focus-visible,
-input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 2px solid #c4a25f;
-  outline-offset: 2px;
-}
-
-/* Inherit font family for form controls (fixes browser-default) */
-input, select, textarea, button {
-  font-family: inherit;
-}
-
-/* Responsive media */
-img, svg, video {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Subtle hover for buttons (only if no transition already set, gentle filter) */
-button:hover:not(:disabled), .btn:hover:not(:disabled) {
-  filter: brightness(0.96);
-  transition: filter 0.15s ease;
-}
-
-/* Smooth scrollbar on Webkit */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: #f5ece0;
-}
-::-webkit-scrollbar-thumb {
-  background: #d9c8b4;
-  border-radius: 6px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #c4a25f;
-}
-
-/* Selection highlight on-brand */
-::selection {
-  background: #c4a25f;
-  color: #fff;
-}
-
-/* HR baseline */
-hr {
-  border: none;
-  border-top: 1px solid #eadccd;
-  margin: 12px 0;
-}
-
-/* Anchor baseline color matches brand (no underline by default to match flat UI) */
-a {
-  color: #8a5a3b;
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
-</style>
-</head>
+  </head>
   <body>
-    <div class="settings-shell">
-      <div class="settings-header">
-        <div class="settings-header-title">
-          Master Data — Region &amp; Station
-        </div>
-        <div class="settings-header-sub">
-          Only labels for regions, cities, railway lines and stations can be
-          renamed here. The underlying geographical structure (hierarchy and
-          routes) is fixed and cannot be changed from this screen.
-        </div>
+    <div class="page-head">
+      <div>
+        <h1>Master Data — Region &amp; Station</h1>
       </div>
-
-      <div class="settings-layout">
-        <section class="settings-content-wrap">
-          <div>
-            <div class="settings-card">
-              <div class="settings-card-title">Regions &amp; prefectures</div>
-
-              <div class="setting-row">
-                <div class="setting-info">
-                  <div class="setting-name">
-                    Prefecture / City label management
-                  </div>
-                  <div class="setting-desc">
-                    Tree view for Prefecture / City hierarchy. Only labels can
-                    be renamed. The geographical hierarchy itself is fixed and
-                    cannot be changed here.
-                  </div>
-                </div>
-                <div class="setting-control">
-                  <button
-                    class="btn btn-secondary"
-                    style="width: 100%"
-                    onclick="openModal('modal-region-manager')"
-                  >
-                    Open region manager
-                  </button>
-                </div>
-              </div>
-
-              <div class="setting-row" style="border-bottom: none">
-                <div class="setting-info">
-                  <div class="setting-name">Regional content presets</div>
-                  <div class="setting-desc">
-                    Configure regional labels / descriptions used by Client and
-                    Agent portals.
-                  </div>
-                </div>
-                <div class="setting-control">
-                  <button
-                    class="btn btn-secondary"
-                    style="width: 100%"
-                    onclick="openModal('modal-regional-content')"
-                  >
-                    Open regional content screen
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="settings-card">
-              <div class="settings-card-title">
-                Railway, lines &amp; stations
-              </div>
-
-              <div class="setting-row">
-                <div class="setting-info">
-                  <div class="setting-name">Line / Station labels</div>
-                  <div class="setting-desc">
-                    View railway companies, lines, and stations. Only names /
-                    labels can be edited; geographical routes and hierarchy are
-                    managed by the system.
-                  </div>
-                </div>
-                <div class="setting-control">
-                  <button
-                    class="btn btn-secondary"
-                    style="width: 100%"
-                    onclick="openModal('modal-railway-station')"
-                  >
-                    Open railway &amp; station screen
-                  </button>
-                </div>
-              </div>
-
-              <div class="setting-row" style="border-bottom: none">
-                <div class="setting-info">
-                  <div class="setting-name">Place name content presets</div>
-                  <div class="setting-desc">
-                    Maintain mapping for renamed stations / areas so legacy
-                    records continue to resolve correctly.
-                  </div>
-                </div>
-                <div class="setting-control">
-                  <button
-                    class="btn btn-secondary"
-                    style="width: 100%"
-                    onclick="openModal('modal-place-history')"
-                  >
-                    Open place-name history screen
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
+      <button class="btn btn-gold" id="syncBtn" onclick="syncFromGoogle()">
+        <i class="fas fa-rotate"></i> Sync from Google Maps
+      </button>
     </div>
 
-    <div class="modal-backdrop" id="modal-region-manager">
-      <div class="modal-shell">
-        <div class="modal-header">
-          <div class="modal-header-main">
-            <div class="modal-title">Region &amp; Prefecture label manager</div>
-            <div class="modal-subtitle">
-              Tree view for Prefecture / City labels. Only naming / labeling can
-              be adjusted; the geographical hierarchy itself is fixed and cannot
-              be edited here.
-            </div>
-          </div>
-          <button
-            class="modal-close-btn"
-            onclick="closeModal('modal-region-manager')"
-          >
-            ×
-          </button>
-        </div>
-        <div class="modal-body modal-two-column">
-          <div>
-            <div class="setting-name" style="margin-bottom: 6px">
-              Prefectures
-            </div>
-            <div class="table-wrap">
-              <table class="table-mini">
-                <thead>
-                  <tr>
-                    <th>Prefecture</th>
-                    <th>Active</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Tokyo</td>
-                    <td><span class="badge badge-success">Yes</span></td>
-                  </tr>
-                  <tr>
-                    <td>Kanagawa</td>
-                    <td><span class="badge badge-success">Yes</span></td>
-                  </tr>
-                  <tr>
-                    <td>Osaka</td>
-                    <td><span class="badge badge-success">Yes</span></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <button class="btn btn-secondary" style="margin-top: 6px">
-              Edit prefecture labels
-            </button>
-          </div>
-          <div>
-            <div class="setting-name" style="margin-bottom: 6px">
-              Cities in selected prefecture
-            </div>
-            <div class="table-wrap">
-              <table class="table-mini">
-                <thead>
-                  <tr>
-                    <th>City</th>
-                    <th>Listings linked</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Shinjuku</td>
-                    <td>184</td>
-                    <td><span class="badge badge-success">Locked</span></td>
-                  </tr>
-                  <tr>
-                    <td>Shibuya</td>
-                    <td>92</td>
-                    <td><span class="badge badge-success">Locked</span></td>
-                  </tr>
-                  <tr>
-                    <td>Adachi</td>
-                    <td>0</td>
-                    <td><span class="badge badge-gray">Deletable</span></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div style="margin-top: 6px; display: flex; gap: 8px">
-              <button class="btn btn-secondary">Edit city labels</button>
-              <button class="btn btn-secondary">Review city status</button>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button
-            class="btn btn-secondary"
-            onclick="closeModal('modal-region-manager')"
-          >
-            Close
-          </button>
-          <button class="btn btn-primary">Save changes</button>
-        </div>
-      </div>
+    <div class="sync-banner" id="syncBanner">
+      <i class="fas fa-rotate spin"></i> Syncing data from Google Maps. Please
+      wait.
     </div>
 
-    <div class="modal-backdrop" id="modal-regional-content">
-      <div class="modal-shell">
-        <div class="modal-header">
-          <div class="modal-header-main">
-            <div class="modal-title">Regional content presets</div>
-            <div class="modal-subtitle">
-              Configure short labels / descriptions per region. These are used
-              by Client and Agent portals.
-            </div>
+    <div class="rs-layout">
+      <!-- LEFT: navigation tree -->
+      <aside class="card card-pad">
+        <div class="card-title">Levels</div>
+        <div class="nav-list" id="navList"></div>
+      </aside>
+
+      <!-- RIGHT: data table -->
+      <section class="card card-pad">
+        <div class="level-head">
+          <span class="level-title" id="levelTitle">Prefecture</span>
+          <span class="level-context" id="levelContext"></span>
+        </div>
+        <div class="parent-bar" id="parentBar" style="display: none">
+          <span class="pb-group" id="pbPrefWrap">
+            <label class="pb-label">Prefecture:</label>
+            <select id="selPrefecture" onchange="onPrefChange()"></select>
+          </span>
+          <span class="pb-group" id="pbCityWrap">
+            <label class="pb-label">City:</label>
+            <select id="selCity" onchange="onCityChange()"></select>
+          </span>
+          <span class="pb-group" id="pbLineWrap">
+            <label class="pb-label">Railway Line:</label>
+            <select id="selLine" onchange="onLineChange()"></select>
+          </span>
+        </div>
+        <div class="rs-filter">
+          <div class="rs-search">
+            <i class="fas fa-magnifying-glass"></i>
+            <input
+              id="fSearch"
+              type="text"
+              placeholder="Search by name JP or EN..."
+              oninput="renderTable()"
+            />
           </div>
-          <button
-            class="modal-close-btn"
-            onclick="closeModal('modal-regional-content')"
-          >
-            ×
+          <select id="fSync" onchange="renderTable()">
+            <option value="">Sync mode: All</option>
+            <option value="auto">Auto Update</option>
+            <option value="locked">Manually Locked</option>
+          </select>
+          <select id="fStatus" onchange="renderTable()">
+            <option value="">Status: All</option>
+            <option value="google">Google Source</option>
+            <option value="edited">Manually Edited</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="resetFilters()">
+            <i class="fas fa-xmark"></i> Reset
           </button>
         </div>
-        <div class="modal-body">
-          <div class="table-wrap">
-            <table class="table-mini">
-              <thead>
-                <tr>
-                  <th>Prefecture</th>
-                  <th>Area label</th>
-                  <th>Short description</th>
-                  <th>Last updated</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Tokyo</td>
-                  <td>Central Tokyo</td>
-                  <td>Urban core, Yamanote line access</td>
-                  <td>2026-03-20</td>
-                  <td><button class="btn-text">Edit</button></td>
-                </tr>
-                <tr>
-                  <td>Kanagawa</td>
-                  <td>Yokohama area</td>
-                  <td>Port city, commuter access to Tokyo</td>
-                  <td>2026-03-12</td>
-                  <td><button class="btn-text">Edit</button></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <button class="btn btn-secondary" style="margin-top: 8px">
-            Add regional preset
-          </button>
+        <div class="rs-count" id="resultCount"></div>
+        <div class="table-wrap">
+          <table>
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
         </div>
-        <div class="modal-footer">
-          <button
-            class="btn btn-secondary"
-            onclick="closeModal('modal-regional-content')"
-          >
-            Close
-          </button>
-          <button class="btn btn-primary">Save changes</button>
-        </div>
-      </div>
+      </section>
     </div>
 
-    <div class="modal-backdrop" id="modal-railway-station">
-      <div class="modal-shell">
-        <div class="modal-header">
-          <div class="modal-header-main">
-            <div class="modal-title">Railway &amp; station labels</div>
-            <div class="modal-subtitle">
-              View Company / Line / Station hierarchy. Only labels can be
-              renamed here; routes and relationships are managed by the core
-              geographical data.
-            </div>
-          </div>
-          <button
-            class="modal-close-btn"
-            onclick="closeModal('modal-railway-station')"
-          >
-            ×
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="table-wrap">
-            <table class="table-mini">
-              <thead>
-                <tr>
-                  <th>Company</th>
-                  <th>Line</th>
-                  <th>Station</th>
-                  <th>Transfer</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>JR East</td>
-                  <td>Yamanote</td>
-                  <td>Shinjuku</td>
-                  <td><span class="badge badge-success">Yes</span></td>
-                  <td><span class="badge badge-success">Active</span></td>
-                </tr>
-                <tr>
-                  <td>JR East</td>
-                  <td>Chuo</td>
-                  <td>Tokyo</td>
-                  <td><span class="badge badge-success">Yes</span></td>
-                  <td><span class="badge badge-success">Active</span></td>
-                </tr>
-                <tr>
-                  <td>Tokyu</td>
-                  <td>Toyoko</td>
-                  <td>Daikanyama</td>
-                  <td><span class="badge badge-gray">No</span></td>
-                  <td><span class="badge badge-success">Active</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div style="margin-top: 8px; display: flex; gap: 8px">
-            <button class="btn btn-secondary">Edit station labels</button>
-            <button class="btn btn-secondary">Edit line labels</button>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button
-            class="btn btn-secondary"
-            onclick="closeModal('modal-railway-station')"
-          >
-            Close
-          </button>
-          <button class="btn btn-primary">Save changes</button>
-        </div>
-      </div>
-    </div>
+    <div class="toast-wrap" id="toastWrap"></div>
 
-    <div class="modal-backdrop" id="modal-place-history">
-      <div class="modal-shell">
-        <div class="modal-header">
-          <div class="modal-header-main">
-            <div class="modal-title">Place name history</div>
-            <div class="modal-subtitle">
-              Maintain mappings from old to new station / area names so legacy
-              records can still be resolved.
-            </div>
-          </div>
-          <button
-            class="modal-close-btn"
-            onclick="closeModal('modal-place-history')"
-          >
-            ×
-          </button>
+    <!-- in-page confirmation modal -->
+    <div class="modal-overlay" id="modalOverlay">
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modalTitle"
+      >
+        <div class="modal-head" id="modalHead">
+          <i class="fas fa-circle-question" id="modalIcon"></i>
+          <span class="modal-title" id="modalTitle"></span>
         </div>
-        <div class="modal-body">
-          <div class="table-wrap">
-            <table class="table-mini">
-              <thead>
-                <tr>
-                  <th>Old name</th>
-                  <th>New name</th>
-                  <th>Type</th>
-                  <th>Effective from</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Heiwajima</td>
-                  <td>Omori-Minami</td>
-                  <td>Station</td>
-                  <td>2025-10-01</td>
-                  <td><span class="badge badge-success">Active</span></td>
-                </tr>
-                <tr>
-                  <td>Old Town A</td>
-                  <td>New Town A</td>
-                  <td>Area</td>
-                  <td>2024-04-01</td>
-                  <td><span class="badge badge-success">Active</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <button class="btn btn-secondary" style="margin-top: 8px">
-            Add mapping
-          </button>
-        </div>
-        <div class="modal-footer">
-          <button
-            class="btn btn-secondary"
-            onclick="closeModal('modal-place-history')"
-          >
-            Close
-          </button>
-          <button class="btn btn-primary">Save changes</button>
+        <div class="modal-body" id="modalMsg"></div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" id="modalCancel">Cancel</button>
+          <button class="btn btn-primary" id="modalConfirm"></button>
         </div>
       </div>
     </div>
 
     <script>
-      function openModal(id) {
-        var el = document.getElementById(id);
-        if (el) {
-          el.classList.add("open");
-        }
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      const LS_KEY = "yuushi.regionMasterData";
+      const LS = {
+        get(k, d) {
+          try {
+            const v = localStorage.getItem(k);
+            return v ? JSON.parse(v) : d;
+          } catch (e) {
+            return d;
+          }
+        },
+        set(k, v) {
+          try {
+            localStorage.setItem(k, JSON.stringify(v));
+          } catch (e) {}
+        },
+      };
+      function toast(msg, kind) {
+        const el = document.createElement("div");
+        el.className = "toast " + (kind || "ok");
+        const icon = kind === "err" ? "circle-exclamation" : "circle-check";
+        el.innerHTML = '<i class="fas fa-' + icon + '"></i> ' + esc(msg);
+        $("toastWrap").appendChild(el);
+        setTimeout(() => {
+          el.style.opacity = "0";
+          setTimeout(() => el.remove(), 200);
+        }, 3200);
       }
 
-      function closeModal(id) {
-        var el = document.getElementById(id);
-        if (el) {
-          el.classList.remove("open");
+      // ---------- in-page confirmation modal ----------
+      // opts: { title, message, confirmLabel, danger, onConfirm }
+      let _modalOnConfirm = null;
+      function openModal(opts) {
+        _modalOnConfirm = opts.onConfirm || null;
+        $("modalTitle").textContent = opts.title || "";
+        $("modalMsg").textContent = opts.message || "";
+        const confirmBtn = $("modalConfirm");
+        confirmBtn.textContent = opts.confirmLabel || "Confirm";
+        confirmBtn.className =
+          "btn " + (opts.danger ? "btn-danger" : "btn-primary");
+        const head = $("modalHead");
+        head.className = "modal-head" + (opts.danger ? " danger" : "");
+        $("modalIcon").className =
+          "fas " +
+          (opts.danger ? "fa-triangle-exclamation" : "fa-circle-question");
+        $("modalOverlay").classList.add("show");
+        confirmBtn.focus();
+      }
+      function closeModal() {
+        $("modalOverlay").classList.remove("show");
+        _modalOnConfirm = null;
+      }
+      $("modalCancel").addEventListener("click", closeModal);
+      $("modalConfirm").addEventListener("click", () => {
+        const fn = _modalOnConfirm;
+        closeModal();
+        if (fn) fn();
+      });
+      $("modalOverlay").addEventListener("click", (e) => {
+        if (e.target === $("modalOverlay")) closeModal();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && $("modalOverlay").classList.contains("show"))
+          closeModal();
+      });
+
+      const LEVELS = [
+        {
+          key: "prefecture",
+          label: "Prefecture",
+          icon: "fa-map",
+          context: "All prefectures",
+        },
+        {
+          key: "city",
+          label: "City",
+          icon: "fa-city",
+          context: "Under 東京都 (Tokyo)",
+        },
+        {
+          key: "ward",
+          label: "Ward",
+          icon: "fa-location-dot",
+          context: "Under 渋谷区 (Shibuya)",
+        },
+        {
+          key: "railway",
+          label: "Railway Line",
+          icon: "fa-train",
+          context: "All railway lines",
+        },
+        {
+          key: "station",
+          label: "Station",
+          icon: "fa-train-subway",
+          context: "Under 山手線 (Yamanote Line)",
+        },
+      ];
+
+      // ---------- seed ----------
+      // extra = { company, parent } — parent links city→prefecture, ward→city, station→railway line (by JP name).
+      function mkRow(level, i, nameJp, nameEn, edited, sync, extra) {
+        extra = extra || {};
+        return {
+          id: level + "-" + (i + 1),
+          nameJp,
+          nameEn,
+          company: extra.company || "",
+          parent: extra.parent || "",
+          is_google_source: true,
+          is_manually_edited: !!edited,
+          sync_mode: sync, // "auto" | "locked"
+          gOrigJp: nameJp, // original Google label (for Reset to Google)
+          gOrigEn: nameEn,
+          _v: 1, // version for optimistic-concurrency conflict detection
+        };
+      }
+      function buildSeed() {
+        return {
+          prefecture: [
+            ["東京都", "Tokyo", false, "auto"],
+            ["大阪府", "Osaka", false, "auto"],
+            ["神奈川県", "Kanagawa", false, "auto"],
+            ["京都府", "Kyoto", false, "auto"],
+            ["福岡県", "Fukuoka", false, "auto"],
+          ].map((r, i) => mkRow("prefecture", i, r[0], r[1], r[2], r[3])),
+          city: [
+            ["渋谷区", "Shibuya", false, "auto"],
+            ["新宿区", "Shinjuku", true, "locked"],
+            ["港区", "Minato", false, "auto"],
+          ].map((r, i) =>
+            mkRow("city", i, r[0], r[1], r[2], r[3], { parent: "東京都" }),
+          ),
+          ward: [
+            ["渋谷", "Shibuya", false, "auto"],
+            ["恵比寿", "Ebisu", false, "auto"],
+            ["代官山", "Daikanyama", false, "auto"],
+          ].map((r, i) =>
+            mkRow("ward", i, r[0], r[1], r[2], r[3], { parent: "渋谷区" }),
+          ),
+          railway: [
+            ["山手線", "Yamanote Line", false, "auto", "JR East"],
+            ["中央線", "Chuo Line", false, "auto", "JR East"],
+            ["東横線", "Toyoko Line", false, "auto", "Tokyu"],
+          ].map((r, i) =>
+            mkRow("railway", i, r[0], r[1], r[2], r[3], { company: r[4] }),
+          ),
+          station: [
+            ["新宿駅", "Shinjuku Station", true, "locked"],
+            ["渋谷駅", "Shibuya Station", false, "auto"],
+            ["東京駅", "Tokyo Station", false, "auto"],
+          ].map((r, i) =>
+            mkRow("station", i, r[0], r[1], r[2], r[3], { parent: "山手線" }),
+          ),
+        };
+      }
+
+      let data = LS.get(LS_KEY, null);
+      if (!data || typeof data !== "object") {
+        data = buildSeed();
+        LS.set(LS_KEY, data);
+      }
+      // migrate older data that lacks parent links
+      const PARENT_DEFAULT = {
+        city: "東京都",
+        ward: "渋谷区",
+        station: "山手線",
+      };
+      ["city", "ward", "station"].forEach((lv) => {
+        (data[lv] || []).forEach((r) => {
+          if (r.parent == null || r.parent === undefined)
+            r.parent = PARENT_DEFAULT[lv];
+        });
+      });
+      function persist() {
+        LS.set(LS_KEY, data);
+      }
+
+      // ---------- state ----------
+      let currentLevel = "prefecture";
+      let editId = null; // row currently in inline edit
+      let editVersion = null; // row._v captured at edit start (conflict check)
+      let syncing = false;
+      // selected parent context (by JP name)
+      let selPrefecture = "東京都";
+      let selCity = "渋谷区";
+      let selLine = "山手線";
+
+      // ---------- parent selector bar ----------
+      function fillSelect(sel, rows, keepJp) {
+        sel.innerHTML = (rows || [])
+          .map(
+            (r) =>
+              `<option value="${esc(r.nameJp)}">${esc(r.nameJp)} (${esc(r.nameEn)})</option>`,
+          )
+          .join("");
+        if (keepJp && (rows || []).some((r) => r.nameJp === keepJp))
+          sel.value = keepJp;
+      }
+      function updateParentBar() {
+        const showPref = currentLevel === "city" || currentLevel === "ward";
+        const showCity = currentLevel === "ward";
+        const showLine = currentLevel === "station";
+        $("parentBar").style.display =
+          showPref || showCity || showLine ? "flex" : "none";
+        $("pbPrefWrap").style.display = showPref ? "inline-flex" : "none";
+        $("pbCityWrap").style.display = showCity ? "inline-flex" : "none";
+        $("pbLineWrap").style.display = showLine ? "inline-flex" : "none";
+        if (showPref) {
+          fillSelect($("selPrefecture"), data.prefecture, selPrefecture);
+          selPrefecture = $("selPrefecture").value || selPrefecture;
+        }
+        if (showCity) {
+          const cities = (data.city || []).filter(
+            (c) => c.parent === selPrefecture,
+          );
+          fillSelect($("selCity"), cities, selCity);
+          selCity = $("selCity").value || "";
+        }
+        if (showLine) {
+          fillSelect($("selLine"), data.railway, selLine);
+          selLine = $("selLine").value || selLine;
         }
       }
+      function onPrefChange() {
+        selPrefecture = $("selPrefecture").value;
+        if (currentLevel === "ward") {
+          const cities = (data.city || []).filter(
+            (c) => c.parent === selPrefecture,
+          );
+          fillSelect($("selCity"), cities, null); // reset to first city of new prefecture
+          selCity = $("selCity").value || "";
+        }
+        renderTable();
+      }
+      function onCityChange() {
+        selCity = $("selCity").value;
+        renderTable();
+      }
+      function onLineChange() {
+        selLine = $("selLine").value;
+        renderTable();
+      }
+      function contextLabel() {
+        if (currentLevel === "prefecture") return "All Prefectures";
+        if (currentLevel === "railway") return "All Railway Lines";
+        if (currentLevel === "city") {
+          const p = (data.prefecture || []).find(
+            (x) => x.nameJp === selPrefecture,
+          );
+          return p ? `Cities under ${p.nameJp} (${p.nameEn})` : "Cities";
+        }
+        if (currentLevel === "ward") {
+          const c = (data.city || []).find((x) => x.nameJp === selCity);
+          return c
+            ? `Wards under ${c.nameJp} (${c.nameEn})`
+            : "Wards (select a city)";
+        }
+        if (currentLevel === "station") {
+          const l = (data.railway || []).find((x) => x.nameJp === selLine);
+          return l ? `Stations under ${l.nameJp} (${l.nameEn})` : "Stations";
+        }
+        return "";
+      }
+
+      // ---------- left nav ----------
+      function renderNav() {
+        $("navList").innerHTML = LEVELS.map(
+          (l) => `
+          <div class="nav-item ${l.key === currentLevel ? "active" : ""}" onclick="selectLevel('${l.key}')">
+            <i class="fas ${l.icon}"></i> ${esc(l.label)}
+            <span class="nav-count">${(data[l.key] || []).length}</span>
+          </div>`,
+        ).join("");
+      }
+      function selectLevel(key) {
+        if (editId) {
+          openModal({
+            title: "Discard inline edit?",
+            message:
+              "You have an unsaved edit. Switch level and discard the edit?",
+            confirmLabel: "Discard",
+            danger: true,
+            onConfirm: () => doSelectLevel(key),
+          });
+          return;
+        }
+        doSelectLevel(key);
+      }
+      function doSelectLevel(key) {
+        currentLevel = key;
+        editId = null;
+        editVersion = null;
+        clearFilterInputs();
+        updateParentBar();
+        renderNav();
+        renderTable();
+      }
+
+      // ---------- search & filter ----------
+      function clearFilterInputs() {
+        if ($("fSearch")) $("fSearch").value = "";
+        if ($("fSync")) $("fSync").value = "";
+        if ($("fStatus")) $("fStatus").value = "";
+      }
+      function getFilteredRows() {
+        const q = ($("fSearch").value || "").toLowerCase().trim();
+        const fs = $("fSync").value; // "", "auto", "locked"
+        const fst = $("fStatus").value; // "", "google", "edited"
+        return (data[currentLevel] || []).filter((r) => {
+          if (currentLevel === "city" && r.parent !== selPrefecture)
+            return false;
+          if (currentLevel === "ward" && r.parent !== selCity) return false;
+          if (currentLevel === "station" && r.parent !== selLine) return false;
+          if (fs && r.sync_mode !== fs) return false;
+          if (fst === "google" && r.is_manually_edited) return false;
+          if (fst === "edited" && !r.is_manually_edited) return false;
+          if (
+            q &&
+            !(
+              (r.nameJp || "").toLowerCase().includes(q) ||
+              (r.nameEn || "").toLowerCase().includes(q)
+            )
+          )
+            return false;
+          return true;
+        });
+      }
+      function resetFilters() {
+        clearFilterInputs();
+        renderTable();
+      }
+
+      // ---------- right table ----------
+      function statusBadge(r) {
+        return r.is_manually_edited
+          ? '<span class="badge badge-edited"><i class="fas fa-pen-nib"></i> Manually Edited</span>'
+          : '<span class="badge badge-google"><i class="fab fa-google"></i> Google Source</span>';
+      }
+      function syncBadge(r) {
+        return r.sync_mode === "auto"
+          ? '<span class="badge badge-auto"><i class="fas fa-arrows-rotate"></i> Auto Update</span>'
+          : '<span class="badge badge-locked"><i class="fas fa-lock"></i> Manually Locked</span>';
+      }
+      function renderTable() {
+        const level = LEVELS.find((l) => l.key === currentLevel);
+        $("levelTitle").textContent = level.label;
+        $("levelContext").textContent = contextLabel();
+        const isRail = currentLevel === "railway";
+
+        $("tableHead").innerHTML = `<tr>
+          <th>Name (JP)</th>
+          <th>Name (EN)</th>
+          ${isRail ? "<th>Company</th>" : ""}
+          <th>Status</th>
+          <th>Sync mode</th>
+          <th>Toggle</th>
+          <th style="text-align:right">Actions</th>
+        </tr>`;
+
+        const allRows = data[currentLevel] || [];
+        const rows = getFilteredRows();
+        const colspan = isRail ? 7 : 6;
+        $("resultCount").textContent =
+          "Showing " + rows.length + " of " + allRows.length + " entries";
+        if (!allRows.length) {
+          $("tableBody").innerHTML =
+            `<tr><td colspan="${colspan}" class="empty-state">No data available for this level.</td></tr>`;
+          return;
+        }
+        if (!rows.length) {
+          $("tableBody").innerHTML =
+            `<tr><td colspan="${colspan}" class="empty-state">No entries match your search or filters.</td></tr>`;
+          return;
+        }
+
+        $("tableBody").innerHTML = rows
+          .map((r) => {
+            const editing = editId === r.id;
+            const jp = editing
+              ? `<input class="cell-input" id="edit-jp-${esc(r.id)}" maxlength="255" value="${esc(r.nameJp)}">`
+              : `<span class="name-jp">${esc(r.nameJp)}</span>`;
+            const en = editing
+              ? `<input class="cell-input" id="edit-en-${esc(r.id)}" maxlength="255" value="${esc(r.nameEn)}">`
+              : esc(r.nameEn);
+            const railCell = isRail ? `<td>${esc(r.company)}</td>` : "";
+            const toggleDisabled = syncing || editing;
+            const toggle = `
+            <label class="switch ${toggleDisabled ? "disabled" : ""}" title="Auto Update / Manually Locked">
+              <input type="checkbox" ${r.sync_mode === "auto" ? "checked" : ""} ${toggleDisabled ? "disabled" : ""} onchange="toggleSync('${esc(r.id)}', this.checked)">
+              <span class="slider"></span>
+              <span>${r.sync_mode === "auto" ? "Auto" : "Locked"}</span>
+            </label>`;
+
+            let actions;
+            if (editing) {
+              actions = `
+              <button class="btn btn-primary btn-sm" onclick="saveEdit('${esc(r.id)}')"><i class="fas fa-floppy-disk"></i> Save</button>
+              <button class="btn btn-ghost btn-sm" onclick="cancelEdit()">Cancel</button>`;
+            } else {
+              const resetBtn = r.is_manually_edited
+                ? `<button class="btn btn-danger btn-sm" ${syncing ? "disabled" : ""} onclick="resetToGoogle('${esc(r.id)}')"><i class="fas fa-rotate-left"></i> Reset to Google</button>`
+                : "";
+              actions = `
+              <button class="btn btn-sm" ${syncing ? "disabled" : ""} onclick="openEdit('${esc(r.id)}')"><i class="fas fa-pen"></i> Edit</button>
+              ${resetBtn}`;
+            }
+
+            return `<tr>
+            <td>${jp}</td>
+            <td>${en}</td>
+            ${railCell}
+            <td>${statusBadge(r)}</td>
+            <td>${syncBadge(r)}</td>
+            <td>${toggle}</td>
+            <td class="col-actions"><div class="row-actions">${actions}</div></td>
+          </tr>`;
+          })
+          .join("");
+      }
+
+      function findRow(level, id) {
+        return (data[level] || []).find((x) => x.id === id);
+      }
+
+      // ---------- inline edit ----------
+      function openEdit(id) {
+        if (syncing) return;
+        const r = findRow(currentLevel, id);
+        if (!r) return;
+        editId = id;
+        editVersion = r._v;
+        renderTable();
+        const el = $("edit-jp-" + id);
+        if (el) el.focus();
+      }
+      function cancelEdit() {
+        editId = null;
+        editVersion = null;
+        renderTable();
+      }
+      function saveEdit(id) {
+        // conflict check: reload from storage and compare version
+        const fresh = LS.get(LS_KEY, null);
+        const freshRow =
+          fresh && fresh[currentLevel]
+            ? fresh[currentLevel].find((x) => x.id === id)
+            : null;
+        if (!freshRow || freshRow._v !== editVersion) {
+          toast(
+            "This record was updated by another user. Please refresh and try again.",
+            "err",
+          );
+          data = fresh || data; // adopt latest
+          editId = null;
+          editVersion = null;
+          renderNav();
+          renderTable();
+          return;
+        }
+        const jp = ($("edit-jp-" + id).value || "").trim();
+        const en = ($("edit-en-" + id).value || "").trim();
+        if (!jp || !en) {
+          toast("Both Name (JP) and Name (EN) are required.", "err");
+          return;
+        }
+        if (jp.length > 255 || en.length > 255) {
+          toast("Both Name (JP) and Name (EN) are required.", "err");
+          return;
+        }
+        const r = findRow(currentLevel, id);
+        r.nameJp = jp;
+        r.nameEn = en;
+        r.is_manually_edited = true; // editing marks it as manually edited…
+        r.sync_mode = "locked"; // …and locks it from auto-sync
+        r._v = (r._v || 1) + 1;
+        persist();
+        editId = null;
+        editVersion = null;
+        renderTable();
+        toast("Label saved. This row is now Manually Locked.");
+      }
+
+      // ---------- sync-mode toggle ----------
+      function toggleSync(id, checked) {
+        if (syncing) return;
+        const r = findRow(currentLevel, id);
+        if (!r) return;
+        r.sync_mode = checked ? "auto" : "locked";
+        r._v = (r._v || 1) + 1;
+        persist();
+        renderTable();
+        toast(
+          r.nameEn +
+            " set to " +
+            (checked ? "Auto Update" : "Manually Locked") +
+            ".",
+        );
+      }
+
+      // ---------- reset to google ----------
+      function resetToGoogle(id) {
+        if (syncing) return;
+        openModal({
+          title: "Reset to Google data?",
+          message:
+            "Reset this label to Google data? Your manual edit will be lost.",
+          confirmLabel: "Reset",
+          danger: true,
+          onConfirm: () => doResetToGoogle(id),
+        });
+      }
+      function doResetToGoogle(id) {
+        if (syncing) return;
+        const r = findRow(currentLevel, id);
+        if (!r) return;
+        r.nameJp = r.gOrigJp;
+        r.nameEn = r.gOrigEn;
+        r.is_manually_edited = false;
+        r.is_google_source = true;
+        r.sync_mode = "auto";
+        r._v = (r._v || 1) + 1;
+        persist();
+        renderTable();
+        toast("Label reset to Google data.");
+      }
+
+      // ---------- sync from google maps ----------
+      function syncFromGoogle() {
+        if (syncing) return;
+        openModal({
+          title: "Sync from Google Maps?",
+          message:
+            "Sync data from Google Maps? Rows set to Manually Locked will not be updated.",
+          confirmLabel: "Sync",
+          danger: false,
+          onConfirm: doSyncFromGoogle,
+        });
+      }
+      function doSyncFromGoogle() {
+        if (syncing) return;
+        syncing = true;
+        editId = null;
+        editVersion = null;
+        $("syncBtn").disabled = true;
+        $("syncBanner").classList.add("show");
+        renderTable(); // re-render disabled state
+
+        setTimeout(() => {
+          let updated = 0,
+            skipped = 0;
+          LEVELS.forEach((l) => {
+            (data[l.key] || []).forEach((r) => {
+              if (r.sync_mode === "auto") {
+                // pull fresh label from Google source
+                r.nameJp = r.gOrigJp;
+                r.nameEn = r.gOrigEn;
+                r.is_google_source = true;
+                r.is_manually_edited = false;
+                r._v = (r._v || 1) + 1;
+                updated++;
+              } else {
+                skipped++; // manually locked → skip
+              }
+            });
+          });
+          persist();
+          syncing = false;
+          $("syncBtn").disabled = false;
+          $("syncBanner").classList.remove("show");
+          renderNav();
+          renderTable();
+          toast(
+            "Sync completed. " +
+              updated +
+              " rows updated, " +
+              skipped +
+              " rows skipped (manually locked).",
+          );
+        }, 1300);
+      }
+
+      // ---------- init ----------
+      renderNav();
+      updateParentBar();
+      renderTable();
     </script>
   </body>
 </html>

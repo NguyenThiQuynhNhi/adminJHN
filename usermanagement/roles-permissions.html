@@ -1,2154 +1,850 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin - Roles &amp; Permissions</title>
-    <style>
-      * {
-        box-sizing: border-box;
-      }
-
-      body {
-        margin: 0;
-        font-family:
-          system-ui,
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
-          sans-serif;
-        background: #f5f3ef;
-        color: #2a2118;
-      }
-
-      .page {
-        padding: 24px 32px 32px;
-      }
-
-      .page-header {
-        margin-bottom: 18px;
-      }
-
-      .page-title {
-        font-size: 22px;
-        font-weight: 700;
-        margin-bottom: 4px;
-      }
-
-      .page-subtitle {
-        font-size: 13px;
-        color: #7c6a55;
-        max-width: 720px;
-      }
-
-      .pill {
-        margin-top: 6px;
-        padding: 4px 10px;
-        border-radius: 999px;
-        font-size: 11px;
-        font-weight: 600;
-        background: #efe3cf;
-        color: #7b623f;
-        display: inline-block;
-      }
-
-      .layout {
-        display: grid;
-        grid-template-columns: minmax(0, 1.5fr) minmax(0, 2.5fr);
-        gap: 18px;
-      }
-
-      .card {
-        background: #fffaf2;
-        border-radius: 10px;
-        border: 1px solid #eadccd;
-        padding: 16px 18px 18px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-      }
-
-      .card-header {
-        margin-bottom: 10px;
-      }
-
-      .card-title {
-        font-size: 15px;
-        font-weight: 600;
-      }
-
-      .card-subtitle {
-        font-size: 12px;
-        color: #7c6a55;
-      }
-
-      .role-list {
-        max-height: 380px;
-        overflow: auto;
-        margin-top: 6px;
-      }
-
-      .role-item {
-        padding: 8px 9px;
-        border-radius: 8px;
-        border: 1px solid transparent;
-        cursor: pointer;
-        margin-bottom: 6px;
-      }
-
-      .role-item-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 8px;
-      }
-
-      .role-actions {
-        display: inline-flex;
-        gap: 4px;
-      }
-
-      .icon-btn {
-        width: 24px;
-        height: 24px;
-        border-radius: 6px;
-        border: 1px solid #ddcdb9;
-        background: #fdf8f0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        padding: 0;
-      }
-
-      .icon-btn:hover {
-        background: #efe3cf;
-      }
-
-      .icon-btn svg {
-        width: 13px;
-        height: 13px;
-        stroke: #6a5641;
-      }
-
-      .role-item:hover {
-        background: #f6ede0;
-      }
-
-      .role-item.active {
-        border-color: #c49b63;
-        background: #f0e0c9;
-      }
-
-      .role-name {
-        font-size: 13px;
-        font-weight: 600;
-      }
-
-      .role-meta {
-        font-size: 11px;
-        color: #7c6a55;
-        margin-top: 2px;
-      }
-
-      .tag {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 8px;
-        border-radius: 999px;
-        font-size: 10px;
-        background: #efe3cf;
-        color: #7b623f;
-        margin-top: 4px;
-      }
-
-      .btn {
-        border-radius: 999px;
-        border: none;
-        padding: 6px 12px;
-        font-size: 12px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-      }
-
-      .btn-primary {
-        background: #3a6b3c;
-        color: #fff;
-      }
-
-      .btn-secondary {
-        background: #f7efe4;
-        color: #6a5641;
-        border: 1px solid #ddcdb9;
-      }
-
-      .btn-sm {
-        padding: 4px 10px;
-        font-size: 11px;
-      }
-
-      .permission-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 6px;
-        font-size: 11px;
-      }
-
-      .permission-table th,
-      .permission-table td {
-        border-bottom: 1px solid #efe2d3;
-        padding: 6px 5px;
-        text-align: left;
-      }
-
-      .permission-table thead {
-        background: #f1e4d4;
-      }
-
-      .perm-scope {
-        font-weight: 600;
-        color: #6b5032;
-      }
-
-      .perm-desc {
-        font-size: 11px;
-        color: #7c6a55;
-        margin-top: 2px;
-      }
-
-      .matrix-cell {
-        text-align: center;
-      }
-
-      .matrix-indicator {
-        display: inline-flex;
-        width: 18px;
-        height: 18px;
-        border-radius: 6px;
-        align-items: center;
-        justify-content: center;
-        font-size: 11px;
-        border: 1px solid #c9b79f;
-        background: #fff;
-        cursor: pointer;
-      }
-
-      .matrix-indicator.active {
-        background: #3a6b3c;
-        color: #fff;
-        border-color: #3a6b3c;
-      }
-
-      .assignment-list {
-        margin-top: 6px;
-        max-height: 190px;
-        overflow: auto;
-      }
-
-      .assignment-item {
-        padding: 6px 8px;
-        border-radius: 8px;
-        border: 1px solid #eadccd;
-        margin-bottom: 6px;
-      }
-
-      .assignment-name {
-        font-size: 12px;
-        font-weight: 500;
-      }
-
-      .assignment-meta {
-        font-size: 11px;
-        color: #7c6a55;
-        margin-top: 2px;
-      }
-
-      .field-row {
-        margin-top: 8px;
-      }
-
-      .field-row label {
-        display: block;
-        font-size: 11px;
-        color: #7c6a55;
-        margin-bottom: 2px;
-      }
-
-      .field-row select {
-        width: 100%;
-        border-radius: 8px;
-        border: 1px solid #ddcdb9;
-        padding: 5px 7px;
-        font-size: 12px;
-        background: #fdf8f0;
-      }
-
-      .divider-text {
-        font-size: 11px;
-        color: #9a8466;
-        margin-top: 10px;
-      }
-
-      .layout-col-roles {
-        grid-column: 1 / auto;
-      }
-
-      .layout-col-matrix {
-        grid-column: 2 / auto;
-      }
-
-      .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.35);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 40;
-      }
-
-      .modal {
-        background: #fffaf2;
-        border-radius: 10px;
-        border: 1px solid #eadccd;
-        padding: 16px 18px 14px;
-        width: 420px;
-        max-width: calc(100% - 32px);
-        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
-      }
-
-      .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-      }
-
-      .modal-title {
-        font-size: 15px;
-        font-weight: 600;
-      }
-
-      .modal-field {
-        margin-bottom: 8px;
-      }
-
-      .modal-field label {
-        display: block;
-        font-size: 11px;
-        color: #7c6a55;
-        margin-bottom: 2px;
-      }
-
-      .modal-field input,
-      .modal-field textarea {
-        width: 100%;
-        border-radius: 8px;
-        border: 1px solid #ddcdb9;
-        padding: 6px 8px;
-        font-size: 12px;
-        background: #fdf8f0;
-        font-family: inherit;
-      }
-
-      .modal-field textarea {
-        min-height: 80px;
-        resize: vertical;
-      }
-
-      .modal-footer {
-        margin-top: 10px;
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-      }
-
-      @media (max-width: 1180px) {
-        .layout {
-          grid-template-columns: minmax(0, 1.4fr) minmax(0, 2.2fr);
-          grid-template-rows: auto;
-          grid-template-areas: "roles matrix";
-        }
-
-        .layout-col-roles {
-          grid-area: roles;
-        }
-
-        .layout-col-matrix {
-          grid-area: matrix;
-        }
-      }
-
-      @media (max-width: 960px) {
-        .layout {
-          grid-template-columns: minmax(0, 1fr);
-        }
-      }
-    </style>
-    <style id="uxResponsiveSplitFix">
-/* Force stack 1 column: list full-width on top, detail below */
-.layout {
-  grid-template-columns: minmax(0, 1fr) !important;
-}
-/* Compact tightening for very narrow viewports */
-@media (max-width: 900px) {
-  .page {
-    padding: 16px !important;
-  }
-}
-</style>
-<style id="uxTableOverflowFix">
-/* Table overflow handling: keep text intact, only enable horizontal scroll on narrow viewport */
-@media (max-width: 1199px) {
-  table {
-    display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-}
-</style>
-  <style id="uxBaselinePolish">
-/* Baseline UI polish — applies only where file CSS doesn't override */
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-/* Pointer cursor on interactive */
-button, .btn, [role="button"], select,
-input[type="checkbox"], input[type="radio"], input[type="submit"],
-input[type="button"], a[href], label[for] {
-  cursor: pointer;
-}
-
-/* Disabled state */
-button:disabled, .btn:disabled, input:disabled, select:disabled, textarea:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/* Focus-visible outline (a11y) */
-button:focus-visible, .btn:focus-visible,
-a:focus-visible, [role="button"]:focus-visible,
-input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 2px solid #c4a25f;
-  outline-offset: 2px;
-}
-
-/* Inherit font family for form controls (fixes browser-default) */
-input, select, textarea, button {
-  font-family: inherit;
-}
-
-/* Responsive media */
-img, svg, video {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Subtle hover for buttons (only if no transition already set, gentle filter) */
-button:hover:not(:disabled), .btn:hover:not(:disabled) {
-  filter: brightness(0.96);
-  transition: filter 0.15s ease;
-}
-
-/* Smooth scrollbar on Webkit */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: #f5ece0;
-}
-::-webkit-scrollbar-thumb {
-  background: #d9c8b4;
-  border-radius: 6px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #c4a25f;
-}
-
-/* Selection highlight on-brand */
-::selection {
-  background: #c4a25f;
-  color: #fff;
-}
-
-/* HR baseline */
-hr {
-  border: none;
-  border-top: 1px solid #eadccd;
-  margin: 12px 0;
-}
-
-/* Anchor baseline color matches brand (no underline by default to match flat UI) */
-a {
-  color: #8a5a3b;
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
-</style>
-</head>
-  <body>
-    <div class="page">
-      <div class="page-header">
-        <div class="page-title">Roles &amp; Permissions</div>
-      </div>
-
-      <div class="layout">
-        <div class="card layout-col-roles">
-          <div class="card-header">
-            <div class="card-title">Role list</div>
-          </div>
-
-          <div
-            style="
-              display: flex;
-              flex-direction: column;
-              gap: 6px;
-              margin-bottom: 8px;
-            "
-          >
-            <div style="display: flex; justify-content: flex-end; gap: 6px">
-              <button
-                type="button"
-                class="btn btn-secondary btn-sm"
-                id="addRoleBtn"
-              >
-                New role
-              </button>
-            </div>
-            <div
-              style="
-                display: flex;
-                flex-wrap: wrap;
-                gap: 6px;
-              "
-            >
-              <input
-                id="roleSearch"
-                type="text"
-                placeholder="Search role or description"
-                style="
-                  flex: 1;
-                  min-width: 150px;
-                  border-radius: 999px;
-                  border: 1px solid #ddcdb9;
-                  padding: 5px 10px;
-                  font-size: 11px;
-                  background: #fdf8f0;
-                "
-              />
-              <select
-                id="roleTypeFilter"
-                style="
-                  border-radius: 999px;
-                  border: 1px solid #ddcdb9;
-                  padding: 5px 10px;
-                  font-size: 11px;
-                  background: #fdf8f0;
-                "
-              >
-                <option value="">All types</option>
-                <option value="Global">Global</option>
-                <option value="Support">Support</option>
-                <option value="Content">Content</option>
-                <option value="Finance">Finance</option>
-                <option value="Custom">Custom</option>
-              </select>
-              <select
-                id="rolePrivilegeFilter"
-                title="Privilege level"
-                style="
-                  border-radius: 999px;
-                  border: 1px solid #ddcdb9;
-                  padding: 5px 10px;
-                  font-size: 11px;
-                  background: #fdf8f0;
-                "
-              >
-                <option value="">All privileges</option>
-                <option value="admin">Has admin rights</option>
-                <option value="write">Has write rights</option>
-                <option value="read-only">Read-only</option>
-                <option value="none">No permissions</option>
-              </select>
-              <select
-                id="roleScopeFilter"
-                title="Includes scope"
-                style="
-                  border-radius: 999px;
-                  border: 1px solid #ddcdb9;
-                  padding: 5px 10px;
-                  font-size: 11px;
-                  background: #fdf8f0;
-                "
-              >
-                <option value="">Any scope</option>
-                <option value="users">Users</option>
-                <option value="leads">Leads</option>
-                <option value="properties">Properties</option>
-                <option value="content">Content</option>
-                <option value="support">Support</option>
-                <option value="billing">Billing</option>
-                <option value="analytics">Analytics</option>
-                <option value="system">System</option>
-              </select>
-              <select
-                id="roleSortBy"
-                title="Sort by"
-                style="
-                  border-radius: 999px;
-                  border: 1px solid #ddcdb9;
-                  padding: 5px 10px;
-                  font-size: 11px;
-                  background: #fdf8f0;
-                "
-              >
-                <option value="default">Default order</option>
-                <option value="name-asc">Name A→Z</option>
-                <option value="name-desc">Name Z→A</option>
-                <option value="scopes-desc">Most scopes ↓</option>
-              </select>
-              <button
-                type="button"
-                class="btn btn-secondary btn-sm"
-                id="resetRoleFilters"
-              >
-                Reset
-              </button>
-            </div>
-          </div>
-
-          <div class="role-list" id="roleList"></div>
-          <div
-            id="roleListEmpty"
-            style="
-              display: none;
-              padding: 10px 6px;
-              color: #7b623f;
-              font-size: 12px;
-              text-align: center;
-            "
-          >
-            No roles match current filters.
-          </div>
-        </div>
-
-        <div class="card layout-col-matrix">
-          <div class="card-header">
-            <div class="card-title" id="matrixTitle">Permission matrix</div>
-            <div class="card-subtitle" id="matrixSubtitle"></div>
-          </div>
-
-          <div class="field-row">
-            <label for="roleNameInput">Role name</label>
-            <input
-              type="text"
-              id="roleNameInput"
-              style="
-                width: 100%;
-                border-radius: 8px;
-                border: 1px solid #ddcdb9;
-                padding: 5px 7px;
-                font-size: 12px;
-                background: #fdf8f0;
-              "
-            />
-          </div>
-
-          <div
-            style="margin-top: 10px; display: flex; justify-content: flex-end"
-          >
-            <button
-              type="button"
-              class="btn btn-primary btn-sm"
-              id="saveRoleBtn"
-            >
-              Save changes
-            </button>
-          </div>
-
-          <table class="permission-table">
-            <thead>
-              <tr>
-                <th style="width: 40%">Scope</th>
-                <th style="width: 23%">Read</th>
-                <th style="width: 23%">Write</th>
-                <th style="width: 14%">Admin</th>
-              </tr>
-            </thead>
-            <tbody id="permissionBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div class="modal-backdrop" id="roleModal">
-      <div class="modal">
-        <div class="modal-header">
-          <div class="modal-title" id="roleModalTitle">New role</div>
-          <button
-            type="button"
-            class="btn btn-secondary btn-sm"
-            id="closeRoleModalBtn"
-          >
-            Close
-          </button>
-        </div>
-        <div class="modal-field">
-          <label for="modalRoleName" class="req">Role name</label>
-          <input id="modalRoleName" type="text" required autocomplete="off" />
-        </div>
-        <div class="modal-field">
-          <label for="modalRoleDescription">Description</label>
-          <textarea id="modalRoleDescription" placeholder="What is this role responsible for?"></textarea>
-        </div>
-        <div class="modal-footer">
-          <button
-            type="button"
-            class="btn btn-secondary btn-sm"
-            id="cancelRoleModalBtn"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            class="btn btn-primary btn-sm"
-            id="saveRoleModalBtn"
-          >
-            Save role
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <script>
-      const permissionScopes = [
-        {
-          id: "users",
-          label: "Users & accounts",
-          desc: "View and manage end user / agent / internal support accounts.",
-        },
-        {
-          id: "leads",
-          label: "Leads & CRM",
-          desc: "Access to lead inbox, routing, assignment and history.",
-        },
-        {
-          id: "properties",
-          label: "Property inventory",
-          desc: "View and curate listings and projects.",
-        },
-        {
-          id: "content",
-          label: "Content & CMS",
-          desc: "Articles, landing pages, static content blocks.",
-        },
-        {
-          id: "support",
-          label: "Messages & support",
-          desc: "Tickets, routing, SLA (never message/call content).",
-        },
-        {
-          id: "billing",
-          label: "Billing & monetisation",
-          desc: "Plans, invoices, payouts configuration.",
-        },
-        {
-          id: "analytics",
-          label: "Operations & analytics",
-          desc: "Funnels, cohorts, platform health dashboards.",
-        },
-        {
-          id: "system",
-          label: "System settings & integrations",
-          desc: "SSO, webhooks, API keys and audit configuration.",
-        },
-      ];
-
-      let roles = [
-        {
-          id: "platform_admin",
-          name: "Platform Admin",
-          type: "Global",
-          description: "Full platform configuration and operations.",
-          permissions: {
-            users: { read: true, write: true, admin: true },
-            leads: { read: true, write: true, admin: true },
-            properties: { read: true, write: true, admin: true },
-            content: { read: true, write: true, admin: true },
-            support: { read: true, write: true, admin: true },
-            billing: { read: true, write: true, admin: true },
-            analytics: { read: true, write: true, admin: true },
-            system: { read: true, write: true, admin: true },
-          },
-        },
-        {
-          id: "support_lead",
-          name: "Support Lead",
-          type: "Support",
-          description: "Head of CS, manages tickets and queues.",
-          permissions: {
-            users: { read: true, write: false, admin: false },
-            leads: { read: true, write: false, admin: false },
-            properties: { read: true, write: false, admin: false },
-            content: { read: true, write: false, admin: false },
-            support: { read: true, write: true, admin: true },
-            billing: { read: false, write: false, admin: false },
-            analytics: { read: true, write: false, admin: false },
-            system: { read: false, write: false, admin: false },
-          },
-        },
-        {
-          id: "content_editor",
-          name: "Content Editor",
-          type: "Content",
-          description: "Create and schedule content.",
-          permissions: {
-            users: { read: true, write: false, admin: false },
-            leads: { read: false, write: false, admin: false },
-            properties: { read: true, write: false, admin: false },
-            content: { read: true, write: true, admin: false },
-            support: { read: false, write: false, admin: false },
-            billing: { read: false, write: false, admin: false },
-            analytics: { read: true, write: false, admin: false },
-            system: { read: false, write: false, admin: false },
-          },
-        },
-        {
-          id: "finance_ops",
-          name: "Finance & Ops",
-          type: "Finance",
-          description: "Manage payouts, invoices and reconciliation.",
-          permissions: {
-            users: { read: true, write: false, admin: false },
-            leads: { read: false, write: false, admin: false },
-            properties: { read: true, write: false, admin: false },
-            content: { read: false, write: false, admin: false },
-            support: { read: true, write: false, admin: false },
-            billing: { read: true, write: true, admin: true },
-            analytics: { read: true, write: false, admin: false },
-            system: { read: false, write: false, admin: false },
-          },
-        },
-      ];
-
-      let selectedRoleId = roles[0].id;
-      let roleModalMode = "create";
-      let editingRoleId = null;
-
-      function getRole(id) {
-        return roles.find((r) => r.id === id);
-      }
-
-      function getFilteredRoles() {
-        const search = (
-          document.getElementById("roleSearch")?.value || ""
-        )
-          .trim()
-          .toLowerCase();
-        const typeFilter =
-          document.getElementById("roleTypeFilter")?.value || "";
-        const privFilter =
-          document.getElementById("rolePrivilegeFilter")?.value || "";
-        const scopeFilter =
-          document.getElementById("roleScopeFilter")?.value || "";
-        const sortBy =
-          document.getElementById("roleSortBy")?.value || "default";
-
-        const hasPriv = (perms, level) => {
-          if (!perms) return false;
-          return Object.values(perms).some((p) => p && p[level]);
-        };
-        const scopeCount = (perms) => {
-          if (!perms) return 0;
-          return Object.values(perms).filter(
-            (p) => p && (p.read || p.write || p.admin),
-          ).length;
-        };
-
-        let result = roles.filter((role) => {
-          if (search) {
-            const hay = `${role.name} ${role.description || ""} ${role.type || ""}`.toLowerCase();
-            if (!hay.includes(search)) return false;
-          }
-          if (typeFilter && (role.type || "") !== typeFilter) return false;
-          if (privFilter) {
-            if (privFilter === "admin" && !hasPriv(role.permissions, "admin"))
-              return false;
-            if (
-              privFilter === "write" &&
-              !hasPriv(role.permissions, "write")
-            )
-              return false;
-            if (privFilter === "read-only") {
-              if (
-                hasPriv(role.permissions, "write") ||
-                hasPriv(role.permissions, "admin") ||
-                !hasPriv(role.permissions, "read")
-              )
-                return false;
-            }
-            if (privFilter === "none" && scopeCount(role.permissions) > 0)
-              return false;
-          }
-          if (scopeFilter) {
-            const p = (role.permissions || {})[scopeFilter];
-            if (!p || !(p.read || p.write || p.admin)) return false;
-          }
-          return true;
-        });
-
-        if (sortBy !== "default") {
-          const sorters = {
-            "name-asc": (a, b) => a.name.localeCompare(b.name),
-            "name-desc": (a, b) => b.name.localeCompare(a.name),
-            "scopes-desc": (a, b) =>
-              scopeCount(b.permissions) - scopeCount(a.permissions),
-          };
-          if (sorters[sortBy]) result = [...result].sort(sorters[sortBy]);
-        }
-        return result;
-      }
-
-      function renderRoles() {
-        const list = document.getElementById("roleList");
-        list.innerHTML = "";
-        const filtered = getFilteredRoles();
-        const empty = document.getElementById("roleListEmpty");
-        if (empty) empty.style.display = filtered.length ? "none" : "block";
-        filtered.forEach((role) => {
-          const div = document.createElement("div");
-          div.className =
-            "role-item" + (role.id === selectedRoleId ? " active" : "");
-          div.innerHTML = `
-            <div class="role-item-head">
-              <div class="role-name">${role.name}</div>
-              <div class="role-actions">
-                <button type="button" class="icon-btn" data-action="edit" title="Edit role" aria-label="Edit role">
-                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-                  </svg>
-                </button>
-                <button type="button" class="icon-btn" data-action="delete" title="Delete role" aria-label="Delete role">
-                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 6h18" />
-                    <path d="M8 6V4h8v2" />
-                    <path d="M19 6l-1 14H6L5 6" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div class="role-meta">${role.description}</div>
-          `;
-          div.addEventListener("click", () => {
-            selectedRoleId = role.id;
-            renderRoles();
-            renderMatrix();
-          });
-
-          const editBtn = div.querySelector('[data-action="edit"]');
-          if (editBtn) {
-            editBtn.addEventListener("click", (event) => {
-              event.stopPropagation();
-              openRoleModal("edit", role.id);
-            });
-          }
-
-          const deleteBtn = div.querySelector('[data-action="delete"]');
-          if (deleteBtn) {
-            deleteBtn.addEventListener("click", (event) => {
-              event.stopPropagation();
-              deleteRole(role.id);
-            });
-          }
-
-          list.appendChild(div);
-        });
-      }
-
-      function renderMatrix() {
-        const body = document.getElementById("permissionBody");
-        const role = getRole(selectedRoleId);
-        if (!role) return;
-        document.getElementById("matrixTitle").textContent = `Permission table`;
-        document.getElementById("matrixSubtitle").textContent =
-          role.description;
-
-        const nameInput = document.getElementById("roleNameInput");
-        if (nameInput) {
-          nameInput.value = role.name;
-        }
-
-        body.innerHTML = "";
-        permissionScopes.forEach((scope) => {
-          const tr = document.createElement("tr");
-          const p = role.permissions[scope.id] || {
-            read: false,
-            write: false,
-            admin: false,
-          };
-          tr.innerHTML = `
-            <td>
-              <div class="perm-scope">${scope.label}</div>
-              <div class="perm-desc">${scope.desc}</div>
-            </td>
-            <td class="matrix-cell">
-              <span class="matrix-indicator ${p.read ? "active" : ""}" data-scope="${scope.id}" data-key="read">R</span>
-            </td>
-            <td class="matrix-cell">
-              <span class="matrix-indicator ${p.write ? "active" : ""}" data-scope="${scope.id}" data-key="write">W</span>
-            </td>
-            <td class="matrix-cell">
-              <span class="matrix-indicator ${p.admin ? "active" : ""}" data-scope="${scope.id}" data-key="admin">A</span>
-            </td>
-          `;
-          body.appendChild(tr);
-        });
-
-        body.querySelectorAll(".matrix-indicator").forEach((el) => {
-          el.addEventListener("click", () => {
-            const scopeId = el.getAttribute("data-scope");
-            const key = el.getAttribute("data-key");
-            const role = getRole(selectedRoleId);
-            if (!role.permissions[scopeId]) {
-              role.permissions[scopeId] = {
-                read: false,
-                write: false,
-                admin: false,
-              };
-            }
-            role.permissions[scopeId][key] = !role.permissions[scopeId][key];
-            if (key === "admin" && role.permissions[scopeId][key]) {
-              role.permissions[scopeId].read = true;
-              role.permissions[scopeId].write = true;
-            }
-            renderMatrix();
-            renderRoles();
-          });
-        });
-      }
-
-      function createRole() {
-        openRoleModal("create");
-      }
-
-      function openRoleModal(mode, roleId) {
-        roleModalMode = mode;
-        editingRoleId = roleId || null;
-
-        const modal = document.getElementById("roleModal");
-        const title = document.getElementById("roleModalTitle");
-        const nameInput = document.getElementById("modalRoleName");
-        const descInput = document.getElementById("modalRoleDescription");
-
-        if (!modal || !title || !nameInput || !descInput) return;
-
-        if (mode === "edit" && roleId) {
-          const role = getRole(roleId);
-          if (!role) return;
-          title.textContent = "Edit role";
-          nameInput.value = role.name;
-          descInput.value = role.description || "";
-        } else {
-          title.textContent = "New role";
-          nameInput.value = "";
-          descInput.value = "";
-        }
-
-        modal.style.display = "flex";
-      }
-
-      function closeRoleModal() {
-        const modal = document.getElementById("roleModal");
-        if (!modal) return;
-        modal.style.display = "none";
-      }
-
-      function saveRoleFromModal() {
-        const nameInput = document.getElementById("modalRoleName");
-        const descInput = document.getElementById("modalRoleDescription");
-        if (!nameInput || !descInput) return;
-
-        const trimmed = nameInput.value.trim();
-        const description =
-          descInput.value.trim() || "Custom role.";
-        if (!trimmed) {
-          nameInput.classList.add("ux-invalid");
-          nameInput.focus();
-          Toast.err("Role name is required.");
-          return;
-        }
-        nameInput.classList.remove("ux-invalid");
-
-        if (roleModalMode === "edit" && editingRoleId) {
-          const role = getRole(editingRoleId);
-          if (!role) return;
-          role.name = trimmed;
-          role.description = description;
-          selectedRoleId = role.id;
-          closeRoleModal();
-          renderRoles();
-          renderMatrix();
-          Toast.ok(`Role "${trimmed}" updated`);
-          return;
-        }
-
-        const baseId = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, "_");
-        let newId = baseId || "role";
-        let counter = 1;
-        while (roles.some((r) => r.id === newId)) {
-          newId = `${baseId || "role"}_${counter++}`;
-        }
-
-        const emptyPerms = {};
-        permissionScopes.forEach((s) => {
-          emptyPerms[s.id] = { read: false, write: false, admin: false };
-        });
-
-        const newRole = {
-          id: newId,
-          name: trimmed,
-          type: "Custom",
-          description,
-          permissions: emptyPerms,
-        };
-        roles.push(newRole);
-        selectedRoleId = newId;
-        closeRoleModal();
-        renderRoles();
-        renderMatrix();
-        Toast.ok(`Role "${trimmed}" created`);
-      }
-
-      function deleteRole(roleId) {
-        const targetRoleId = roleId || selectedRoleId;
-        if (!targetRoleId) return;
-        if (roles.length <= 1) {
-          Toast.err("At least one role must remain.");
-          return;
-        }
-        const role = getRole(targetRoleId);
-        const roleName = role ? role.name : targetRoleId;
-        UX.confirm({
-          title: "Delete role?",
-          message: `Delete role "${roleName}"? Users with this role will need to be reassigned. This cannot be undone.`,
-          okLabel: "Delete",
-          danger: true,
-          onConfirm() {
-            _doDeleteRole(targetRoleId, roleName);
-          },
-        });
-      }
-
-      function _doDeleteRole(targetRoleId, roleName) {
-        renderRoles();
-        renderMatrix();
-        Toast.ok(`Role "${roleName}" deleted`);
-      }
-
-      document.addEventListener("DOMContentLoaded", () => {
-        renderRoles();
-        renderMatrix();
-
-        [
-          "roleSearch",
-          "roleTypeFilter",
-          "rolePrivilegeFilter",
-          "roleScopeFilter",
-          "roleSortBy",
-        ].forEach((id) => {
-          const el = document.getElementById(id);
-          if (!el) return;
-          el.addEventListener("input", renderRoles);
-          el.addEventListener("change", renderRoles);
-        });
-        document
-          .getElementById("resetRoleFilters")
-          ?.addEventListener("click", () => {
-            [
-              "roleSearch",
-              "roleTypeFilter",
-              "rolePrivilegeFilter",
-              "roleScopeFilter",
-            ].forEach((id) => {
-              const el = document.getElementById(id);
-              if (el) el.value = "";
-            });
-            const sb = document.getElementById("roleSortBy");
-            if (sb) sb.value = "default";
-            renderRoles();
-          });
-
-        const nameInput = document.getElementById("roleNameInput");
-        const saveBtn = document.getElementById("saveRoleBtn");
-        if (nameInput && saveBtn) {
-          saveBtn.addEventListener("click", () => {
-            const role = getRole(selectedRoleId);
-            if (!role) return;
-            const value = nameInput.value.trim();
-            if (!value) return;
-            role.name = value;
-            renderRoles();
-            renderMatrix();
-            Toast.ok("Role changes saved");
-          });
-        }
-
-        const addBtn = document.getElementById("addRoleBtn");
-        if (addBtn) {
-          addBtn.addEventListener("click", createRole);
-        }
-        const closeRoleModalBtn = document.getElementById("closeRoleModalBtn");
-        if (closeRoleModalBtn) {
-          closeRoleModalBtn.addEventListener("click", closeRoleModal);
-        }
-        const cancelRoleModalBtn =
-          document.getElementById("cancelRoleModalBtn");
-        if (cancelRoleModalBtn) {
-          cancelRoleModalBtn.addEventListener("click", closeRoleModal);
-        }
-        const saveRoleModalBtn = document.getElementById("saveRoleModalBtn");
-        if (saveRoleModalBtn) {
-          saveRoleModalBtn.addEventListener("click", saveRoleFromModal);
-        }
-        const deleteBtn = document.getElementById("deleteRoleBtn");
-        if (deleteBtn) {
-          deleteBtn.addEventListener("click", () => deleteRole(selectedRoleId));
-        }
-      });
-    </script>
-  <!-- ─────── UX KIT (toast · confirm · focus trap · dirty guard) ─────── -->
-<style id="uxKitStyle">
-  .ux-toast-wrap{position:fixed;right:18px;bottom:18px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-  .ux-toast{background:#fff;border:1px solid #e5d9c0;border-left:4px solid #c4a25f;border-radius:8px;padding:10px 14px;min-width:240px;max-width:380px;box-shadow:0 4px 16px rgba(0,0,0,.12);font-size:13px;color:#2c1810;display:flex;align-items:flex-start;gap:8px;animation:ux-slide .22s ease;pointer-events:auto}
-  .ux-toast.ok{border-left-color:#2d6a4f}
-  .ux-toast.err{border-left-color:#c41e3a}
-  .ux-toast.info{border-left-color:#1d4e89}
-  .ux-toast .x{margin-left:auto;cursor:pointer;color:#9d8777;background:none;border:none;font-size:14px;padding:0 4px;font-family:inherit}
-  .ux-toast .x:hover{color:#2c1810}
-  @keyframes ux-slide{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
-
-  .ux-modal{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35)}
-  .ux-modal.open{display:flex}
-  .ux-modal-box{background:#fff;border-radius:12px;padding:22px 24px;width:420px;max-width:90vw;box-shadow:0 10px 32px rgba(0,0,0,.22)}
-  .ux-modal-box h3{font-size:15px;font-weight:700;color:#2c1810;margin:0 0 8px}
-  .ux-modal-box p{font-size:13px;color:#6b5c4e;line-height:1.5;margin:0 0 18px;white-space:pre-line}
-  .ux-modal-actions{display:flex;gap:8px;justify-content:flex-end}
-  .ux-btn{padding:7px 16px;border-radius:6px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500;border:1.5px solid #e5d9c0;background:#fff;color:#2c1810}
-  .ux-btn:hover{background:#fdfaf6}
-  .ux-btn.primary{background:#c4a25f;border-color:#c4a25f;color:#fff}
-  .ux-btn.primary:hover{background:#b08d4a}
-  .ux-btn.danger{background:#c41e3a;border-color:#c41e3a;color:#fff}
-  .ux-btn.danger:hover{background:#a51730}
-
-  /* Required-field marker */
-  .ux-req::after, label.req::after, .req::after{content:" *";color:#c41e3a;font-weight:700}
-
-  /* Form section heading */
-  .ux-form-section{margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid #e5d9c0;font-size:11px;font-weight:700;color:#6b5c4e;text-transform:uppercase;letter-spacing:.5px}
-  .ux-form-section:first-child{margin-top:4px}
-
-  /* Inline field validation */
-  .ux-field-error{font-size:11px;color:#c41e3a;margin-top:2px;display:block}
-  .ux-invalid, input.ux-invalid, textarea.ux-invalid, select.ux-invalid{border-color:#c41e3a !important;box-shadow:0 0 0 2px rgba(196,30,58,.12)}
-
-  /* Dirty indicator pill */
-  .ux-dirty-pill{display:none;background:#fff3cd;color:#856404;font-size:11px;font-weight:600;padding:3px 10px;border-radius:10px;margin-left:8px;vertical-align:middle}
-  .ux-dirty .ux-dirty-pill{display:inline-block}
-</style>
-
-<div class="ux-toast-wrap" id="uxToastWrap" role="status" aria-live="polite"></div>
-<div class="ux-modal" id="uxConfirmModal" role="dialog" aria-modal="true" aria-labelledby="uxConfirmTitle">
-  <div class="ux-modal-box">
-    <h3 id="uxConfirmTitle">Confirm</h3>
-    <p id="uxConfirmMsg"></p>
-    <div class="ux-modal-actions">
-      <button type="button" class="ux-btn" id="uxConfirmCancel">Cancel</button>
-      <button type="button" class="ux-btn primary" id="uxConfirmOk">Confirm</button>
-    </div>
-  </div>
-</div>
-
-<script>
-(function(){
-  if (window.UX) return; // idempotent
-  const wrap = document.getElementById('uxToastWrap');
-  const modal = document.getElementById('uxConfirmModal');
-  const titleEl = document.getElementById('uxConfirmTitle');
-  const msgEl = document.getElementById('uxConfirmMsg');
-  const okBtn = document.getElementById('uxConfirmOk');
-  const cancelBtn = document.getElementById('uxConfirmCancel');
-
-  // ──── Toast ────────────────────────────────────────────────────
-  function toast(msg, type){
-    if(!wrap) return;
-    const el = document.createElement('div');
-    el.className = 'ux-toast ' + (type || 'info');
-    const span = document.createElement('span');
-    span.textContent = msg || '';
-    const x = document.createElement('button');
-    x.className = 'x'; x.type = 'button'; x.setAttribute('aria-label','Dismiss');
-    x.textContent = '×';
-    x.addEventListener('click', () => el.remove());
-    el.appendChild(span); el.appendChild(x);
-    wrap.appendChild(el);
-    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 220); }, 3800);
-  }
-  window.Toast = {
-    show: toast,
-    ok:   (m) => toast(m, 'ok'),
-    err:  (m) => toast(m, 'err'),
-    info: (m) => toast(m, 'info'),
-  };
-
-  // ──── Confirm modal ───────────────────────────────────────────
-  let _onOk = null;
-  let _lastFocus = null;
-  function closeConfirm(){
-    modal.classList.remove('open');
-    _onOk = null;
-    if(_lastFocus && _lastFocus.focus) try { _lastFocus.focus(); } catch(e){}
-  }
-  okBtn.addEventListener('click', () => { const cb = _onOk; closeConfirm(); if(cb) cb(); });
-  cancelBtn.addEventListener('click', closeConfirm);
-  modal.addEventListener('click', (e) => { if(e.target === modal) closeConfirm(); });
-
-  function openConfirm(opts){
-    titleEl.textContent  = opts.title   || 'Confirm';
-    msgEl.textContent    = opts.message || 'Are you sure?';
-    okBtn.textContent    = opts.okLabel || 'Confirm';
-    cancelBtn.textContent= opts.cancelLabel || 'Cancel';
-    okBtn.className = 'ux-btn ' + (opts.danger ? 'danger' : 'primary');
-    _onOk = typeof opts.onConfirm === 'function' ? opts.onConfirm : null;
-    _lastFocus = document.activeElement;
-    modal.classList.add('open');
-    setTimeout(() => okBtn.focus(), 40);
-  }
-
-  window.UX = {
-    confirm: openConfirm,
-    toast,
-    // Run action only after confirming if dirty
-    guard(action){
-      if(!window.UX_dirty){ if(typeof action === 'function') action(); return; }
-      openConfirm({
-        title: 'Discard unsaved changes?',
-        message: 'You have edits that have not been saved. Leave anyway?',
-        okLabel: 'Discard',
-        danger: true,
-        onConfirm(){ window.UX_dirty = false; if(typeof action === 'function') action(); }
-      });
-    },
-    markClean(){ window.UX_dirty = false; document.body.classList.remove('ux-dirty'); },
-    markDirty(){ window.UX_dirty = true;  document.body.classList.add('ux-dirty'); },
-  };
-
-  // ──── Esc closes any open modal (built-in + page modals) ──────
-  document.addEventListener('keydown', (e) => {
-    if(e.key !== 'Escape') return;
-    if(modal.classList.contains('open')){ closeConfirm(); return; }
-    document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(m => {
-      const visible = getComputedStyle(m).display !== 'none' || m.classList.contains('show') || m.classList.contains('open');
-      if(!visible) return;
-      m.classList.remove('open','show','active');
-      m.style.display = 'none';
-    });
-  });
-
-  // ──── Backdrop click closes existing page modals ──────────────
-  document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(m => {
-    if(m.__uxBound) return; m.__uxBound = true;
-    m.addEventListener('click', (e) => {
-      if(e.target !== m) return;
-      m.classList.remove('open','show','active');
-      m.style.display = 'none';
-    });
-  });
-
-  // ──── Auto-track dirty on any [data-track-dirty] container ────
-  document.addEventListener('input', (e) => {
-    if(e.target.closest('[data-track-dirty]')) UX.markDirty();
-  });
-  document.addEventListener('change', (e) => {
-    if(e.target.closest('[data-track-dirty]')) UX.markDirty();
-  });
-  window.addEventListener('beforeunload', (e) => {
-    if(window.UX_dirty){ e.preventDefault(); e.returnValue = ''; }
-  });
-
-  // ──── Inline validation helper ────────────────────────────────
-  window.UX.validate = function(form){
-    let firstInvalid = null;
-    form.querySelectorAll('.ux-field-error').forEach(n => n.remove());
-    form.querySelectorAll('.ux-invalid').forEach(n => n.classList.remove('ux-invalid'));
-    form.querySelectorAll('[required]').forEach(field => {
-      const v = (field.value || '').trim();
-      let bad = !v;
-      if(!bad && field.type === 'email'){
-        bad = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-      }
-      if(bad){
-        field.classList.add('ux-invalid');
-        const note = document.createElement('span');
-        note.className = 'ux-field-error';
-        note.textContent = field.dataset.errorMsg ||
-          (field.type === 'email' ? 'Please enter a valid email.' : 'This field is required.');
-        if(field.parentNode) field.parentNode.insertBefore(note, field.nextSibling);
-        if(!firstInvalid) firstInvalid = field;
-      }
-    });
-    if(firstInvalid){ firstInvalid.focus(); return false; }
-    return true;
-  };
-})();
-</script>
-<!-- ─────── END UX KIT ─────── -->
-
-  <!-- ─────── SYSTEM VISUAL POLISH (CRUD forms) ─────── -->
-<style id="uxVisualPolish">
-  /* ========== Inputs & selects ========== */
-  body .card input[type="text"],
-  body .card input[type="email"],
-  body .card input[type="number"],
-  body .card input[type="tel"],
-  body .card input[type="url"],
-  body .card input[type="date"],
-  body .card input[type="time"],
-  body .card input[type="password"],
-  body .card select,
-  body .card textarea,
-  body .modal input[type="text"],
-  body .modal input[type="email"],
-  body .modal input[type="password"],
-  body .modal select,
-  body .modal textarea,
-  body .field-grid input,
-  body .field-grid select,
-  body .field-row input,
-  body .field-row select,
-  body .field-row textarea {
-    padding: 9px 12px !important;
-    border-radius: 8px !important;
-    border: 1px solid #ddcdb9 !important;
-    background: #fff !important;
-    font-size: 13px !important;
-    color: #2c1810 !important;
-    font-family: inherit !important;
-    transition: border-color .15s, box-shadow .15s, background .15s;
-    line-height: 1.4;
-  }
-  body .card input:hover:not(:disabled):not([readonly]),
-  body .card select:hover:not(:disabled),
-  body .card textarea:hover:not(:disabled):not([readonly]),
-  body .modal input:hover:not(:disabled):not([readonly]),
-  body .modal select:hover:not(:disabled),
-  body .modal textarea:hover:not(:disabled):not([readonly]) {
-    border-color: #c9b079 !important;
-  }
-  body .card input:focus,
-  body .card select:focus,
-  body .card textarea:focus,
-  body .modal input:focus,
-  body .modal select:focus,
-  body .modal textarea:focus {
-    outline: none !important;
-    border-color: #c4a25f !important;
-    box-shadow: 0 0 0 3px rgba(196, 162, 95, 0.18) !important;
-    background: #fff !important;
-  }
-  body input[readonly],
-  body input:disabled,
-  body select:disabled,
-  body textarea:disabled,
-  body textarea[readonly] {
-    background: #f7f0e0 !important;
-    color: #7c6a55 !important;
-    cursor: not-allowed !important;
-    border-color: #e8dcc2 !important;
-  }
-
-  /* ========== Labels ========== */
-  body .field-grid > div > label,
-  body .field-grid label,
-  body .field-row > label,
-  body .modal-field > label,
-  body .detail-field-label {
-    font-size: 11.5px !important;
-    color: #6b5c4e !important;
-    font-weight: 600 !important;
-    margin-bottom: 5px !important;
-    display: block;
-    letter-spacing: 0.01em;
-  }
-
-  /* ========== Detail sections (turn flat dividers into sub-cards) ========== */
-  body .detail-section,
-  body .detail-block {
-    background: #fff !important;
-    border: 1px solid #eadccd !important;
-    border-radius: 10px !important;
-    padding: 18px 20px !important;
-    margin-bottom: 14px !important;
-    box-shadow: 0 1px 2px rgba(60, 42, 15, 0.03);
-    position: relative;
-  }
-
-  /* Section heading with gold accent bar */
-  body .detail-section > .detail-title,
-  body .detail-section > .ux-form-section,
-  body .detail-block > .ux-form-section,
-  body .detail-section-title {
-    font-size: 13.5px !important;
-    font-weight: 700 !important;
-    color: #2c1810 !important;
-    margin: 0 0 14px !important;
-    padding: 0 0 10px !important;
-    border-bottom: 1px solid #f0e6d4 !important;
-    text-transform: none !important;
-    letter-spacing: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 10px !important;
-  }
-  body .detail-section > .detail-title::before,
-  body .detail-section > .ux-form-section::before,
-  body .detail-block > .ux-form-section::before,
-  body .detail-section-title::before {
-    content: "";
-    width: 3px;
-    height: 16px;
-    background: #c4a25f;
-    border-radius: 2px;
-    flex-shrink: 0;
-  }
-
-  /* ========== Field grids: rhythm ========== */
-  body .field-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 14px 18px !important;
-  }
-  @media (max-width: 760px) {
-    body .field-grid {
-      grid-template-columns: 1fr !important;
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roles &amp; Permissions</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #8B7340;
+      --gold-light: #c9a85c;
+      --gray-text: #888;
+      --border: #e0e0e0;
+      --bg: #ffffff;
+      --text: #1a1a1a;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
-  }
-  body .field-row {
-    margin-bottom: 12px !important;
-  }
 
-  /* ========== Buttons ========== */
-  body .btn,
-  body .ux-btn {
-    padding: 8px 16px !important;
-    font-size: 12px !important;
-    border-radius: 8px !important;
-    cursor: pointer;
-    font-family: inherit;
-    font-weight: 600;
-    transition: background 0.15s, border-color 0.15s, color 0.15s,
-      box-shadow 0.15s;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    line-height: 1.3;
-  }
-  body .btn-sm,
-  body .ux-btn.btn-sm {
-    padding: 5px 11px !important;
-    font-size: 11px !important;
-    border-radius: 6px !important;
-  }
-  body .btn-primary {
-    background: #c4a25f !important;
-    color: #fff !important;
-    border: 1.5px solid #c4a25f !important;
-  }
-  body .btn-primary:hover {
-    background: #b08d4a !important;
-    border-color: #b08d4a !important;
-  }
-  body .btn-ghost {
-    background: #fff !important;
-    color: #2c1810 !important;
-    border: 1.5px solid #e5d9c0 !important;
-  }
-  body .btn-ghost:hover {
-    background: #faf6ee !important;
-    border-color: #d4c3a0 !important;
-  }
-  body .btn-secondary {
-    background: #fff !important;
-    color: #2c1810 !important;
-    border: 1.5px solid #e5d9c0 !important;
-  }
-  body .btn-secondary:hover {
-    background: #faf6ee !important;
-  }
-  body .btn-danger {
-    background: #c41e3a !important;
-    color: #fff !important;
-    border: 1.5px solid #c41e3a !important;
-  }
-  body .btn-danger:hover {
-    background: #a51730 !important;
-    border-color: #a51730 !important;
-  }
-
-  /* ========== Detail / Edit page top header ========== */
-  body #detailView > .card:first-child > .card-header {
-    background: linear-gradient(135deg, #fdf8ee, #f7eddb) !important;
-    margin: -14px -16px 14px !important;
-    padding: 16px 20px !important;
-    border-radius: 10px 10px 0 0 !important;
-    border-bottom: 1px solid #eadccd !important;
-    align-items: center !important;
-  }
-
-  /* ========== Card refinements ========== */
-  body .card {
-    border-radius: 12px !important;
-    border: 1px solid #eadccd !important;
-    background: #fffaf2 !important;
-    box-shadow: 0 1px 3px rgba(60, 42, 15, 0.05) !important;
-    padding: 16px 18px 18px !important;
-  }
-
-  /* ========== Modal polish (page-native modals, not ux-modal) ========== */
-  body .modal-backdrop {
-    background: rgba(44, 24, 16, 0.45) !important;
-    backdrop-filter: blur(2px);
-  }
-  body .modal {
-    border-radius: 14px !important;
-    border: 1px solid #eadccd !important;
-    box-shadow: 0 16px 40px rgba(44, 24, 16, 0.25) !important;
-    padding: 22px 24px !important;
-    max-width: 480px !important;
-    width: calc(100% - 32px) !important;
-  }
-  body .modal-header {
-    margin-bottom: 14px !important;
-    padding-bottom: 12px !important;
-    border-bottom: 1px solid #f0e6d4;
-    align-items: center !important;
-  }
-  body .modal-title {
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    color: #2c1810 !important;
-  }
-  body .modal-field {
-    margin-bottom: 12px !important;
-  }
-  body .modal-footer {
-    margin-top: 16px !important;
-    padding-top: 14px !important;
-    border-top: 1px solid #f0e6d4;
-    display: flex !important;
-    gap: 8px !important;
-    justify-content: flex-end !important;
-  }
-
-  /* ========== Empty state ========== */
-  body .empty-state {
-    padding: 32px 20px !important;
-    color: #9a8466 !important;
-    font-size: 13px !important;
-  }
-  body #emptyDetail {
-    text-align: center;
-    padding: 60px 20px !important;
-    color: #9a8466 !important;
-  }
-
-  /* ========== Badges / status pills ========== */
-  body .status-pill,
-  body .badge {
-    padding: 3px 10px !important;
-    border-radius: 999px !important;
-    font-size: 10.5px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-  }
-  body .badge-soft {
-    background: #f1e4d4 !important;
-    color: #7b623f !important;
-  }
-
-  /* ========== Avatar wrapper ========== */
-  body .avatar-circle {
-    width: 36px !important;
-    height: 36px !important;
-    font-size: 12px !important;
-    background: linear-gradient(135deg, #c9a574, #8c6845) !important;
-  }
-
-  /* ========== KPI cards ========== */
-  body .kpi-card,
-  body .kcard {
-    background: #fff !important;
-    border-radius: 10px !important;
-    border: 1px solid #eadccd !important;
-    padding: 14px 16px !important;
-    transition: box-shadow 0.15s, transform 0.15s;
-  }
-  body .kpi-card:hover,
-  body .kcard:hover {
-    box-shadow: 0 4px 14px rgba(60, 42, 15, 0.08) !important;
-    transform: translateY(-1px);
-  }
-  body .kpi-value {
-    font-size: 22px !important;
-    font-weight: 700 !important;
-    color: #2c1810 !important;
-  }
-  body .kpi-label {
-    font-size: 10.5px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    color: #7c6a55 !important;
-  }
-
-  /* ========== Filter bar refinement ========== */
-  body .filters {
-    padding: 12px 14px !important;
-    background: #fff !important;
-    border: 1px solid #eadccd !important;
-    border-radius: 10px !important;
-    margin-bottom: 14px !important;
-    gap: 8px !important;
-  }
-  body .filters input[type="text"],
-  body .filters select {
-    border-radius: 999px !important;
-    padding: 7px 12px !important;
-    font-size: 12px !important;
-    background: #faf6ee !important;
-    border: 1px solid #e5d9c0 !important;
-  }
-  body .filters input[type="text"]:focus,
-  body .filters select:focus {
-    outline: none !important;
-    border-color: #c4a25f !important;
-    background: #fff !important;
-    box-shadow: 0 0 0 3px rgba(196, 162, 95, 0.18) !important;
-  }
-
-  /* ========== Table refinement ========== */
-  body table thead {
-    background: #f7eedb !important;
-  }
-  body table th {
-    padding: 10px 12px !important;
-    font-size: 10.5px !important;
-    color: #7c6a55 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    font-weight: 700 !important;
-  }
-  body table td {
-    padding: 11px 12px !important;
-    font-size: 12.5px !important;
-    color: #2c1810;
-  }
-  body tbody tr:hover td {
-    background: #fbf5e8 !important;
-  }
-
-  /* ========== Page header refinement ========== */
-  body .page-header .page-title {
-    font-size: 24px !important;
-    font-weight: 800 !important;
-    color: #2c1810 !important;
-    letter-spacing: -0.01em;
-  }
-  body .page-header .page-subtitle {
-    font-size: 13px !important;
-    color: #7c6a55 !important;
-    margin-top: 4px;
-  }
-
-  /* ========== Sticky form footer (auto-applied when a section has .save-bar class) ========== */
-  body .save-bar,
-  body .sticky-save-bar {
-    position: sticky;
-    bottom: 0;
-    background: linear-gradient(
-      to top,
-      #fffaf2 70%,
-      rgba(255, 250, 242, 0)
-    ) !important;
-    padding: 18px 0 10px !important;
-    display: flex !important;
-    gap: 10px !important;
-    justify-content: flex-end !important;
-    margin: 18px -20px -18px !important;
-    border-top: 1px solid #eadccd !important;
-    padding-left: 20px !important;
-    padding-right: 20px !important;
-    z-index: 5;
-  }
-
-  /* ========== Permission matrix (roles page) ========== */
-  body .permission-table {
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  body .permission-table thead {
-    background: #f7eedb !important;
-  }
-  body .matrix-indicator {
-    width: 22px !important;
-    height: 22px !important;
-    border-radius: 7px !important;
-    transition: transform 0.15s, background 0.15s;
-  }
-  body .matrix-indicator:hover {
-    transform: scale(1.1);
-  }
-  body .matrix-indicator.active {
-    background: #2d6a4f !important;
-    border-color: #2d6a4f !important;
-  }
-
-  /* ========== Role list items ========== */
-  body .role-item {
-    padding: 10px 12px !important;
-    border-radius: 10px !important;
-    margin-bottom: 8px !important;
-    border: 1px solid #eadccd !important;
-    background: #fff;
-    transition: all 0.15s;
-  }
-  body .role-item:hover {
-    background: #fdf6e6 !important;
-    border-color: #d4c3a0 !important;
-    transform: translateX(2px);
-  }
-  body .role-item.active {
-    background: linear-gradient(135deg, #fdf2d8, #f8e8c4) !important;
-    border-color: #c4a25f !important;
-    box-shadow: 0 2px 8px rgba(196, 162, 95, 0.18);
-  }
-  body .role-name {
-    font-size: 13.5px !important;
-    font-weight: 700 !important;
-    color: #2c1810;
-  }
-
-  /* ========== Pretty checkbox/toggle row ========== */
-  body input[type="checkbox"],
-  body input[type="radio"] {
-    accent-color: #c4a25f;
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-  }
-
-  /* ========== File upload area ========== */
-  body input[type="file"] {
-    padding: 6px 10px !important;
-    border: 1.5px dashed #d4c3a0 !important;
-    border-radius: 8px !important;
-    background: #faf6ee !important;
-    cursor: pointer;
-    font-size: 11.5px !important;
-  }
-  body input[type="file"]:hover {
-    border-color: #c4a25f !important;
-    background: #fdf8ee !important;
-  }
-
-  /* ========== Required asterisk styled ========== */
-  body label.req::after,
-  body .req::after {
-    margin-left: 4px;
-    color: #c41e3a;
-    font-weight: 800;
-  }
-</style>
-<!-- ─────── END VISUAL POLISH ─────── -->
-
-  <!-- ─────── Detail-view layout primitives ─────── -->
-<style id="uxDetailLayout">
-  /* Top toolbar: back button + secondary actions */
-  body .entity-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-  }
-  body .entity-toolbar-right {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  body .entity-back-btn {
-    background: none;
-    border: none;
-    color: #6b5c4e;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 6px 10px;
-    border-radius: 8px;
-    font-family: inherit;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: background 0.15s, color 0.15s;
-  }
-  body .entity-back-btn:hover {
-    background: #faf6ee;
-    color: #2c1810;
-  }
-  body .entity-back-btn span {
-    font-size: 16px;
-    line-height: 1;
-  }
-
-  /* Hero card: avatar + identity + status + primary actions */
-  body .entity-hero {
-    background: linear-gradient(135deg, #fffaf2 0%, #fcf4e6 100%);
-    border: 1px solid #eadccd;
-    border-radius: 14px;
-    padding: 22px 24px;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    box-shadow: 0 2px 6px rgba(60, 42, 15, 0.05);
-  }
-  body .entity-hero-avatar {
-    flex-shrink: 0;
-    position: relative;
-  }
-  body .entity-hero-avatar .avatar-circle {
-    width: 60px !important;
-    height: 60px !important;
-    font-size: 22px !important;
-    box-shadow: 0 2px 6px rgba(60, 42, 15, 0.18);
-  }
-  body .entity-hero-avatar img {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    object-fit: cover;
-    background: #ddd;
-  }
-  body .entity-hero-info {
-    flex: 1;
-    min-width: 0;
-  }
-  body .entity-hero-name {
-    font-size: 22px !important;
-    font-weight: 800 !important;
-    color: #2c1810 !important;
-    margin: 0 0 6px !important;
-    letter-spacing: -0.01em;
-    line-height: 1.2;
-  }
-  body .entity-hero-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    font-size: 12.5px;
-    color: #6b5c4e;
-  }
-  body .entity-hero-sep {
-    color: #c4a25f;
-  }
-  body .entity-hero-email {
-    color: #6b5c4e;
-    font-weight: 500;
-  }
-  body .entity-hero-actions {
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
-  /* Section sub-title (after main heading) */
-  body .detail-title .section-sub {
-    font-size: 11.5px;
-    font-weight: 500;
-    color: #9d8a72;
-    text-transform: none;
-    letter-spacing: 0;
-    margin-left: auto;
-  }
-
-  /* Settings block (subsection inside a section card) */
-  body .settings-block {
-    padding: 14px 0;
-    border-bottom: 1px dashed #f0e6d4;
-  }
-  body .settings-block:last-child {
-    border-bottom: none;
-    padding-bottom: 4px;
-  }
-  body .settings-block:first-child {
-    padding-top: 4px;
-  }
-  body .settings-block-title {
-    font-size: 12.5px;
-    font-weight: 700;
-    color: #2c1810;
-    margin-bottom: 8px;
-  }
-  body .settings-block-sub {
-    font-size: 11.5px;
-    color: #7c6a55;
-    margin-bottom: 10px;
-  }
-
-  /* Checkbox row: clean horizontal checkbox + label */
-  body .checkbox-row {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12.5px !important;
-    color: #2c1810 !important;
-    font-weight: 500 !important;
-    cursor: pointer;
-    padding: 6px 0;
-    margin: 0 !important;
-  }
-  body .checkbox-row input[type="checkbox"] {
-    margin: 0;
-    width: 16px;
-    height: 16px;
-  }
-  body .checkbox-row span {
-    line-height: 1.3;
-  }
-  body .checkbox-group {
-    display: flex;
-    gap: 18px;
-    flex-wrap: wrap;
-  }
-
-  /* Sticky save bar: bottom action zone */
-  body .sticky-save-bar {
-    position: sticky;
-    bottom: 0;
-    background: #fffaf2;
-    border: 1px solid #eadccd;
-    border-radius: 12px;
-    padding: 14px 18px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: flex-end;
-    margin-top: 16px;
-    box-shadow: 0 -4px 16px rgba(60, 42, 15, 0.06);
-    z-index: 5;
-  }
-  body .sticky-save-bar .save-bar-hint {
-    font-size: 11.5px;
-    color: #9d8a72;
-    margin-right: auto;
-    font-style: italic;
-  }
-  body .sticky-save-bar .btn {
-    padding: 9px 18px !important;
-    font-size: 13px !important;
-    font-weight: 600;
-  }
-  body .sticky-save-bar .btn-primary {
-    box-shadow: 0 2px 6px rgba(196, 162, 95, 0.32);
-  }
-
-  /* Entity form: reset wrapping that older .card forced */
-  body .entity-form {
-    margin: 0;
-  }
-  body .entity-form .detail-section {
-    margin-bottom: 14px !important;
-  }
-  body .entity-form .detail-section:last-child {
-    margin-bottom: 0 !important;
-  }
-
-  /* Detail section heading: allow flex layout for sub-title alignment */
-  body .detail-section > .detail-title {
-    flex-wrap: wrap;
-  }
-
-  /* Read-only info grid (definition list style) */
-  body .info-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px 24px;
-  }
-  body .info-row {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 8px 0;
-    border-bottom: 1px dashed #f0e6d4;
-  }
-  body .info-row.info-row-wide {
-    grid-column: 1 / -1;
-  }
-  body .info-row:last-child,
-  body .info-row:nth-last-child(2):not(.info-row-wide) {
-    border-bottom: none;
-  }
-  body .info-label {
-    font-size: 11px;
-    color: #9d8a72;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 700;
-  }
-  body .info-value {
-    font-size: 13.5px;
-    color: #2c1810;
-    font-weight: 500;
-    line-height: 1.5;
-  }
-
-  /* Mobile */
-  @media (max-width: 720px) {
-    body .entity-hero {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 14px;
+    body {
+      font-family: var(--font);
+      background: #f5f5f5;
+      color: var(--text);
+      min-height: 100vh;
     }
-    body .entity-hero-actions {
+
+    /* ══════════════════════════════════════
+       MAIN PAGE
+    ══════════════════════════════════════ */
+    .page {
+      background: var(--bg);
+      min-height: 100vh;
+      padding: 32px 36px 48px;
+    }
+
+    /* ── Page Header ── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .btn-add {
+      background: var(--gold);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 28px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: filter 0.15s;
+    }
+    .btn-add:hover { filter: brightness(0.9); }
+
+    /* ── Search ── */
+    .search-wrap {
+      position: relative;
+      width: 260px;
+      margin-bottom: 20px;
+    }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 15px;
+      height: 15px;
+      color: #aaa;
+      pointer-events: none;
+    }
+
+    .search-input {
       width: 100%;
-      justify-content: stretch;
+      padding: 9px 14px 9px 36px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 13.5px;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      transition: border-color 0.15s;
     }
-    body .entity-hero-actions .btn {
-      flex: 1;
+    .search-input::placeholder { color: #bbb; }
+    .search-input:focus { border-color: var(--gold-light); }
+
+    /* ── Table ── */
+    .table-wrap {
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
     }
-    body .sticky-save-bar {
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead tr {
+      border-bottom: 1.5px solid var(--border);
+    }
+
+    th {
+      padding: 14px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      text-align: left;
+      background: var(--bg);
+    }
+
+    th.col-role { width: 240px; }
+    th.col-desc { }
+    th.col-actions { width: 90px; text-align: right; padding-right: 20px; }
+
+    .sort-arrow {
+      display: inline-flex;
+      flex-direction: column;
+      gap: 1px;
+      vertical-align: middle;
+      margin-left: 5px;
+      margin-bottom: 1px;
+    }
+    .sort-arrow span {
+      display: block;
+      width: 0;
+      height: 0;
+    }
+    .sort-arrow span:first-child {
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-bottom: 4px solid #aaa;
+    }
+    .sort-arrow span:last-child {
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 4px solid #aaa;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #f0f0f0;
+      transition: background 0.1s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fafafa; }
+
+    td {
+      padding: 16px 18px;
+      font-size: 13.5px;
+      color: var(--text);
+      vertical-align: middle;
+    }
+
+    td.col-desc { color: #333; }
+
+    .row-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding-right: 20px;
+    }
+
+    .action-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      color: #aaa;
+      transition: color 0.15s;
+    }
+    .action-btn:hover { color: var(--gold); }
+    .action-btn svg { width: 17px; height: 17px; }
+
+    /* ── Table Footer ── */
+    .table-footer {
+      padding: 13px 18px;
+      font-size: 12.5px;
+      color: var(--gray-text);
+      border-top: 1px solid #f0f0f0;
+    }
+
+    /* ── Result count + pagination ── */
+    .result-count {
+      font-size: 12.5px;
+      color: var(--gray-text);
+      margin-bottom: 12px;
+    }
+    .pager {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 16px;
       flex-wrap: wrap;
     }
-    body .sticky-save-bar .save-bar-hint {
-      flex-basis: 100%;
-      margin-right: 0;
-      margin-bottom: 6px;
+    .pager button {
+      min-width: 34px;
+      height: 34px;
+      padding: 0 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+      font-size: 13px;
+      font-family: var(--font);
+      cursor: pointer;
     }
-  }
-</style>
-<!-- ─────── END detail-view extras ─────── -->
+    .pager button:hover:not(:disabled) { background: #faf7ef; }
+    .pager button.current {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #fff;
+      font-weight: 700;
+    }
+    .pager button:disabled { opacity: 0.45; cursor: default; }
+    .pager .pager-ellipsis { padding: 0 4px; color: var(--gray-text); }
 
-  </body>
+    /* ══════════════════════════════════════
+       OVERLAY + DRAWER
+    ══════════════════════════════════════ */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .overlay-backdrop {
+      flex: 0 0 260px;
+      background: rgba(80, 80, 80, 0.55);
+    }
+
+    .drawer {
+      flex: 1;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: translateX(40px);
+      transition: transform 0.25s ease;
+    }
+    .overlay.open .drawer {
+      transform: translateX(0);
+    }
+
+    /* ── Drawer Header ── */
+    .drawer-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 24px 28px 20px;
+      flex-shrink: 0;
+    }
+
+    .drawer-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .drawer-subtitle {
+      font-size: 13px;
+      color: var(--gold);
+      margin-top: 3px;
+    }
+
+    .drawer-header-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 2px;
+    }
+
+    .btn-cancel {
+      background: #5c5c5c;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: filter 0.15s;
+    }
+    .btn-cancel:hover { filter: brightness(0.88); }
+
+    .btn-save {
+      background: #d6ccb8;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 22px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-save.active {
+      background: var(--gold);
+      cursor: pointer;
+    }
+    .btn-save.active:hover { filter: brightness(0.9); }
+
+    .drawer-divider {
+      height: 1px;
+      background: #ebebeb;
+      margin: 0;
+      flex-shrink: 0;
+    }
+
+    /* ── Drawer Body ── */
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+    }
+
+    /* ── Section Block ── */
+    .form-section {
+      padding: 24px 28px 28px;
+      border-bottom: 1px solid #ebebeb;
+    }
+
+    .form-section-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+
+    .form-section-sub {
+      font-size: 12.5px;
+      color: var(--gold);
+      margin-bottom: 20px;
+    }
+
+    /* ── Form Fields ── */
+    .form-group {
+      margin-bottom: 18px;
+    }
+    .form-group:last-child { margin-bottom: 0; }
+
+    .form-label {
+      display: block;
+      font-size: 12.5px;
+      color: #444;
+      margin-bottom: 7px;
+    }
+
+    .req {
+      color: #e04040;
+      margin-left: 3px;
+    }
+
+    .form-input,
+    .form-textarea {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      padding: 10px 14px;
+      font-size: 13.5px;
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      transition: border-color 0.15s;
+      resize: none;
+    }
+    .form-input::placeholder,
+    .form-textarea::placeholder { color: #c0c0c0; }
+    .form-input:focus,
+    .form-textarea:focus { border-color: var(--gold-light); }
+
+    .form-textarea { height: 90px; }
+
+    /* ── Permission Table ── */
+    .perm-section {
+      padding: 24px 28px 32px;
+    }
+
+    .perm-group {
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .perm-group:last-child { margin-bottom: 0; }
+
+    .perm-group-header {
+      background: #f7f5f1;
+      padding: 11px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .perm-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #f2f2f2;
+      transition: background 0.1s;
+    }
+    .perm-row:last-child { border-bottom: none; }
+    .perm-row:hover { background: #fafaf8; }
+
+    .perm-row label {
+      font-size: 13.5px;
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+    }
+
+    /* Custom checkbox */
+    .custom-cb {
+      position: relative;
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+    }
+
+    .custom-cb input[type="checkbox"] {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .cb-box {
+      width: 20px;
+      height: 20px;
+      border: 1.5px solid #ccc;
+      border-radius: 5px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, border-color 0.15s;
+      pointer-events: none;
+    }
+
+    .custom-cb input:checked ~ .cb-box {
+      background: var(--gold);
+      border-color: var(--gold);
+    }
+
+    .cb-check {
+      display: none;
+      width: 10px;
+      height: 10px;
+    }
+
+    .custom-cb input:checked ~ .cb-box .cb-check {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     MAIN PAGE — Roles & Permissions
+══════════════════════════════════════ -->
+<div class="page">
+
+  <div class="page-header">
+    <h1 class="page-title">Roles &amp; Permissions</h1>
+    <button class="btn-add" onclick="openDrawer()">Add</button>
+  </div>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input class="search-input" id="roleSearch" type="text" placeholder="Search role name" oninput="renderRoles(true)" />
+  </div>
+
+  <!-- Result count -->
+  <div class="result-count" id="roleCount"></div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-role" id="roleSortHead" onclick="toggleSort()" style="cursor:pointer">
+            Role name
+            <span class="sort-arrow">
+              <span></span><span></span>
+            </span>
+          </th>
+          <th class="col-desc">Description</th>
+          <th class="col-actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="rolesBody">
+      </tbody>
+    </table>
+    <div class="table-footer" id="roleFooter">1 – 5 of 5</div>
+  </div>
+
+  <!-- Pagination controls -->
+  <div class="pager" id="rolePager"></div>
+
+</div><!-- /.page -->
+
+
+<!-- ══════════════════════════════════════
+     OVERLAY — New Role Drawer
+══════════════════════════════════════ -->
+<div class="overlay" id="overlay">
+
+  <!-- left dim backdrop, click to close -->
+  <div class="overlay-backdrop" onclick="closeDrawer()"></div>
+
+  <!-- Right panel -->
+  <div class="drawer">
+
+    <!-- Drawer Header -->
+    <div class="drawer-header">
+      <div>
+        <div class="drawer-title" id="drawerTitle">New Role</div>
+        <div class="drawer-subtitle" id="drawerSubtitle">Add a new Role</div>
+      </div>
+      <div class="drawer-header-actions">
+        <button class="btn-cancel" onclick="closeDrawer()">Cancel</button>
+        <button class="btn-save" id="saveBtn">Save</button>
+      </div>
+    </div>
+
+    <div class="drawer-divider"></div>
+
+    <!-- Scrollable Body -->
+    <div class="drawer-body">
+
+      <!-- General Section -->
+      <div class="form-section">
+        <div class="form-section-title">General</div>
+        <div class="form-section-sub">Basic information about the role</div>
+
+        <div class="form-group">
+          <label class="form-label" for="roleName">Role name <span class="req">*</span></label>
+          <input
+            class="form-input"
+            id="roleName"
+            type="text"
+            placeholder="Enter"
+            oninput="checkSave()"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="roleDesc">Description</label>
+          <textarea
+            class="form-textarea"
+            id="roleDesc"
+            placeholder="Enter"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Permission Table Section -->
+      <div class="perm-section">
+        <div class="form-section-title">Permission table</div>
+        <div class="form-section-sub" id="permSubtitle" style="margin-bottom:20px">Full platform configuration and operations</div>
+
+        <!-- User Management Group -->
+        <div class="perm-group">
+          <div class="perm-group-header">User management</div>
+          <div class="perm-row"><label><span class="custom-cb"><input type="checkbox" data-perm-id="view-user-list" /><span class="cb-box"><svg class="cb-check" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>View User List</label></div>
+          <div class="perm-row"><label><span class="custom-cb"><input type="checkbox" data-perm-id="edit-user-info" /><span class="cb-box"><svg class="cb-check" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>Edit User Information</label></div>
+          <div class="perm-row"><label><span class="custom-cb"><input type="checkbox" data-perm-id="suspend-delete-account" /><span class="cb-box"><svg class="cb-check" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>Suspend / Delete Account</label></div>
+          <div class="perm-row"><label><span class="custom-cb"><input type="checkbox" data-perm-id="approve-reject-agent" /><span class="cb-box"><svg class="cb-check" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>Approve / Reject Agent</label></div>
+          <div class="perm-row"><label><span class="custom-cb"><input type="checkbox" data-perm-id="send-password-reset" /><span class="cb-box"><svg class="cb-check" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>Send Password Reset</label></div>
+          <div class="perm-row"><label><span class="custom-cb"><input type="checkbox" data-perm-id="grant-remove-badge" /><span class="cb-box"><svg class="cb-check" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>Grant / Remove Badge</label></div>
+          <div class="perm-row"><label><span class="custom-cb"><input type="checkbox" data-perm-id="change-kyc" /><span class="cb-box"><svg class="cb-check" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>Change KYC Verification Status</label></div>
+        </div>
+
+        <!-- Property Management Group -->
+        <div class="perm-group">
+          <div class="perm-group-header">Property Management</div>
+          <div class="perm-row"><label><span class="custom-cb"><input type="checkbox" data-perm-id="view-property-list" /><span class="cb-box"><svg class="cb-check" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>View Property List</label></div>
+          <div class="perm-row"><label><span class="custom-cb"><input type="checkbox" data-perm-id="publish-suspend-delete-property" /><span class="cb-box"><svg class="cb-check" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>Publish / Suspend / Delete Property</label></div>
+          <div class="perm-row"><label><span class="custom-cb"><input type="checkbox" data-perm-id="review-reported-properties" /><span class="cb-box"><svg class="cb-check" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>Review &amp; Process Reported Properties</label></div>
+          <div class="perm-row"><label><span class="custom-cb"><input type="checkbox" data-perm-id="edit-property-type" /><span class="cb-box"><svg class="cb-check" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>Edit Property Type &amp; Filter Settings</label></div>
+        </div>
+
+        <!-- Financial Management Group -->
+        <div class="perm-group">
+          <div class="perm-group-header">Financial Management</div>
+          <div class="perm-row"><label><span class="custom-cb"><input type="checkbox" data-perm-id="view-transaction-history" /><span class="cb-box"><svg class="cb-check" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>View Transaction History</label></div>
+          <div class="perm-row"><label><span class="custom-cb"><input type="checkbox" data-perm-id="approve-reject-payouts" /><span class="cb-box"><svg class="cb-check" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>Approve / Reject Payouts</label></div>
+          <div class="perm-row"><label><span class="custom-cb"><input type="checkbox" data-perm-id="manage-invoices" /><span class="cb-box"><svg class="cb-check" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>Manage Invoices &amp; Reconciliation</label></div>
+        </div>
+
+      </div><!-- /.perm-section -->
+    </div><!-- /.drawer-body -->
+  </div><!-- /.drawer -->
+</div><!-- /.overlay -->
+
+<script>
+  /* ── Role data ── */
+  const ROLES = {
+    'platform-admin': {
+      name: 'Platform Admin',
+      description: 'Full platform configuration and operations.',
+      permissions: ['view-user-list', 'suspend-delete-account', 'grant-remove-badge', 'change-kyc', 'view-property-list']
+    },
+    'support-lead': {
+      name: 'Support Lead',
+      description: 'Head of CS, manages tickets and queues.',
+      permissions: ['view-user-list', 'approve-reject-agent', 'send-password-reset', 'view-property-list', 'review-reported-properties']
+    },
+    'content-editor': {
+      name: 'Content Editor',
+      description: 'Create and schedule content.',
+      permissions: ['view-property-list', 'publish-suspend-delete-property', 'edit-property-type']
+    },
+    'finance-ops': {
+      name: 'Finance & Ops',
+      description: 'Manage payouts, invoices and reconciliation.',
+      permissions: ['view-transaction-history', 'approve-reject-payouts', 'manage-invoices']
+    }
+  };
+
+  /* ── Ordered list backing the table (named roles first, then deterministic
+        filler so the list exceeds one page / >=60 roles). Each filler role is
+        also registered in ROLES so its Edit drawer works. ── */
+  const ROLE_LIST = [
+    { id: 'platform-admin', name: 'Platform Admin', description: 'Full platform configuration and operations.' },
+    { id: 'support-lead', name: 'Support Lead', description: 'Head of CS, manages tickets and queues.' },
+    { id: 'content-editor', name: 'Content Editor', description: 'Create and schedule content.' },
+    { id: 'finance-ops', name: 'Finance & Ops', description: 'Manage payouts, invoices and reconciliation.' }
+  ];
+  (function padRoles() {
+    const ALL_PERMS = [
+      'view-user-list', 'edit-user-info', 'suspend-delete-account', 'approve-reject-agent',
+      'send-password-reset', 'grant-remove-badge', 'change-kyc', 'view-property-list',
+      'publish-suspend-delete-property', 'review-reported-properties', 'edit-property-type',
+      'view-transaction-history', 'approve-reject-payouts', 'manage-invoices'
+    ];
+    const namePool = [
+      'Listing Moderator', 'Regional Manager', 'Compliance Officer', 'Data Analyst',
+      'Customer Support Agent', 'Marketing Specialist', 'Onboarding Specialist',
+      'Billing Administrator', 'Localization Editor', 'Partnerships Manager',
+      'Fraud Reviewer', 'Quality Assurance', 'Account Manager', 'Operations Coordinator'
+    ];
+    const descPool = [
+      'Reviews and moderates property listings.',
+      'Oversees operations for an assigned region.',
+      'Monitors policy compliance across the platform.',
+      'Reviews reports and platform analytics.',
+      'Handles day-to-day customer support tickets.',
+      'Plans and runs marketing campaigns.',
+      'Guides new users through onboarding.',
+      'Manages invoices and billing records.'
+    ];
+    const target = 60;
+    let n = 1;
+    while (ROLE_LIST.length < target) {
+      const id = 'role-' + n;
+      const name = namePool[n % namePool.length] + ' ' + n;
+      const description = descPool[n % descPool.length];
+      const permCount = 2 + (n % 4);
+      const permissions = [];
+      for (let k = 0; k < permCount; k++) {
+        permissions.push(ALL_PERMS[(n + k * 3) % ALL_PERMS.length]);
+      }
+      ROLE_LIST.push({ id, name, description });
+      ROLES[id] = { name, description, permissions };
+      n++;
+    }
+  })();
+
+  /* ── Pagination + list state (universal 50/page) ── */
+  const PAGE_SIZE = 50;
+  let rolePage = 1;
+  let roleSortAsc = true;
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  const EDIT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+  const DELETE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+
+  function buildPager(containerId, totalRows, curPage, onGo) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+    if (totalRows <= PAGE_SIZE) { el.innerHTML = ''; return; }
+    const pages = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      let lo = Math.max(2, curPage - 1);
+      let hi = Math.min(totalPages - 1, curPage + 1);
+      if (curPage <= 3) { lo = 2; hi = 4; }
+      if (curPage >= totalPages - 2) { lo = totalPages - 3; hi = totalPages - 1; }
+      if (lo > 2) pages.push('…');
+      for (let i = lo; i <= hi; i++) pages.push(i);
+      if (hi < totalPages - 1) pages.push('…');
+      pages.push(totalPages);
+    }
+    let html = '<button ' + (curPage === 1 ? 'disabled' : '') + ' data-go="' + (curPage - 1) + '">Previous</button>';
+    pages.forEach((p) => {
+      if (p === '…') html += '<span class="pager-ellipsis">…</span>';
+      else html += '<button class="' + (p === curPage ? 'current' : '') + '" data-go="' + p + '">' + p + '</button>';
+    });
+    html += '<button ' + (curPage === totalPages ? 'disabled' : '') + ' data-go="' + (curPage + 1) + '">Next</button>';
+    el.innerHTML = html;
+    el.querySelectorAll('button[data-go]').forEach((b) => {
+      b.addEventListener('click', () => {
+        if (b.disabled) return;
+        onGo(parseInt(b.dataset.go, 10));
+      });
+    });
+  }
+
+  function toggleSort() {
+    roleSortAsc = !roleSortAsc;
+    renderRoles(true);
+  }
+
+  function renderRoles(resetPage) {
+    if (resetPage) rolePage = 1;
+    const q = (document.getElementById('roleSearch').value || '').toLowerCase();
+    let filtered = ROLE_LIST.filter((r) => !q || r.name.toLowerCase().includes(q));
+    filtered = filtered.slice().sort((a, b) =>
+      roleSortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
+    );
+    const total = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (rolePage > totalPages) rolePage = totalPages;
+    if (rolePage < 1) rolePage = 1;
+    const start = total === 0 ? 0 : (rolePage - 1) * PAGE_SIZE + 1;
+    const end = Math.min(rolePage * PAGE_SIZE, total);
+    document.getElementById('roleCount').textContent =
+      total === 0 ? 'Showing 0 of 0 roles'
+                  : 'Showing ' + start + '–' + end + ' of ' + total + ' roles';
+    const rows = filtered.slice((rolePage - 1) * PAGE_SIZE, rolePage * PAGE_SIZE);
+    document.getElementById('rolesBody').innerHTML = rows.length
+      ? rows.map((r) => `
+          <tr>
+            <td>${escapeHtml(r.name)}</td>
+            <td class="col-desc">${escapeHtml(r.description)}</td>
+            <td>
+              <div class="row-actions">
+                <button class="action-btn" title="Edit" onclick="openEditDrawer('${r.id}')">${EDIT_ICON}</button>
+                <button class="action-btn" title="Delete">${DELETE_ICON}</button>
+              </div>
+            </td>
+          </tr>`).join('')
+      : `<tr><td colspan="3" style="text-align:center;color:#999;padding:30px">No roles found.</td></tr>`;
+    document.getElementById('roleFooter').textContent = start + ' – ' + end + ' of ' + total;
+    buildPager('rolePager', total, rolePage, (p) => { rolePage = p; renderRoles(); });
+  }
+
+  /* ── Helpers ── */
+  function setCheckboxes(activePermissions) {
+    document.querySelectorAll('[data-perm-id]').forEach(cb => {
+      cb.checked = activePermissions.includes(cb.dataset.permId);
+    });
+  }
+
+  function resetCheckboxes() {
+    document.querySelectorAll('[data-perm-id]').forEach(cb => { cb.checked = false; });
+  }
+
+  function updatePermSubtitle(text) {
+    document.getElementById('permSubtitle').textContent = text;
+  }
+
+  /* ── Open: ADD mode ── */
+  function openDrawer() {
+    document.getElementById('drawerTitle').textContent   = 'New Role';
+    document.getElementById('drawerSubtitle').textContent = 'Add a new Role';
+    document.getElementById('roleName').value  = '';
+    document.getElementById('roleDesc').value  = '';
+    resetCheckboxes();
+    updatePermSubtitle('Full platform configuration and operations');
+    document.getElementById('saveBtn').classList.remove('active');
+    document.getElementById('overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => document.getElementById('roleName').focus(), 280);
+  }
+
+  /* ── Open: EDIT mode ── */
+  function openEditDrawer(roleId) {
+    const role = ROLES[roleId];
+    if (!role) return;
+
+    document.getElementById('drawerTitle').textContent    = role.name;
+    document.getElementById('drawerSubtitle').textContent = 'Edit role';
+    document.getElementById('roleName').value  = role.name;
+    document.getElementById('roleDesc').value  = role.description;
+    setCheckboxes(role.permissions);
+    updatePermSubtitle(role.description.replace(/\.$/, ''));
+    document.getElementById('saveBtn').classList.add('active');
+    document.getElementById('overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  /* ── Close ── */
+  function closeDrawer() {
+    document.getElementById('overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  /* ── Save button reactivity (Add mode) ── */
+  function checkSave() {
+    const val = document.getElementById('roleName').value.trim();
+    document.getElementById('saveBtn').classList.toggle('active', val.length > 0);
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+  /* Initial render of the roles list (page 1). */
+  renderRoles(true);
+</script>
+
+</body>
 </html>

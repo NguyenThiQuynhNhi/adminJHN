@@ -163,6 +163,51 @@ a:hover {
       }
     </style>
 
+    <style id="articlesPaneSpacing">
+      /* Scoped spacing for this Articles pane — keep things from touching ("dính nhau") */
+      #articleTableBody td,
+      .table-wrap thead th {
+        padding: 12px 14px;
+      }
+      .table-wrap {
+        margin-top: 16px;
+      }
+      .cms-filter-bar {
+        margin-top: 16px;
+        gap: 10px;
+      }
+      .cms-inline-actions {
+        margin-top: 16px !important;
+      }
+      .category-manager {
+        margin-bottom: 16px;
+      }
+      .article-row-actions {
+        text-align: right;
+        white-space: nowrap;
+      }
+      .article-row-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+      .article-row-actions .btn {
+        min-height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 10px;
+        border: 1px solid #eadccd;
+        border-radius: 8px;
+      }
+      .article-row-actions .btn:hover {
+        border-color: #8b7340;
+      }
+      .article-row-actions .btn-danger {
+        border-color: #e0e0e0;
+      }
+    </style>
+
     <div class="category-manager">
       <div class="category-manager-head">
         <div>
@@ -181,6 +226,7 @@ a:hover {
     </div>
 
     <div class="cms-filter-bar">
+      <button class="btn btn-primary" type="button" onclick="openBlogEditor('article')">New article</button>
       <input
         id="articleSearchInput"
         type="text"
@@ -199,6 +245,8 @@ a:hover {
       </select>
     </div>
 
+    <div id="articleResultCount" class="list-result-count"></div>
+
     <div class="table-wrap">
       <table>
         <thead>
@@ -215,15 +263,8 @@ a:hover {
       </table>
     </div>
 
-    <div style="margin-top: 10px" class="cms-inline-actions">
-      <button
-        class="btn btn-primary"
-        type="button"
-        onclick="openBlogEditor('article')"
-      >
-        New article
-      </button>
-    </div>
+    <div id="articlePagination" class="pagination"></div>
+
 
     <script>
       (function () {
@@ -233,30 +274,68 @@ a:hover {
           "Blog",
           "Market analysis",
         ];
-        let editingArticleCategoryName = null;
-        const articleRows = [
-          {
-            title: "Guide: reading floor plans",
-            categoryTag: "Guides",
-            transactionType: "BuyerGuide",
-            status: "Published",
-            author: "Hana",
-          },
-          {
-            title: "Platform tips for new agents",
-            categoryTag: "Blog",
-            transactionType: "SellerGuide",
-            status: "Draft",
-            author: "Yuki",
-          },
-          {
-            title: "Market insights — Q1 rental trends",
-            categoryTag: "Market analysis",
-            transactionType: "Renter Guide",
-            status: "Draft",
-            author: "Michael",
-          },
-        ];
+        const ARTICLE_PAGE_SIZE = 50;
+        let articlePage = 1;
+
+        // Seed ≥60 article rows to demonstrate pagination.
+        const articleRows = (function buildArticleSeed() {
+          const base = [
+            {
+              title: "Guide: reading floor plans",
+              categoryTag: "Guides",
+              transactionType: "BuyerGuide",
+              status: "Published",
+              author: "Hana",
+            },
+            {
+              title: "Platform tips for new agents",
+              categoryTag: "Blog",
+              transactionType: "SellerGuide",
+              status: "Draft",
+              author: "Yuki",
+            },
+            {
+              title: "Market insights — Q1 rental trends",
+              categoryTag: "Market analysis",
+              transactionType: "Renter Guide",
+              status: "Draft",
+              author: "Michael",
+            },
+          ];
+          const cats = ["Guides", "Blog", "Market analysis"];
+          const txns = ["None", "SellerGuide", "BuyerGuide", "Renter Guide"];
+          const authors = ["Hana", "Yuki", "Michael", "Anna", "Emily", "Jason"];
+          const topics = [
+            "Choosing the right neighbourhood",
+            "Understanding building age",
+            "Negotiating purchase price",
+            "Mortgage pre-approval steps",
+            "Reading a property survey",
+            "Renovation budgeting basics",
+            "Tax tips for landlords",
+            "Staging a rental unit",
+            "Earthquake-resistant buildings",
+            "Commuting from the suburbs",
+            "Comparing management fees",
+            "First-time buyer checklist",
+            "Investing in regional cities",
+            "Short-term rental rules",
+            "Energy efficiency upgrades",
+          ];
+          const rows = base.slice();
+          let n = 0;
+          while (rows.length < 64) {
+            n += 1;
+            rows.push({
+              title: topics[n % topics.length] + " (Part " + n + ")",
+              categoryTag: cats[n % cats.length],
+              transactionType: txns[n % txns.length],
+              status: n % 3 === 0 ? "Draft" : "Published",
+              author: authors[n % authors.length],
+            });
+          }
+          return rows;
+        })();
 
         function normalizeCategoryName(name) {
           return String(name || "")
@@ -361,130 +440,206 @@ a:hover {
             return haystack.includes(search);
           });
 
-          tbody.innerHTML = filtered
+          const total = filtered.length;
+          const pages = Math.max(1, Math.ceil(total / ARTICLE_PAGE_SIZE));
+          if (articlePage > pages) articlePage = pages;
+          const startIdx = (articlePage - 1) * ARTICLE_PAGE_SIZE;
+          const pageRows = filtered.slice(
+            startIdx,
+            startIdx + ARTICLE_PAGE_SIZE,
+          );
+
+          const countEl = document.getElementById("articleResultCount");
+          if (countEl) {
+            if (total === 0) {
+              countEl.textContent = "Showing 0 articles";
+            } else {
+              countEl.textContent =
+                "Showing " +
+                (startIdx + 1) +
+                "–" +
+                (startIdx + pageRows.length) +
+                " of " +
+                total +
+                " articles";
+            }
+          }
+
+          tbody.innerHTML = pageRows
             .map(
-              (row) => `
+              (row, index) => `
                 <tr>
                   <td>${row.title}</td>
                   <td><span class="tag-chip" style="margin-right:0">${row.categoryTag}</span></td>
                   <td>${row.transactionType}</td>
                   <td><span class="badge ${row.status === "Published" ? "badge-success" : "badge-warning"}">${row.status}</span></td>
-                  <td>${row.author}</td>
-                  <td style="text-align:right; display:flex; gap:6px; justify-content:flex-end">
-                    <button class="btn btn-ghost" type="button" title="Edit article">✎</button>
-                    <button class="btn btn-ghost btn-danger" type="button" title="Delete article" onclick="if (confirm('Delete this article?')) alert('Deleted');">🗑</button>
+                  <td>${row.author || "—"}</td>
+                  <td class="article-row-actions">
+                    <button class="btn btn-ghost" type="button" title="Edit article" data-edit-index="${index}">✎</button>
+                    <button class="btn btn-ghost btn-danger" type="button" title="Delete article" data-del-index="${index}">🗑</button>
                   </td>
                 </tr>
               `,
             )
             .join("");
+
+          // Wire the per-row Edit (✎) button to the shared article editor.
+          // Close over the page rows so the correct row opens after filtering.
+          tbody.querySelectorAll("[data-edit-index]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const row = pageRows[Number(btn.getAttribute("data-edit-index"))];
+              if (!row) return;
+              if (typeof window.openBlogEditor === "function") {
+                window.openBlogEditor("article", {
+                  title: row.title,
+                  category: row.categoryTag,
+                  transactionType: row.transactionType,
+                  status: String(row.status).toLowerCase(),
+                  author: row.author,
+                  contentBody: "",
+                });
+              }
+            });
+          });
+
+          tbody.querySelectorAll("[data-del-index]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const row = pageRows[Number(btn.getAttribute("data-del-index"))];
+              if (!row) return;
+              const doDelete = () => {
+                const idx = articleRows.indexOf(row);
+                if (idx > -1) articleRows.splice(idx, 1);
+                renderArticleTable();
+                if (typeof window.showToast === "function")
+                  window.showToast("Article deleted.", "success");
+              };
+              if (typeof window.showConfirm === "function") {
+                window
+                  .showConfirm({
+                    title: "Delete article",
+                    message: `Delete "${row.title}"?`,
+                    confirmLabel: "Delete",
+                  })
+                  .then((ok) => {
+                    if (ok) doDelete();
+                  });
+              } else {
+                doDelete();
+              }
+            });
+          });
+
+          if (typeof window.renderPagination === "function") {
+            window.renderPagination(
+              document.getElementById("articlePagination"),
+              total,
+              articlePage,
+              ARTICLE_PAGE_SIZE,
+              (go) => {
+                articlePage = go;
+                renderArticleTable();
+              },
+            );
+          }
         }
 
-        function addArticleCategory() {
-          const inputEl = document.getElementById("articleCategoryInput");
-          const addBtn = document.getElementById("btnAddArticleCategory");
-          const cancelBtn = document.getElementById(
-            "btnCancelArticleCategoryEdit",
-          );
-          if (!inputEl) return;
-          const value = normalizeCategoryName(inputEl.value);
+        function commitArticleCategory(rawValue, oldName) {
+          const value = normalizeCategoryName(rawValue);
           if (!value) {
-            alert("Please enter a category name.");
+            if (typeof window.showToast === "function")
+              window.showToast("Please enter a category name.", "error");
             return;
           }
           const categories = getArticleCategories();
-
-          if (editingArticleCategoryName) {
+          if (oldName) {
             const exists = categories.some(
               (item) =>
                 item.toLowerCase() === value.toLowerCase() &&
-                item.toLowerCase() !== editingArticleCategoryName.toLowerCase(),
+                item.toLowerCase() !== oldName.toLowerCase(),
             );
             if (exists) {
-              alert("This category already exists.");
+              if (typeof window.showToast === "function")
+                window.showToast("This category already exists.", "error");
               return;
             }
             const updated = categories.map((item) =>
-              item.toLowerCase() === editingArticleCategoryName.toLowerCase()
-                ? value
-                : item,
+              item.toLowerCase() === oldName.toLowerCase() ? value : item,
             );
             saveArticleCategories(updated);
-            editingArticleCategoryName = null;
-            if (addBtn) addBtn.textContent = "Add";
-            if (cancelBtn) cancelBtn.style.display = "none";
-            inputEl.value = "";
             renderArticleCategoryList();
+            if (typeof window.showToast === "function")
+              window.showToast("Category tag renamed.", "success");
             return;
           }
-
           const exists = categories.some(
             (item) => item.toLowerCase() === value.toLowerCase(),
           );
           if (exists) {
-            alert("This category already exists.");
+            if (typeof window.showToast === "function")
+              window.showToast("This category already exists.", "error");
             return;
           }
           categories.push(value);
           saveArticleCategories(categories);
-          inputEl.value = "";
           renderArticleCategoryList();
+          if (typeof window.showToast === "function")
+            window.showToast("Category tag added.", "success");
+        }
+
+        function addArticleCategory() {
+          if (typeof window.showTagInput === "function") {
+            window
+              .showTagInput({ title: "Add category tag", value: "" })
+              .then((val) => {
+                if (val == null) return;
+                commitArticleCategory(val, null);
+              });
+          }
         }
 
         function beginRenameArticleCategory(oldName) {
-          const inputEl = document.getElementById("articleCategoryInput");
-          const addBtn = document.getElementById("btnAddArticleCategory");
-          const cancelBtn = document.getElementById(
-            "btnCancelArticleCategoryEdit",
-          );
-          if (!inputEl) return;
-          editingArticleCategoryName = oldName;
-          inputEl.value = oldName;
-          inputEl.focus();
-          inputEl.select();
-          if (addBtn) addBtn.textContent = "Save";
-          if (cancelBtn) cancelBtn.style.display = "inline-flex";
-        }
-
-        function cancelArticleCategoryEdit() {
-          const inputEl = document.getElementById("articleCategoryInput");
-          const addBtn = document.getElementById("btnAddArticleCategory");
-          const cancelBtn = document.getElementById(
-            "btnCancelArticleCategoryEdit",
-          );
-          editingArticleCategoryName = null;
-          if (inputEl) inputEl.value = "";
-          if (addBtn) addBtn.textContent = "Add";
-          if (cancelBtn) cancelBtn.style.display = "none";
+          if (typeof window.showTagInput === "function") {
+            window
+              .showTagInput({ title: "Rename category tag", value: oldName })
+              .then((val) => {
+                if (val == null) return;
+                commitArticleCategory(val, oldName);
+              });
+          }
         }
 
         function deleteArticleCategory(name) {
-          if (!confirm(`Delete category "${name}"?`)) return;
-          const updated = getArticleCategories().filter(
-            (item) => item.toLowerCase() !== name.toLowerCase(),
-          );
-          if (!updated.length) {
-            alert("At least one category is required.");
-            return;
+          const doDelete = () => {
+            const updated = getArticleCategories().filter(
+              (item) => item.toLowerCase() !== name.toLowerCase(),
+            );
+            if (!updated.length) {
+              if (typeof window.showToast === "function")
+                window.showToast("At least one category is required.", "error");
+              return;
+            }
+            saveArticleCategories(updated);
+            renderArticleCategoryList();
+            if (typeof window.showToast === "function")
+              window.showToast("Category tag deleted.", "success");
+          };
+          if (typeof window.showConfirm === "function") {
+            window
+              .showConfirm({
+                title: "Delete category tag",
+                message: `Delete category "${name}"?`,
+                confirmLabel: "Delete",
+              })
+              .then((ok) => {
+                if (ok) doDelete();
+              });
+          } else {
+            doDelete();
           }
-          saveArticleCategories(updated);
-          renderArticleCategoryList();
         }
 
         const addBtn = document.getElementById("btnAddArticleCategory");
-        const cancelBtn = document.getElementById(
-          "btnCancelArticleCategoryEdit",
-        );
-        const inputEl = document.getElementById("articleCategoryInput");
         if (addBtn) addBtn.addEventListener("click", addArticleCategory);
-        if (cancelBtn)
-          cancelBtn.addEventListener("click", cancelArticleCategoryEdit);
-        if (inputEl) {
-          inputEl.addEventListener("keydown", (event) => {
-            if (event.key === "Enter") addArticleCategory();
-            if (event.key === "Escape") cancelArticleCategoryEdit();
-          });
-        }
 
         [
           "articleSearchInput",
@@ -493,8 +648,12 @@ a:hover {
         ].forEach((id) => {
           const el = document.getElementById(id);
           if (el) {
-            el.addEventListener("input", renderArticleTable);
-            el.addEventListener("change", renderArticleTable);
+            const reset = () => {
+              articlePage = 1;
+              renderArticleTable();
+            };
+            el.addEventListener("input", reset);
+            el.addEventListener("change", reset);
           }
         });
 

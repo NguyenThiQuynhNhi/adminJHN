@@ -1,0 +1,1833 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ad Booking — YUUSHI Agent Portal</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --bg: #0a0a0a;
+        --bg-elev-1: #141414;
+        --bg-elev-2: #1c1c1c;
+        --bg-elev-3: #242424;
+        --border: #2a2a2a;
+        --border-strong: #3a3a3a;
+        --gold: #c8a96e;
+        --gold-dark: #a88a4f;
+        --gold-soft: #e6d3a8;
+        --text: #f3ede0;
+        --text-muted: #9a8f7e;
+        --text-dim: #6a6358;
+        --success: #4ade80;
+        --warning: #fbbf24;
+        --danger: #f87171;
+        --shadow-gold: 0 0 0 1px rgba(200, 169, 110, 0.25), 0 8px 24px rgba(0, 0, 0, 0.4);
+        --r: 10px;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        font-size: 14px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+      button { font-family: inherit; cursor: pointer; }
+      input, select, textarea { font-family: inherit; }
+
+      /* ===== Top bar ===== */
+      .topbar {
+        background: var(--bg-elev-1);
+        border-bottom: 1px solid var(--border);
+        padding: 14px 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .brand .logo {
+        width: 36px; height: 36px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+        color: #1a1208;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 800;
+        box-shadow: 0 4px 12px rgba(200, 169, 110, 0.25);
+      }
+      .brand .titles {
+        display: flex; flex-direction: column; line-height: 1.1;
+      }
+      .brand .titles .b { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: 0.02em; }
+      .brand .titles .s { font-size: 11px; color: var(--gold); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+      .topbar-right {
+        display: flex; align-items: center; gap: 14px;
+      }
+      .agent-pill {
+        display: flex; align-items: center; gap: 10px;
+        padding: 6px 12px 6px 6px;
+        background: var(--bg-elev-2);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+      }
+      .agent-pill .av {
+        width: 28px; height: 28px; border-radius: 50%;
+        background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+        color: #1a1208; display: flex; align-items: center; justify-content: center;
+        font-size: 12px; font-weight: 700;
+      }
+      .agent-pill .name { font-size: 12px; font-weight: 600; }
+      .agent-pill .sub { font-size: 10.5px; color: var(--text-muted); }
+
+      /* ===== Layout ===== */
+      .layout {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        min-height: calc(100vh - 65px);
+      }
+      .sidebar {
+        background: var(--bg-elev-1);
+        border-right: 1px solid var(--border);
+        padding: 24px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+      .main {
+        padding: 28px 36px 120px;
+        max-width: 1100px;
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      /* ===== Sidebar — step indicator ===== */
+      .side-section-title {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--text-dim);
+        margin-bottom: 12px;
+      }
+      .steps {
+        display: flex; flex-direction: column; gap: 4px;
+      }
+      .step-row {
+        display: flex; align-items: center; gap: 12px;
+        padding: 10px 12px;
+        border-radius: var(--r);
+        border: 1px solid transparent;
+        transition: all 0.18s;
+        position: relative;
+      }
+      .step-row .num {
+        width: 28px; height: 28px;
+        border-radius: 50%;
+        background: var(--bg-elev-3);
+        color: var(--text-muted);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 12px; font-weight: 700;
+        flex-shrink: 0;
+        border: 1px solid var(--border);
+      }
+      .step-row .lbl {
+        font-size: 13px;
+        color: var(--text-muted);
+        font-weight: 500;
+      }
+      .step-row .sub {
+        font-size: 10.5px;
+        color: var(--text-dim);
+        display: block;
+        margin-top: 2px;
+      }
+      .step-row.done .num {
+        background: var(--gold);
+        color: #1a1208;
+        border-color: var(--gold);
+      }
+      .step-row.done .lbl { color: var(--text); }
+      .step-row.active {
+        background: var(--bg-elev-2);
+        border-color: var(--border-strong);
+      }
+      .step-row.active .num {
+        background: rgba(200, 169, 110, 0.18);
+        color: var(--gold);
+        border-color: var(--gold);
+        box-shadow: 0 0 0 3px rgba(200, 169, 110, 0.12);
+      }
+      .step-row.active .lbl { color: var(--gold); font-weight: 600; }
+
+      /* ===== Sidebar — selected ad type ===== */
+      .selected-card {
+        background: var(--bg-elev-2);
+        border: 1px solid var(--border);
+        border-radius: var(--r);
+        padding: 14px;
+      }
+      .selected-card.has-type {
+        border-color: rgba(200, 169, 110, 0.45);
+        background: linear-gradient(180deg, rgba(200, 169, 110, 0.05), rgba(0,0,0,0));
+      }
+      .selected-card .empty {
+        font-size: 12px; color: var(--text-dim); text-align: center; padding: 12px 0;
+      }
+      .selected-card .lbl {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px;
+      }
+      .selected-card .name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+      .selected-card .desc { font-size: 11.5px; color: var(--text-muted); line-height: 1.45; }
+      .selected-card .switch-btn {
+        margin-top: 12px;
+        background: transparent;
+        border: 1px solid var(--border-strong);
+        color: var(--text-muted);
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        width: 100%;
+        transition: all 0.15s;
+      }
+      .selected-card .switch-btn:hover {
+        border-color: var(--gold);
+        color: var(--gold);
+      }
+
+      /* ===== Main header ===== */
+      .main-header { margin-bottom: 24px; }
+      .main-header h1 {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--text);
+      }
+      .main-header .sub {
+        font-size: 13px; color: var(--text-muted); margin-top: 6px;
+      }
+
+      /* ===== Step container ===== */
+      .step-pane { display: none; }
+      .step-pane.active { display: block; animation: fadeIn 0.25s ease; }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      /* ===== Ad type cards (Step 1) ===== */
+      .type-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 18px;
+      }
+      .type-card {
+        background: var(--bg-elev-1);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 22px;
+        cursor: pointer;
+        transition: all 0.22s;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .type-card:hover {
+        border-color: var(--gold-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      }
+      .type-card.selected {
+        border-color: var(--gold);
+        background: linear-gradient(180deg, rgba(200, 169, 110, 0.08), var(--bg-elev-1));
+        box-shadow: var(--shadow-gold);
+      }
+      .type-card.selected::after {
+        content: "\f00c";
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        position: absolute;
+        top: 14px; right: 14px;
+        width: 26px; height: 26px;
+        background: var(--gold);
+        color: #1a1208;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 11px;
+      }
+      .type-card .icon {
+        width: 48px; height: 48px;
+        border-radius: 12px;
+        background: rgba(200, 169, 110, 0.12);
+        color: var(--gold);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 20px;
+      }
+      .type-card .name { font-size: 16px; font-weight: 700; color: var(--text); }
+      .type-card .desc { font-size: 12.5px; color: var(--text-muted); line-height: 1.55; }
+      .type-card .price-pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: var(--bg-elev-3);
+        border: 1px solid var(--border);
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        color: var(--text);
+        align-self: flex-start;
+      }
+      .type-card .price-pill .dot { width: 6px; height: 6px; background: var(--gold); border-radius: 50%; }
+
+      /* ===== Form blocks (Step 2) ===== */
+      .panel {
+        background: var(--bg-elev-1);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 22px;
+        margin-bottom: 18px;
+      }
+      .panel-title {
+        display: flex; align-items: center; gap: 10px;
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 18px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+      }
+      .panel-title i { color: var(--gold); width: 18px; text-align: center; }
+      .panel-title small {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-dim);
+        margin-left: auto;
+      }
+      .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+      .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+      @media (max-width: 700px) {
+        .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        .grid-4 { grid-template-columns: repeat(2, 1fr); }
+      }
+
+      .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+      .field label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+      }
+      .field label .req { color: var(--gold); }
+      .field .hint { font-size: 11px; color: var(--text-dim); }
+      .input, .select, .textarea {
+        background: #ffffff;
+        color: #1a1208;
+        border: 1px solid var(--border-strong);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 13.5px;
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        width: 100%;
+      }
+      .select { appearance: none; padding-right: 36px; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path fill='%23a88a4f' d='M6 8.4 1.5 3.9l1-1L6 6.4l3.5-3.5 1 1z'/></svg>"); background-repeat: no-repeat; background-position: right 12px center; }
+      .input:focus, .select:focus, .textarea:focus {
+        border-color: var(--gold);
+        box-shadow: 0 0 0 3px rgba(200, 169, 110, 0.18);
+      }
+      .input:disabled, .select:disabled { background: #f0ebe1; color: #8a7e6a; cursor: not-allowed; }
+      .textarea { resize: vertical; min-height: 80px; }
+
+      /* Rank cards */
+      .rank-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+      @media (max-width: 500px) { .rank-grid { grid-template-columns: 1fr; } }
+      .rank-card {
+        background: var(--bg-elev-2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px;
+        cursor: pointer;
+        transition: all 0.18s;
+        text-align: center;
+        position: relative;
+      }
+      .rank-card .pos {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--gold);
+        line-height: 1;
+      }
+      .rank-card .lbl {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .rank-card .price {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+        margin-top: 8px;
+      }
+      .rank-card:hover { border-color: var(--gold-dark); }
+      .rank-card.selected {
+        border-color: var(--gold);
+        background: linear-gradient(180deg, rgba(200,169,110,0.12), var(--bg-elev-2));
+        box-shadow: var(--shadow-gold);
+      }
+      .rank-card.occupied {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      .rank-card.occupied .pos, .rank-card.occupied .price { color: var(--text-dim); }
+      .availability {
+        margin-top: 8px;
+        display: inline-flex; align-items: center; gap: 5px;
+        font-size: 10.5px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 999px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .av-available { background: rgba(74, 222, 128, 0.12); color: var(--success); border: 1px solid rgba(74, 222, 128, 0.3); }
+      .av-occupied { background: rgba(248, 113, 113, 0.12); color: var(--danger); border: 1px solid rgba(248, 113, 113, 0.3); }
+      .rank-card .end-date { font-size: 10px; color: var(--text-dim); margin-top: 4px; }
+
+      /* Duration cards */
+      .duration-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+      @media (max-width: 500px) { .duration-grid { grid-template-columns: repeat(2, 1fr); } }
+      .duration-card {
+        background: var(--bg-elev-2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.18s;
+        position: relative;
+      }
+      .duration-card:hover { border-color: var(--gold-dark); }
+      .duration-card.selected {
+        border-color: var(--gold);
+        background: linear-gradient(180deg, rgba(200,169,110,0.12), var(--bg-elev-2));
+      }
+      .duration-card .mo { font-size: 18px; font-weight: 800; color: var(--text); }
+      .duration-card .mo-l { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+      .duration-card .disc { font-size: 10px; color: var(--gold); font-weight: 600; }
+      .duration-card .total { font-size: 12.5px; font-weight: 700; color: var(--text); margin-top: 6px; }
+      .duration-card .badge-best {
+        position: absolute; top: -8px; right: 8px;
+        background: var(--gold); color: #1a1208;
+        font-size: 9px; font-weight: 800; padding: 2px 6px;
+        border-radius: 4px; letter-spacing: 0.05em;
+      }
+
+      /* Placement list (Banner Ad) */
+      .placement-list { display: flex; flex-direction: column; gap: 8px; }
+      .placement-row {
+        background: var(--bg-elev-2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        display: flex; align-items: center; gap: 12px;
+        cursor: pointer;
+        transition: all 0.18s;
+      }
+      .placement-row:hover { border-color: var(--gold-dark); }
+      .placement-row.selected {
+        border-color: var(--gold);
+        background: linear-gradient(90deg, rgba(200,169,110,0.10), var(--bg-elev-2));
+      }
+      .placement-row .pico {
+        width: 36px; height: 36px;
+        background: rgba(200, 169, 110, 0.12);
+        color: var(--gold);
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+      }
+      .placement-row .info { flex: 1; min-width: 0; }
+      .placement-row .info .nm { font-size: 13px; font-weight: 600; color: var(--text); }
+      .placement-row .info .dc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+      .placement-row .pr { font-size: 13px; font-weight: 700; color: var(--gold); white-space: nowrap; }
+      .placement-row .radio-dot {
+        width: 18px; height: 18px;
+        border-radius: 50%;
+        border: 2px solid var(--border-strong);
+        flex-shrink: 0;
+        position: relative;
+      }
+      .placement-row.selected .radio-dot { border-color: var(--gold); }
+      .placement-row.selected .radio-dot::after {
+        content: ""; position: absolute; inset: 3px;
+        background: var(--gold); border-radius: 50%;
+      }
+
+      /* Upload */
+      .upload {
+        background: var(--bg-elev-2);
+        border: 2px dashed var(--border-strong);
+        border-radius: 10px;
+        padding: 28px 16px;
+        text-align: center;
+        transition: all 0.18s;
+        cursor: pointer;
+      }
+      .upload:hover { border-color: var(--gold); background: rgba(200,169,110,0.04); }
+      .upload.has-file { border-style: solid; border-color: var(--gold); background: rgba(200,169,110,0.06); }
+      .upload .ic { font-size: 28px; color: var(--gold); margin-bottom: 8px; }
+      .upload .ttl { font-size: 13px; font-weight: 600; color: var(--text); }
+      .upload .sub { font-size: 11.5px; color: var(--text-muted); margin-top: 4px; }
+      .upload input[type="file"] { display: none; }
+
+      /* Toggle (segmented) */
+      .seg-toggle {
+        display: inline-flex;
+        background: var(--bg-elev-2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 3px;
+      }
+      .seg-toggle button {
+        background: transparent;
+        border: 0;
+        padding: 8px 16px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text-muted);
+        border-radius: 6px;
+        transition: all 0.15s;
+      }
+      .seg-toggle button.active {
+        background: var(--gold);
+        color: #1a1208;
+      }
+
+      /* Article list */
+      .article-list {
+        max-height: 280px;
+        overflow-y: auto;
+        background: var(--bg-elev-2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 6px;
+      }
+      .article-row {
+        display: flex; align-items: flex-start; gap: 10px;
+        padding: 10px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.12s;
+      }
+      .article-row:hover { background: var(--bg-elev-3); }
+      .article-row input[type="checkbox"] {
+        margin-top: 3px;
+        width: 16px; height: 16px;
+        accent-color: var(--gold);
+        flex-shrink: 0;
+      }
+      .article-row .a-title { font-size: 13px; font-weight: 600; color: var(--text); }
+      .article-row .a-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+      .article-list::-webkit-scrollbar { width: 8px; }
+      .article-list::-webkit-scrollbar-track { background: transparent; }
+      .article-list::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+
+      /* Budget calc */
+      .budget-box {
+        background: var(--bg-elev-2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px;
+        display: flex; align-items: center; gap: 14px;
+      }
+      .budget-box .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+      .budget-box .val { font-size: 20px; font-weight: 800; color: var(--gold); }
+      .budget-box .sep { width: 1px; align-self: stretch; background: var(--border); }
+
+      /* Listing row (sponsored) */
+      .listing-pick {
+        background: var(--bg-elev-2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        display: flex; align-items: center; gap: 12px;
+      }
+      .listing-pick .lico {
+        width: 44px; height: 44px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--gold-dark), #5e4928);
+        display: flex; align-items: center; justify-content: center;
+        color: var(--text);
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+      .listing-pick .l-info { flex: 1; min-width: 0; }
+      .listing-pick .l-title { font-size: 13px; font-weight: 600; color: var(--text); }
+      .listing-pick .l-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+
+      /* Review (Step 3) */
+      .review-grid {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 18px;
+      }
+      @media (max-width: 900px) { .review-grid { grid-template-columns: 1fr; } }
+      .summary-row {
+        display: flex; justify-content: space-between; gap: 14px;
+        padding: 10px 0;
+        border-bottom: 1px dashed var(--border);
+      }
+      .summary-row:last-child { border-bottom: 0; }
+      .summary-row .k { font-size: 12px; color: var(--text-muted); }
+      .summary-row .v { font-size: 13px; font-weight: 600; color: var(--text); text-align: right; word-break: break-word; }
+      .price-table { margin-top: 14px; }
+      .price-table .line {
+        display: flex; justify-content: space-between;
+        padding: 8px 0;
+        font-size: 13px;
+      }
+      .price-table .line.muted { color: var(--text-muted); font-size: 12px; }
+      .price-table .line.total {
+        margin-top: 8px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border);
+        font-size: 17px;
+        font-weight: 800;
+      }
+      .price-table .line.total .pr { color: var(--gold); }
+
+      /* Payment cards */
+      .pay-card {
+        background: var(--bg-elev-2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px;
+        display: flex; align-items: center; gap: 14px;
+        cursor: pointer;
+        transition: all 0.18s;
+      }
+      .pay-card:hover { border-color: var(--gold-dark); }
+      .pay-card.selected {
+        border-color: var(--gold);
+        background: linear-gradient(90deg, rgba(200,169,110,0.10), var(--bg-elev-2));
+      }
+      .pay-card .brand-ico {
+        width: 44px; height: 28px;
+        background: linear-gradient(135deg, #1e3a8a, #1e40af);
+        border-radius: 4px;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 800;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+      }
+      .pay-card.amex .brand-ico { background: linear-gradient(135deg, #006fcf, #00498f); }
+      .pay-card .pay-info { flex: 1; min-width: 0; }
+      .pay-card .pay-info .pn { font-size: 13px; font-weight: 600; }
+      .pay-card .pay-info .pm { font-size: 11px; color: var(--text-muted); }
+      .pay-card .pay-radio {
+        width: 18px; height: 18px; border-radius: 50%;
+        border: 2px solid var(--border-strong); position: relative;
+        flex-shrink: 0;
+      }
+      .pay-card.selected .pay-radio { border-color: var(--gold); }
+      .pay-card.selected .pay-radio::after {
+        content: ""; position: absolute; inset: 3px;
+        background: var(--gold); border-radius: 50%;
+      }
+
+      /* Success (Step 4) */
+      .success {
+        text-align: center;
+        padding: 48px 24px;
+        background: var(--bg-elev-1);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+      }
+      .success .ring {
+        width: 88px; height: 88px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(74,222,128,0.18), rgba(74,222,128,0.04));
+        color: var(--success);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 38px;
+        margin: 0 auto 22px;
+        border: 2px solid rgba(74, 222, 128, 0.35);
+      }
+      .success h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+      .success .ord { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
+      .success .booked-card {
+        background: var(--bg-elev-2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+        max-width: 480px;
+        margin: 0 auto 28px;
+        text-align: left;
+      }
+      .success .booked-card .summary-row { padding: 8px 0; font-size: 12.5px; }
+      .success-actions {
+        display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+      }
+
+      /* Buttons + footer */
+      .footer-nav {
+        position: fixed;
+        bottom: 0; left: 300px; right: 0;
+        background: var(--bg-elev-1);
+        border-top: 1px solid var(--border);
+        padding: 14px 36px;
+        display: flex; justify-content: space-between; align-items: center; gap: 12px;
+        z-index: 40;
+      }
+      .footer-nav .helper {
+        font-size: 12px; color: var(--text-muted);
+      }
+      .footer-nav .right { display: flex; gap: 10px; }
+      .btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 10px 18px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        transition: all 0.15s;
+        background: transparent;
+        color: var(--text);
+      }
+      .btn-ghost {
+        border-color: var(--border-strong);
+        color: var(--text-muted);
+      }
+      .btn-ghost:hover { background: var(--bg-elev-2); color: var(--text); }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+        color: #1a1208;
+        border-color: var(--gold-dark);
+        box-shadow: 0 6px 16px rgba(200, 169, 110, 0.22);
+      }
+      .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 10px 20px rgba(200, 169, 110, 0.3); }
+      .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+      .alert {
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 12.5px;
+        margin-bottom: 14px;
+        display: flex; align-items: flex-start; gap: 10px;
+      }
+      .alert i { margin-top: 1px; }
+      .alert.info { background: rgba(200, 169, 110, 0.08); border: 1px solid rgba(200, 169, 110, 0.25); color: var(--gold-soft); }
+      .alert.warn { background: rgba(251, 191, 36, 0.06); border: 1px solid rgba(251, 191, 36, 0.25); color: var(--warning); }
+
+      /* Tabs (ad type quick-switcher in Step 2+) */
+      .type-tabs {
+        display: flex;
+        gap: 6px;
+        background: var(--bg-elev-2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 4px;
+        margin-bottom: 18px;
+      }
+      .type-tab {
+        flex: 1;
+        background: transparent;
+        border: 0;
+        padding: 10px 12px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text-muted);
+        border-radius: 7px;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+      }
+      .type-tab:hover { color: var(--text); }
+      .type-tab.active {
+        background: rgba(200, 169, 110, 0.14);
+        color: var(--gold);
+        box-shadow: inset 0 0 0 1px rgba(200, 169, 110, 0.35);
+      }
+
+      /* Mobile */
+      @media (max-width: 880px) {
+        .layout { grid-template-columns: 1fr; }
+        .sidebar {
+          flex-direction: row;
+          padding: 14px;
+          overflow-x: auto;
+          gap: 14px;
+          border-right: 0;
+          border-bottom: 1px solid var(--border);
+        }
+        .sidebar > div { flex-shrink: 0; min-width: 240px; }
+        .footer-nav { left: 0; padding: 12px 16px; }
+        .main { padding: 18px 16px 110px; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ========== Top bar ========== -->
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">Y</div>
+        <div class="titles">
+          <span class="b">YUUSHI Agent Portal</span>
+          <span class="s">Ad Booking Wizard</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="agent-pill">
+          <div class="av">YH</div>
+          <div>
+            <div class="name">Yamada Hiroshi</div>
+            <div class="sub">ABC Realty · Gold Plan</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== Layout ========== -->
+    <div class="layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div>
+          <div class="side-section-title">Booking Progress</div>
+          <div class="steps" id="stepsNav">
+            <div class="step-row active" data-step="1">
+              <div class="num">1</div>
+              <div><div class="lbl">Select ad type</div><span class="sub">Pick a product</span></div>
+            </div>
+            <div class="step-row" data-step="2">
+              <div class="num">2</div>
+              <div><div class="lbl">Configure</div><span class="sub">Targeting &amp; duration</span></div>
+            </div>
+            <div class="step-row" data-step="3">
+              <div class="num">3</div>
+              <div><div class="lbl">Review &amp; pay</div><span class="sub">Confirm booking</span></div>
+            </div>
+            <div class="step-row" data-step="4">
+              <div class="num">4</div>
+              <div><div class="lbl">Confirmation</div><span class="sub">All done</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="side-section-title">Selected Ad Type</div>
+          <div class="selected-card" id="selectedCard">
+            <div class="empty">No ad type selected yet.</div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <main class="main">
+        <!-- ===== Step 1 ===== -->
+        <section class="step-pane active" id="step1">
+          <div class="main-header">
+            <h1>Choose your ad product</h1>
+            <p class="sub">Select one of three ad products. You can switch between them at any time during configuration.</p>
+          </div>
+          <div class="type-grid">
+            <div class="type-card" data-type="sponsored" onclick="selectAdType('sponsored')">
+              <div class="icon"><i class="fa-solid fa-arrow-trend-up"></i></div>
+              <div class="name">Sponsored Listing Slot</div>
+              <div class="desc">Boost one of your active listings into rank 1–3 of the search results for a specific area &amp; property type. Exclusive — 1 agent per slot per month.</div>
+              <span class="price-pill"><span class="dot"></span> Fixed monthly · from ¥70,000/mo</span>
+            </div>
+            <div class="type-card" data-type="banner" onclick="selectAdType('banner')">
+              <div class="icon"><i class="fa-solid fa-rectangle-ad"></i></div>
+              <div class="name">Banner Ad — Agent Brand</div>
+              <div class="desc">Promote your agency with a creative banner on Area Guide, Property Detail, Agent Search and more. Targeting by Prefecture / City / Specialism.</div>
+              <span class="price-pill"><span class="dot"></span> Fixed monthly · from ¥45,000/mo</span>
+            </div>
+            <div class="type-card" data-type="article" onclick="selectAdType('article')">
+              <div class="icon"><i class="fa-solid fa-newspaper"></i></div>
+              <div class="name">Article Banner (Impression)</div>
+              <div class="desc">Pay per 1,000 impressions on News &amp; Blog articles. Set a monthly budget and target by article category or pick specific articles.</div>
+              <span class="price-pill"><span class="dot"></span> Impression-based · ¥520 CPM</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Step 2 ===== -->
+        <section class="step-pane" id="step2">
+          <div class="main-header">
+            <h1>Configure your ad</h1>
+            <p class="sub">Fields update based on the selected product. Switch product type below at any time.</p>
+          </div>
+
+          <div class="type-tabs" id="typeTabs">
+            <button class="type-tab" data-type="sponsored" onclick="switchAdType('sponsored')">
+              <i class="fa-solid fa-arrow-trend-up"></i> Sponsored
+            </button>
+            <button class="type-tab" data-type="banner" onclick="switchAdType('banner')">
+              <i class="fa-solid fa-rectangle-ad"></i> Banner
+            </button>
+            <button class="type-tab" data-type="article" onclick="switchAdType('article')">
+              <i class="fa-solid fa-newspaper"></i> Article
+            </button>
+          </div>
+
+          <!-- ========== Sponsored Listing config ========== -->
+          <div id="cfgSponsored" style="display:none">
+            <div class="panel">
+              <div class="panel-title"><i class="fa-solid fa-location-dot"></i> Target area &amp; property type</div>
+              <div class="grid-2" style="margin-bottom:16px">
+                <div class="field">
+                  <label>Prefecture <span class="req">*</span></label>
+                  <select class="select" id="spPrefecture" onchange="onPrefChange('sp')">
+                    <option value="">— Select prefecture —</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>City / Ward <span class="req">*</span></label>
+                  <select class="select" id="spCity" disabled onchange="updateAvailability()">
+                    <option value="">Choose prefecture first</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <label>Property type <span class="req">*</span></label>
+                <select class="select" id="spPropType" onchange="updateAvailability()">
+                  <option value="">— Select property type —</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-title">
+                <i class="fa-solid fa-ranking-star"></i> Rank position
+                <small id="spAvailabilityHint">Pick area + type to see availability</small>
+              </div>
+              <div class="rank-grid" id="spRanks">
+                <!-- generated -->
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-title"><i class="fa-solid fa-house"></i> Listing to boost</div>
+              <div class="field">
+                <label>Choose one of your active listings <span class="req">*</span></label>
+                <select class="select" id="spListing" onchange="onListingChange()">
+                  <option value="">— Select a listing —</option>
+                </select>
+              </div>
+              <div id="spListingPreview" style="margin-top:12px;display:none"></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-title">
+                <i class="fa-solid fa-calendar-days"></i> Contract duration
+                <small>Longer contracts win priority on conflict</small>
+              </div>
+              <div class="duration-grid" id="spDuration"></div>
+            </div>
+          </div>
+
+          <!-- ========== Banner Ad config ========== -->
+          <div id="cfgBanner" style="display:none">
+            <div class="panel">
+              <div class="panel-title"><i class="fa-solid fa-bullseye"></i> Choose placement</div>
+              <div class="placement-list" id="bPlacements"></div>
+            </div>
+
+            <div class="panel" id="bSubTargetPanel" style="display:none">
+              <div class="panel-title"><i class="fa-solid fa-crosshairs"></i> Targeting</div>
+              <div id="bSubTarget"></div>
+              <div style="margin-top:14px" id="bAvailabilityBox"></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-title">
+                <i class="fa-solid fa-calendar-days"></i> Contract duration
+              </div>
+              <div class="duration-grid" id="bDuration"></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-title"><i class="fa-solid fa-image"></i> Banner creative</div>
+              <label class="upload" id="bUpload">
+                <div class="ic"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                <div class="ttl" id="bUploadTitle">Drop banner image here or click to browse</div>
+                <div class="sub">Recommended size: 728×90 (leaderboard) or 300×250 · JPG/PNG · max 2 MB</div>
+                <input type="file" accept="image/*" onchange="onFileChange(event,'banner')" />
+              </label>
+            </div>
+          </div>
+
+          <!-- ========== Article Banner config ========== -->
+          <div id="cfgArticle" style="display:none">
+            <div class="panel">
+              <div class="panel-title"><i class="fa-solid fa-bullseye"></i> Targeting mode</div>
+              <div class="seg-toggle" id="artModeToggle">
+                <button class="active" data-mode="category" onclick="setArticleMode('category')">By category</button>
+                <button data-mode="article" onclick="setArticleMode('article')">By specific articles</button>
+              </div>
+
+              <div id="artCategoryBlock" style="margin-top:16px">
+                <div class="field">
+                  <label>Article category <span class="req">*</span></label>
+                  <select class="select" id="artCategory" onchange="updateBudgetEstimate()">
+                    <option value="">— Select category —</option>
+                  </select>
+                </div>
+              </div>
+
+              <div id="artArticleBlock" style="margin-top:16px;display:none">
+                <div class="field" style="margin-bottom:10px">
+                  <label>Select specific published articles <span class="req">*</span></label>
+                  <span class="hint">Tick one or more articles. Impressions will be split evenly.</span>
+                </div>
+                <div class="article-list" id="artArticleList"></div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-title">
+                <i class="fa-solid fa-coins"></i> Monthly budget
+                <small>Min ¥30,000 · CPM ¥520</small>
+              </div>
+              <div class="grid-2" style="gap:18px;align-items:end">
+                <div class="field">
+                  <label>Budget per month (JPY) <span class="req">*</span></label>
+                  <input
+                    class="input"
+                    id="artBudget"
+                    type="number"
+                    min="30000"
+                    step="5000"
+                    value="100000"
+                    oninput="updateBudgetEstimate()"
+                  />
+                </div>
+                <div class="budget-box">
+                  <div>
+                    <div class="lbl">Est. impressions / mo</div>
+                    <div class="val" id="artImpressions">~192,300</div>
+                  </div>
+                  <div class="sep"></div>
+                  <div>
+                    <div class="lbl">Est. daily reach</div>
+                    <div class="val" id="artDaily">~6,400</div>
+                  </div>
+                </div>
+              </div>
+              <div class="alert info" style="margin-top:14px;margin-bottom:0">
+                <i class="fa-solid fa-circle-info"></i>
+                <div>Impressions are delivered until the monthly budget is consumed. Unspent budget does not roll over.</div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-title"><i class="fa-solid fa-image"></i> Banner creative</div>
+              <label class="upload" id="aUpload">
+                <div class="ic"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                <div class="ttl" id="aUploadTitle">Drop banner image here or click to browse</div>
+                <div class="sub">Recommended: 600×500 in-article · JPG/PNG · max 2 MB</div>
+                <input type="file" accept="image/*" onchange="onFileChange(event,'article')" />
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Step 3 — Review & Payment ===== -->
+        <section class="step-pane" id="step3">
+          <div class="main-header">
+            <h1>Review &amp; pay</h1>
+            <p class="sub">Verify your booking details. Contract starts the 1st of next month.</p>
+          </div>
+          <div class="review-grid">
+            <div class="panel" style="margin-bottom:0">
+              <div class="panel-title"><i class="fa-solid fa-clipboard-list"></i> Booking summary</div>
+              <div id="reviewSummary"></div>
+            </div>
+            <div>
+              <div class="panel">
+                <div class="panel-title"><i class="fa-solid fa-receipt"></i> Price breakdown</div>
+                <div class="price-table" id="priceBreakdown"></div>
+              </div>
+              <div class="panel">
+                <div class="panel-title"><i class="fa-solid fa-credit-card"></i> Payment method</div>
+                <div class="pay-card selected" data-pay="visa" onclick="selectPayment('visa')">
+                  <div class="brand-ico">VISA</div>
+                  <div class="pay-info">
+                    <div class="pn">Visa ending in 4521</div>
+                    <div class="pm">Card on file · Exp 03/28</div>
+                  </div>
+                  <div class="pay-radio"></div>
+                </div>
+                <div class="pay-card amex" data-pay="amex" onclick="selectPayment('amex')" style="margin-top:8px">
+                  <div class="brand-ico">AMEX</div>
+                  <div class="pay-info">
+                    <div class="pn">Amex ending in 0091</div>
+                    <div class="pm">Card on file · Exp 11/27</div>
+                  </div>
+                  <div class="pay-radio"></div>
+                </div>
+                <button class="btn btn-ghost" style="margin-top:12px;width:100%" onclick="alert('Add new card form (demo)')">
+                  <i class="fa-solid fa-plus"></i> Add new card
+                </button>
+                <div class="alert warn" style="margin-top:14px;margin-bottom:0">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                  <div>By confirming, you agree to YUUSHI's Advertising Terms &amp; auto-renewal policy.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Step 4 — Confirmation ===== -->
+        <section class="step-pane" id="step4">
+          <div class="success">
+            <div class="ring"><i class="fa-solid fa-check"></i></div>
+            <h2>Booking confirmed</h2>
+            <div class="ord">Order ID · <span id="orderId">ORD-YS-2026-000000</span></div>
+            <div class="booked-card" id="bookedCard"></div>
+            <div class="success-actions">
+              <button class="btn btn-primary" onclick="goAdManagement()">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Go to Ad Management
+              </button>
+              <button class="btn btn-ghost" onclick="restartFlow()">
+                <i class="fa-solid fa-plus"></i> Book another ad
+              </button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- ========== Footer nav ========== -->
+    <div class="footer-nav" id="footerNav">
+      <div class="helper" id="navHelper">Step 1 of 4 — Choose an ad product to continue</div>
+      <div class="right">
+        <button class="btn btn-ghost" id="btnBack" onclick="goBack()" style="display:none">
+          <i class="fa-solid fa-arrow-left"></i> Back
+        </button>
+        <button class="btn btn-primary" id="btnNext" onclick="goNext()" disabled>
+          Continue <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // ============== Data ==============
+      const PREFECTURES = {
+        Tokyo:      ["Shibuya","Shinjuku","Minato","Setagaya","Chuo","Meguro","Bunkyo","Shinagawa","Suginami","Taito"],
+        Osaka:      ["Osaka","Sakai","Toyonaka","Higashi-Osaka","Suita","Hirakata"],
+        Kanagawa:   ["Yokohama","Kawasaki","Sagamihara","Yokosuka","Fujisawa"],
+        Kyoto:      ["Kyoto","Uji","Kameoka"],
+        Hokkaido:   ["Sapporo","Hakodate","Asahikawa"],
+        Fukuoka:    ["Fukuoka","Kitakyushu","Kurume"],
+        Saitama:    ["Saitama","Kawaguchi","Tokorozawa","Kawagoe"],
+        Chiba:      ["Chiba","Funabashi","Matsudo","Ichikawa"],
+        Aichi:      ["Nagoya","Toyota","Toyohashi","Okazaki"],
+        Hyogo:      ["Kobe","Himeji","Nishinomiya","Amagasaki"],
+      };
+      const PROPERTY_TYPES = [
+        "Apartment / Mansion",
+        "House / Ikkodate",
+        "Land / Tochi",
+        "Commercial / Tenpo",
+        "Office / Jimusho",
+        "Investment Property",
+      ];
+      const SPECIALISMS = [
+        "Residential Sales",
+        "Commercial Real Estate",
+        "Rental Management",
+        "Luxury Properties",
+        "Investment Advisory",
+        "New Development",
+        "Foreign Buyer Specialist",
+      ];
+      const ARTICLE_CATEGORIES = [
+        "Buying Guide",
+        "Investment Strategy",
+        "Tax & Legal",
+        "Visa & Residency",
+        "Market Trends",
+        "Mortgage Guide",
+        "Tokyo Living",
+        "Property Renovation",
+      ];
+      const ARTICLES = [
+        { id: "A101", title: "Foreign Buyer's Guide to Tokyo Real Estate", cat: "Buying Guide", date: "2026-04-12" },
+        { id: "A102", title: "Mortgage Options for Non-Residents in Japan", cat: "Mortgage Guide", date: "2026-04-02" },
+        { id: "A103", title: "Tax Implications of Property Investment in Japan", cat: "Tax & Legal", date: "2026-03-22" },
+        { id: "A104", title: "Top 10 Tokyo Neighborhoods for Investment 2026", cat: "Market Trends", date: "2026-03-15" },
+        { id: "A105", title: "Visa Pathways Through Real Estate Ownership", cat: "Visa & Residency", date: "2026-03-08" },
+        { id: "A106", title: "2026 Tokyo Property Market Outlook", cat: "Market Trends", date: "2026-02-28" },
+        { id: "A107", title: "Buying vs Renting in Shibuya: A Cost Breakdown", cat: "Buying Guide", date: "2026-02-19" },
+        { id: "A108", title: "Inheritance Tax on Japanese Real Estate", cat: "Tax & Legal", date: "2026-02-10" },
+        { id: "A109", title: "Renovating a Showa-era Machiya in Kyoto", cat: "Property Renovation", date: "2026-01-30" },
+      ];
+      const AGENT_LISTINGS = [
+        { id: "LST-58102", title: "2LDK Apartment · Shibuya Sta. 5 min", area: "Shibuya, Tokyo", price: "¥58,000,000" },
+        { id: "LST-58103", title: "3LDK House · Setagaya quiet street", area: "Setagaya, Tokyo", price: "¥120,000,000" },
+        { id: "LST-58104", title: "Commercial unit · Ginza-dori 1F",      area: "Chuo, Tokyo",    price: "¥250,000,000" },
+        { id: "LST-58105", title: "1K Studio · Shinjuku Sta. 8 min",       area: "Shinjuku, Tokyo",price: "¥28,500,000" },
+        { id: "LST-58106", title: "Land 180m² · Yokohama Naka-ku",         area: "Yokohama, Kanagawa", price: "¥85,000,000" },
+        { id: "LST-58107", title: "Investment Mansion · Toyonaka",         area: "Toyonaka, Osaka",   price: "¥42,000,000" },
+      ];
+
+      const BANNER_PLACEMENTS = [
+        { id: "areaGuide",    name: "Area Guide (top banner)",        desc: "Static · 1 slot · top of /area-guide",                   price: 90000,  target: "static" },
+        { id: "mortgage",     name: "Mortgage Calculator page",       desc: "Static · 1 slot · sidebar of /tools/mortgage",           price: 75000,  target: "static" },
+        { id: "cityDetail",   name: "City Detail page",               desc: "Dynamic · 1 agent per prefecture per month",             price: 65000,  target: "prefecture" },
+        { id: "areaDetail",   name: "Area Detail page",               desc: "Dynamic · 1 agent per city per month",                   price: 55000,  target: "city" },
+        { id: "propDetail",   name: "Property Detail (bottom)",       desc: "Dynamic · target by property type",                      price: 70000,  target: "propType" },
+        { id: "agentSearch",  name: "Agent Search results (sidebar)", desc: "Dynamic · target by prefecture + specialism",            price: 60000,  target: "agent" },
+        { id: "midArticle",   name: "Mid-article (News & Blog)",      desc: "Dynamic · target by article category",                   price: 45000,  target: "category" },
+      ];
+
+      // Rank pricing per area (Tokyo baseline; smaller prefectures cheaper)
+      const RANK_PRICING = {
+        Tokyo:    { 1: 150000, 2: 100000, 3: 70000 },
+        Osaka:    { 1: 120000, 2: 85000,  3: 55000 },
+        Kanagawa: { 1: 110000, 2: 78000,  3: 50000 },
+        Kyoto:    { 1: 95000,  2: 65000,  3: 42000 },
+        Hokkaido: { 1: 80000,  2: 55000,  3: 38000 },
+        Fukuoka:  { 1: 85000,  2: 60000,  3: 40000 },
+        Saitama:  { 1: 85000,  2: 60000,  3: 40000 },
+        Chiba:    { 1: 85000,  2: 60000,  3: 40000 },
+        Aichi:    { 1: 100000, 2: 70000,  3: 48000 },
+        Hyogo:    { 1: 95000,  2: 68000,  3: 45000 },
+      };
+
+      const DURATIONS = [
+        { months: 1,  discount: 1.00, label: "1 month",   pretty: "" },
+        { months: 3,  discount: 0.95, label: "3 months",  pretty: "5% off" },
+        { months: 6,  discount: 0.90, label: "6 months",  pretty: "10% off" },
+        { months: 12, discount: 0.80, label: "12 months", pretty: "20% off" },
+      ];
+
+      // Deterministic "availability" hash so demo feels real (same combo → same result)
+      function hashStr(s) {
+        let h = 0;
+        for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+        return Math.abs(h);
+      }
+      function isOccupied(key) { return hashStr(key) % 5 === 0; }
+      function occupiedEndDate(key) {
+        const months = (hashStr(key + "end") % 8) + 1;
+        const d = new Date(2026, 4 + months, 1);
+        return d.toISOString().slice(0, 10);
+      }
+      function fmtYen(n) { return "¥" + (n || 0).toLocaleString("en-US"); }
+      function nextMonthFirst() {
+        const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + 1);
+        return d.toISOString().slice(0, 10);
+      }
+
+      // ============== State ==============
+      const state = {
+        step: 1,
+        adType: null,                  // 'sponsored' | 'banner' | 'article'
+        // sponsored
+        sp: { prefecture: "", city: "", propType: "", rank: null, listingId: "", durationMonths: null },
+        // banner
+        bn: { placement: null, sub: {}, durationMonths: null, file: "" },
+        // article
+        ar: { mode: "category", category: "", articleIds: [], budget: 100000, file: "" },
+        payment: "visa",
+      };
+
+      // ============== Init ==============
+      function $(id) { return document.getElementById(id); }
+      function init() {
+        // Populate prefecture options
+        const prefSel = $("spPrefecture");
+        Object.keys(PREFECTURES).forEach(p => prefSel.add(new Option(p, p)));
+        // property type
+        const ptSel = $("spPropType");
+        PROPERTY_TYPES.forEach(p => ptSel.add(new Option(p, p)));
+        // article category
+        const cSel = $("artCategory");
+        ARTICLE_CATEGORIES.forEach(c => cSel.add(new Option(c, c)));
+        // article list
+        $("artArticleList").innerHTML = ARTICLES.map(a => `
+          <label class="article-row">
+            <input type="checkbox" value="${a.id}" onchange="onArticleToggle(this)">
+            <div>
+              <div class="a-title">${a.title}</div>
+              <div class="a-meta">${a.cat} · Published ${a.date}</div>
+            </div>
+          </label>`).join("");
+        // listing select
+        const lSel = $("spListing");
+        AGENT_LISTINGS.forEach(l =>
+          lSel.add(new Option(`${l.id} · ${l.title} (${l.price})`, l.id))
+        );
+        // banner placements
+        $("bPlacements").innerHTML = BANNER_PLACEMENTS.map(p => `
+          <div class="placement-row" data-pid="${p.id}" onclick="selectBannerPlacement('${p.id}')">
+            <div class="pico"><i class="fa-solid ${placementIcon(p.id)}"></i></div>
+            <div class="info">
+              <div class="nm">${p.name}</div>
+              <div class="dc">${p.desc}</div>
+            </div>
+            <div class="pr">${fmtYen(p.price)}/mo</div>
+            <div class="radio-dot"></div>
+          </div>`).join("");
+        // ranks
+        renderRanks();
+        // duration grids
+        renderDuration("spDuration", "sp");
+        renderDuration("bDuration", "bn");
+        updateBudgetEstimate();
+        updateNav();
+      }
+      function placementIcon(id) {
+        return {
+          areaGuide: "fa-map-location-dot",
+          mortgage:  "fa-calculator",
+          cityDetail:"fa-city",
+          areaDetail:"fa-map",
+          propDetail:"fa-house",
+          agentSearch:"fa-user-tie",
+          midArticle:"fa-newspaper",
+        }[id] || "fa-rectangle-ad";
+      }
+
+      // ============== Step 1 ==============
+      function selectAdType(t) {
+        state.adType = t;
+        document.querySelectorAll(".type-card").forEach(c => {
+          c.classList.toggle("selected", c.dataset.type === t);
+        });
+        refreshSelectedCard();
+        updateNav();
+      }
+      function refreshSelectedCard() {
+        const meta = {
+          sponsored: { name: "Sponsored Listing Slot", desc: "Boost a specific property listing to rank 1–3 in search.", ico: "fa-arrow-trend-up" },
+          banner:    { name: "Banner Ad — Agent Brand", desc: "Promote your agency across targeted placements.", ico: "fa-rectangle-ad" },
+          article:   { name: "Article Banner (Impression)", desc: "Impression-based ads on News & Blog articles.", ico: "fa-newspaper" },
+        };
+        const card = $("selectedCard");
+        if (!state.adType) {
+          card.classList.remove("has-type");
+          card.innerHTML = `<div class="empty">No ad type selected yet.</div>`;
+          return;
+        }
+        const m = meta[state.adType];
+        card.classList.add("has-type");
+        card.innerHTML = `
+          <div class="lbl"><i class="fa-solid ${m.ico}"></i> Ad product</div>
+          <div class="name">${m.name}</div>
+          <div class="desc">${m.desc}</div>
+          ${state.step > 1 ? `<button class="switch-btn" onclick="goToStep(1)"><i class="fa-solid fa-rotate"></i> Switch ad type</button>` : ""}
+        `;
+      }
+
+      // ============== Step 2 — sponsored ==============
+      function onPrefChange(prefix) {
+        const pref = $(prefix + "Prefecture").value;
+        const citySel = $(prefix + "City");
+        citySel.innerHTML = "";
+        if (!pref) {
+          citySel.add(new Option("Choose prefecture first", ""));
+          citySel.disabled = true;
+        } else {
+          citySel.disabled = false;
+          citySel.add(new Option("— Select city —", ""));
+          PREFECTURES[pref].forEach(c => citySel.add(new Option(c, c)));
+        }
+        state.sp.prefecture = pref;
+        state.sp.city = "";
+        state.sp.rank = null;
+        renderRanks();
+        updateAvailability();
+        updateNav();
+      }
+      function updateAvailability() {
+        state.sp.city = $("spCity").value;
+        state.sp.propType = $("spPropType").value;
+        const ready = state.sp.prefecture && state.sp.city && state.sp.propType;
+        $("spAvailabilityHint").textContent = ready ? "Click an available rank to select" : "Pick area + type to see availability";
+        renderRanks();
+        updateNav();
+      }
+      function renderRanks() {
+        const ready = state.sp.prefecture && state.sp.city && state.sp.propType;
+        const pricing = RANK_PRICING[state.sp.prefecture] || { 1: 100000, 2: 70000, 3: 45000 };
+        $("spRanks").innerHTML = [1,2,3].map(r => {
+          const key = `${state.sp.prefecture}|${state.sp.city}|${state.sp.propType}|${r}`;
+          const occ = ready && isOccupied(key);
+          const sel = state.sp.rank === r;
+          return `
+            <div class="rank-card ${sel?"selected":""} ${occ?"occupied":""}" onclick="${occ?"":"selectRank("+r+")"}">
+              <div class="pos">${r}<sup style="font-size:14px">${r===1?"st":r===2?"nd":"rd"}</sup></div>
+              <div class="lbl">Position</div>
+              <div class="price">${fmtYen(pricing[r])}/mo</div>
+              ${ready ? `
+                <div class="availability ${occ?"av-occupied":"av-available"}">
+                  <i class="fa-solid ${occ?"fa-circle-xmark":"fa-circle-check"}"></i>
+                  ${occ?"Occupied":"Available"}
+                </div>
+                ${occ?`<div class="end-date">Ends ${occupiedEndDate(key)}</div>`:""}
+              ` : ""}
+            </div>`;
+        }).join("");
+      }
+      function selectRank(r) {
+        state.sp.rank = r;
+        renderRanks();
+        updateNav();
+      }
+      function onListingChange() {
+        state.sp.listingId = $("spListing").value;
+        const prev = $("spListingPreview");
+        if (!state.sp.listingId) { prev.style.display = "none"; updateNav(); return; }
+        const l = AGENT_LISTINGS.find(x => x.id === state.sp.listingId);
+        prev.style.display = "block";
+        prev.innerHTML = `
+          <div class="listing-pick">
+            <div class="lico"><i class="fa-solid fa-house"></i></div>
+            <div class="l-info">
+              <div class="l-title">${l.title}</div>
+              <div class="l-meta">${l.id} · ${l.area} · ${l.price}</div>
+            </div>
+          </div>`;
+        updateNav();
+      }
+
+      // ============== Step 2 — banner ==============
+      function selectBannerPlacement(pid) {
+        state.bn.placement = pid;
+        state.bn.sub = {};
+        document.querySelectorAll(".placement-row").forEach(r => r.classList.toggle("selected", r.dataset.pid === pid));
+        renderBannerSubTarget();
+        renderBannerAvailability();
+        updateNav();
+      }
+      function renderBannerSubTarget() {
+        const p = BANNER_PLACEMENTS.find(x => x.id === state.bn.placement);
+        const panel = $("bSubTargetPanel");
+        if (!p) { panel.style.display = "none"; return; }
+        panel.style.display = "block";
+        const box = $("bSubTarget");
+        let html = "";
+        if (p.target === "static") {
+          html = `<div class="alert info" style="margin:0"><i class="fa-solid fa-circle-info"></i>
+            <div>This placement is static (no further targeting). 1 slot available globally, set by admin.</div></div>`;
+        } else if (p.target === "prefecture") {
+          html = `<div class="field"><label>Prefecture <span class="req">*</span></label>
+            <select class="select" onchange="state.bn.sub.prefecture=this.value;renderBannerAvailability();updateNav()">
+              <option value="">— Select prefecture —</option>
+              ${Object.keys(PREFECTURES).map(p=>`<option>${p}</option>`).join("")}
+            </select></div>`;
+        } else if (p.target === "city") {
+          html = `<div class="grid-2">
+            <div class="field"><label>Prefecture <span class="req">*</span></label>
+              <select class="select" id="bnPref" onchange="onBnPrefChange()">
+                <option value="">— Select prefecture —</option>
+                ${Object.keys(PREFECTURES).map(p=>`<option>${p}</option>`).join("")}
+              </select></div>
+            <div class="field"><label>City <span class="req">*</span></label>
+              <select class="select" id="bnCity" disabled onchange="state.bn.sub.city=this.value;renderBannerAvailability();updateNav()">
+                <option value="">Choose prefecture first</option>
+              </select></div></div>`;
+        } else if (p.target === "propType") {
+          html = `<div class="field"><label>Property type <span class="req">*</span></label>
+            <select class="select" onchange="state.bn.sub.propType=this.value;renderBannerAvailability();updateNav()">
+              <option value="">— Select property type —</option>
+              ${PROPERTY_TYPES.map(t=>`<option>${t}</option>`).join("")}
+            </select></div>`;
+        } else if (p.target === "agent") {
+          html = `<div class="grid-2">
+            <div class="field"><label>Prefecture <span class="req">*</span></label>
+              <select class="select" onchange="state.bn.sub.prefecture=this.value;renderBannerAvailability();updateNav()">
+                <option value="">— Select prefecture —</option>
+                ${Object.keys(PREFECTURES).map(p=>`<option>${p}</option>`).join("")}
+              </select></div>
+            <div class="field"><label>Specialism <span class="req">*</span></label>
+              <select class="select" onchange="state.bn.sub.specialism=this.value;renderBannerAvailability();updateNav()">
+                <option value="">— Select specialism —</option>
+                ${SPECIALISMS.map(s=>`<option>${s}</option>`).join("")}
+              </select></div></div>`;
+        } else if (p.target === "category") {
+          html = `<div class="field"><label>Article category <span class="req">*</span></label>
+            <select class="select" onchange="state.bn.sub.category=this.value;renderBannerAvailability();updateNav()">
+              <option value="">— Select category —</option>
+              ${ARTICLE_CATEGORIES.map(c=>`<option>${c}</option>`).join("")}
+            </select></div>`;
+        }
+        box.innerHTML = html;
+      }
+      function onBnPrefChange() {
+        const pref = $("bnPref").value;
+        const citySel = $("bnCity");
+        citySel.innerHTML = "";
+        if (!pref) { citySel.add(new Option("Choose prefecture first","")); citySel.disabled = true; }
+        else {
+          citySel.disabled = false;
+          citySel.add(new Option("— Select city —",""));
+          PREFECTURES[pref].forEach(c => citySel.add(new Option(c, c)));
+        }
+        state.bn.sub.prefecture = pref;
+        state.bn.sub.city = "";
+        renderBannerAvailability();
+        updateNav();
+      }
+      function renderBannerAvailability() {
+        const box = $("bAvailabilityBox");
+        const p = BANNER_PLACEMENTS.find(x => x.id === state.bn.placement);
+        if (!p) { box.innerHTML = ""; return; }
+        if (p.target === "static") { box.innerHTML = ""; return; }
+        const subKey = JSON.stringify(state.bn.sub);
+        const needsAll = bnSubTargetComplete();
+        if (!needsAll) { box.innerHTML = `<div class="hint" style="color:var(--text-dim);font-size:12px">Fill targeting fields to see availability.</div>`; return; }
+        const occ = isOccupied(p.id + "|" + subKey);
+        box.innerHTML = `<div class="availability ${occ?"av-occupied":"av-available"}">
+          <i class="fa-solid ${occ?"fa-circle-xmark":"fa-circle-check"}"></i>
+          ${occ?"Slot occupied":"Slot available"}
+        </div>${occ?` <span class="hint" style="margin-left:8px">Ends ${occupiedEndDate(p.id+subKey)} — longer contracts win on conflict.</span>`:""}`;
+      }
+      function bnSubTargetComplete() {
+        const p = BANNER_PLACEMENTS.find(x => x.id === state.bn.placement);
+        if (!p) return false;
+        if (p.target === "static") return true;
+        if (p.target === "prefecture") return !!state.bn.sub.prefecture;
+        if (p.target === "city") return !!(state.bn.sub.prefecture && state.bn.sub.city);
+        if (p.target === "propType") return !!state.bn.sub.propType;
+        if (p.target === "agent") return !!(state.bn.sub.prefecture && state.bn.sub.specialism);
+        if (p.target === "category") return !!state.bn.sub.category;
+        return false;
+      }
+      function onFileChange(e, kind) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const name = file.name;
+        if (kind === "banner") {
+          state.bn.file = name;
+          $("bUpload").classList.add("has-file");
+          $("bUploadTitle").innerHTML = `<i class="fa-solid fa-circle-check" style="color:var(--success)"></i> ${name}`;
+        } else {
+          state.ar.file = name;
+          $("aUpload").classList.add("has-file");
+          $("aUploadTitle").innerHTML = `<i class="fa-solid fa-circle-check" style="color:var(--success)"></i> ${name}`;
+        }
+        updateNav();
+      }
+
+      // ============== Step 2 — article ==============
+      function setArticleMode(m) {
+        state.ar.mode = m;
+        document.querySelectorAll("#artModeToggle button").forEach(b => b.classList.toggle("active", b.dataset.mode === m));
+        $("artCategoryBlock").style.display = m === "category" ? "block" : "none";
+        $("artArticleBlock").style.display = m === "article" ? "block" : "none";
+        updateBudgetEstimate();
+        updateNav();
+      }
+      function onArticleToggle(cb) {
+        if (cb.checked) state.ar.articleIds.push(cb.value);
+        else state.ar.articleIds = state.ar.articleIds.filter(x => x !== cb.value);
+        updateBudgetEstimate();
+        updateNav();
+      }
+      function updateBudgetEstimate() {
+        const b = Number($("artBudget").value || 0);
+        state.ar.budget = b;
+        state.ar.category = $("artCategory") ? $("artCategory").value : "";
+        const cpm = 520;
+        const impressions = Math.round((b / cpm) * 1000);
+        const daily = Math.round(impressions / 30);
+        $("artImpressions").textContent = "~" + impressions.toLocaleString("en-US");
+        $("artDaily").textContent = "~" + daily.toLocaleString("en-US");
+        updateNav();
+      }
+
+      // ============== Duration ==============
+      function renderDuration(elId, scope) {
+        $(elId).innerHTML = DURATIONS.map(d => {
+          const sel = state[scope].durationMonths === d.months;
+          const monthly = monthlyPrice();
+          const total = monthly ? Math.round(monthly * d.months * d.discount) : null;
+          return `
+            <div class="duration-card ${sel?"selected":""}" onclick="selectDuration(${d.months},'${scope}')">
+              ${d.months===12?`<span class="badge-best">BEST</span>`:""}
+              <div class="mo">${d.months}</div>
+              <div class="mo-l">${d.months===1?"month":"months"}</div>
+              ${d.pretty?`<div class="disc">${d.pretty}</div>`:`<div class="disc" style="opacity:0">.</div>`}
+              ${total?`<div class="total">${fmtYen(total)}</div>`:`<div class="total" style="color:var(--text-dim)">Pick details</div>`}
+            </div>`;
+        }).join("");
+      }
+      function selectDuration(m, scope) {
+        state[scope].durationMonths = m;
+        renderDuration(scope === "sp" ? "spDuration" : "bDuration", scope);
+        updateNav();
+      }
+      function monthlyPrice() {
+        if (state.adType === "sponsored") {
+          if (!state.sp.prefecture || !state.sp.rank) return 0;
+          const pricing = RANK_PRICING[state.sp.prefecture] || {1:100000,2:70000,3:45000};
+          return pricing[state.sp.rank];
+        }
+        if (state.adType === "banner") {
+          const p = BANNER_PLACEMENTS.find(x => x.id === state.bn.placement);
+          return p ? p.price : 0;
+        }
+        return 0;
+      }
+
+      // ============== Tabs (Step 2 ad-type switch) ==============
+      function switchAdType(t) {
+        state.adType = t;
+        refreshTabs();
+        showConfigPanel();
+        refreshSelectedCard();
+        renderDuration("spDuration","sp");
+        renderDuration("bDuration","bn");
+        updateNav();
+      }
+      function refreshTabs() {
+        document.querySelectorAll(".type-tab").forEach(t => t.classList.toggle("active", t.dataset.type === state.adType));
+      }
+      function showConfigPanel() {
+        ["cfgSponsored","cfgBanner","cfgArticle"].forEach(id => $(id).style.display = "none");
+        if (state.adType === "sponsored") $("cfgSponsored").style.display = "block";
+        else if (state.adType === "banner") $("cfgBanner").style.display = "block";
+        else if (state.adType === "article") $("cfgArticle").style.display = "block";
+      }
+
+      // ============== Validation ==============
+      function isStepValid(s) {
+        if (s === 1) return !!state.adType;
+        if (s === 2) {
+          if (state.adType === "sponsored") {
+            const sp = state.sp;
+            return sp.prefecture && sp.city && sp.propType && sp.rank && sp.listingId && sp.durationMonths;
+          }
+          if (state.adType === "banner") {
+            return state.bn.placement && bnSubTargetComplete() && state.bn.durationMonths && state.bn.file;
+          }
+          if (state.adType === "article") {
+            const ar = state.ar;
+            const targetingOK = (ar.mode === "category" && ar.category) || (ar.mode === "article" && ar.articleIds.length > 0);
+            return targetingOK && ar.budget >= 30000 && ar.file;
+          }
+        }
+        if (s === 3) return !!state.payment;
+        return true;
+      }
+
+      // ============== Step nav ==============
+      function goNext() {
+        if (!isStepValid(state.step)) return;
+        if (state.step < 4) goToStep(state.step + 1);
+      }
+      function goBack() {
+        if (state.step > 1) goToStep(state.step - 1);
+      }
+      function goToStep(n) {
+        state.step = n;
+        document.querySelectorAll(".step-pane").forEach(p => p.classList.remove("active"));
+        $("step" + n).classList.add("active");
+        document.querySelectorAll("#stepsNav .step-row").forEach(r => {
+          const s = Number(r.dataset.step);
+          r.classList.toggle("done", s < n);
+          r.classList.toggle("active", s === n);
+        });
+        if (n === 2) {
+          refreshTabs();
+          showConfigPanel();
+        }
+        if (n === 3) renderReview();
+        if (n === 4) renderConfirmation();
+        refreshSelectedCard();
+        updateNav();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function updateNav() {
+        const btnNext = $("btnNext");
+        const btnBack = $("btnBack");
+        const helper = $("navHelper");
+        btnBack.style.display = state.step > 1 && state.step < 4 ? "inline-flex" : "none";
+        if (state.step === 4) {
+          btnNext.style.display = "none";
+          helper.textContent = "Step 4 of 4 — Booking complete";
+          return;
+        }
+        btnNext.style.display = "inline-flex";
+        const ok = isStepValid(state.step);
+        btnNext.disabled = !ok;
+        if (state.step === 3) {
+          btnNext.innerHTML = `<i class="fa-solid fa-lock"></i> Confirm &amp; Pay`;
+        } else {
+          btnNext.innerHTML = `Continue <i class="fa-solid fa-arrow-right"></i>`;
+        }
+        const hints = {
+          1: state.adType ? "Ad type selected — continue to configuration" : "Step 1 of 4 — Choose an ad product to continue",
+          2: ok ? "All required fields complete" : "Step 2 of 4 — Fill remaining fields",
+          3: "Step 3 of 4 — Review then confirm payment",
+        };
+        helper.textContent = hints[state.step];
+      }
+
+      // ============== Step 3 — Review ==============
+      function renderReview() {
+        const sum = $("reviewSummary");
+        const br = $("priceBreakdown");
+        let rows = [];
+        let monthly = monthlyPrice();
+        let months = 1;
+        let discount = 1;
+        let total = 0;
+
+        if (state.adType === "sponsored") {
+          const sp = state.sp;
+          const l = AGENT_LISTINGS.find(x => x.id === sp.listingId);
+          rows = [
+            ["Product", "Sponsored Listing Slot"],
+            ["Area", `${sp.city}, ${sp.prefecture}`],
+            ["Property type", sp.propType],
+            ["Rank position", `#${sp.rank}`],
+            ["Listing boosted", l ? `${l.title} <span style="color:var(--text-muted)">(${l.id})</span>` : "—"],
+            ["Contract duration", `${sp.durationMonths} month${sp.durationMonths>1?"s":""}`],
+            ["Start date", nextMonthFirst()],
+          ];
+          months = sp.durationMonths;
+        } else if (state.adType === "banner") {
+          const p = BANNER_PLACEMENTS.find(x => x.id === state.bn.placement);
+          rows = [
+            ["Product", "Banner Ad — Agent Brand"],
+            ["Placement", p.name],
+            ["Targeting", formatBannerTargeting()],
+            ["Contract duration", `${state.bn.durationMonths} month${state.bn.durationMonths>1?"s":""}`],
+            ["Creative file", state.bn.file || "—"],
+            ["Start date", nextMonthFirst()],
+          ];
+          months = state.bn.durationMonths;
+        } else if (state.adType === "article") {
+          const ar = state.ar;
+          rows = [
+            ["Product", "Article Banner (Impression)"],
+            ["Targeting mode", ar.mode === "category" ? "By category" : "By specific articles"],
+            ["Target", ar.mode === "category" ? ar.category : `${ar.articleIds.length} article${ar.articleIds.length>1?"s":""} selected`],
+            ["Monthly budget", fmtYen(ar.budget)],
+            ["Est. impressions", $("artImpressions").textContent + " / mo"],
+            ["Creative file", ar.file || "—"],
+            ["Start date", nextMonthFirst()],
+          ];
+        }
+        sum.innerHTML = rows.map(r => `<div class="summary-row"><span class="k">${r[0]}</span><span class="v">${r[1]}</span></div>`).join("");
+
+        // Price breakdown
+        if (state.adType === "article") {
+          total = state.ar.budget;
+          br.innerHTML = `
+            <div class="line"><span>Monthly budget</span><span>${fmtYen(state.ar.budget)}</span></div>
+            <div class="line muted"><span>CPM</span><span>¥520 / 1,000 impressions</span></div>
+            <div class="line muted"><span>Billing</span><span>Monthly · until budget consumed</span></div>
+            <div class="line total"><span>First month due</span><span class="pr">${fmtYen(total)}</span></div>`;
+        } else {
+          const dur = DURATIONS.find(d => d.months === months);
+          discount = dur ? dur.discount : 1;
+          const gross = monthly * months;
+          const off = gross - Math.round(gross * discount);
+          total = gross - off;
+          br.innerHTML = `
+            <div class="line"><span>Monthly rate</span><span>${fmtYen(monthly)}</span></div>
+            <div class="line"><span>Months</span><span>× ${months}</span></div>
+            <div class="line muted"><span>Subtotal</span><span>${fmtYen(gross)}</span></div>
+            ${off ? `<div class="line muted"><span>Multi-month discount (${Math.round((1-discount)*100)}%)</span><span>− ${fmtYen(off)}</span></div>` : ""}
+            <div class="line total"><span>Total due today</span><span class="pr">${fmtYen(total)}</span></div>`;
+        }
+      }
+      function formatBannerTargeting() {
+        const p = BANNER_PLACEMENTS.find(x => x.id === state.bn.placement);
+        if (!p) return "—";
+        if (p.target === "static") return "Static placement (no targeting)";
+        const s = state.bn.sub;
+        if (p.target === "prefecture") return `Prefecture: ${s.prefecture}`;
+        if (p.target === "city") return `${s.city}, ${s.prefecture}`;
+        if (p.target === "propType") return `Property type: ${s.propType}`;
+        if (p.target === "agent") return `${s.prefecture} · ${s.specialism}`;
+        if (p.target === "category") return `Category: ${s.category}`;
+        return "—";
+      }
+
+      function selectPayment(p) {
+        state.payment = p;
+        document.querySelectorAll(".pay-card").forEach(c => c.classList.toggle("selected", c.dataset.pay === p));
+      }
+
+      // ============== Step 4 ==============
+      function renderConfirmation() {
+        $("orderId").textContent = "ORD-YS-" + new Date().getFullYear() + "-" + String(Math.floor(Math.random()*900000)+100000);
+        const box = $("bookedCard");
+        const rows = [];
+        if (state.adType === "sponsored") {
+          rows.push(["Product","Sponsored Listing"]);
+          rows.push(["Area", `${state.sp.city}, ${state.sp.prefecture}`]);
+          rows.push(["Rank", `#${state.sp.rank} · ${state.sp.propType}`]);
+          rows.push(["Duration", `${state.sp.durationMonths} months`]);
+        } else if (state.adType === "banner") {
+          const p = BANNER_PLACEMENTS.find(x => x.id === state.bn.placement);
+          rows.push(["Product","Banner Ad"]);
+          rows.push(["Placement", p.name]);
+          rows.push(["Targeting", formatBannerTargeting()]);
+          rows.push(["Duration", `${state.bn.durationMonths} months`]);
+        } else if (state.adType === "article") {
+          rows.push(["Product","Article Banner"]);
+          rows.push(["Mode", state.ar.mode === "category" ? `Category · ${state.ar.category}` : `${state.ar.articleIds.length} articles`]);
+          rows.push(["Monthly budget", fmtYen(state.ar.budget)]);
+        }
+        rows.push(["Start date", nextMonthFirst()]);
+        rows.push(["Payment", state.payment === "visa" ? "Visa ····4521" : "Amex ····0091"]);
+        box.innerHTML = rows.map(r => `<div class="summary-row"><span class="k">${r[0]}</span><span class="v">${r[1]}</span></div>`).join("");
+      }
+
+      function goAdManagement() {
+        alert("Navigate to Ad Management dashboard (demo).");
+      }
+      function restartFlow() {
+        state.step = 1;
+        state.adType = null;
+        state.sp = { prefecture:"", city:"", propType:"", rank:null, listingId:"", durationMonths:null };
+        state.bn = { placement:null, sub:{}, durationMonths:null, file:"" };
+        state.ar = { mode:"category", category:"", articleIds:[], budget:100000, file:"" };
+        document.querySelectorAll(".type-card").forEach(c => c.classList.remove("selected"));
+        $("spPrefecture").value = ""; onPrefChange("sp");
+        $("spPropType").value = "";
+        $("spListing").value = "";
+        $("spListingPreview").style.display = "none";
+        document.querySelectorAll(".placement-row").forEach(r => r.classList.remove("selected"));
+        $("bSubTargetPanel").style.display = "none";
+        $("bUpload").classList.remove("has-file");
+        $("bUploadTitle").textContent = "Drop banner image here or click to browse";
+        $("aUpload").classList.remove("has-file");
+        $("aUploadTitle").textContent = "Drop banner image here or click to browse";
+        $("artBudget").value = 100000;
+        document.querySelectorAll("#artArticleList input[type=checkbox]").forEach(cb => cb.checked = false);
+        setArticleMode("category");
+        $("artCategory").value = "";
+        renderDuration("spDuration","sp");
+        renderDuration("bDuration","bn");
+        renderRanks();
+        goToStep(1);
+      }
+
+      // ============== Bootstrap ==============
+      document.addEventListener("DOMContentLoaded", init);
+    </script>
+  </body>
+</html>

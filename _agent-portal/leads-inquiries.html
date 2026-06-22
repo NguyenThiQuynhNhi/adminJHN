@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leads &amp; Inquiries — YUUSHI Agent</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --bg-body: #f5f0e8;
+        --bg-card: #ffffff;
+        --bg-alt: #fdf9f3;
+        --border-subtle: #eadccd;
+        --border-strong: #d9c8b4;
+        --accent: #c4714a;
+        --accent-dark: #a55232;
+        --accent-soft: #fef1e6;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+        --text-dim: #9b8568;
+        --badge-green: #2f855a;
+        --badge-red: #c53030;
+        --badge-amber: #b7791f;
+        --badge-blue: #2c5282;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg-body);
+        color: var(--text-main);
+        font-size: 13px;
+        line-height: 1.5;
+        padding: clamp(16px, 2.5vw, 24px);
+        -webkit-font-smoothing: antialiased;
+      }
+      h1 { margin: 0 0 4px; font-size: 22px; font-weight: 700; }
+      .page-header {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        margin-bottom: 14px; gap: 12px; flex-wrap: wrap;
+      }
+      .page-sub { font-size: 12.5px; color: var(--text-muted); }
+      .tabs {
+        display: flex; gap: 4px; border-bottom: 1px solid var(--border-subtle);
+        margin-bottom: 18px;
+      }
+      .tab {
+        background: transparent; border: 0; padding: 10px 18px;
+        font-family: inherit; font-size: 13.5px; font-weight: 600;
+        color: var(--text-muted); cursor: pointer;
+        border-bottom: 3px solid transparent; margin-bottom: -1px;
+      }
+      .tab:hover { color: var(--text-main); }
+      .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+      .tab-count {
+        font-size: 11px; font-weight: 700; background: var(--accent-soft);
+        color: var(--accent); padding: 2px 7px; border-radius: 999px; margin-left: 6px;
+      }
+      .tab.active .tab-count { background: var(--accent); color: #fff; }
+
+      input, select, textarea {
+        border-radius: 8px; border: 1px solid var(--border-subtle);
+        padding: 8px 11px; font-size: 13px; background: #fff;
+        color: var(--text-main); outline: none; font-family: inherit;
+        width: 100%; min-height: 36px;
+      }
+      input:focus, select:focus, textarea:focus {
+        border-color: var(--accent); box-shadow: 0 0 0 2px rgba(196, 113, 74, 0.18);
+      }
+      .btn {
+        border-radius: 8px; border: 1px solid var(--border-strong);
+        padding: 8px 14px; font-size: 13px; background: #fff;
+        cursor: pointer; display: inline-flex; gap: 6px;
+        align-items: center; justify-content: center;
+        color: var(--text-main); font-family: inherit; font-weight: 500;
+        min-height: 36px;
+      }
+      .btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        border-color: var(--accent-dark); color: #fffaf3;
+      }
+      .btn-primary:hover { color: #fffaf3; }
+      .btn-sm { padding: 5px 10px; font-size: 11.5px; min-height: 28px; }
+
+      /* ============ Split panel ============ */
+      .split {
+        display: grid;
+        grid-template-columns: 35% 1fr;
+        gap: 16px;
+        height: calc(100vh - 200px);
+        min-height: 560px;
+      }
+      @media (max-width: 880px) {
+        .split { grid-template-columns: 1fr; height: auto; }
+      }
+
+      .panel {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 4px 12px rgba(115, 72, 39, 0.04);
+      }
+      .panel-toolbar {
+        padding: 12px;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .filter-pills {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      .filter-pill {
+        background: transparent;
+        border: 1px solid var(--border-subtle);
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .filter-pill:hover { background: var(--accent-soft); }
+      .filter-pill.active {
+        background: var(--accent); color: #fff; border-color: var(--accent);
+      }
+
+      .inq-list {
+        flex: 1;
+        overflow-y: auto;
+      }
+      .inq-item {
+        padding: 12px 14px;
+        border-bottom: 1px solid #f5ece0;
+        cursor: pointer;
+        display: flex;
+        gap: 10px;
+        transition: background 0.1s;
+      }
+      .inq-item:hover { background: var(--bg-alt); }
+      .inq-item.active { background: var(--accent-soft); border-left: 3px solid var(--accent); padding-left: 11px; }
+      .inq-avatar {
+        width: 38px; height: 38px; border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: #fffaf3;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 13px; font-weight: 700; flex-shrink: 0;
+      }
+      .inq-avatar.gray {
+        background: linear-gradient(135deg, #9b8568, #7a6a5c);
+      }
+      .inq-body { flex: 1; min-width: 0; }
+      .inq-top {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 2px; gap: 6px;
+      }
+      .inq-name {
+        font-size: 13.5px; font-weight: 700; color: var(--text-main);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .inq-time { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+      .inq-prop {
+        font-size: 11.5px; color: var(--text-muted);
+        margin-bottom: 3px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .inq-preview {
+        font-size: 12px; color: var(--text-muted);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .inq-meta {
+        display: flex; gap: 6px; align-items: center; margin-top: 4px;
+      }
+      .user-tag {
+        font-size: 9.5px; font-weight: 700;
+        background: #f3e8ff; color: #6b46c1;
+        border: 1px solid #ddd6fe;
+        padding: 1px 6px; border-radius: 999px;
+        text-transform: uppercase; letter-spacing: 0.04em;
+      }
+      .unread-badge {
+        background: var(--accent); color: #fff;
+        font-size: 10px; font-weight: 700;
+        padding: 1px 7px; border-radius: 999px; margin-left: auto;
+      }
+
+      /* Conversation */
+      .conv-header {
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex; justify-content: space-between; align-items: center;
+        gap: 10px; flex-wrap: wrap;
+      }
+      .conv-title { font-size: 14px; font-weight: 700; }
+      .conv-prop {
+        font-size: 12px; color: var(--text-muted);
+        display: inline-flex; align-items: center; gap: 5px; margin-top: 2px;
+      }
+      .conv-prop .link {
+        color: var(--accent); font-weight: 600; text-decoration: none; cursor: pointer;
+      }
+      .conv-prop .link:hover { text-decoration: underline; }
+
+      .conv-body {
+        flex: 1; overflow-y: auto;
+        padding: 18px;
+        display: flex; flex-direction: column; gap: 10px;
+        background: linear-gradient(180deg, var(--bg-alt), #fff);
+      }
+      .msg {
+        max-width: 70%; padding: 10px 14px;
+        border-radius: 14px; font-size: 13px;
+        word-wrap: break-word; line-height: 1.5;
+      }
+      .msg.user {
+        background: #eee9e0; color: var(--text-main);
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+      }
+      .msg.agent {
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: #fffaf3;
+        align-self: flex-end;
+        border-bottom-right-radius: 4px;
+      }
+      .msg-time {
+        font-size: 10.5px; opacity: 0.7;
+        margin-top: 4px; display: block;
+      }
+      .msg-day-sep {
+        text-align: center; font-size: 10.5px; color: var(--text-dim);
+        text-transform: uppercase; letter-spacing: 0.06em;
+        padding: 6px 0; font-weight: 700;
+      }
+
+      .quick-replies {
+        padding: 8px 16px;
+        border-top: 1px solid var(--border-subtle);
+        display: flex; gap: 6px; flex-wrap: wrap;
+        background: var(--bg-alt);
+      }
+      .qr-btn {
+        background: #fff; border: 1px solid var(--border-subtle);
+        padding: 5px 10px; border-radius: 999px;
+        font-size: 11.5px; font-family: inherit;
+        cursor: pointer; color: var(--text-main);
+      }
+      .qr-btn:hover {
+        background: var(--accent-soft); border-color: var(--accent);
+        color: var(--accent-dark);
+      }
+
+      .compose-row {
+        padding: 12px 16px;
+        border-top: 1px solid var(--border-subtle);
+        display: flex; gap: 8px; align-items: flex-end;
+      }
+      .compose-row textarea {
+        min-height: 40px; max-height: 120px; resize: none;
+      }
+      .send-btn {
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: #fffaf3; border: 0; padding: 10px 16px; border-radius: 8px;
+        cursor: pointer; font-family: inherit; font-weight: 600;
+        display: inline-flex; gap: 6px; align-items: center;
+        white-space: nowrap;
+      }
+      .send-btn:hover { box-shadow: 0 6px 14px rgba(196, 113, 74, 0.25); }
+
+      .empty-conv {
+        flex: 1; display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        color: var(--text-muted); padding: 32px; text-align: center;
+      }
+      .empty-conv i { font-size: 42px; color: var(--text-dim); margin-bottom: 12px; }
+
+      /* Saved table */
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 18px;
+        box-shadow: 0 4px 12px rgba(115, 72, 39, 0.04);
+      }
+      table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+      .data-table thead { background: var(--bg-alt); }
+      .data-table th, .data-table td {
+        padding: 10px 12px; text-align: left;
+        border-bottom: 1px solid #f5ece0;
+      }
+      .data-table th {
+        font-size: 11px; font-weight: 700; color: var(--text-muted);
+        text-transform: uppercase; letter-spacing: 0.04em;
+      }
+      .data-table tbody tr:hover { background: var(--bg-alt); }
+
+      .toast-wrap {
+        position: fixed; bottom: 20px; right: 20px;
+        z-index: 999; display: flex; flex-direction: column; gap: 8px;
+      }
+      .toast {
+        background: var(--text-main); color: #fffaf3;
+        padding: 10px 14px; border-radius: 8px; font-size: 13px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      }
+      .toast.success { background: var(--badge-green); }
+    </style>
+  </head>
+  <body>
+    <div class="page-header">
+      <div>
+        <h1>Leads &amp; Inquiries</h1>
+        <div class="page-sub">
+          Conversations with potential buyers and users who saved your properties
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" type="button" onclick="switchTab('inq')">
+        Inquiries <span class="tab-count" id="cntInq">5</span>
+      </button>
+      <button class="tab" type="button" onclick="switchTab('saved')">
+        Saved by Users <span class="tab-count">3</span>
+      </button>
+    </div>
+
+    <!-- ===== TAB 1: INQUIRIES ===== -->
+    <div id="tabInq" class="split">
+      <div class="panel">
+        <div class="panel-toolbar">
+          <input
+            type="text"
+            id="inqSearch"
+            placeholder="Search by user or property…"
+          />
+          <div class="filter-pills" id="filterPills">
+            <button
+              class="filter-pill active"
+              onclick="setFilter(this, 'all')"
+            >
+              All
+            </button>
+            <button class="filter-pill" onclick="setFilter(this, 'unread')">
+              Unread
+            </button>
+            <button class="filter-pill" onclick="setFilter(this, 'replied')">
+              Replied
+            </button>
+            <button class="filter-pill" onclick="setFilter(this, 'archived')">
+              Archived
+            </button>
+          </div>
+        </div>
+        <div class="inq-list" id="inqList"></div>
+      </div>
+
+      <div class="panel" id="convPanel">
+        <div class="conv-header" id="convHeader" style="display: none">
+          <div>
+            <div class="conv-title" id="convName">—</div>
+            <div class="conv-prop">
+              <i class="fas fa-house-chimney"></i>
+              <span id="convProp">—</span>
+              ·
+              <a class="link" onclick="openProperty()">View Property →</a>
+            </div>
+          </div>
+          <button class="btn btn-sm" onclick="archiveConv()">
+            <i class="fas fa-box-archive"></i> Archive
+          </button>
+        </div>
+        <div class="conv-body" id="convBody">
+          <div class="empty-conv">
+            <i class="fas fa-comments"></i>
+            <div><strong>No conversation selected</strong></div>
+            <div style="font-size: 12px">
+              Pick an inquiry from the list to start replying
+            </div>
+          </div>
+        </div>
+        <div class="quick-replies" id="quickReplies" style="display: none">
+          <button
+            class="qr-btn"
+            onclick="useQuickReply('Thank you for your inquiry! I will get back to you shortly with more details.')"
+          >
+            Thank you for your inquiry
+          </button>
+          <button
+            class="qr-btn"
+            onclick="useQuickReply('I would be happy to arrange a viewing for you. What day and time works best?')"
+          >
+            I will arrange a viewing
+          </button>
+          <button
+            class="qr-btn"
+            onclick="useQuickReply('Please provide your availability for the next 7 days, and I will confirm a slot.')"
+          >
+            Please provide your availability
+          </button>
+        </div>
+        <div class="compose-row" id="composeRow" style="display: none">
+          <textarea
+            id="msgInput"
+            placeholder="Type a message…"
+            onkeydown="onMsgKey(event)"
+          ></textarea>
+          <button class="send-btn" onclick="sendMsg()">
+            <i class="fas fa-paper-plane"></i> Send
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB 2: SAVED ===== -->
+    <div id="tabSaved" style="display: none">
+      <div class="card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Property Saved</th>
+              <th>Date Saved</th>
+              <th>User Type</th>
+              <th style="text-align: right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="savedBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+      const INQS = [
+        {
+          id: "I-001",
+          user: "Sato Hiroshi",
+          initials: "SH",
+          userType: "End User",
+          property: "Roppongi Hills 2LDK",
+          propId: "P-1001",
+          unread: 2,
+          status: "unread",
+          messages: [
+            { from: "user", text: "Hi, I'm interested in the Roppongi Hills 2LDK. Is it still available?", time: "Today 10:24" },
+            { from: "user", text: "Also, what is the management fee per month?", time: "Today 10:25" },
+          ],
+        },
+        {
+          id: "I-002",
+          user: "Yamada Yuki",
+          initials: "YY",
+          userType: "End User",
+          property: "Daikanyama 1LDK",
+          propId: "P-1004",
+          unread: 1,
+          status: "unread",
+          messages: [
+            { from: "user", text: "Can I schedule a viewing this weekend?", time: "Today 09:12" },
+          ],
+        },
+        {
+          id: "I-003",
+          user: "Lee Min-jun",
+          initials: "LM",
+          userType: "End User",
+          property: "Shinjuku Studio",
+          propId: "P-1002",
+          unread: 0,
+          status: "replied",
+          messages: [
+            { from: "user", text: "Hello, does this unit accept pets?", time: "Yesterday 14:02" },
+            { from: "agent", text: "Hi Lee-san, yes — small pets (under 10kg) are allowed with a refundable deposit of ¥100,000.", time: "Yesterday 14:48" },
+            { from: "user", text: "Great. I'd like to schedule a viewing.", time: "Yesterday 15:10" },
+            { from: "agent", text: "Wonderful! I have slots open this Saturday at 11:00 or 14:00. Which works best?", time: "Yesterday 15:22" },
+          ],
+        },
+        {
+          id: "I-004",
+          user: "Kim Soo-yeon",
+          initials: "KS",
+          userType: "End User",
+          property: "Minami-Aoyama Penthouse",
+          propId: "P-1003",
+          unread: 0,
+          status: "replied",
+          messages: [
+            { from: "user", text: "Could you share floor plans?", time: "Mar 25 11:00" },
+            { from: "agent", text: "Sent! Please check the email attachment. Let me know if you have any questions.", time: "Mar 25 13:30" },
+          ],
+        },
+        {
+          id: "I-005",
+          user: "Anonymous Guest",
+          initials: "?",
+          userType: "End User",
+          property: "Shibuya Land Plot 240㎡",
+          propId: "P-1006",
+          unread: 5,
+          status: "unread",
+          messages: [
+            { from: "user", text: "Is this land plot zoned for residential or commercial?", time: "Today 08:30" },
+            { from: "user", text: "What are the height restrictions?", time: "Today 08:32" },
+            { from: "user", text: "Are there any encumbrances on the title?", time: "Today 08:33" },
+            { from: "user", text: "When was the last survey done?", time: "Today 08:35" },
+            { from: "user", text: "Could you provide the official appraisal value?", time: "Today 08:36" },
+          ],
+        },
+      ];
+
+      const SAVED = [
+        { user: "Tanaka Yui", type: "End User", property: "Roppongi Hills 2LDK", propId: "P-1001", date: "May 24, 2026" },
+        { user: "Anonymous Guest", type: "Guest (Not Registered)", property: "Minami-Aoyama Penthouse", propId: "P-1003", date: "May 23, 2026" },
+        { user: "Watanabe Ryo", type: "End User", property: "Shinjuku Studio", propId: "P-1002", date: "May 22, 2026" },
+      ];
+
+      let currentInq = null;
+      let currentFilter = "all";
+
+      function esc(s) {
+        return String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]
+        );
+      }
+
+      function renderList() {
+        const q = (document.getElementById("inqSearch").value || "").toLowerCase().trim();
+        const list = INQS.filter((i) => {
+          if (currentFilter === "unread" && i.status !== "unread") return false;
+          if (currentFilter === "replied" && i.status !== "replied") return false;
+          if (currentFilter === "archived" && i.status !== "archived") return false;
+          if (q && !(i.user + " " + i.property).toLowerCase().includes(q)) return false;
+          return true;
+        });
+        document.getElementById("cntInq").textContent = INQS.filter(i => i.unread > 0).length;
+        const html = list.map((i) => {
+          const last = i.messages[i.messages.length - 1];
+          return `
+            <div class="inq-item ${currentInq === i.id ? "active" : ""}" onclick="openInq('${i.id}')">
+              <div class="inq-avatar ${i.initials === "?" ? "gray" : ""}">${esc(i.initials)}</div>
+              <div class="inq-body">
+                <div class="inq-top">
+                  <span class="inq-name">${esc(i.user)}</span>
+                  <span class="inq-time">${esc(last.time)}</span>
+                </div>
+                <div class="inq-prop"><i class="fas fa-house-chimney" style="font-size:10px;color:var(--text-dim)"></i> ${esc(i.property)}</div>
+                <div class="inq-preview">${esc(last.text)}</div>
+                <div class="inq-meta">
+                  <span class="user-tag">${esc(i.userType)}</span>
+                  ${i.unread > 0 ? `<span class="unread-badge">${i.unread} new</span>` : ""}
+                </div>
+              </div>
+            </div>`;
+        }).join("");
+        document.getElementById("inqList").innerHTML = html ||
+          '<div style="padding:32px;text-align:center;color:var(--text-muted);font-size:12.5px"><i class="fas fa-inbox" style="font-size:24px;display:block;margin-bottom:8px;color:var(--text-dim)"></i>No inquiries match.</div>';
+      }
+
+      function openInq(id) {
+        const inq = INQS.find((i) => i.id === id);
+        if (!inq) return;
+        currentInq = id;
+        inq.unread = 0;
+        if (inq.status === "unread") inq.status = "replied";
+        document.getElementById("convHeader").style.display = "flex";
+        document.getElementById("quickReplies").style.display = "flex";
+        document.getElementById("composeRow").style.display = "flex";
+        document.getElementById("convName").textContent = inq.user;
+        document.getElementById("convProp").textContent = inq.property;
+        renderConv();
+        renderList();
+      }
+      window.openInq = openInq;
+
+      function renderConv() {
+        const inq = INQS.find((i) => i.id === currentInq);
+        if (!inq) return;
+        const body = document.getElementById("convBody");
+        body.innerHTML =
+          `<div class="msg-day-sep">— ${esc(inq.messages[0].time.split(" ")[0])} —</div>` +
+          inq.messages
+            .map(
+              (m) =>
+                `<div class="msg ${m.from}">
+              ${esc(m.text)}
+              <span class="msg-time">${esc(m.time)}</span>
+            </div>`
+            )
+            .join("");
+        body.scrollTop = body.scrollHeight;
+      }
+
+      function sendMsg() {
+        const input = document.getElementById("msgInput");
+        const text = input.value.trim();
+        if (!text || !currentInq) return;
+        const inq = INQS.find((i) => i.id === currentInq);
+        const now = new Date();
+        const time = "Today " + now.getHours().toString().padStart(2, "0") + ":" + now.getMinutes().toString().padStart(2, "0");
+        inq.messages.push({ from: "agent", text: text, time: time });
+        input.value = "";
+        renderConv();
+        renderList();
+        toast("Message sent");
+      }
+      window.sendMsg = sendMsg;
+
+      function onMsgKey(e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendMsg();
+        }
+      }
+      window.onMsgKey = onMsgKey;
+
+      function useQuickReply(text) {
+        document.getElementById("msgInput").value = text;
+        document.getElementById("msgInput").focus();
+      }
+      window.useQuickReply = useQuickReply;
+
+      function archiveConv() {
+        if (!currentInq) return;
+        const inq = INQS.find((i) => i.id === currentInq);
+        inq.status = "archived";
+        toast("Conversation archived", "success");
+        currentInq = null;
+        document.getElementById("convHeader").style.display = "none";
+        document.getElementById("quickReplies").style.display = "none";
+        document.getElementById("composeRow").style.display = "none";
+        document.getElementById("convBody").innerHTML =
+          '<div class="empty-conv"><i class="fas fa-comments"></i><div><strong>No conversation selected</strong></div></div>';
+        renderList();
+      }
+      window.archiveConv = archiveConv;
+
+      function openProperty() {
+        toast("Open property in My Properties (demo)");
+      }
+      window.openProperty = openProperty;
+
+      function setFilter(el, key) {
+        document.querySelectorAll(".filter-pill").forEach((p) => p.classList.remove("active"));
+        el.classList.add("active");
+        currentFilter = key;
+        renderList();
+      }
+      window.setFilter = setFilter;
+
+      function switchTab(t) {
+        document.querySelectorAll(".tab").forEach((el) => el.classList.remove("active"));
+        document.querySelectorAll(".tab")[t === "inq" ? 0 : 1].classList.add("active");
+        document.getElementById("tabInq").style.display = t === "inq" ? "" : "none";
+        document.getElementById("tabSaved").style.display = t === "saved" ? "" : "none";
+      }
+      window.switchTab = switchTab;
+
+      function renderSaved() {
+        document.getElementById("savedBody").innerHTML = SAVED.map(
+          (s) => `
+          <tr>
+            <td><strong>${esc(s.user)}</strong></td>
+            <td>${esc(s.property)} <span style="font-size:11px;color:var(--text-muted)">· ${esc(s.propId)}</span></td>
+            <td>${esc(s.date)}</td>
+            <td><span class="user-tag">${esc(s.type)}</span></td>
+            <td style="text-align:right">
+              <button class="btn btn-sm" onclick="msgUser('${esc(s.user)}')"><i class="fas fa-paper-plane"></i> Send Message</button>
+            </td>
+          </tr>`
+        ).join("");
+      }
+
+      function msgUser(name) {
+        toast(`Open message to ${name} (demo)`);
+      }
+      window.msgUser = msgUser;
+
+      function toast(msg, kind) {
+        const wrap = document.getElementById("toastWrap");
+        const el = document.createElement("div");
+        el.className = "toast " + (kind || "success");
+        el.textContent = msg;
+        wrap.appendChild(el);
+        setTimeout(() => el.remove(), 2400);
+      }
+
+      document.getElementById("inqSearch").addEventListener("input", renderList);
+
+      renderList();
+      renderSaved();
+    </script>
+  
+<style id="ystd-sb-css">
+.ystd-sb{position:fixed;top:0;left:0;width:200px;height:100vh;background:#fff;border-right:1px solid #e9e2d6;overflow-y:auto;z-index:40;font-family:Arial,Helvetica,sans-serif;}
+.ystd-sb .ystd-logo{padding:18px;display:flex;gap:9px;align-items:center;border-bottom:1px solid #f0ece4;}
+.ystd-sb .ystd-logo b{width:32px;height:32px;border-radius:7px;background:#c4714a;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;}
+.ystd-sb .ystd-logo span{font-size:16px;font-weight:800;color:#1a1a1a;}
+.ystd-sb a{display:flex;align-items:center;gap:10px;padding:9px 18px;color:#5b5249;font-size:13px;text-decoration:none;border-left:3px solid transparent;}
+.ystd-sb a:hover{background:#faf0e9;color:#a55232;}
+.ystd-sb a.on{background:#faf0e9;color:#a55232;font-weight:700;border-left-color:#c4714a;}
+.ystd-sb a i{width:16px;text-align:center;font-size:13px;}
+body{padding-left:216px !important;}
+@media(max-width:900px){body{padding-left:0 !important;}.ystd-sb{display:none;}}
+</style>
+<aside class="ystd-sb"><div class="ystd-logo"><b>Y</b><span>YUUSHI</span></div><nav><a class="" href="dashboard.html"><i class="fas fa-gauge-high"></i> Dashboard</a><a class="" href="property-list-oversight.html"><i class="fas fa-house-chimney"></i> Properties</a><a class="" href="project-management.html"><i class="fas fa-building-circle-arrow-right"></i> Projects</a><a class="" href="lead-management.html"><i class="fas fa-users"></i> Leads</a><a class="" href="crm-activities.html#viewings"><i class="fas fa-calendar-check"></i> Viewings</a><a class="" href="crm-activities.html#tasks"><i class="fas fa-list-check"></i> Tasks</a><a class="" href="crm-activities.html#jobs"><i class="fas fa-briefcase"></i> Jobs</a><a class="" href="crm-activities.html#calls"><i class="fas fa-phone"></i> Calls</a><a class="" href="crm-activities.html#emails"><i class="fas fa-envelope"></i> Emails</a><a class="" href="crm-activities.html#sms"><i class="fas fa-comment-sms"></i> SMS</a><a class="" href="crm-activities.html#comments"><i class="fas fa-comment"></i> Comments</a><a class="on" href="leads-inquiries.html"><i class="fas fa-comments"></i> Messages</a><a class="" href="ad-monetisation.html"><i class="fas fa-rectangle-ad"></i> Advertising</a><a class="" href="billing.html"><i class="fas fa-credit-card"></i> Subscription</a></nav></aside>
+</body>
+</html>

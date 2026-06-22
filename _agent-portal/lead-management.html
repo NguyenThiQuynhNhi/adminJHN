@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leads — YUUSHI Agent</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+      :root {
+        --accent: #c4714a; --accent-dark: #a55232; --accent-soft: #fdeee4; --accent-tint: #faf0e9;
+        --bg-body: #f5f0e8; --bg-card: #fff; --bg-alt: #fdfcf9;
+        --border: #e9e2d6; --border-soft: #f0ece4;
+        --text-main: #333; --text-head: #222; --text-muted: #8a8178; --text-dim: #aaa094;
+        --pink: #e74c7a; --grey-pill: #eceae4; --grey-pill-dark: #ddd8cf;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; }
+      body { font-family: Arial, Helvetica, system-ui, sans-serif; background: var(--bg-body); color: var(--text-main); font-size: 13px; line-height: 1.5; display: flex; -webkit-font-smoothing: antialiased; }
+      a { color: var(--accent); text-decoration: none; cursor: pointer; }
+
+      /* ===== Sidebar ===== */
+      .sidebar { width: 200px; min-width: 200px; height: 100vh; background: #fff; border-right: 1px solid var(--border); overflow-y: auto; flex-shrink: 0; }
+      .sb-logo { padding: 18px 18px; display: flex; align-items: center; gap: 9px; border-bottom: 1px solid var(--border-soft); }
+      .sb-logo-icon { width: 32px; height: 32px; border-radius: 7px; background: var(--accent); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; }
+      .sb-logo-text { font-size: 16px; font-weight: 800; color: #1a1a1a; }
+      .sb-nav { padding: 8px 0; }
+      .sb-item { display: flex; align-items: center; gap: 10px; padding: 9px 18px; color: #5b5249; font-size: 13px; cursor: pointer; border-left: 3px solid transparent; transition: all 0.12s; }
+      .sb-item:hover { background: var(--accent-tint); color: var(--accent-dark); }
+      .sb-item.active { background: var(--accent-tint); color: var(--accent-dark); font-weight: 700; border-left-color: var(--accent); }
+      .sb-item i { width: 16px; text-align: center; font-size: 13px; }
+
+      /* ===== Main ===== */
+      .main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+      .topnav { height: 56px; flex-shrink: 0; background: #fff; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 22px; gap: 16px; }
+      .topnav .search { flex: 1; max-width: 520px; margin: 0 auto; position: relative; }
+      .topnav .search input { width: 100%; height: 38px; border-radius: 8px; border: 1px solid var(--border); padding: 0 14px 0 38px; font-size: 13px; outline: none; background: var(--bg-alt); }
+      .topnav .search i { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--text-dim); }
+      .topnav-icons { display: flex; align-items: center; gap: 6px; }
+      .nav-icon { width: 36px; height: 36px; border-radius: 50%; border: 0; background: 0; color: #9a9085; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; position: relative; }
+      .nav-icon:hover { background: var(--bg-alt); color: var(--accent); }
+      .nav-icon.add { background: var(--accent); color: #fff; }
+      .nav-icon.add:hover { background: var(--accent-dark); color: #fff; }
+
+      .content { flex: 1; overflow-y: auto; padding: 24px; }
+
+      /* ===== Buttons ===== */
+      .btn { border-radius: 6px; border: 1px solid var(--border); padding: 8px 16px; font-size: 13px; background: #fff; cursor: pointer; display: inline-flex; gap: 7px; align-items: center; justify-content: center; color: var(--text-main); font-family: inherit; font-weight: 600; }
+      .btn:hover { background: var(--bg-alt); }
+      .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .btn-primary:hover { background: var(--accent-dark); }
+      .btn-pill { border-radius: 20px; }
+
+      /* ===== Page header ===== */
+      .page-title { font-size: 24px; font-weight: 800; color: var(--text-head); }
+      .page-subtitle { font-size: 12.5px; color: var(--accent); font-style: italic; margin-top: 2px; }
+      .list-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+      .head-right { display: flex; align-items: center; gap: 10px; }
+      .rows-sel { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; background: #fff; font-size: 13px; cursor: pointer; }
+
+      /* ===== Filter bar ===== */
+      .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+      .pill-toggle { display: inline-flex; border-radius: 20px; overflow: hidden; border: 1px solid var(--accent); }
+      .pill-toggle button { border: 0; background: #fff; color: var(--accent); padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+      .pill-toggle button.active { background: var(--accent); color: #fff; }
+      .filter-field { position: relative; }
+      .filter-field input, .filter-field select { height: 38px; border-radius: 8px; border: 1px solid var(--border); padding: 0 32px 0 12px; font-size: 13px; background: #fff; outline: none; min-width: 150px; color: var(--text-main); appearance: none; cursor: pointer; }
+      .filter-field.has-icon input { padding-left: 34px; }
+      .filter-field .fi-left { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; }
+      .filter-field .fi-right { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; font-size: 11px; }
+
+      /* ===== Card ===== */
+      .card { background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 1px 3px rgba(60,41,28,0.04); overflow: hidden; }
+
+      /* ===== Table ===== */
+      table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+      .data thead { background: #f6f3ec; }
+      .data th { padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 700; color: #555; white-space: nowrap; cursor: pointer; user-select: none; }
+      .data th .sort { color: var(--text-dim); margin-left: 5px; font-size: 10px; }
+      .data th.asc .sort, .data th.desc .sort { color: var(--accent); }
+      .data td { padding: 11px 14px; border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
+      .data tbody tr { cursor: pointer; }
+      .data tbody tr:nth-child(even) { background: var(--bg-alt); }
+      .data tbody tr:hover { background: var(--accent-tint); }
+      .circle-check { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--border-soft); display: inline-block; cursor: pointer; background: #fff; }
+      .circle-check.checked { background: var(--accent); border-color: var(--accent); position: relative; }
+      .circle-check.checked::after { content: "✓"; color: #fff; font-size: 11px; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+      .name-cell { display: flex; align-items: center; gap: 10px; }
+      .ini-avatar { width: 30px; height: 30px; border-radius: 50%; background: #e7e2d8; color: #6b6256; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+      .owner-cell { display: flex; align-items: center; gap: 8px; }
+      .owner-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--pink); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+      .act-icons { display: flex; gap: 10px; color: #b3a89c; }
+      .act-icons i { cursor: pointer; }
+      .act-icons i:hover { color: var(--accent); }
+
+      /* ===== Pagination ===== */
+      .pagination { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; flex-wrap: wrap; gap: 10px; }
+      .pg-left { display: flex; align-items: center; gap: 12px; font-size: 12.5px; color: var(--text-muted); }
+      .pg-right { display: flex; align-items: center; gap: 4px; }
+      .pg-btn { min-width: 28px; height: 28px; border-radius: 50%; border: 0; background: 0; cursor: pointer; font-size: 13px; color: var(--text-main); display: inline-flex; align-items: center; justify-content: center; font-family: inherit; }
+      .pg-btn:hover { background: var(--bg-alt); }
+      .pg-btn.active { background: var(--accent); color: #fff; }
+      .pg-arrow { color: var(--text-muted); }
+
+      /* ===== Detail screen ===== */
+      .detail-top { position: sticky; top: 0; background: var(--bg-body); z-index: 10; padding-bottom: 12px; }
+      .dt-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+      .back-arrow { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: #fff; cursor: pointer; color: var(--text-main); font-size: 15px; flex-shrink: 0; }
+      .back-arrow:hover { background: var(--bg-alt); }
+      .dt-name { font-size: 22px; font-weight: 800; color: var(--text-head); line-height: 1.1; }
+      .dt-created { font-size: 12px; color: var(--text-muted); }
+      .dt-stats { margin-left: auto; display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+      .dt-stat { display: flex; align-items: center; gap: 8px; }
+      .dt-stat i { color: var(--accent); font-size: 16px; }
+      .dt-stat .l { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+      .dt-stat .v { font-size: 13px; color: var(--accent); font-weight: 700; }
+
+      .pipeline { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 14px; }
+      .pipe-step { padding: 6px 13px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--grey-pill); color: #8a8178; cursor: pointer; white-space: nowrap; }
+      .pipe-step.past { background: var(--grey-pill-dark); color: #6b6256; }
+      .pipe-step.active { background: var(--accent); color: #fff; }
+      .pipe-sep { color: var(--text-dim); font-size: 11px; }
+
+      .detail-layout { display: grid; grid-template-columns: 1fr 300px; gap: 18px; margin-top: 16px; align-items: start; }
+      @media (max-width: 1100px) { .detail-layout { grid-template-columns: 1fr; } }
+
+      .sec { padding: 18px 0; border-bottom: 1px solid var(--border-soft); }
+      .sec:first-child { padding-top: 4px; }
+      .sec:last-child { border-bottom: 0; }
+      .sec-title { font-size: 15px; font-weight: 700; color: var(--text-head); }
+      .sec-sub { font-size: 12px; color: var(--accent); font-style: italic; margin: 2px 0 14px; }
+      .kv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 18px; }
+      @media (max-width: 760px) { .kv-grid { grid-template-columns: 1fr 1fr; } }
+      .kv-grid.two { grid-template-columns: repeat(2, 1fr); }
+      .kv-l { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 3px; }
+      .kv-v { font-size: 13px; color: var(--text-main); }
+      .kv-v.link { color: var(--accent); }
+      .doc-counts { display: flex; gap: 28px; margin-top: 16px; }
+      .doc-count { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+      .doc-count .circle { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); }
+
+      /* Bottom tabs */
+      .btabs { display: flex; gap: 8px; margin: 6px 0 16px; flex-wrap: wrap; }
+      .btab { padding: 7px 16px; border-radius: 20px; font-size: 12.5px; font-weight: 600; background: var(--grey-pill); color: #7a7064; cursor: pointer; border: 0; font-family: inherit; }
+      .btab.active { background: var(--accent); color: #fff; }
+      .tab-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+      .tab-filters select { height: 34px; border-radius: 7px; border: 1px solid var(--border); padding: 0 28px 0 10px; font-size: 12.5px; appearance: none; background: #fff; min-width: 120px; }
+
+      /* Empty state */
+      .empty-state { min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; }
+      .empty-state .et { font-size: 16px; font-weight: 700; color: var(--text-head); }
+      .empty-state .es { font-size: 13px; color: var(--text-muted); }
+
+      /* Right panel */
+      .rp-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+      .rp-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+      .rp-title { font-size: 15px; font-weight: 700; color: var(--text-head); display: flex; align-items: center; gap: 7px; }
+      .rp-add { display: inline-flex; align-items: center; gap: 8px; position: relative; }
+      .rp-add .lnk { font-size: 12px; }
+      .rp-add-btn { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; border: 0; cursor: pointer; font-size: 12px; }
+      .activity { position: relative; padding-left: 18px; margin-bottom: 14px; }
+      .activity::before { content: ""; position: absolute; left: 0; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--pink); }
+      .activity .a-title { font-weight: 700; font-size: 13px; }
+      .activity .a-line { font-size: 12.5px; color: var(--text-main); }
+      .activity .a-time { font-size: 11.5px; color: var(--text-muted); margin: 2px 0; }
+      .rp-sub { font-size: 12px; color: var(--accent); font-style: italic; margin-bottom: 10px; }
+      .comment-input { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 13px; font-family: inherit; resize: vertical; min-height: 60px; outline: none; }
+      .comment-input:focus { border-color: var(--accent); }
+      .press-enter { text-align: right; font-size: 11px; color: var(--text-dim); margin: 4px 0 12px; }
+      .comment { border-top: 1px solid var(--border-soft); padding-top: 12px; margin-top: 4px; }
+      .comment .c-body { font-size: 12.5px; color: var(--text-main); }
+      .comment .c-attr { font-size: 11.5px; margin-top: 5px; }
+      .comment .c-attr .who { color: var(--accent); font-weight: 600; }
+      .comment .c-attr .when { color: var(--text-muted); }
+      .full-btn { width: 100%; margin-top: 12px; }
+
+      /* Edit form */
+      .edit-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+      .form-sec { padding: 20px 0; border-bottom: 1px solid var(--border-soft); }
+      .form-sec:last-of-type { border-bottom: 0; }
+      .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+      @media (max-width: 900px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+      .fld { display: flex; flex-direction: column; gap: 5px; }
+      .fld.full { grid-column: 1 / -1; }
+      .fld label { font-size: 11px; font-weight: 700; color: #6b6256; }
+      .fld label .req { color: var(--accent); }
+      .fld input, .fld select, .fld textarea { border: 1px solid #ddd6c9; border-radius: 6px; padding: 8px 12px; font-size: 13px; font-family: inherit; background: #fff; outline: none; width: 100%; }
+      .fld select { appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px; }
+      .fld input:focus, .fld select:focus, .fld textarea:focus { border-color: var(--accent); }
+      .fld textarea { min-height: 70px; resize: vertical; }
+      .fld-combo { display: flex; gap: 6px; }
+      .fld-combo select { flex: 1; min-width: 0; }
+      .mini-add { width: 38px; flex-shrink: 0; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); border-radius: 6px; cursor: pointer; }
+      .input-icons { position: relative; }
+      .input-icons input { padding-right: 56px; }
+      .input-icons .ic { position: absolute; top: 50%; transform: translateY(-50%); color: var(--text-dim); cursor: pointer; }
+      .input-icons .ic1 { right: 32px; } .input-icons .ic2 { right: 10px; }
+
+      /* Toast */
+      .toast-wrap { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+      .toast { background: var(--accent); color: #fff; padding: 11px 16px; border-radius: 8px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+      .toast.success { background: #2f855a; }
+
+      .more-menu { position: relative; }
+      .menu-pop { position: absolute; right: 0; top: calc(100% + 6px); background: #fff; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 10px 28px rgba(60,41,28,0.16); padding: 6px; min-width: 160px; z-index: 50; display: none; }
+      .menu-pop.open { display: block; }
+      .menu-pop button { display: block; width: 100%; text-align: left; padding: 8px 12px; border: 0; background: 0; font-size: 13px; cursor: pointer; border-radius: 6px; font-family: inherit; color: var(--text-main); }
+      .menu-pop button:hover { background: var(--bg-alt); }
+      .hidden { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="sb-logo"><div class="sb-logo-icon">Y</div><div class="sb-logo-text">YUUSHI</div></div>
+      <nav class="sb-nav">
+        <a class="sb-item" href="dashboard.html"><i class="fas fa-gauge-high"></i> Dashboard</a>
+        <a class="sb-item" href="property-list-oversight.html"><i class="fas fa-house-chimney"></i> Properties</a>
+        <a class="sb-item" href="project-management.html"><i class="fas fa-building-circle-arrow-right"></i> Projects</a>
+        <a class="sb-item active"><i class="fas fa-users"></i> Leads</a>
+        <a class="sb-item" href="crm-activities.html#viewings"><i class="fas fa-calendar-check"></i> Viewings</a>
+        <a class="sb-item" href="crm-activities.html#tasks"><i class="fas fa-list-check"></i> Tasks</a>
+        <a class="sb-item" href="crm-activities.html#jobs"><i class="fas fa-briefcase"></i> Jobs</a>
+        <a class="sb-item" href="crm-activities.html#calls"><i class="fas fa-phone"></i> Calls</a>
+        <a class="sb-item" href="crm-activities.html#emails"><i class="fas fa-envelope"></i> Emails</a>
+        <a class="sb-item" href="crm-activities.html#sms"><i class="fas fa-comment-sms"></i> SMS</a>
+        <a class="sb-item" href="crm-activities.html#comments"><i class="fas fa-comment"></i> Comments</a>
+        <a class="sb-item" href="leads-inquiries.html"><i class="fas fa-comments"></i> Messages</a>
+        <a class="sb-item" href="ad-monetisation.html"><i class="fas fa-rectangle-ad"></i> Advertising</a>
+        <a class="sb-item" href="billing.html"><i class="fas fa-credit-card"></i> Subscription</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topnav">
+        <div class="search"><i class="fas fa-search"></i><input placeholder="Search leads, properties, contacts…" /></div>
+        <div class="topnav-icons">
+          <button class="nav-icon add" title="Add" onclick="showEdit()"><i class="fas fa-plus"></i></button>
+          <button class="nav-icon" title="Notifications"><i class="fas fa-bell"></i></button>
+          <button class="nav-icon" title="Profile"><i class="fas fa-user"></i></button>
+          <button class="nav-icon" title="Settings"><i class="fas fa-gear"></i></button>
+          <button class="nav-icon" title="Apps"><i class="fas fa-table-cells-large"></i></button>
+        </div>
+      </div>
+
+      <div class="content">
+        <!-- ========== SCREEN 1: LIST ========== -->
+        <div id="screenList">
+          <div class="list-head">
+            <div>
+              <div class="page-title">Leads</div>
+              <div class="page-subtitle">Select a lead below to get started</div>
+            </div>
+            <div class="head-right">
+              <div class="rows-sel" onclick="cycleRows()"><span id="rowsLabel">10</span> <i class="fas fa-chevron-down" style="font-size:10px;color:var(--text-dim)"></i></div>
+              <button class="btn btn-primary btn-pill" onclick="showEdit()"><i class="fas fa-plus"></i> Add</button>
+            </div>
+          </div>
+
+          <div class="filter-bar">
+            <div class="pill-toggle">
+              <button class="active" id="pillBuy" onclick="setIntent('buy')">To Buy</button>
+              <button id="pillRent" onclick="setIntent('rent')">To Rent</button>
+            </div>
+            <div class="filter-field has-icon"><i class="fas fa-globe fi-left"></i><input placeholder="Location" /></div>
+            <div class="filter-field"><select><option value="">Status</option><option>New</option><option>Assigned</option><option>Converted</option><option>In Progress</option></select><i class="fas fa-chevron-down fi-right"></i></div>
+            <div class="filter-field"><select><option value="">Price Range</option><option>¥0 – ¥2M</option><option>¥2M – ¥5M</option><option>¥5M+</option></select><i class="fas fa-chevron-down fi-right"></i></div>
+            <div class="filter-field"><select><option value="">Property Type</option><option>House</option><option>Apartment</option><option>Office</option></select><i class="fas fa-chevron-down fi-right"></i></div>
+          </div>
+
+          <div class="card">
+            <table class="data">
+              <thead><tr>
+                <th style="width:40px"></th>
+                <th onclick="sortBy('name')">Contact Name <span class="sort">↕</span></th>
+                <th onclick="sortBy('type')">Property Type <span class="sort">↕</span></th>
+                <th onclick="sortBy('enquiry')">Enquiry Date <span class="sort">↕</span></th>
+                <th onclick="sortBy('follow')">Net Follow Up Date <span class="sort">↕</span></th>
+                <th onclick="sortBy('status')">Status <span class="sort">↕</span></th>
+                <th onclick="sortBy('owner')">Owner <span class="sort">↕</span></th>
+                <th>Actions</th>
+              </tr></thead>
+              <tbody id="listBody"></tbody>
+            </table>
+            <div class="pagination">
+              <div class="pg-left">
+                <div class="rows-sel" onclick="cycleRows()"><span id="rowsLabel2">10</span> <i class="fas fa-chevron-down" style="font-size:10px;color:var(--text-dim)"></i></div>
+                <span id="entriesLabel">Showing 1 to 10 of 100 entries</span>
+              </div>
+              <div class="pg-right" id="pgRight"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== SCREEN 2: DETAIL ========== -->
+        <div id="screenDetail" class="hidden">
+          <div class="detail-top">
+            <div class="dt-bar">
+              <button class="back-arrow" onclick="showList()"><i class="fas fa-arrow-left"></i></button>
+              <div>
+                <div class="dt-name">Santi Argo</div>
+                <div class="dt-created">Created: 22 May, 2025</div>
+              </div>
+              <div class="dt-stats">
+                <div class="dt-stat"><i class="fas fa-house"></i><div><div class="l">Looking for</div><div class="v">House</div></div></div>
+                <div class="dt-stat"><i class="fas fa-tag"></i><div><div class="l">Interest</div><div class="v">To Buy</div></div></div>
+                <div class="dt-stat"><i class="fas fa-yen-sign"></i><div><div class="l">Budget</div><div class="v">¥2,000,000</div></div></div>
+                <button class="btn btn-primary btn-pill" onclick="showEdit()">Edit</button>
+                <div class="more-menu">
+                  <button class="nav-icon" onclick="toggleMore(event)"><i class="fas fa-ellipsis-vertical"></i></button>
+                  <div class="menu-pop" id="morePop">
+                    <button onclick="toast('Duplicate lead (demo)')">Duplicate</button>
+                    <button onclick="toast('Archive lead (demo)')">Archive</button>
+                    <button onclick="if(confirm('Delete this lead?'))toast('Deleted (demo)')" style="color:#c53030">Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="pipeline" id="pipeline"></div>
+          </div>
+
+          <div class="detail-layout">
+            <div class="card" style="padding:0 22px">
+              <div class="sec">
+                <div class="sec-title">Details</div>
+                <div class="sec-sub">Basic information about this lead</div>
+                <div class="kv-grid">
+                  <div><div class="kv-l">Contact Name</div><div class="kv-v link">Santi Argo</div></div>
+                  <div><div class="kv-l">Status</div><div class="kv-v">Proposal</div></div>
+                  <div><div class="kv-l">Owner</div><div class="kv-v">Chris Sales</div></div>
+                  <div><div class="kv-l">Enquiry Date</div><div class="kv-v">22 May 2025</div></div>
+                  <div><div class="kv-l">Next Follow Up Date</div><div class="kv-v">27 May 2025, 00:00</div></div>
+                  <div><div class="kv-l">Created</div><div class="kv-v">22 May 2025, 19:31</div></div>
+                  <div><div class="kv-l">Modified</div><div class="kv-v">12 May 2025, 22:26</div></div>
+                  <div><div class="kv-l">Ref</div><div class="kv-v">100006</div></div>
+                  <div><div class="kv-l">Enquiry Type</div><div class="kv-v">House</div></div>
+                </div>
+              </div>
+              <div class="sec">
+                <div class="sec-title">Source Details</div>
+                <div class="sec-sub">Where this lead originated from</div>
+                <div class="kv-grid two">
+                  <div><div class="kv-l">Source</div><div class="kv-v">Direct</div></div>
+                  <div><div class="kv-l">Direct Source</div><div class="kv-v">Walk-In</div></div>
+                </div>
+              </div>
+              <div class="sec">
+                <div class="sec-title">Locations</div>
+                <div class="sec-sub">Select locations from a list, draw an area on the map, or enter a post code to define the area of interest for this lead.</div>
+                <div><div class="kv-l">Location</div><div class="kv-v">1. United States, California, San Jose, Palo Alto</div></div>
+              </div>
+              <div class="sec">
+                <div class="sec-title">Budget &amp; Necessities</div>
+                <div class="sec-sub">Lead's key necessities</div>
+                <div class="kv-grid">
+                  <div><div class="kv-l">Transaction Type</div><div class="kv-v">To Buy</div></div>
+                  <div><div class="kv-l">Properties</div><div class="kv-v link">1. San Jose 4-bedroom V…</div></div>
+                  <div><div class="kv-l">List Selling Price From</div><div class="kv-v">¥2,000,000</div></div>
+                  <div><div class="kv-l">List Selling Price To</div><div class="kv-v">¥5,000,000</div></div>
+                </div>
+                <div class="doc-counts">
+                  <div class="doc-count">Leads Files <span class="circle">0</span></div>
+                  <div class="doc-count">KYC Documents <span class="circle">0</span></div>
+                  <div class="doc-count">VIP Documents <span class="circle">0</span></div>
+                </div>
+              </div>
+              <div class="sec">
+                <div class="sec-title">Main Features</div>
+                <div class="sec-sub">Technical overview of the property</div>
+                <div class="kv-grid">
+                  <div><div class="kv-l">Construction Stage</div><div class="kv-v">Completed</div></div>
+                  <div><div class="kv-l">Bedrooms From</div><div class="kv-v">2</div></div>
+                  <div><div class="kv-l">Bedrooms To</div><div class="kv-v">3</div></div>
+                  <div><div class="kv-l">Bathrooms From</div><div class="kv-v">1</div></div>
+                  <div><div class="kv-l">Bathrooms To</div><div class="kv-v">2</div></div>
+                  <div><div class="kv-l">Covered Area From</div><div class="kv-v">250 m²</div></div>
+                  <div><div class="kv-l">Covered Area To</div><div class="kv-v">300 m²</div></div>
+                  <div><div class="kv-l">Pets Allowed</div><div class="kv-v">No</div></div>
+                  <div><div class="kv-l">Private Swimming Pool</div><div class="kv-v">Yes</div></div>
+                </div>
+              </div>
+              <div class="sec">
+                <div class="sec-title">Say Hello</div>
+                <div class="sec-sub">Lead's contact details</div>
+                <div class="kv-grid">
+                  <div><div class="kv-l">Name</div><div class="kv-v">Santi Argo</div></div>
+                  <div><div class="kv-l">Phone</div><div class="kv-v">+34-655-5231</div></div>
+                  <div><div class="kv-l">Email</div><div class="kv-v link">santi-argo@gmail.com</div></div>
+                  <div><div class="kv-l">Created</div><div class="kv-v">20 May 2025, 19:55</div></div>
+                  <div><div class="kv-l">Modified</div><div class="kv-v">27 May 2025, 21:08</div></div>
+                </div>
+              </div>
+              <div class="sec" style="border-bottom:0">
+                <div class="btabs">
+                  <button class="btab active" onclick="detailTab('matching',this)">Matching Properties</button>
+                  <button class="btab" onclick="detailTab('offers',this)">Offers</button>
+                  <button class="btab" onclick="detailTab('agreements',this)">Agreements</button>
+                  <button class="btab" onclick="detailTab('related',this)">Related Leads</button>
+                </div>
+                <div id="detailTabBody"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="rp-card">
+                <div class="rp-head">
+                  <div class="rp-title">Activities</div>
+                  <div class="rp-add">
+                    <a class="lnk" onclick="openActivityMenu(event)">Add activity</a>
+                    <button class="rp-add-btn" onclick="openActivityMenu(event)"><i class="fas fa-plus"></i></button>
+                    <div class="menu-pop" id="actPop" style="top:30px">
+                      <button onclick="addActivityType('Arrange Viewing')">Arrange Viewing</button>
+                      <button onclick="addActivityType('Log Call')">Log Call</button>
+                      <button onclick="addActivityType('Add Note')">Add Note</button>
+                    </div>
+                  </div>
+                </div>
+                <div id="activityList">
+                  <div class="activity">
+                    <div class="a-title">Arrange Viewing</div>
+                    <div class="a-line">Call Santi Argo</div>
+                    <div class="a-time">Starts 24 May 2025, 19:05</div>
+                    <a class="lnk" style="font-size:12px">View call</a>
+                  </div>
+                </div>
+                <button class="btn btn-pill full-btn" onclick="toast('Showing all activities (demo)')">View All</button>
+              </div>
+
+              <div class="rp-card">
+                <div class="rp-title"><i class="fas fa-quote-left" style="color:var(--accent)"></i> Comments</div>
+                <div class="rp-sub">It's good to talk</div>
+                <textarea class="comment-input" id="commentInput" placeholder="Say something..." onkeydown="commentKey(event)"></textarea>
+                <div class="press-enter">Press Enter to Submit</div>
+                <div id="commentList">
+                  <div class="comment" style="border-top:0;padding-top:0">
+                    <div class="c-body">I have sent the proposal to the customer with the asking price of 2,300,000 for Property 312</div>
+                    <div class="c-attr"><span class="who">Chris Sales</span> &nbsp; <span class="when">26 May 2025, 19:07</span></div>
+                  </div>
+                </div>
+                <button class="btn btn-pill full-btn" onclick="toast('Showing all comments (demo)')">View All</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== SCREEN 3: EDIT ========== -->
+        <div id="screenEdit" class="hidden">
+          <div class="edit-top">
+            <div>
+              <div class="dt-name">Santi Argo</div>
+              <div class="dt-created">Created: 22 May, 2025</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-pill" onclick="showDetail()">Cancel</button>
+              <button class="btn btn-primary btn-pill" onclick="saveLead()">Save</button>
+            </div>
+          </div>
+
+          <div class="form-sec">
+            <div class="sec-title">Details</div>
+            <div class="sec-sub">Basic information about this Lead</div>
+            <div class="form-grid">
+              <div class="fld"><label>Contact Name <span class="req">*</span></label><div class="fld-combo"><select><option>Santi Argo (100029)</option></select><button class="mini-add"><i class="fas fa-plus"></i></button></div></div>
+              <div class="fld"><label>Status <span class="req">*</span></label><select><option value="">Select</option><option>New</option><option>Assigned</option><option selected>Proposal</option><option>Negotiation</option><option>Closed Won</option></select></div>
+              <div class="fld"><label>Owner</label><select><option>Chris Sales (100031)</option><option>Maria Sales</option><option>Tony Sales</option></select></div>
+              <div class="fld"><label>Enquiry Date</label><input value="22/05/2025" /></div>
+              <div class="fld"><label>Next Follow Up Date</label><input value="27/05/2025, 00:00" /></div>
+              <div class="fld"><label>Enquiry Type</label><select><option selected>House</option><option>Apartment</option><option>Office</option></select></div>
+              <div class="fld"><label>Enquiry Subtypes</label><select><option value="">Select</option><option>Villa</option><option>Townhouse</option></select></div>
+            </div>
+          </div>
+
+          <div class="form-sec">
+            <div class="sec-title">Source Details</div>
+            <div class="sec-sub">Where this lead originated from</div>
+            <div class="form-grid">
+              <div class="fld"><label>Source</label><select><option selected>Direct</option><option>Website</option><option>Referral</option></select></div>
+              <div class="fld"><label>Direct Source</label><select><option selected>Walk-In</option><option>Phone</option><option>Email</option></select></div>
+              <div class="fld"><label>Website URL</label><input placeholder="Enter" /></div>
+              <div class="fld"><label>Campaign</label><select><option value="">Select</option><option>Spring 2025</option></select></div>
+              <div class="fld"><label>Broker/External Agent</label><select><option value="">Select</option><option>Tokyo Realty</option></select></div>
+              <div class="fld full"><label>Source Description</label><textarea placeholder="Enter"></textarea></div>
+            </div>
+          </div>
+
+          <div class="form-sec">
+            <div class="sec-title">Locations</div>
+            <div class="sec-sub">Select locations from a list, draw an area on the map, or enter a post code to define the area of interest for this lead.</div>
+            <div class="form-grid" style="grid-template-columns:1fr 1fr">
+              <div class="fld"><label>Location input method</label><select><option value="">Select</option><option>From list</option><option>Draw on map</option><option>Post code</option></select></div>
+              <div class="fld"><label>Locations</label><select><option>United States, California, San Joe, Palo…</option></select></div>
+            </div>
+          </div>
+
+          <div class="form-sec">
+            <div class="sec-title">Budget &amp; Necessities</div>
+            <div class="sec-sub">Lead's key necessities</div>
+            <div class="form-grid">
+              <div class="fld"><label>Transaction Type</label><select><option selected>To Buy</option><option>To Rent</option></select></div>
+              <div class="fld"><label>Properties</label><select><option>San Jose 4-bedroom Villa (1002)</option></select></div>
+              <div class="fld"><label>Projects</label><select><option value="">Select</option></select></div>
+              <div class="fld"><label>List Selling Price From</label><input value="¥2,000,000" /></div>
+              <div class="fld"><label>List Selling Price To</label><input value="¥5,000,000" /></div>
+              <div class="fld"><label>Leads Files</label><div class="input-icons"><input value="0" /><i class="fas fa-search ic ic1"></i><i class="fas fa-plus ic ic2"></i></div></div>
+              <div class="fld"><label>KYC Documents</label><div class="input-icons"><input value="0" /><i class="fas fa-search ic ic1"></i><i class="fas fa-plus ic ic2"></i></div></div>
+              <div class="fld"><label>VIP Documents</label><div class="input-icons"><input value="0" /><i class="fas fa-search ic ic1"></i><i class="fas fa-plus ic ic2"></i></div></div>
+              <div class="fld full"><label>Description</label><textarea placeholder="Enter"></textarea></div>
+            </div>
+          </div>
+
+          <div class="form-sec">
+            <div class="sec-title">Main Features</div>
+            <div class="sec-sub">Technical overview of the property</div>
+            <div class="form-grid">
+              <div class="fld"><label>New Build</label><select><option value="">Select</option><option>Yes</option><option>No</option></select></div>
+              <div class="fld"><label>Construction Stage</label><select><option selected>Completed</option><option>Under construction</option></select></div>
+              <div class="fld"><label>Bedrooms From</label><input value="2" /></div>
+              <div class="fld"><label>Bedrooms To</label><input value="3" /></div>
+              <div class="fld"><label>Bathrooms From</label><input value="1" /></div>
+              <div class="fld"><label>Bathrooms To</label><input value="2" /></div>
+              <div class="fld"><label>Internal Area From</label><input placeholder="Enter" /></div>
+              <div class="fld"><label>Internal Area To</label><input placeholder="Enter" /></div>
+              <div class="fld"><label>Covered Area From</label><input value="250 m²" /></div>
+              <div class="fld"><label>Covered Area To</label><input value="300 m²" /></div>
+              <div class="fld"><label>Plot Area From</label><input placeholder="Enter" /></div>
+              <div class="fld"><label>Plot Area To</label><input placeholder="Enter" /></div>
+              <div class="fld"><label>Total Area From</label><input placeholder="Enter" /></div>
+              <div class="fld"><label>Total Area To</label><input placeholder="Enter" /></div>
+              <div class="fld"><label>Air Condition</label><select><option value="">Select</option><option>Yes</option><option>No</option></select></div>
+              <div class="fld"><label>Furnished</label><select><option value="">Select</option><option>Yes</option><option>No</option></select></div>
+              <div class="fld"><label>Elevator</label><select><option value="">Select</option><option>Yes</option><option>No</option></select></div>
+              <div class="fld"><label>Pets Allowed</label><select><option selected>No</option><option>Yes</option></select></div>
+              <div class="fld"><label>Private Swimming Pool</label><select><option selected>Yes</option><option>No</option></select></div>
+              <div class="fld"><label>Title Deeds</label><select><option value="">Select</option><option>Clean</option></select></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+      function emptyBox(title, sub) {
+        return `<div class="empty-state">
+          <svg width="120" height="96" viewBox="0 0 120 96" fill="none">
+            <ellipse cx="60" cy="86" rx="40" ry="6" fill="#eceae4"/>
+            <path d="M30 44 L60 54 L90 44 L90 74 L60 84 L30 74 Z" fill="#dbe6ef"/>
+            <path d="M30 44 L60 54 L60 84 L30 74 Z" fill="#c7d7e6"/>
+            <path d="M30 44 L42 34 L72 44 L60 54 Z" fill="#eaf1f7"/>
+            <path d="M90 44 L78 34 L48 44 L60 54 Z" fill="#dbe6ef"/>
+            <circle cx="76" cy="26" r="3.5" fill="#f0b429"/>
+            <circle cx="50" cy="20" r="2.5" fill="#f7c948"/>
+            <rect x="62" y="14" width="6" height="6" rx="1" fill="#9fb3c8" transform="rotate(20 65 17)"/>
+          </svg>
+          <div class="et">${title}</div>
+          ${sub ? `<div class="es">${sub}</div>` : ""}
+        </div>`;
+      }
+
+      const OWNERS = { MS: "Maria Sales", TS: "Tony Sales", JS: "Jenny Sales" };
+      const LEADS = [
+        { name: "Neil Down", type: "House", enquiry: "2025-05-27", follow: "2025-06-03 | 14:30", status: "New", owner: "MS" },
+        { name: "Colin Sik", type: "Apartment", enquiry: "2025-05-27", follow: "2025-06-03 | 14:30", status: "Assigned", owner: "TS" },
+        { name: "Dee End", type: "House", enquiry: "2025-05-27", follow: "2025-06-03 | 14:30", status: "Converted", owner: "JS" },
+        { name: "Art Decco", type: "Office", enquiry: "2025-05-27", follow: "2025-06-03 | 14:30", status: "Assigned", owner: "TS" },
+        { name: "Audi Yose", type: "Apartment", enquiry: "2025-05-27", follow: "2025-06-03 | 14:30", status: "In Progress", owner: "TS" },
+        { name: "Mark Ateer", type: "Apartment", enquiry: "2025-05-27", follow: "2025-06-03 | 14:30", status: "Assigned", owner: "JS" },
+        { name: "Andreas Papandreas", type: "House", enquiry: "2025-05-27", follow: "2025-06-03 | 14:30", status: "Assigned", owner: "MS" },
+        { name: "Margarett Romanovich", type: "Apartment", enquiry: "2025-05-27", follow: "2025-06-03 | 14:30", status: "Converted", owner: "MS" },
+        { name: "Oscar Nommanee", type: "House", enquiry: "2025-05-27", follow: "2025-06-03 | 14:30", status: "Converted", owner: "MS" },
+        { name: "Stan Dupp", type: "House", enquiry: "2025-05-27", follow: "2025-06-03 | 14:30", status: "Assigned", owner: "MS" },
+      ];
+      let sortKey = "name", sortDir = "asc", rowsPerPage = 10, page = 1, intent = "buy";
+      const TOTAL = 100;
+
+      function ini2(n) { const p = n.trim().split(/\s+/); return ((p[0]?.[0] || "") + (p[1]?.[0] || p[0]?.[1] || "")).toUpperCase(); }
+
+      function renderList() {
+        let rows = LEADS.slice();
+        rows.sort((a, b) => {
+          const va = sortKey === "owner" ? OWNERS[a.owner] : a[sortKey], vb = sortKey === "owner" ? OWNERS[b.owner] : b[sortKey];
+          return (va < vb ? -1 : va > vb ? 1 : 0) * (sortDir === "asc" ? 1 : -1);
+        });
+        const shown = rows.slice(0, rowsPerPage);
+        document.getElementById("listBody").innerHTML = shown.map(l => `
+          <tr onclick="showDetail()">
+            <td onclick="event.stopPropagation();this.querySelector('.circle-check').classList.toggle('checked')"><span class="circle-check"></span></td>
+            <td><div class="name-cell"><span class="ini-avatar">${ini2(l.name)}</span> ${l.name}</div></td>
+            <td>${l.type}</td>
+            <td>${l.enquiry}</td>
+            <td>${l.follow}</td>
+            <td>${l.status}</td>
+            <td><div class="owner-cell"><span class="owner-avatar">${l.owner}</span> ${OWNERS[l.owner]}</div></td>
+            <td onclick="event.stopPropagation()"><div class="act-icons"><i class="fas fa-pen" onclick="showEdit()"></i><i class="fas fa-trash" onclick="if(confirm('Delete lead?'))toast('Deleted (demo)')"></i></div></td>
+          </tr>`).join("");
+        document.querySelectorAll(".data thead th").forEach(th => th.classList.remove("asc", "desc"));
+        const colIdx = { name: 1, type: 2, enquiry: 3, follow: 4, status: 5, owner: 6 }[sortKey];
+        if (colIdx) document.querySelectorAll("#screenList .data thead th")[colIdx].classList.add(sortDir);
+        const start = (page - 1) * rowsPerPage + 1, end = Math.min(page * rowsPerPage, TOTAL);
+        document.getElementById("entriesLabel").textContent = `Showing ${start} to ${end} of ${TOTAL} entries`;
+        renderPagination();
+      }
+      function renderPagination() {
+        const pages = Math.ceil(TOTAL / rowsPerPage);
+        let h = `<button class="pg-btn pg-arrow" onclick="goPage(${page - 1})">‹</button>`;
+        for (let i = 1; i <= Math.min(5, pages); i++) h += `<button class="pg-btn ${i === page ? "active" : ""}" onclick="goPage(${i})">${i}</button>`;
+        h += `<button class="pg-btn pg-arrow" onclick="goPage(${page + 1})">›</button>`;
+        document.getElementById("pgRight").innerHTML = h;
+      }
+      function goPage(p) { const pages = Math.ceil(TOTAL / rowsPerPage); if (p < 1 || p > pages) return; page = p; renderList(); }
+      window.goPage = goPage;
+      function sortBy(k) { if (sortKey === k) sortDir = sortDir === "asc" ? "desc" : "asc"; else { sortKey = k; sortDir = "asc"; } renderList(); }
+      window.sortBy = sortBy;
+      function cycleRows() { rowsPerPage = rowsPerPage === 10 ? 25 : rowsPerPage === 25 ? 50 : 10; document.getElementById("rowsLabel").textContent = rowsPerPage; document.getElementById("rowsLabel2").textContent = rowsPerPage; page = 1; renderList(); }
+      window.cycleRows = cycleRows;
+      function setIntent(i) { intent = i; document.getElementById("pillBuy").classList.toggle("active", i === "buy"); document.getElementById("pillRent").classList.toggle("active", i === "rent"); }
+      window.setIntent = setIntent;
+
+      const STAGES = ["New", "Assigned", "Contact", "Viewing", "Proposal", "Negotiation", "Asleep", "Closed Won", "Closed Lost"];
+      let currentStage = 4;
+      function renderPipeline() {
+        document.getElementById("pipeline").innerHTML = STAGES.map((s, i) => {
+          const cls = i === currentStage ? "active" : i < currentStage ? "past" : "";
+          return `<span class="pipe-step ${cls}" onclick="setStage(${i})">${s}</span>` + (i < STAGES.length - 1 ? '<span class="pipe-sep">→</span>' : "");
+        }).join("");
+      }
+      function setStage(i) { currentStage = i; renderPipeline(); toast("Status: " + STAGES[i]); }
+      window.setStage = setStage;
+
+      function detailTab(t, btn) {
+        document.querySelectorAll(".btab").forEach(b => b.classList.remove("active")); btn.classList.add("active");
+        const body = document.getElementById("detailTabBody");
+        if (t === "matching") {
+          body.innerHTML = `<div class="tab-filters">
+            <select><option>Projects</option></select><select><option>Price</option></select><select><option>Locations</option></select><select><option>Bedrooms</option></select><select><option>Group By</option></select>
+          </div>` + emptyBox("No entries were found");
+        } else if (t === "offers") {
+          body.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-weight:700;font-size:14px">List</div><button class="btn btn-primary btn-pill" onclick="toast('Add offer (demo)')"><i class="fas fa-plus-circle"></i> ADD</button></div>
+            <table class="data"><thead><tr><th>Property <span class="sort">↕</span></th><th>Offer Price <span class="sort">↕</span></th><th>Offer Date Sent <span class="sort">↕</span></th><th>Counteroffer Price <span class="sort">↕</span></th><th>Counteroffer Date Sent <span class="sort">↕</span></th><th>Actions</th></tr></thead>
+            <tbody><tr><td>San Jose 4-bedroom Villa</td><td>¥2,200,000</td><td>25 May 2025</td><td>¥2,300,000</td><td>27 May 2025</td><td><i class="fas fa-ellipsis-vertical" style="color:#b3a89c;cursor:pointer"></i></td></tr></tbody></table>
+            <div class="pagination"><div class="pg-left"><div class="rows-sel">10 <i class="fas fa-chevron-down" style="font-size:10px;color:var(--text-dim)"></i></div><span>Showing 1 to 1 of 1 entries</span></div></div>`;
+        } else if (t === "agreements") {
+          body.innerHTML = `<table class="data"><thead><tr><th>Ref <span class="sort">↕</span></th><th>Property <span class="sort">↕</span></th><th>List Selling Price <span class="sort">↕</span></th><th>Final Selling Price <span class="sort">↕</span></th><th>Assigned To <span class="sort">↕</span></th></tr></thead></table>` + emptyBox("No entries were found");
+        } else {
+          body.innerHTML = `<table class="data"><thead><tr><th>Contact Name <span class="sort">↕</span></th><th>Enquiry Date <span class="sort">↕</span></th><th>Created <span class="sort">↕</span></th><th>Status <span class="sort">↕</span></th><th>Owner <span class="sort">↕</span></th><th>Budget from <span class="sort">↕</span></th><th>Budget to <span class="sort">↕</span></th></tr></thead></table>` + emptyBox("No entries were found");
+        }
+      }
+      window.detailTab = detailTab;
+
+      function openActivityMenu(e) { e.stopPropagation(); const p = document.getElementById("actPop"); p.classList.toggle("open"); document.addEventListener("click", () => p.classList.remove("open"), { once: true }); }
+      window.openActivityMenu = openActivityMenu;
+      function addActivityType(t) {
+        const div = document.createElement("div"); div.className = "activity";
+        div.innerHTML = `<div class="a-title">${t}</div><div class="a-line">Santi Argo</div><div class="a-time">Starts ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}, now</div>`;
+        document.getElementById("activityList").prepend(div); toast(t + " added");
+      }
+      window.addActivityType = addActivityType;
+      function commentKey(e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          const v = e.target.value.trim(); if (!v) return;
+          const div = document.createElement("div"); div.className = "comment";
+          div.innerHTML = `<div class="c-body">${v.replace(/[<>&]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]))}</div><div class="c-attr"><span class="who">Chris Sales</span> &nbsp; <span class="when">${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}, ${new Date().toTimeString().slice(0, 5)}</span></div>`;
+          document.getElementById("commentList").prepend(div); e.target.value = ""; toast("Comment added");
+        }
+      }
+      window.commentKey = commentKey;
+      function toggleMore(e) { e.stopPropagation(); const p = document.getElementById("morePop"); p.classList.toggle("open"); document.addEventListener("click", () => p.classList.remove("open"), { once: true }); }
+      window.toggleMore = toggleMore;
+
+      function showList() { document.getElementById("screenList").classList.remove("hidden"); document.getElementById("screenDetail").classList.add("hidden"); document.getElementById("screenEdit").classList.add("hidden"); }
+      function showDetail() { document.getElementById("screenList").classList.add("hidden"); document.getElementById("screenDetail").classList.remove("hidden"); document.getElementById("screenEdit").classList.add("hidden"); renderPipeline(); detailTab("matching", document.querySelector(".btab")); window.scrollTo(0, 0); }
+      function showEdit() { document.getElementById("screenList").classList.add("hidden"); document.getElementById("screenDetail").classList.add("hidden"); document.getElementById("screenEdit").classList.remove("hidden"); window.scrollTo(0, 0); }
+      function saveLead() { toast("Lead saved successfully", "success"); setTimeout(showDetail, 400); }
+      window.showList = showList; window.showDetail = showDetail; window.showEdit = showEdit; window.saveLead = saveLead;
+
+      function toast(msg, kind) { const el = document.createElement("div"); el.className = "toast " + (kind || ""); el.textContent = msg; document.getElementById("toastWrap").appendChild(el); setTimeout(() => el.remove(), 2600); }
+      window.toast = toast;
+
+      renderList();
+    </script>
+  </body>
+</html>

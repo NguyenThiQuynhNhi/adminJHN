@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Advertising — YUUSHI Agent</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+      :root {
+        --bg-body: #f5f0e8;
+        --bg-card: #ffffff;
+        --bg-alt: #fdf9f3;
+        --border-subtle: #eadccd;
+        --border-strong: #d9c8b4;
+        --accent: #c4714a;
+        --accent-dark: #a55232;
+        --accent-soft: #fef1e6;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+        --text-dim: #9b8568;
+        --badge-green: #2f855a;
+        --badge-red: #c53030;
+        --badge-amber: #b7791f;
+        --badge-blue: #2c5282;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg-body); color: var(--text-main);
+        font-size: 13px; line-height: 1.5;
+        padding: clamp(16px, 2.5vw, 24px);
+        -webkit-font-smoothing: antialiased;
+      }
+      h1 { margin: 0 0 4px; font-size: 22px; font-weight: 700; }
+      h2 { margin: 0 0 12px; font-size: 18px; font-weight: 700; }
+      .page-header {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        margin-bottom: 14px; gap: 12px; flex-wrap: wrap;
+      }
+      .page-sub { font-size: 12.5px; color: var(--text-muted); }
+      .tabs {
+        display: flex; gap: 4px; border-bottom: 1px solid var(--border-subtle);
+        margin-bottom: 18px;
+      }
+      .tab {
+        background: transparent; border: 0; padding: 10px 18px;
+        font-family: inherit; font-size: 13.5px; font-weight: 600;
+        color: var(--text-muted); cursor: pointer;
+        border-bottom: 3px solid transparent; margin-bottom: -1px;
+      }
+      .tab:hover { color: var(--text-main); }
+      .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+      input, select, textarea {
+        border-radius: 8px; border: 1px solid var(--border-subtle);
+        padding: 8px 11px; font-size: 13px; background: #fff;
+        color: var(--text-main); outline: none; font-family: inherit;
+        width: 100%; min-height: 36px;
+      }
+      input:focus, select:focus, textarea:focus {
+        border-color: var(--accent); box-shadow: 0 0 0 2px rgba(196, 113, 74, 0.18);
+      }
+      .btn {
+        border-radius: 8px; border: 1px solid var(--border-strong);
+        padding: 8px 14px; font-size: 13px; background: #fff;
+        cursor: pointer; display: inline-flex; gap: 6px;
+        align-items: center; justify-content: center;
+        color: var(--text-main); font-family: inherit; font-weight: 500;
+        min-height: 36px;
+      }
+      .btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        border-color: var(--accent-dark); color: #fffaf3;
+      }
+      .btn-primary:hover { color: #fffaf3; }
+      .btn-sm { padding: 5px 10px; font-size: 11.5px; min-height: 28px; }
+
+      .card {
+        background: var(--bg-card); border: 1px solid var(--border-subtle);
+        border-radius: 12px; padding: 18px;
+        box-shadow: 0 4px 12px rgba(115, 72, 39, 0.04);
+        margin-bottom: 14px;
+      }
+      .card-title {
+        font-size: 14px; font-weight: 700; margin-bottom: 12px;
+        padding-bottom: 10px; border-bottom: 1px solid #f5ece0;
+        display: flex; align-items: center; gap: 8px;
+      }
+      .card-title i { color: var(--accent); }
+
+      /* Buy Ads intro */
+      .intro-hero {
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: #fffaf3;
+        border-radius: 14px; padding: 22px 24px;
+        margin-bottom: 18px;
+        box-shadow: 0 10px 28px rgba(165, 82, 50, 0.2);
+      }
+      .intro-hero h2 { margin: 0 0 6px; color: #fffaf3; font-size: 22px; }
+      .intro-hero p { margin: 0; font-size: 13.5px; opacity: 0.92; }
+
+      .slot-scroll {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(240px, 1fr));
+        gap: 12px; overflow-x: auto;
+        padding-bottom: 6px; margin-bottom: 18px;
+      }
+      @media (max-width: 1280px) {
+        .slot-scroll { grid-template-columns: repeat(5, 260px); }
+      }
+      .slot-card {
+        background: var(--bg-card); border: 1px solid var(--border-subtle);
+        border-radius: 12px; padding: 16px;
+        display: flex; flex-direction: column; gap: 8px;
+        box-shadow: 0 4px 12px rgba(115, 72, 39, 0.04);
+        transition: transform 0.15s, box-shadow 0.15s;
+      }
+      .slot-card:hover {
+        transform: translateY(-2px); box-shadow: 0 8px 20px rgba(115, 72, 39, 0.08);
+      }
+      .slot-icon {
+        width: 42px; height: 42px; border-radius: 10px;
+        background: var(--accent-soft); color: var(--accent);
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 18px;
+      }
+      .slot-name { font-size: 14px; font-weight: 700; }
+      .slot-desc { font-size: 12px; color: var(--text-muted); flex: 1; }
+      .slot-meta {
+        display: flex; justify-content: space-between;
+        font-size: 11.5px; color: var(--text-muted); margin-top: 4px;
+      }
+      .slot-meta strong { color: var(--accent-dark); }
+      .slot-price {
+        font-size: 16px; font-weight: 800; color: var(--accent-dark);
+      }
+      .slot-actions { display: flex; gap: 6px; margin-top: 6px; }
+
+      /* KPI cards */
+      .kpi-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 12px; margin-bottom: 16px;
+      }
+      .kpi {
+        background: var(--bg-card); border: 1px solid var(--border-subtle);
+        border-radius: 12px; padding: 14px;
+      }
+      .kpi-label {
+        font-size: 11px; font-weight: 700; color: var(--text-muted);
+        text-transform: uppercase; letter-spacing: 0.04em;
+        margin-bottom: 6px;
+      }
+      .kpi-value {
+        font-size: 24px; font-weight: 800; color: var(--text-main); line-height: 1.1;
+      }
+      .kpi-trend {
+        font-size: 11px; margin-top: 4px; color: var(--badge-green);
+      }
+
+      /* Table */
+      table.data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+      .data-table thead { background: var(--bg-alt); }
+      .data-table th, .data-table td {
+        padding: 10px 12px; text-align: left;
+        border-bottom: 1px solid #f5ece0;
+      }
+      .data-table th {
+        font-size: 11px; font-weight: 700; color: var(--text-muted);
+        text-transform: uppercase; letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      .data-table tbody tr:hover { background: var(--bg-alt); }
+      .badge {
+        font-size: 10.5px; padding: 3px 8px; border-radius: 999px;
+        font-weight: 700; border: 1px solid transparent;
+        white-space: nowrap;
+      }
+      .b-active { background: #e6f6ef; color: var(--badge-green); border-color: #b7e4cc; }
+      .b-pending { background: #fff6e0; color: var(--badge-amber); border-color: #fbd38d; }
+      .b-rejected { background: #fde8e8; color: var(--badge-red); border-color: #fbcaca; }
+      .b-paused { background: #f7f7f8; color: #4a5568; border-color: #d2d6dc; }
+      .b-expired { background: #ede1d4; color: #5b4a35; border-color: #d9c8b4; }
+      .progress-bar {
+        background: #f5ece0; height: 6px; border-radius: 999px;
+        overflow: hidden; min-width: 60px;
+      }
+      .progress-bar .fill {
+        height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+      }
+      .reject-tooltip {
+        cursor: help; border-bottom: 1px dotted var(--badge-red);
+      }
+
+      .hometown-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: #e6f6ef; color: var(--badge-green);
+        border: 1px solid #b7e4cc;
+        padding: 5px 10px; border-radius: 999px;
+        font-size: 11.5px; font-weight: 700;
+        margin-bottom: 12px;
+      }
+
+      .disclaimer {
+        font-size: 11.5px; color: var(--text-muted);
+        background: #fff8eb; border: 1px solid #fcd9bf;
+        border-radius: 6px; padding: 8px 12px;
+        display: flex; gap: 6px; align-items: flex-start;
+        margin-top: 8px;
+      }
+      .disclaimer i { color: var(--accent); margin-top: 1px; }
+
+      /* Modal & stepper (reused) */
+      .modal-backdrop {
+        position: fixed; inset: 0; background: rgba(34, 24, 18, 0.5);
+        display: none; align-items: center; justify-content: center;
+        z-index: 200; padding: 16px;
+      }
+      .modal-backdrop.open { display: flex; }
+      .modal-box {
+        background: #fff; border-radius: 14px;
+        width: 640px; max-width: 100%; max-height: 92vh;
+        display: flex; flex-direction: column;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
+      }
+      .modal-header {
+        padding: 16px 22px; border-bottom: 1px solid var(--border-subtle);
+        display: flex; justify-content: space-between; align-items: center;
+      }
+      .modal-header h3 { margin: 0; font-size: 16px; font-weight: 700; }
+      .modal-body { padding: 22px; overflow: auto; }
+      .modal-footer {
+        padding: 14px 22px; border-top: 1px solid var(--border-subtle);
+        display: flex; justify-content: space-between; gap: 8px;
+      }
+      .stepper {
+        display: flex; gap: 4px; margin-bottom: 22px; align-items: center;
+      }
+      .step { flex: 1; text-align: center; }
+      .step-circle {
+        width: 26px; height: 26px; border-radius: 50%;
+        background: #ede1d4; color: #7a6a5c;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 11px; font-weight: 700; margin: 0 auto 3px;
+      }
+      .step.active .step-circle { background: var(--accent); color: #fff; }
+      .step.done .step-circle { background: var(--badge-green); color: #fff; }
+      .step-label { font-size: 10px; color: var(--text-muted); font-weight: 600; }
+      .step.active .step-label { color: var(--accent); }
+      .step-connector {
+        height: 2px; background: #ede1d4; flex: 0.5; margin-bottom: 18px;
+      }
+      .form-label {
+        display: block; font-size: 11px; font-weight: 700;
+        color: var(--text-muted); text-transform: uppercase;
+        letter-spacing: 0.04em; margin-bottom: 5px; margin-top: 14px;
+      }
+      .form-label:first-child { margin-top: 0; }
+
+      .warn-banner {
+        background: #fff6e0; border: 1px solid #fcd34d;
+        border-radius: 8px; padding: 12px 14px; font-size: 12.5px;
+        color: #6b3a00; margin-bottom: 12px;
+        display: flex; gap: 8px; align-items: flex-start;
+      }
+      .warn-banner i { color: var(--badge-amber); margin-top: 1px; }
+
+      .summary-row {
+        display: flex; justify-content: space-between;
+        padding: 8px 0; border-bottom: 1px solid #f5ece0; font-size: 13px;
+      }
+      .summary-row:last-child { border-bottom: 0; font-weight: 700; font-size: 14px; }
+
+      .toolbar {
+        display: flex; gap: 10px; align-items: center; margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+      .toolbar select { max-width: 180px; }
+
+      .toast-wrap {
+        position: fixed; bottom: 20px; right: 20px;
+        z-index: 999; display: flex; flex-direction: column; gap: 8px;
+      }
+      .toast {
+        background: var(--text-main); color: #fffaf3;
+        padding: 10px 14px; border-radius: 8px; font-size: 13px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      }
+      .toast.success { background: var(--badge-green); }
+      .toast.warn { background: var(--badge-amber); color: #2a1f18; }
+
+      .chart-wrap { height: 280px; }
+    </style>
+  </head>
+  <body>
+    <div class="page-header">
+      <div>
+        <h1>Advertising</h1>
+        <div class="page-sub">
+          Promote your listings with targeted ad campaigns
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('buy')">
+        <i class="fas fa-cart-shopping"></i> Buy Ads
+      </button>
+      <button class="tab" onclick="switchTab('camp')">
+        <i class="fas fa-list-check"></i> My Campaigns
+      </button>
+      <button class="tab" onclick="switchTab('perf')">
+        <i class="fas fa-chart-line"></i> Performance
+      </button>
+    </div>
+
+    <!-- ===== TAB 1: BUY ADS ===== -->
+    <div id="tabBuy">
+      <div class="intro-hero">
+        <h2><i class="fas fa-rocket"></i> Promote your properties to more buyers</h2>
+        <p>Choose from 5 ad slot types. Pre-authorize budget, get admin approval within 24–48h, then go live.</p>
+      </div>
+
+      <div class="slot-scroll" id="slotScroll"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <i class="fas fa-circle-question"></i> How it works
+        </div>
+        <ol style="padding-left: 18px; margin: 0; font-size: 13px; color: var(--text-muted); line-height: 1.8">
+          <li>Choose a slot type that matches your target audience.</li>
+          <li>Select properties / configure targeting, then set budget &amp; dates.</li>
+          <li>Upload creative or confirm property cards.</li>
+          <li>YUUSHI admin reviews and approves within 24–48 hours.</li>
+          <li>Ad goes live · payment is confirmed only after approval.</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- ===== TAB 2: MY CAMPAIGNS ===== -->
+    <div id="tabCamp" style="display: none">
+      <div class="toolbar">
+        <select id="filtCampStatus" onchange="renderCamps()">
+          <option value="">All status</option>
+          <option value="active">Active</option>
+          <option value="pending">Pending Review</option>
+          <option value="rejected">Rejected</option>
+          <option value="paused">Paused</option>
+          <option value="expired">Expired</option>
+        </select>
+        <select id="filtCampType" onchange="renderCamps()">
+          <option value="">All ad types</option>
+          <option>Homepage Carousel</option>
+          <option>Static Banner</option>
+          <option>Sponsored Search</option>
+          <option>In-Article Banner</option>
+          <option>Property Detail Banner</option>
+        </select>
+      </div>
+      <div class="card" style="padding: 0; overflow: hidden">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Campaign ID</th>
+              <th>Ad Type</th>
+              <th>Slot</th>
+              <th>Properties</th>
+              <th>Budget</th>
+              <th>Start–End</th>
+              <th>Status</th>
+              <th>Delivered</th>
+              <th style="text-align: right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="campBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== TAB 3: PERFORMANCE ===== -->
+    <div id="tabPerf" style="display: none">
+      <div class="toolbar">
+        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase">Date range:</label>
+        <select id="dateRange" onchange="updateChart()">
+          <option value="week">This Week</option>
+          <option value="month" selected>This Month</option>
+          <option value="quarter">Last 3 Months</option>
+        </select>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi"><div class="kpi-label">Total Impressions</div><div class="kpi-value" id="kpiImp">142,580</div><div class="kpi-trend">+18% vs prev</div></div>
+        <div class="kpi"><div class="kpi-label">Total Clicks</div><div class="kpi-value" id="kpiCl">3,124</div><div class="kpi-trend">+22% vs prev</div></div>
+        <div class="kpi"><div class="kpi-label">Avg CTR</div><div class="kpi-value" id="kpiCtr">2.19%</div><div class="kpi-trend">+0.3pt vs prev</div></div>
+        <div class="kpi"><div class="kpi-label">Total Conversions</div><div class="kpi-value" id="kpiCv">87</div><div class="kpi-trend">chats + saves</div></div>
+        <div class="kpi"><div class="kpi-label">Total Spend</div><div class="kpi-value" id="kpiSp">¥215,400</div><div class="kpi-trend" style="color:var(--text-muted)">of ¥320,000 budget</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <i class="fas fa-chart-area"></i> Impressions &amp; Clicks Over Time
+        </div>
+        <div class="chart-wrap">
+          <canvas id="perfChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <i class="fas fa-table"></i> Per-Campaign Performance
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Campaign</th>
+              <th>IMP</th>
+              <th>CL</th>
+              <th>CTR</th>
+              <th>CV</th>
+              <th>CVR</th>
+              <th>Spend</th>
+              <th>Delivered</th>
+            </tr>
+          </thead>
+          <tbody id="perfBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== PURCHASE MODAL ===== -->
+    <div class="modal-backdrop" id="buyModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="buyTitle"><i class="fas fa-cart-shopping" style="color: var(--accent)"></i> Buy Ad Slot</h3>
+          <button class="btn btn-sm" onclick="closeBuy()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body" id="buyBody"></div>
+        <div class="modal-footer">
+          <button class="btn" onclick="prevBuyStep()" id="buyPrev">‹ Back</button>
+          <div style="font-size: 11.5px; color: var(--text-muted); align-self: center">
+            Step <span id="buyStepNum">1</span> of 5
+          </div>
+          <button class="btn btn-primary" onclick="nextBuyStep()" id="buyNext">Next ›</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+      const SLOTS = [
+        {
+          key: "carousel",
+          icon: "fa-images",
+          name: "Homepage Carousel",
+          desc: "Feature your property in the homepage spotlight. Fixed position, maximum visibility.",
+          reach: "~85K imp/wk",
+          price: "¥120,000/mo",
+        },
+        {
+          key: "static",
+          icon: "fa-rectangle-ad",
+          name: "Static Banner",
+          desc: "Your brand banner on Area Guide and Mortgage Calculator pages.",
+          reach: "~40K imp/wk",
+          price: "¥45,000/mo",
+        },
+        {
+          key: "search",
+          icon: "fa-magnifying-glass",
+          name: "Sponsored Search",
+          desc: "Appear at the top of search results for your target location. Keyword model — buy any city.",
+          reach: "~25K imp/wk",
+          price: "¥850 CPM",
+        },
+        {
+          key: "article",
+          icon: "fa-newspaper",
+          name: "In-Article Banner",
+          desc: "Your brand banner inside blog and news articles by category.",
+          reach: "~18K imp/wk",
+          price: "¥650 CPM",
+        },
+        {
+          key: "detail",
+          icon: "fa-house-flag",
+          name: "Property Detail Banner",
+          desc: "Your brand on property detail pages matching your filter.",
+          reach: "~32K imp/wk",
+          price: "¥720 CPM",
+        },
+      ];
+
+      const CAMPS = [
+        {
+          id: "AD-501",
+          type: "Homepage Carousel",
+          slot: "Position #2",
+          properties: ["Roppongi Hills 2LDK"],
+          budget: 120000,
+          start: "May 10, 2026",
+          end: "Jun 10, 2026",
+          status: "active",
+          delivered: 62,
+          imp: 52800,
+          cl: 1180,
+          cv: 34,
+          spend: 78400,
+        },
+        {
+          id: "AD-502",
+          type: "Sponsored Search",
+          slot: "Tokyo · Minato · Apartment · Rank 1",
+          properties: ["Minami-Aoyama Penthouse"],
+          budget: 80000,
+          start: "May 15, 2026",
+          end: "Jun 15, 2026",
+          status: "active",
+          delivered: 48,
+          imp: 38400,
+          cl: 1085,
+          cv: 28,
+          spend: 38000,
+        },
+        {
+          id: "AD-503",
+          type: "Property Detail Banner",
+          slot: "Filter: Shibuya · 1LDK · Rent",
+          properties: ["Daikanyama 1LDK", "Shinjuku Studio", "Azabu-Juban Tower 2LDK"],
+          budget: 60000,
+          start: "May 27, 2026",
+          end: "Jun 27, 2026",
+          status: "pending",
+          delivered: 0,
+          imp: 0,
+          cl: 0,
+          cv: 0,
+          spend: 0,
+        },
+        {
+          id: "AD-504",
+          type: "In-Article Banner",
+          slot: "Category: Investment Tips",
+          properties: [],
+          budget: 30000,
+          start: "May 20, 2026",
+          end: "Jun 20, 2026",
+          status: "rejected",
+          delivered: 0,
+          imp: 0,
+          cl: 0,
+          cv: 0,
+          spend: 0,
+          rejectReason:
+            "Banner image resolution below 1200×400 minimum. Please re-upload at correct size.",
+        },
+      ];
+
+      function esc(s) {
+        return String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]
+        );
+      }
+      function yen(n) { return "¥" + (n || 0).toLocaleString(); }
+
+      // ============ Buy Ads tab ============
+      function renderSlots() {
+        document.getElementById("slotScroll").innerHTML = SLOTS.map(
+          (s) => `
+          <div class="slot-card">
+            <div class="slot-icon"><i class="fas ${esc(s.icon)}"></i></div>
+            <div class="slot-name">${esc(s.name)}</div>
+            <div class="slot-desc">${esc(s.desc)}</div>
+            <div class="slot-meta">
+              <span><i class="fas fa-chart-bar"></i> <strong>${esc(s.reach)}</strong></span>
+            </div>
+            <div class="slot-price">${esc(s.price)}</div>
+            <div class="slot-actions">
+              <button class="btn btn-sm" onclick="learnMore('${s.key}')"><i class="fas fa-info-circle"></i> Learn more</button>
+              <button class="btn btn-sm btn-primary" onclick="openBuy('${s.key}')"><i class="fas fa-cart-plus"></i> Buy this slot</button>
+            </div>
+          </div>`
+        ).join("");
+      }
+      function learnMore(k) {
+        const s = SLOTS.find((x) => x.key === k);
+        alert(`${s.name}\n\n${s.desc}\n\nEstimated reach: ${s.reach}\nPricing: ${s.price}`);
+      }
+      window.learnMore = learnMore;
+
+      // ============ Purchase modal ============
+      let buyState = { slot: null, step: 1, city: "", propertyType: "Apartment", rank: 1, props: [], budget: 50000, start: "", end: "", creative: "" };
+
+      function openBuy(slotKey) {
+        buyState = { slot: SLOTS.find(s => s.key === slotKey), step: 1, city: "", propertyType: "Apartment", rank: 1, props: [], budget: 50000, start: "", end: "", creative: "" };
+        document.getElementById("buyTitle").innerHTML = `<i class="fas fa-cart-shopping" style="color:var(--accent)"></i> Buy: ${esc(buyState.slot.name)}`;
+        renderBuyStep();
+        document.getElementById("buyModal").classList.add("open");
+      }
+      window.openBuy = openBuy;
+      function closeBuy() {
+        document.getElementById("buyModal").classList.remove("open");
+      }
+      window.closeBuy = closeBuy;
+
+      function stepperHtml(active) {
+        const labels = ["Slot details", "Select properties", "Budget & dates", "Upload creative", "Review"];
+        return `<div class="stepper">${labels.map((l, i) => `
+          <div class="step ${i + 1 === active ? "active" : ""} ${i + 1 < active ? "done" : ""}">
+            <div class="step-circle">${i + 1 < active ? '<i class="fas fa-check" style="font-size:10px"></i>' : i + 1}</div>
+            <div class="step-label">${l}</div>
+          </div>${i < 4 ? '<div class="step-connector"></div>' : ""}
+        `).join("")}</div>`;
+      }
+
+      function renderBuyStep() {
+        const body = document.getElementById("buyBody");
+        document.getElementById("buyStepNum").textContent = buyState.step;
+        document.getElementById("buyPrev").style.visibility = buyState.step > 1 ? "visible" : "hidden";
+        document.getElementById("buyNext").innerHTML = buyState.step === 5 ? '<i class="fas fa-paper-plane"></i> Submit for Review' : "Next ›";
+        let html = stepperHtml(buyState.step);
+
+        if (buyState.step === 1) {
+          if (buyState.slot.key === "search") {
+            html += `
+              <label class="form-label">Target City / Station</label>
+              <input id="bCity" type="text" value="${esc(buyState.city)}" placeholder="e.g. Tokyo · Minato · Roppongi Station" />
+              <label class="form-label">Property Type</label>
+              <select id="bType">
+                <option>Apartment</option><option>House</option><option>Land</option><option>Commercial</option>
+              </select>
+              <label class="form-label">Rank Position</label>
+              <select id="bRank">
+                <option value="1">Rank 1 (top of results)</option>
+                <option value="2">Rank 2</option>
+                <option value="3">Rank 3</option>
+              </select>
+              ${buyState.city && buyState.city.toLowerCase().includes("minato") ? '<div class="hometown-badge" style="margin-top:14px"><i class="fas fa-medal"></i> Hometown discount applied · Save ¥8,000</div>' : ""}
+            `;
+          } else if (buyState.slot.key === "carousel") {
+            html += `
+              <label class="form-label">Carousel Position</label>
+              <select id="bRank">
+                <option value="1">Slot #1 (first, prime)</option>
+                <option value="2">Slot #2</option>
+                <option value="3">Slot #3</option>
+              </select>
+              <label class="form-label">Run on devices</label>
+              <select><option>All devices</option><option>Mobile only</option><option>Desktop only</option></select>
+            `;
+          } else if (buyState.slot.key === "static") {
+            html += `
+              <label class="form-label">Page</label>
+              <select><option>Area Guide</option><option>Mortgage Calculator</option><option>Both</option></select>
+              <label class="form-label">Banner placement</label>
+              <select><option>Top of page</option><option>Mid-page</option></select>
+            `;
+          } else if (buyState.slot.key === "article") {
+            html += `
+              <label class="form-label">Article Category</label>
+              <select><option>Investment Tips</option><option>Buying Guide</option><option>Market News</option><option>Renting 101</option></select>
+            `;
+          } else {
+            html += `
+              <label class="form-label">Filter Configuration</label>
+              <select><option>Tokyo · Shibuya · 1LDK · Rent</option><option>Tokyo · Minato · Apartment · Sale</option><option>Custom filter…</option></select>
+              <label class="form-label">Match priority</label>
+              <select><option>Exact match</option><option>Broad match</option></select>
+            `;
+          }
+        } else if (buyState.step === 2) {
+          if (buyState.slot.key === "static" || buyState.slot.key === "article" || buyState.slot.key === "detail") {
+            html += `
+              <div class="warn-banner"><i class="fas fa-info-circle"></i><div>This is a <strong>brand banner slot</strong>. No property selection needed — your banner image will display.</div></div>
+              <label class="form-label">Promoted brand name (optional)</label>
+              <input type="text" placeholder="e.g. Tokyo Realty Co." />
+            `;
+          } else {
+            html += `
+              <label class="form-label">Properties to promote (max 3)</label>
+              ${["Roppongi Hills 2LDK", "Shinjuku Studio", "Minami-Aoyama Penthouse", "Daikanyama 1LDK", "Azabu-Juban Tower 2LDK"].map((p, i) =>
+                `<label style="display:flex;gap:8px;align-items:center;padding:8px;border:1px solid var(--border-subtle);border-radius:8px;margin-bottom:6px;cursor:pointer">
+                  <input type="checkbox" ${i < 2 ? "checked" : ""} style="width:16px;height:16px;accent-color:var(--accent);min-height:0" />
+                  <span>${esc(p)}</span>
+                </label>`).join("")}
+            `;
+          }
+        } else if (buyState.step === 3) {
+          html += `
+            <label class="form-label">Start date</label>
+            <input type="date" id="bStart" />
+            <label class="form-label">End date</label>
+            <input type="date" id="bEnd" />
+            <label class="form-label">Budget (¥)</label>
+            <input type="number" id="bBudget" value="${buyState.budget}" min="10000" step="5000" />
+            <div class="disclaimer"><i class="fas fa-circle-info"></i><div>Estimated impressions: <strong>~${(buyState.budget / 12).toLocaleString(undefined, {maximumFractionDigits: 0})}</strong>. Actual delivery may vary based on traffic.</div></div>
+          `;
+        } else if (buyState.step === 4) {
+          if (buyState.slot.key === "carousel" || buyState.slot.key === "static" || buyState.slot.key === "article" || buyState.slot.key === "detail") {
+            html += `
+              <label class="form-label">Upload creative (JPG / PNG)</label>
+              <div style="border:2px dashed var(--border-strong);border-radius:10px;padding:36px;text-align:center;cursor:pointer;background:var(--bg-alt)">
+                <i class="fas fa-cloud-arrow-up" style="font-size:32px;color:var(--accent);display:block;margin-bottom:8px"></i>
+                <div style="font-weight:700">Click or drag a file here</div>
+                <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px">Recommended: 1200 × 400 px, max 500 KB</div>
+              </div>
+              <label class="form-label">Click-through URL</label>
+              <input type="text" placeholder="https://tokyorealty.jp/featured" />
+            `;
+          } else {
+            html += `
+              <div class="warn-banner"><i class="fas fa-check-circle"></i><div>For Sponsored Search, no creative upload is needed — your selected property cards are shown as-is.</div></div>
+              <div style="border:1px solid var(--border-subtle);border-radius:8px;padding:14px">
+                <strong>Properties to display:</strong>
+                <ul style="padding-left:18px;margin:6px 0 0;font-size:12.5px;color:var(--text-muted)">
+                  <li>Roppongi Hills 2LDK · ¥185,000,000</li>
+                  <li>Shinjuku Studio · ¥145,000/mo</li>
+                </ul>
+              </div>
+            `;
+          }
+        } else if (buyState.step === 5) {
+          html += `
+            <div class="warn-banner">
+              <i class="fas fa-triangle-exclamation"></i>
+              <div>Your ad will be reviewed by YUUSHI admin before it goes live. You will be notified within <strong>24–48 hours</strong>. Payment is pre-authorized but only confirmed upon approval.</div>
+            </div>
+            <div style="background:var(--bg-alt);border-radius:10px;padding:14px">
+              <div class="summary-row"><span>Ad type</span><span><strong>${esc(buyState.slot.name)}</strong></span></div>
+              <div class="summary-row"><span>Slot details</span><span>Per step 1 configuration</span></div>
+              <div class="summary-row"><span>Properties</span><span>${buyState.slot.key === "search" || buyState.slot.key === "carousel" ? "2 selected" : "N/A (brand banner)"}</span></div>
+              <div class="summary-row"><span>Run period</span><span>${buyState.start || "May 30, 2026"} → ${buyState.end || "Jun 30, 2026"}</span></div>
+              <div class="summary-row"><span>Budget</span><span>${yen(buyState.budget)}</span></div>
+              <div class="summary-row"><span>Total (pre-authorize)</span><span style="color:var(--accent-dark)">${yen(buyState.budget)}</span></div>
+            </div>
+          `;
+        }
+        body.innerHTML = html;
+
+        if (buyState.step === 1 && buyState.slot.key === "search") {
+          document.getElementById("bCity").addEventListener("input", (e) => { buyState.city = e.target.value; renderBuyStep(); });
+        }
+      }
+      function nextBuyStep() {
+        if (buyState.step === 5) {
+          toast("Campaign submitted for admin review (demo)", "success");
+          closeBuy();
+          return;
+        }
+        if (buyState.step === 3) {
+          const b = parseInt(document.getElementById("bBudget").value);
+          if (b) buyState.budget = b;
+        }
+        buyState.step++;
+        renderBuyStep();
+      }
+      window.nextBuyStep = nextBuyStep;
+      function prevBuyStep() {
+        if (buyState.step > 1) { buyState.step--; renderBuyStep(); }
+      }
+      window.prevBuyStep = prevBuyStep;
+
+      // ============ My Campaigns ============
+      function statusBadge(s) {
+        const map = {
+          active: "b-active", pending: "b-pending", rejected: "b-rejected",
+          paused: "b-paused", expired: "b-expired",
+        };
+        const lbl = { active: "Active", pending: "Pending Review", rejected: "Rejected", paused: "Paused", expired: "Expired" }[s];
+        return `<span class="badge ${map[s]}">${lbl}</span>`;
+      }
+      function renderCamps() {
+        const fs = document.getElementById("filtCampStatus").value;
+        const ft = document.getElementById("filtCampType").value;
+        const list = CAMPS.filter(c => (!fs || c.status === fs) && (!ft || c.type === ft));
+        document.getElementById("campBody").innerHTML = list.map(c => {
+          const rej = c.rejectReason
+            ? ` <span class="reject-tooltip" title="${esc(c.rejectReason)}" style="font-size:10px;color:var(--badge-red);margin-left:4px"><i class="fas fa-circle-info"></i></span>`
+            : "";
+          return `
+          <tr>
+            <td><strong>${esc(c.id)}</strong></td>
+            <td>${esc(c.type)}</td>
+            <td style="font-size:12px;color:var(--text-muted)">${esc(c.slot)}</td>
+            <td>${c.properties.length ? c.properties[0] + (c.properties.length > 1 ? ` <span style="color:var(--text-muted)">+${c.properties.length - 1}</span>` : "") : '<span style="color:var(--text-muted)">—</span>'}</td>
+            <td><strong>${yen(c.budget)}</strong></td>
+            <td style="white-space:nowrap;font-size:12px">${esc(c.start)}<br>→ ${esc(c.end)}</td>
+            <td>${statusBadge(c.status)}${rej}</td>
+            <td><div class="progress-bar"><div class="fill" style="width:${c.delivered}%"></div></div><div style="font-size:11px;margin-top:2px;color:var(--text-muted)">${c.delivered}%</div></td>
+            <td style="text-align:right;white-space:nowrap">
+              <button class="btn btn-sm" onclick="campAct('view','${c.id}')"><i class="fas fa-eye"></i></button>
+              ${c.status === "active" ? `<button class="btn btn-sm" onclick="campAct('pause','${c.id}')" title="Pause"><i class="fas fa-pause"></i></button>` : ""}
+              <button class="btn btn-sm" onclick="campAct('terminate','${c.id}')" title="Terminate"><i class="fas fa-stop"></i></button>
+              ${c.status === "expired" ? `<button class="btn btn-sm" onclick="campAct('renew','${c.id}')"><i class="fas fa-rotate"></i></button>` : ""}
+            </td>
+          </tr>`;
+        }).join("");
+      }
+      function campAct(k, id) {
+        if (k === "terminate" && !confirm(`Terminate ${id}? Remaining budget refunded.`)) return;
+        toast(`${k} → ${id} (demo)`);
+      }
+      window.campAct = campAct;
+
+      // ============ Performance ============
+      function renderPerfTable() {
+        document.getElementById("perfBody").innerHTML = CAMPS.filter(c => c.imp > 0).map(c => {
+          const ctr = c.imp ? ((c.cl / c.imp) * 100).toFixed(2) + "%" : "—";
+          const cvr = c.cl ? ((c.cv / c.cl) * 100).toFixed(2) + "%" : "—";
+          return `<tr>
+            <td><strong>${esc(c.id)}</strong><div style="font-size:11px;color:var(--text-muted)">${esc(c.type)}</div></td>
+            <td>${c.imp.toLocaleString()}</td>
+            <td>${c.cl.toLocaleString()}</td>
+            <td>${ctr}</td>
+            <td>${c.cv}</td>
+            <td>${cvr}</td>
+            <td>${yen(c.spend)}</td>
+            <td><div class="progress-bar"><div class="fill" style="width:${c.delivered}%"></div></div><div style="font-size:11px;margin-top:2px;color:var(--text-muted)">${c.delivered}%</div></td>
+          </tr>`;
+        }).join("");
+      }
+
+      let chart = null;
+      function updateChart() {
+        const range = document.getElementById("dateRange").value;
+        const labels = range === "week"
+          ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+          : range === "month"
+          ? ["W1", "W2", "W3", "W4", "W5"]
+          : ["Mar", "Apr", "May"];
+        const impData = labels.map((_, i) => Math.round(8000 + Math.random() * 18000 + i * 1200));
+        const clData = impData.map(v => Math.round(v * (0.018 + Math.random() * 0.01)));
+        if (chart) chart.destroy();
+        const ctx = document.getElementById("perfChart").getContext("2d");
+        chart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              { label: "Impressions", data: impData, borderColor: "#c4714a", backgroundColor: "rgba(196,113,74,0.12)", fill: true, tension: 0.35, yAxisID: "y" },
+              { label: "Clicks", data: clData, borderColor: "#2c5282", backgroundColor: "rgba(44,82,130,0.12)", fill: true, tension: 0.35, yAxisID: "y1" },
+            ],
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            scales: {
+              y: { position: "left", beginAtZero: true, title: { display: true, text: "Impressions" } },
+              y1: { position: "right", beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: "Clicks" } },
+            },
+            plugins: { legend: { position: "bottom" } },
+          },
+        });
+      }
+      window.updateChart = updateChart;
+
+      // ============ Tabs ============
+      function switchTab(t) {
+        document.querySelectorAll(".tab").forEach((el) => el.classList.remove("active"));
+        const idx = { buy: 0, camp: 1, perf: 2 }[t];
+        document.querySelectorAll(".tab")[idx].classList.add("active");
+        document.getElementById("tabBuy").style.display = t === "buy" ? "" : "none";
+        document.getElementById("tabCamp").style.display = t === "camp" ? "" : "none";
+        document.getElementById("tabPerf").style.display = t === "perf" ? "" : "none";
+        if (t === "perf") setTimeout(updateChart, 50);
+      }
+      window.switchTab = switchTab;
+
+      function toast(msg, kind) {
+        const wrap = document.getElementById("toastWrap");
+        const el = document.createElement("div");
+        el.className = "toast " + (kind || "success");
+        el.textContent = msg;
+        wrap.appendChild(el);
+        setTimeout(() => el.remove(), 2700);
+      }
+
+      renderSlots();
+      renderCamps();
+      renderPerfTable();
+    </script>
+  </body>
+</html>

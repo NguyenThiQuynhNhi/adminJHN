@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Subscription &amp; Billing — YUUSHI Agent</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --bg-body: #f5f0e8;
+        --bg-card: #ffffff;
+        --bg-alt: #fdf9f3;
+        --border-subtle: #eadccd;
+        --border-strong: #d9c8b4;
+        --accent: #c4714a;
+        --accent-dark: #a55232;
+        --accent-soft: #fef1e6;
+        --gold: #c4a25f;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+        --text-dim: #9b8568;
+        --badge-green: #2f855a;
+        --badge-red: #c53030;
+        --badge-amber: #b7791f;
+        --badge-blue: #2c5282;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg-body); color: var(--text-main);
+        font-size: 13px; line-height: 1.5;
+        padding: clamp(16px, 2.5vw, 24px);
+        -webkit-font-smoothing: antialiased;
+      }
+      h1 { margin: 0 0 4px; font-size: 22px; font-weight: 700; }
+      h2 { margin: 0 0 12px; font-size: 16px; font-weight: 700; }
+      .page-header { margin-bottom: 14px; }
+      .page-sub { font-size: 12.5px; color: var(--text-muted); }
+
+      .card {
+        background: var(--bg-card); border: 1px solid var(--border-subtle);
+        border-radius: 12px; padding: 22px;
+        box-shadow: 0 4px 12px rgba(115, 72, 39, 0.04);
+        margin-bottom: 16px;
+      }
+      .section-title {
+        font-size: 11px; font-weight: 700; color: var(--text-muted);
+        text-transform: uppercase; letter-spacing: 0.06em;
+        margin: 22px 0 8px;
+        padding-bottom: 6px; border-bottom: 1px solid #f5ece0;
+      }
+      .section-title:first-child { margin-top: 0; }
+      .btn {
+        border-radius: 8px; border: 1px solid var(--border-strong);
+        padding: 8px 14px; font-size: 13px; background: #fff;
+        cursor: pointer; display: inline-flex; gap: 6px;
+        align-items: center; justify-content: center;
+        color: var(--text-main); font-family: inherit; font-weight: 500;
+        min-height: 36px;
+      }
+      .btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        border-color: var(--accent-dark); color: #fffaf3;
+      }
+      .btn-primary:hover { color: #fffaf3; }
+      .btn-sm { padding: 5px 10px; font-size: 11.5px; min-height: 28px; }
+      .btn-link {
+        background: transparent; border: 0; color: var(--text-muted);
+        text-decoration: underline; cursor: pointer; font-size: 12px;
+        padding: 2px 6px;
+      }
+      .btn-link:hover { color: var(--badge-red); }
+
+      input, select {
+        border-radius: 8px; border: 1px solid var(--border-subtle);
+        padding: 8px 11px; font-size: 13px; background: #fff;
+        color: var(--text-main); outline: none; font-family: inherit;
+        width: 100%; min-height: 36px;
+      }
+
+      /* === Current plan === */
+      .plan-hero {
+        display: flex; gap: 18px; align-items: center; flex-wrap: wrap;
+      }
+      .plan-icon {
+        width: 64px; height: 64px; border-radius: 14px;
+        background: linear-gradient(135deg, #c0c0c0, #808080);
+        color: #fff;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 28px; flex-shrink: 0;
+        box-shadow: 0 6px 16px rgba(128, 128, 128, 0.25);
+      }
+      .plan-icon.gold { background: linear-gradient(135deg, var(--gold), #8b6f47); box-shadow: 0 6px 16px rgba(139, 111, 71, 0.3); }
+      .plan-icon.bronze { background: linear-gradient(135deg, #cd7f32, #8b5a2b); box-shadow: 0 6px 16px rgba(139, 90, 43, 0.3); }
+      .plan-icon.free { background: linear-gradient(135deg, #a0aec0, #4a5568); }
+      .plan-info { flex: 1; min-width: 200px; }
+      .plan-name {
+        font-size: 22px; font-weight: 800; margin: 0 0 4px;
+        display: inline-flex; align-items: center; gap: 8px;
+      }
+      .plan-tier-badge {
+        font-size: 10px; padding: 2px 8px; border-radius: 999px;
+        background: #c0c0c0; color: #fff; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.04em;
+      }
+      .plan-meta {
+        font-size: 12.5px; color: var(--text-muted);
+        display: flex; gap: 14px; flex-wrap: wrap;
+      }
+      .plan-meta strong { color: var(--text-main); }
+      .plan-actions {
+        display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      }
+      .features-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 8px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #f5ece0;
+      }
+      .feat {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 12.5px;
+      }
+      .feat i { color: var(--badge-green); }
+
+      /* === Ad wallet === */
+      .wallet-hero {
+        display: flex; gap: 18px; align-items: center;
+        background: linear-gradient(135deg, var(--accent-soft), #fdf1e3);
+        border: 1px solid var(--border-subtle); border-radius: 12px;
+        padding: 18px; margin-bottom: 14px;
+        flex-wrap: wrap;
+      }
+      .wallet-icon {
+        width: 54px; height: 54px; border-radius: 12px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: #fffaf3;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 22px;
+      }
+      .wallet-info { flex: 1; min-width: 180px; }
+      .wallet-label {
+        font-size: 11px; font-weight: 700; color: var(--text-muted);
+        text-transform: uppercase; letter-spacing: 0.04em;
+      }
+      .wallet-balance {
+        font-size: 28px; font-weight: 800; color: var(--accent-dark);
+      }
+      .wallet-spent {
+        font-size: 12px; color: var(--text-muted); margin-top: 2px;
+      }
+
+      table.data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+      .data-table thead { background: var(--bg-alt); }
+      .data-table th, .data-table td {
+        padding: 10px 12px; text-align: left;
+        border-bottom: 1px solid #f5ece0;
+      }
+      .data-table th {
+        font-size: 11px; font-weight: 700; color: var(--text-muted);
+        text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
+      }
+      .data-table tbody tr:hover { background: var(--bg-alt); }
+      .amount-pos { color: var(--badge-green); font-weight: 700; }
+      .amount-neg { color: var(--badge-red); font-weight: 700; }
+      .badge {
+        font-size: 10.5px; padding: 3px 8px; border-radius: 999px;
+        font-weight: 700; border: 1px solid transparent; white-space: nowrap;
+      }
+      .b-paid { background: #e6f6ef; color: var(--badge-green); border-color: #b7e4cc; }
+      .b-pending { background: #fff6e0; color: var(--badge-amber); border-color: #fbd38d; }
+
+      /* === Plan comparison === */
+      .plan-compare {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+      @media (max-width: 980px) {
+        .plan-compare { grid-template-columns: repeat(2, 1fr); }
+      }
+      @media (max-width: 580px) {
+        .plan-compare { grid-template-columns: 1fr; }
+      }
+      .plan-card {
+        background: var(--bg-card); border: 1px solid var(--border-subtle);
+        border-radius: 12px; padding: 18px;
+        display: flex; flex-direction: column; gap: 8px;
+        position: relative;
+        transition: transform 0.15s, box-shadow 0.15s;
+      }
+      .plan-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 24px rgba(115, 72, 39, 0.1);
+      }
+      .plan-card.current {
+        border: 2px solid var(--accent);
+        box-shadow: 0 10px 24px rgba(196, 113, 74, 0.18);
+      }
+      .plan-card.current::before {
+        content: "Current plan"; position: absolute; top: -10px; right: 14px;
+        background: var(--accent); color: #fff;
+        font-size: 10px; font-weight: 700; padding: 3px 10px;
+        border-radius: 999px;
+        text-transform: uppercase; letter-spacing: 0.04em;
+      }
+      .pc-name {
+        font-size: 16px; font-weight: 800;
+        display: flex; align-items: center; gap: 8px;
+      }
+      .pc-icon {
+        width: 24px; height: 24px; border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 12px; color: #fff;
+      }
+      .pc-icon.free { background: #a0aec0; }
+      .pc-icon.bronze { background: #cd7f32; }
+      .pc-icon.silver { background: #c0c0c0; }
+      .pc-icon.gold { background: var(--gold); }
+      .pc-price {
+        font-size: 24px; font-weight: 800; color: var(--text-main);
+        margin: 4px 0;
+      }
+      .pc-price .sub { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+      .pc-feats {
+        list-style: none; padding: 0; margin: 12px 0;
+        display: flex; flex-direction: column; gap: 6px;
+      }
+      .pc-feats li {
+        font-size: 12px; display: flex; gap: 6px; align-items: flex-start;
+        color: var(--text-main);
+      }
+      .pc-feats li i { color: var(--badge-green); margin-top: 2px; flex-shrink: 0; }
+      .pc-feats li.dim { color: var(--text-dim); }
+      .pc-feats li.dim i { color: var(--text-dim); }
+
+      .pc-btn {
+        margin-top: auto;
+        padding: 9px 14px; border-radius: 8px;
+        background: var(--accent); color: #fff;
+        border: 0; font-family: inherit; font-weight: 600;
+        cursor: pointer; font-size: 13px;
+      }
+      .pc-btn:hover { background: var(--accent-dark); }
+      .pc-btn:disabled {
+        background: #ede1d4; color: var(--text-muted);
+        cursor: not-allowed;
+      }
+
+      /* === Modal === */
+      .modal-backdrop {
+        position: fixed; inset: 0; background: rgba(34, 24, 18, 0.5);
+        display: none; align-items: center; justify-content: center;
+        z-index: 200; padding: 16px;
+      }
+      .modal-backdrop.open { display: flex; }
+      .modal-box {
+        background: #fff; border-radius: 14px;
+        width: 440px; max-width: 100%;
+        display: flex; flex-direction: column;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
+      }
+      .modal-header {
+        padding: 14px 18px; border-bottom: 1px solid var(--border-subtle);
+        display: flex; justify-content: space-between; align-items: center;
+      }
+      .modal-header h3 { margin: 0; font-size: 15px; font-weight: 700; }
+      .modal-body { padding: 18px; }
+      .modal-footer {
+        padding: 12px 18px; border-top: 1px solid var(--border-subtle);
+        display: flex; justify-content: flex-end; gap: 8px;
+      }
+      .amount-grid {
+        display: grid; grid-template-columns: repeat(2, 1fr);
+        gap: 8px; margin-bottom: 14px;
+      }
+      .amount-opt {
+        background: #fff; border: 1px solid var(--border-subtle);
+        border-radius: 10px; padding: 14px; text-align: center;
+        cursor: pointer; font-weight: 700; font-size: 15px;
+        transition: all 0.15s;
+      }
+      .amount-opt:hover { border-color: var(--accent); }
+      .amount-opt.selected {
+        border-color: var(--accent); background: var(--accent-soft);
+        color: var(--accent-dark);
+      }
+      .form-label {
+        display: block; font-size: 11px; font-weight: 700;
+        color: var(--text-muted); text-transform: uppercase;
+        letter-spacing: 0.04em; margin-bottom: 5px; margin-top: 12px;
+      }
+
+      .toast-wrap {
+        position: fixed; bottom: 20px; right: 20px;
+        z-index: 999; display: flex; flex-direction: column; gap: 8px;
+      }
+      .toast {
+        background: var(--text-main); color: #fffaf3;
+        padding: 10px 14px; border-radius: 8px; font-size: 13px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      }
+      .toast.success { background: var(--badge-green); }
+    </style>
+  </head>
+  <body>
+    <div class="page-header">
+      <h1>Subscription &amp; Billing</h1>
+      <div class="page-sub">
+        Manage your plan, ad wallet balance, and billing history
+      </div>
+    </div>
+
+    <!-- ===== SECTION 1: CURRENT PLAN ===== -->
+    <div class="section-title">Current Plan</div>
+    <div class="card">
+      <div class="plan-hero">
+        <div class="plan-icon"><i class="fas fa-medal"></i></div>
+        <div class="plan-info">
+          <h2 class="plan-name">
+            Silver Plan <span class="plan-tier-badge">Silver</span>
+          </h2>
+          <div class="plan-meta">
+            <span><i class="fas fa-circle" style="font-size:6px;color:var(--badge-green);margin-right:4px"></i>Active</span>
+            <span>Billing: <strong>Monthly</strong></span>
+            <span>Started: <strong>Jan 12, 2026</strong></span>
+            <span>Renews: <strong>Jun 12, 2026</strong></span>
+            <span>Price: <strong>¥12,000/mo</strong></span>
+          </div>
+        </div>
+        <div class="plan-actions">
+          <button class="btn btn-primary" onclick="scrollTo({ top: document.getElementById('compare').offsetTop, behavior: 'smooth' })">
+            <i class="fas fa-arrow-up"></i> Upgrade Plan
+          </button>
+          <button class="btn-link" onclick="cancelPlan()">Cancel plan</button>
+        </div>
+      </div>
+      <div class="features-list">
+        <div class="feat"><i class="fas fa-check"></i> Up to 30 active listings</div>
+        <div class="feat"><i class="fas fa-check"></i> Full CRM access (Tasks + Viewings)</div>
+        <div class="feat"><i class="fas fa-check"></i> Ad wallet enabled</div>
+        <div class="feat"><i class="fas fa-check"></i> Standard analytics</div>
+        <div class="feat"><i class="fas fa-check"></i> Email support (24h response)</div>
+        <div class="feat"><i class="fas fa-check"></i> 1 featured listing per month</div>
+      </div>
+    </div>
+
+    <!-- ===== SECTION 2: AD WALLET ===== -->
+    <div class="section-title">Ad Wallet</div>
+    <div class="card">
+      <div class="wallet-hero">
+        <div class="wallet-icon"><i class="fas fa-wallet"></i></div>
+        <div class="wallet-info">
+          <div class="wallet-label">Current Balance</div>
+          <div class="wallet-balance">¥24,500</div>
+          <div class="wallet-spent">Spent this month: ¥15,500 of ¥40,000 lifetime top-up</div>
+        </div>
+        <button class="btn btn-primary" onclick="openTopup()">
+          <i class="fas fa-plus"></i> Top Up
+        </button>
+      </div>
+
+      <h2 style="margin-top:18px"><i class="fas fa-clock-rotate-left" style="color:var(--accent);font-size:14px"></i> Transaction History</h2>
+      <table class="data-table" style="margin-top:10px">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th style="text-align:right">Amount</th>
+            <th style="text-align:right">Balance After</th>
+          </tr>
+        </thead>
+        <tbody id="walletBody"></tbody>
+      </table>
+    </div>
+
+    <!-- ===== SECTION 3: PLAN COMPARISON ===== -->
+    <div class="section-title" id="compare">Plan Comparison</div>
+    <div class="card" style="background:transparent;border:0;padding:0;box-shadow:none">
+      <div class="plan-compare" id="planCompare"></div>
+    </div>
+
+    <!-- ===== SECTION 4: BILLING HISTORY ===== -->
+    <div class="section-title">Billing History</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Invoice #</th>
+            <th>Date</th>
+            <th>Description</th>
+            <th style="text-align:right">Amount</th>
+            <th>Status</th>
+            <th style="text-align:right">PDF</th>
+          </tr>
+        </thead>
+        <tbody id="invBody"></tbody>
+      </table>
+    </div>
+
+    <!-- ===== TOPUP MODAL ===== -->
+    <div class="modal-backdrop" id="topupModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3><i class="fas fa-plus" style="color:var(--accent)"></i> Top Up Ad Wallet</h3>
+          <button class="btn btn-sm" onclick="closeTopup()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-label">Quick amounts</div>
+          <div class="amount-grid">
+            <div class="amount-opt" data-amt="10000" onclick="pickAmt(this,10000)">¥10,000</div>
+            <div class="amount-opt selected" data-amt="30000" onclick="pickAmt(this,30000)">¥30,000</div>
+            <div class="amount-opt" data-amt="50000" onclick="pickAmt(this,50000)">¥50,000</div>
+            <div class="amount-opt" data-amt="100000" onclick="pickAmt(this,100000)">¥100,000</div>
+          </div>
+          <div class="form-label">Or custom amount (¥)</div>
+          <input type="number" id="topupCustom" min="1000" step="1000" placeholder="Enter custom amount" />
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:8px;background:var(--bg-alt);padding:10px;border-radius:8px">
+            <i class="fas fa-circle-info" style="color:var(--accent);margin-right:5px"></i>Payment is processed instantly. Balance reflects within 30 seconds.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeTopup()">Cancel</button>
+          <button class="btn btn-primary" onclick="confirmTopup()"><i class="fas fa-credit-card"></i> Pay &amp; Top Up</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+      const CURRENT_PLAN = "silver";
+
+      const PLANS = [
+        {
+          key: "free", name: "Free", icon: "free", iconCh: "F",
+          price: 0,
+          feats: [
+            { txt: "Up to 3 active listings" },
+            { txt: "Basic CRM (Tasks only)" },
+            { txt: "No ad wallet", dim: true },
+            { txt: "Basic analytics", dim: true },
+            { txt: "Community support" },
+          ],
+        },
+        {
+          key: "bronze", name: "Bronze", icon: "bronze", iconCh: "B",
+          price: 4500,
+          feats: [
+            { txt: "Up to 10 active listings" },
+            { txt: "CRM (Tasks + Viewings)" },
+            { txt: "Ad wallet enabled" },
+            { txt: "Standard analytics" },
+            { txt: "Email support (48h)" },
+          ],
+        },
+        {
+          key: "silver", name: "Silver", icon: "silver", iconCh: "S",
+          price: 12000,
+          feats: [
+            { txt: "Up to 30 active listings" },
+            { txt: "Full CRM access" },
+            { txt: "Ad wallet + 1 featured listing/mo" },
+            { txt: "Standard analytics" },
+            { txt: "Email support (24h)" },
+          ],
+        },
+        {
+          key: "gold", name: "Gold", icon: "gold", iconCh: "G",
+          price: 28000,
+          feats: [
+            { txt: "Unlimited listings" },
+            { txt: "Full CRM + automation" },
+            { txt: "Ad wallet + 5 featured/mo" },
+            { txt: "Premium analytics + insights" },
+            { txt: "Priority support (4h)" },
+          ],
+        },
+      ];
+
+      const WALLET = [
+        { date: "May 24, 2026", desc: "Ad spend · AD-501 Homepage Carousel (May 24)", amt: -3200, after: 24500 },
+        { date: "May 22, 2026", desc: "Ad spend · AD-502 Sponsored Search (May 22)", amt: -2800, after: 27700 },
+        { date: "May 18, 2026", desc: "Top up — Bank transfer", amt: 30000, after: 30500 },
+        { date: "May 15, 2026", desc: "Ad spend · AD-501 Homepage Carousel (May 15)", amt: -4200, after: 500 },
+        { date: "May 02, 2026", desc: "Ad spend · AD-501 Homepage Carousel (May launch)", amt: -5300, after: 4700 },
+      ];
+
+      const INVOICES = [
+        { id: "INV-2026-052", date: "May 12, 2026", desc: "Silver Plan — May 2026", amt: 12000, status: "paid" },
+        { id: "INV-2026-041", date: "Apr 12, 2026", desc: "Silver Plan — Apr 2026", amt: 12000, status: "paid" },
+        { id: "INV-2026-032", date: "Mar 12, 2026", desc: "Silver Plan — Mar 2026", amt: 12000, status: "paid" },
+        { id: "INV-2026-053", date: "May 27, 2026", desc: "Ad wallet top-up", amt: 30000, status: "pending" },
+      ];
+
+      function esc(s) {
+        return String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]
+        );
+      }
+      function yen(n) {
+        return (n < 0 ? "-¥" : "¥") + Math.abs(n).toLocaleString();
+      }
+
+      function renderWallet() {
+        document.getElementById("walletBody").innerHTML = WALLET.map(t => `
+          <tr>
+            <td>${esc(t.date)}</td>
+            <td>${esc(t.desc)}</td>
+            <td style="text-align:right" class="${t.amt > 0 ? "amount-pos" : "amount-neg"}">${t.amt > 0 ? "+" : ""}${yen(t.amt)}</td>
+            <td style="text-align:right">${yen(t.after)}</td>
+          </tr>`).join("");
+      }
+
+      function renderPlanCompare() {
+        document.getElementById("planCompare").innerHTML = PLANS.map(p => `
+          <div class="plan-card ${p.key === CURRENT_PLAN ? "current" : ""}">
+            <div class="pc-name">
+              <span class="pc-icon ${p.icon}">${p.iconCh}</span>
+              ${esc(p.name)}
+            </div>
+            <div class="pc-price">${p.price === 0 ? "Free" : "¥" + p.price.toLocaleString()}<span class="sub"> ${p.price === 0 ? "" : "/mo"}</span></div>
+            <ul class="pc-feats">
+              ${p.feats.map(f => `<li class="${f.dim ? "dim" : ""}"><i class="fas fa-${f.dim ? "minus" : "check"}"></i> ${esc(f.txt)}</li>`).join("")}
+            </ul>
+            <button class="pc-btn" ${p.key === CURRENT_PLAN ? "disabled" : ""} onclick="selectPlan('${p.key}')">
+              ${p.key === CURRENT_PLAN ? "Current plan" : p.key === "free" ? "Downgrade" : (PLANS.find(x => x.key === CURRENT_PLAN).price < p.price ? "Upgrade" : "Switch")}
+            </button>
+          </div>`).join("");
+      }
+
+      function renderInv() {
+        document.getElementById("invBody").innerHTML = INVOICES.map(i => `
+          <tr>
+            <td><strong>${esc(i.id)}</strong></td>
+            <td>${esc(i.date)}</td>
+            <td>${esc(i.desc)}</td>
+            <td style="text-align:right"><strong>${yen(i.amt)}</strong></td>
+            <td><span class="badge b-${i.status}">${i.status.charAt(0).toUpperCase() + i.status.slice(1)}</span></td>
+            <td style="text-align:right">
+              <button class="btn btn-sm" onclick="downloadPdf('${esc(i.id)}')" ${i.status !== "paid" ? "disabled style=\"opacity:0.4;cursor:not-allowed\"" : ""}>
+                <i class="fas fa-file-pdf"></i> PDF
+              </button>
+            </td>
+          </tr>`).join("");
+      }
+
+      function selectPlan(k) {
+        const p = PLANS.find(x => x.key === k);
+        if (!confirm(`Switch to ${p.name} plan?\n\nNew monthly charge: ${p.price === 0 ? "Free" : "¥" + p.price.toLocaleString()}\nEffective: next billing cycle (Jun 12, 2026).`)) return;
+        toast(`Switched to ${p.name} plan (demo)`, "success");
+      }
+      window.selectPlan = selectPlan;
+
+      function cancelPlan() {
+        if (!confirm("Cancel your Silver Plan?\n\nYou will retain access until Jun 12, 2026. After that, you'll be moved to the Free plan.")) return;
+        toast("Plan cancellation scheduled for Jun 12, 2026 (demo)", "success");
+      }
+      window.cancelPlan = cancelPlan;
+
+      function downloadPdf(id) {
+        toast(`Download ${id}.pdf (demo)`);
+      }
+      window.downloadPdf = downloadPdf;
+
+      let topupAmt = 30000;
+      function openTopup() { document.getElementById("topupModal").classList.add("open"); }
+      function closeTopup() { document.getElementById("topupModal").classList.remove("open"); }
+      window.openTopup = openTopup;
+      window.closeTopup = closeTopup;
+
+      function pickAmt(el, amt) {
+        document.querySelectorAll(".amount-opt").forEach(o => o.classList.remove("selected"));
+        el.classList.add("selected");
+        topupAmt = amt;
+        document.getElementById("topupCustom").value = "";
+      }
+      window.pickAmt = pickAmt;
+
+      function confirmTopup() {
+        const custom = parseInt(document.getElementById("topupCustom").value);
+        const amt = custom || topupAmt;
+        if (amt < 1000) { toast("Minimum top-up is ¥1,000"); return; }
+        closeTopup();
+        toast(`Top up of ${yen(amt)} processed (demo)`, "success");
+      }
+      window.confirmTopup = confirmTopup;
+
+      function toast(msg, kind) {
+        const wrap = document.getElementById("toastWrap");
+        const el = document.createElement("div");
+        el.className = "toast " + (kind || "success");
+        el.textContent = msg;
+        wrap.appendChild(el);
+        setTimeout(() => el.remove(), 2700);
+      }
+
+      renderWallet();
+      renderPlanCompare();
+      renderInv();
+    </script>
+  
+<style id="ystd-sb-css">
+.ystd-sb{position:fixed;top:0;left:0;width:200px;height:100vh;background:#fff;border-right:1px solid #e9e2d6;overflow-y:auto;z-index:40;font-family:Arial,Helvetica,sans-serif;}
+.ystd-sb .ystd-logo{padding:18px;display:flex;gap:9px;align-items:center;border-bottom:1px solid #f0ece4;}
+.ystd-sb .ystd-logo b{width:32px;height:32px;border-radius:7px;background:#c4714a;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;}
+.ystd-sb .ystd-logo span{font-size:16px;font-weight:800;color:#1a1a1a;}
+.ystd-sb a{display:flex;align-items:center;gap:10px;padding:9px 18px;color:#5b5249;font-size:13px;text-decoration:none;border-left:3px solid transparent;}
+.ystd-sb a:hover{background:#faf0e9;color:#a55232;}
+.ystd-sb a.on{background:#faf0e9;color:#a55232;font-weight:700;border-left-color:#c4714a;}
+.ystd-sb a i{width:16px;text-align:center;font-size:13px;}
+body{padding-left:216px !important;}
+@media(max-width:900px){body{padding-left:0 !important;}.ystd-sb{display:none;}}
+</style>
+<aside class="ystd-sb"><div class="ystd-logo"><b>Y</b><span>YUUSHI</span></div><nav><a class="" href="dashboard.html"><i class="fas fa-gauge-high"></i> Dashboard</a><a class="" href="property-list-oversight.html"><i class="fas fa-house-chimney"></i> Properties</a><a class="" href="project-management.html"><i class="fas fa-building-circle-arrow-right"></i> Projects</a><a class="" href="lead-management.html"><i class="fas fa-users"></i> Leads</a><a class="" href="crm-activities.html#viewings"><i class="fas fa-calendar-check"></i> Viewings</a><a class="" href="crm-activities.html#tasks"><i class="fas fa-list-check"></i> Tasks</a><a class="" href="crm-activities.html#jobs"><i class="fas fa-briefcase"></i> Jobs</a><a class="" href="crm-activities.html#calls"><i class="fas fa-phone"></i> Calls</a><a class="" href="crm-activities.html#emails"><i class="fas fa-envelope"></i> Emails</a><a class="" href="crm-activities.html#sms"><i class="fas fa-comment-sms"></i> SMS</a><a class="" href="crm-activities.html#comments"><i class="fas fa-comment"></i> Comments</a><a class="" href="leads-inquiries.html"><i class="fas fa-comments"></i> Messages</a><a class="" href="ad-monetisation.html"><i class="fas fa-rectangle-ad"></i> Advertising</a><a class="on" href="billing.html"><i class="fas fa-credit-card"></i> Subscription</a></nav></aside>
+</body>
+</html>

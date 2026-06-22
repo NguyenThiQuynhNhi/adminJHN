@@ -1,0 +1,5038 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email Center — YUUSHI Admin</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --bg: #f5f0e8;
+        --navy: #1e3a5f;
+        --navy-dark: #16293f;
+        --accent: #c4714a;
+        --accent-dark: #a55232;
+        --gold: #c4a25f;
+        --card: #ffffff;
+        --thead: #f0ede8;
+        --text: #1a1a1a;
+        --text-sec: #888888;
+        --border: #ece4d6;
+        --radius: 14px;
+      }
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Arial,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        padding: 22px;
+      }
+      .layout {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+        max-width: 1320px;
+        margin: 0 auto;
+      }
+
+      /* ===== LEFT SIDEBAR ===== */
+      .mc-sidebar {
+        width: 260px;
+        min-width: 260px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: 0 4px 16px rgba(120, 80, 40, 0.05);
+        padding: 18px 14px;
+        position: sticky;
+        top: 22px;
+      }
+      .mc-title {
+        font-size: 18px;
+        font-weight: 800;
+        padding: 4px 8px 14px;
+      }
+      .mc-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 12px;
+        border-radius: 10px;
+        font-size: 14px;
+        color: #4a4a4a;
+        cursor: pointer;
+        border-left: 3px solid transparent;
+        margin-bottom: 3px;
+        transition: background 0.15s;
+      }
+      .mc-nav-item i {
+        width: 18px;
+        text-align: center;
+        font-size: 15px;
+        color: var(--text-sec);
+      }
+      .mc-nav-item:hover {
+        background: #faf6ef;
+      }
+      .mc-nav-item.active {
+        background: var(--bg);
+        border-left-color: var(--accent);
+        font-weight: 700;
+        color: var(--text);
+      }
+      .mc-nav-item.active i {
+        color: var(--accent);
+      }
+
+      /* ===== CONTENT ===== */
+      .mc-content {
+        flex: 1;
+        min-width: 0;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: 0 4px 16px rgba(120, 80, 40, 0.05);
+        padding: 26px 28px;
+      }
+      .screen {
+        display: none;
+        animation: fade 0.2s ease;
+      }
+      .screen.active {
+        display: block;
+      }
+      @keyframes fade {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .page-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .page-title {
+        font-size: 24px;
+        font-weight: 800;
+      }
+      .page-title.sm {
+        font-size: 20px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: 24px;
+        font-size: 13.5px;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1px solid transparent;
+        font-family: inherit;
+      }
+      .btn-navy {
+        background: var(--navy);
+        color: #fff;
+      }
+      .btn-navy:hover {
+        background: var(--navy-dark);
+      }
+      .btn-outline {
+        background: #fff;
+        color: var(--text);
+        border-color: var(--border);
+      }
+      .btn-outline:hover {
+        background: #faf6ef;
+      }
+      .btn-sm {
+        padding: 6px 13px;
+        font-size: 12.5px;
+      }
+
+      .filter-bar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+      }
+      .filter-bar input,
+      .filter-bar select {
+        padding: 9px 13px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-size: 13px;
+        background: #fdfbf7;
+        font-family: inherit;
+        outline: none;
+      }
+      .filter-bar input {
+        flex: 1;
+        min-width: 200px;
+      }
+      .filter-bar input:focus,
+      .filter-bar select:focus {
+        border-color: var(--gold);
+      }
+
+      .result-count {
+        font-size: 12.5px;
+        color: var(--text-sec);
+        margin-bottom: 10px;
+      }
+      .pager {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 14px;
+        flex-wrap: wrap;
+      }
+      .pager button {
+        min-width: 34px;
+        height: 34px;
+        padding: 0 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--text);
+        font-size: 13px;
+        font-family: inherit;
+        cursor: pointer;
+      }
+      .pager button:hover:not(:disabled) {
+        background: #faf6ef;
+      }
+      .pager button.current {
+        background: var(--gold);
+        border-color: var(--gold);
+        color: #fff;
+        font-weight: 700;
+      }
+      .pager button:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+      .pager .pager-ellipsis {
+        padding: 0 4px;
+        color: var(--text-sec);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13.5px;
+      }
+      .tbl-wrap {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      thead {
+        background: var(--thead);
+      }
+      th {
+        text-align: left;
+        padding: 13px 14px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #6a6258;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      td {
+        padding: 13px 14px;
+        border-top: 1px solid #f1ebe1;
+      }
+      tbody tr:nth-child(even) {
+        background: #fcfaf6;
+      }
+      tbody tr:hover {
+        background: #faf5ec;
+      }
+      .cell-strong {
+        font-weight: 600;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 3px 11px;
+        border-radius: 12px;
+        font-size: 11.5px;
+        font-weight: 700;
+      }
+      .badge.sent {
+        background: #e3f5e9;
+        color: #1f8a4c;
+      }
+      .badge.scheduled {
+        background: #e4eefb;
+        color: #2563a8;
+      }
+      .badge.draft {
+        background: #eeeae3;
+        color: #8a8276;
+      }
+
+      .pill {
+        display: inline-block;
+        padding: 3px 11px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .pill.green {
+        background: #e3f5e9;
+        color: #1f8a4c;
+      }
+      .pill.amber {
+        background: #fdf0db;
+        color: #b5791b;
+      }
+      .pill.red {
+        background: #fbe4e4;
+        color: #c0392b;
+      }
+      .pill.grey {
+        background: #eeeae3;
+        color: #8a8276;
+      }
+      /* inline rate pill inside combined count+rate analytics cells */
+      .rate-pill {
+        margin-left: 6px;
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-weight: 600;
+      }
+      /* Analytics table: horizontal scroll + sticky Actions (Recreate) column */
+      .an-wrap {
+        overflow-x: auto;
+      }
+      .an-table {
+        min-width: 920px;
+      }
+      .an-table th,
+      .an-table td {
+        white-space: nowrap;
+      }
+      .an-table th:nth-child(1),
+      .an-table td:nth-child(1) {
+        min-width: 200px;
+        max-width: 240px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .an-table th:nth-child(2),
+      .an-table td:nth-child(2) {
+        min-width: 100px;
+      }
+      .an-table th:nth-child(3),
+      .an-table td:nth-child(3) {
+        min-width: 110px;
+      }
+      .an-table th:nth-child(4),
+      .an-table td:nth-child(4) {
+        min-width: 100px;
+      }
+      .an-table th:nth-child(5),
+      .an-table td:nth-child(5) {
+        min-width: 120px;
+      }
+      .an-table th:nth-child(6),
+      .an-table td:nth-child(6) {
+        min-width: 120px;
+      }
+      .an-table th:nth-child(7),
+      .an-table td:nth-child(7) {
+        min-width: 120px;
+      }
+      .an-table th:last-child,
+      .an-table td:last-child {
+        position: sticky;
+        right: 0;
+        z-index: 1;
+        min-width: 110px;
+        background: var(--card);
+        border-left: 1px solid var(--border);
+      }
+      .an-table thead th:last-child {
+        background: var(--thead);
+      }
+
+      .act-wrap {
+        position: relative;
+      }
+      .act-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: #fff;
+        cursor: pointer;
+        color: #6a6258;
+      }
+      .act-btn:hover {
+        background: #f6f1e8;
+      }
+      .act-menu {
+        position: absolute;
+        right: 0;
+        top: 34px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        box-shadow: 0 10px 28px rgba(80, 50, 20, 0.16);
+        padding: 5px;
+        z-index: 30;
+        display: none;
+        min-width: 140px;
+      }
+      .act-menu.open {
+        display: block;
+      }
+      .act-item {
+        padding: 8px 12px;
+        font-size: 13px;
+        border-radius: 7px;
+        cursor: pointer;
+      }
+      .act-item:hover {
+        background: #f6f1e8;
+      }
+      .act-item.danger {
+        color: #c0392b;
+      }
+
+      .steps {
+        display: flex;
+        align-items: center;
+        margin: 4px 0 26px;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .step {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+      .step-num {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #ece4d6;
+        color: #8a8276;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .step.active .step-num {
+        background: var(--navy);
+        color: #fff;
+      }
+      .step.done .step-num {
+        background: #1f8a4c;
+        color: #fff;
+      }
+      .step-label {
+        font-size: 13px;
+        color: var(--text-sec);
+        font-weight: 600;
+      }
+      .step.active .step-label {
+        color: var(--text);
+      }
+      .step-line {
+        width: 32px;
+        height: 2px;
+        background: #e3dccf;
+        margin: 0 4px;
+      }
+
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13.5px;
+        color: var(--text-sec);
+        cursor: pointer;
+        margin-bottom: 14px;
+      }
+      .back-link:hover {
+        color: var(--accent);
+      }
+
+      .field {
+        margin-bottom: 18px;
+      }
+      .field label {
+        display: block;
+        font-size: 12.5px;
+        font-weight: 700;
+        margin-bottom: 6px;
+        color: #4a4439;
+      }
+      .req::after {
+        content: " *";
+        color: #c0392b;
+      }
+      .field input[type="text"],
+      .field input[type="number"],
+      .field input[type="date"],
+      .field input[type="time"],
+      .field select,
+      .field textarea {
+        width: 100%;
+        padding: 10px 13px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-size: 13.5px;
+        font-family: inherit;
+        background: #fdfbf7;
+        outline: none;
+      }
+      .field input:focus,
+      .field select:focus,
+      .field textarea:focus {
+        border-color: var(--gold);
+        background: #fff;
+      }
+      .field textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      .field .err {
+        display: none;
+        font-size: 11.5px;
+        color: #c0392b;
+        margin-top: 4px;
+      }
+      .field.invalid input,
+      .field.invalid select,
+      .field.invalid textarea {
+        border-color: #c0392b;
+        box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.1);
+      }
+      .field.invalid .err {
+        display: block;
+      }
+
+      .radio-cards {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .radio-card {
+        flex: 1;
+        min-width: 150px;
+        border: 1.5px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+        cursor: pointer;
+        background: #fdfbf7;
+      }
+      .radio-card.on {
+        border-color: var(--accent);
+        background: #fdf3ec;
+      }
+      .radio-card .rc-title {
+        font-weight: 700;
+        font-size: 13.5px;
+        margin-bottom: 3px;
+      }
+      .radio-card .rc-desc {
+        font-size: 12px;
+        color: var(--text-sec);
+      }
+
+      .radio-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 11px 0;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      .radio-row input {
+        margin-top: 3px;
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 24px;
+        padding-top: 18px;
+        border-top: 1px solid var(--border);
+      }
+
+      .group-picker {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+        margin-top: 12px;
+        background: #fdfbf7;
+      }
+      .group-search {
+        width: 100%;
+        padding: 9px 13px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-size: 13px;
+        margin-bottom: 10px;
+        background: #fff;
+        font-family: inherit;
+      }
+      .group-opt {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13.5px;
+      }
+      .group-opt:hover {
+        background: #f6f1e8;
+      }
+      .group-opt .gcount {
+        margin-left: auto;
+        font-size: 12px;
+        color: var(--text-sec);
+      }
+      .reach-note {
+        margin-top: 12px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--navy);
+      }
+      .picker-note {
+        font-size: 12px;
+        color: var(--text-sec);
+        margin-top: 10px;
+        line-height: 1.5;
+      }
+      .create-group-link {
+        display: inline-block;
+        margin-top: 10px;
+        font-size: 13px;
+        color: var(--accent);
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .card-box {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+        margin-bottom: 16px;
+        background: #fdfbf7;
+      }
+      .card-box h4 {
+        font-size: 14.5px;
+        margin-bottom: 12px;
+      }
+
+      /* ===== RTE ===== */
+      .rte {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+      .rte-main {
+        flex: 1;
+        min-width: 280px;
+      }
+      .rte-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+        border: 1px solid var(--border);
+        border-bottom: none;
+        border-radius: 10px 10px 0 0;
+        padding: 7px;
+        background: #f7f3ec;
+        position: relative;
+      }
+      .rte-tb {
+        width: 32px;
+        height: 30px;
+        border: none;
+        background: transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        color: #5a5248;
+      }
+      .rte-tb:hover {
+        background: #e9e1d3;
+      }
+      .rte-tb b,
+      .rte-tb i,
+      .rte-tb u {
+        font-style: normal;
+        font-weight: 700;
+      }
+      .rte-body {
+        border: 1px solid var(--border);
+        border-radius: 0 0 10px 10px;
+        min-height: 180px;
+        padding: 14px;
+        font-size: 14px;
+        line-height: 1.6;
+        outline: none;
+        background: #fff;
+      }
+      .rte-body:empty:before {
+        content: attr(data-ph);
+        color: #b7afa2;
+      }
+      .rte-vars {
+        width: 190px;
+        flex-shrink: 0;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px;
+        background: #fdfbf7;
+        height: fit-content;
+      }
+      .rte-vars-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 12.5px;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+      .var-chip {
+        display: inline-block;
+        margin: 0 5px 6px 0;
+        padding: 5px 10px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        font-size: 11.5px;
+        cursor: pointer;
+        color: var(--navy);
+        font-family: monospace;
+      }
+      .var-chip:hover {
+        background: var(--navy);
+        color: #fff;
+      }
+      .var-dropdown {
+        position: absolute;
+        top: 44px;
+        left: 7px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        box-shadow: 0 10px 24px rgba(80, 50, 20, 0.16);
+        padding: 10px;
+        display: none;
+        z-index: 20;
+        width: 220px;
+      }
+      .var-dropdown.open {
+        display: block;
+      }
+
+      .tpl-lib {
+        margin-top: 18px;
+      }
+      .tpl-lib-head {
+        font-size: 13.5px;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+      .tpl-cards {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        padding-bottom: 6px;
+      }
+      .tpl-card {
+        min-width: 200px;
+        border: 1px solid var(--border);
+        border-radius: 11px;
+        padding: 13px;
+        background: #fdfbf7;
+      }
+      .tpl-card .tc-name {
+        font-weight: 700;
+        font-size: 13px;
+        margin-bottom: 6px;
+      }
+      .tpl-card .tc-prev {
+        font-size: 12px;
+        color: var(--text-sec);
+        line-height: 1.45;
+        height: 34px;
+        overflow: hidden;
+        margin-bottom: 10px;
+      }
+
+      .preview-frame {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        background: #f6f3ee;
+        margin-top: 8px;
+      }
+      .pv-email {
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+      }
+      .pv-email-head {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        font-size: 12.5px;
+        color: var(--text-sec);
+      }
+      .pv-email-head .pe-subj {
+        font-size: 14.5px;
+        font-weight: 700;
+        color: var(--text);
+        margin-top: 4px;
+      }
+      .pv-email-body {
+        padding: 16px;
+        font-size: 13.5px;
+        line-height: 1.6;
+      }
+
+      .kpi-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 22px;
+      }
+      .kpi {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+        background: #fdfbf7;
+      }
+      .kpi .k-label {
+        font-size: 12.5px;
+        color: var(--text-sec);
+        margin-bottom: 8px;
+      }
+      .kpi .k-val {
+        font-size: 28px;
+        font-weight: 800;
+      }
+      .analytics-card {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+        margin-bottom: 20px;
+      }
+      .analytics-card h3 {
+        font-size: 16px;
+        margin-bottom: 14px;
+      }
+
+      .list-card {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .list-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 18px;
+        border-top: 1px solid #f1ebe1;
+        cursor: pointer;
+      }
+      .list-row:first-child {
+        border-top: none;
+      }
+      .list-row:hover {
+        background: #faf5ec;
+      }
+      .lr-main {
+        flex: 1;
+        min-width: 0;
+      }
+      .lr-name {
+        font-size: 15.5px;
+        font-weight: 700;
+      }
+      .lr-sub {
+        font-size: 12.5px;
+        color: var(--text-sec);
+        margin-top: 3px;
+      }
+      .lr-cat {
+        display: inline-block;
+        font-size: 11px;
+        color: #8a8276;
+        background: #eeeae3;
+        padding: 2px 9px;
+        border-radius: 10px;
+        margin-top: 5px;
+      }
+      .lr-right {
+        font-size: 12.5px;
+        color: var(--text-sec);
+        flex-shrink: 0;
+      }
+      .lr-icons {
+        display: none;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .list-row:hover .lr-icons {
+        display: flex;
+      }
+      .lr-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: #fff;
+        cursor: pointer;
+        color: #6a6258;
+      }
+      .lr-icon:hover {
+        background: #f6f1e8;
+      }
+
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 46px;
+        height: 26px;
+        flex-shrink: 0;
+      }
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .slider {
+        position: absolute;
+        inset: 0;
+        background: #cfc7b8;
+        border-radius: 26px;
+        transition: 0.25s;
+        cursor: pointer;
+      }
+      .slider:before {
+        content: "";
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        left: 3px;
+        top: 3px;
+        background: #fff;
+        border-radius: 50%;
+        transition: 0.25s;
+      }
+      .switch input:checked + .slider {
+        background: #1f8a4c;
+      }
+      .switch input:checked + .slider:before {
+        transform: translateX(20px);
+      }
+
+      .modal-ov {
+        position: fixed;
+        inset: 0;
+        background: rgba(40, 30, 20, 0.42);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+      }
+      .modal-ov.open {
+        display: flex;
+      }
+      .modal {
+        background: #fff;
+        border-radius: 14px;
+        padding: 24px;
+        width: 440px;
+        max-width: calc(100% - 36px);
+      }
+      .modal h3 {
+        font-size: 17px;
+        margin-bottom: 16px;
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: #2f2a24;
+        color: #fff;
+        padding: 12px 22px;
+        border-radius: 24px;
+        font-size: 13.5px;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.25s ease;
+        z-index: 200;
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      @media (max-width: 980px) {
+        .kpi-row {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (max-width: 860px) {
+        .layout {
+          flex-direction: column;
+        }
+        .mc-sidebar {
+          width: 100%;
+          min-width: 0;
+          position: static;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+        .mc-title {
+          width: 100%;
+        }
+        .mc-nav-item {
+          flex: 1;
+          min-width: 120px;
+        }
+        .kpi-row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <!-- ===== SIDEBAR ===== -->
+      <aside class="mc-sidebar">
+        <div class="mc-title">Email Center</div>
+        <div
+          class="mc-nav-item active"
+          data-screen="campaigns"
+          onclick="navTo('campaigns')"
+        >
+          <i class="fas fa-envelope"></i> Email Campaigns
+        </div>
+        <div
+          class="mc-nav-item"
+          data-screen="templates"
+          onclick="navTo('templates')"
+        >
+          <i class="fas fa-clipboard-list"></i> Email Templates
+        </div>
+        <div
+          class="mc-nav-item"
+          data-screen="automations"
+          onclick="navTo('automations')"
+        >
+          <i class="fas fa-bolt"></i> Automated Emails
+        </div>
+        <div
+          class="mc-nav-item"
+          data-screen="analytics"
+          onclick="navTo('analytics')"
+        >
+          <i class="fas fa-chart-line"></i> Delivery Analytics
+        </div>
+      </aside>
+
+      <!-- ===== CONTENT ===== -->
+      <main class="mc-content">
+        <!-- ===================== SCREEN 1: CAMPAIGNS ===================== -->
+        <section class="screen active" id="screen-campaigns">
+          <div id="camp-list">
+            <div class="page-head">
+              <div class="page-title">Email Campaigns</div>
+              <button class="btn btn-navy" onclick="openBuilder()">
+                <i class="fas fa-plus"></i> New Email Campaign
+              </button>
+            </div>
+            <div class="filter-bar">
+              <input
+                type="text"
+                id="campSearch"
+                placeholder="Search campaigns..."
+                oninput="renderCampaigns(true)"
+              />
+              <select id="campStatus" onchange="renderCampaigns(true)">
+                <option value="">All Status</option>
+                <option>Sent</option>
+                <option>Scheduled</option>
+                <option>Draft</option>
+              </select>
+              <select id="campAud" onchange="renderCampaigns(true)">
+                <option value="">All Audiences</option>
+                <option value="End User">End User</option>
+                <option value="Agent">Agent</option>
+                <option value="Custom">Custom Group</option>
+              </select>
+            </div>
+            <div class="result-count" id="campCount"></div>
+            <div class="tbl-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Campaign Name</th>
+                    <th>Audience</th>
+                    <th>Status</th>
+                    <th>Sent</th>
+                    <th>Open Rate</th>
+                    <th>Click Rate</th>
+                    <th>Conversion</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="campBody"></tbody>
+              </table>
+            </div>
+            <div class="pager" id="campPager"></div>
+          </div>
+
+          <!-- builder -->
+          <div id="camp-builder" style="display: none">
+            <div class="back-link" onclick="closeBuilder()">
+              <i class="fas fa-arrow-left"></i> Back to campaigns
+            </div>
+            <div class="page-title sm" id="builderTitle">
+              New Email Campaign
+            </div>
+            <div class="steps" id="stepIndicator"></div>
+
+            <!-- STEP 1 -->
+            <div class="builder-step" data-step="1">
+              <div class="field" id="f-name">
+                <label class="req">Campaign Name</label>
+                <input
+                  type="text"
+                  id="bName"
+                  placeholder="e.g. Spring Japan Property Update"
+                />
+                <span class="err">Campaign name is required.</span>
+              </div>
+              <div class="field">
+                <label>Description</label
+                ><textarea
+                  id="bDesc"
+                  placeholder="Optional notes about this campaign..."
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- STEP 2 -->
+            <div class="builder-step" data-step="2" style="display: none">
+              <h3 style="font-size: 17px; margin-bottom: 14px">
+                Select your audience
+              </h3>
+              <div id="bAudience">
+                <label class="radio-row"
+                  ><input
+                    type="radio"
+                    name="aud"
+                    value="all_users"
+                    checked
+                    onchange="onAudChange()"
+                  />
+                  All End Users</label
+                >
+                <label class="radio-row"
+                  ><input
+                    type="radio"
+                    name="aud"
+                    value="all_agents"
+                    onchange="onAudChange()"
+                  />
+                  All Agents</label
+                >
+                <label class="radio-row"
+                  ><input
+                    type="radio"
+                    name="aud"
+                    value="all_leads"
+                    onchange="onAudChange()"
+                  />
+                  All Leads (End Users + Agents)</label
+                >
+                <label class="radio-row"
+                  ><input
+                    type="radio"
+                    name="aud"
+                    value="custom"
+                    onchange="onAudChange()"
+                  />
+                  Custom Group</label
+                >
+              </div>
+              <div class="group-picker" id="groupPicker" style="display: none">
+                <input
+                  class="group-search"
+                  id="groupSearch"
+                  placeholder="Search groups..."
+                  oninput="renderGroupPicker()"
+                />
+                <div id="groupOpts"></div>
+                <span class="create-group-link" onclick="openCreateGroup()"
+                  ><i class="fas fa-plus"></i> Create new group</span
+                >
+              </div>
+              <div class="reach-note" id="reachNote">
+                Estimated recipients: ~1,240
+              </div>
+            </div>
+
+            <!-- STEP 3 -->
+            <div class="builder-step" data-step="3" style="display: none">
+              <h3 style="font-size: 17px; margin-bottom: 6px">
+                Compose your email
+              </h3>
+              <p
+                style="
+                  font-size: 12.5px;
+                  color: var(--text-sec);
+                  margin-bottom: 14px;
+                "
+              >
+                <i class="fas fa-envelope"></i> Delivered as an email to
+                recipients' inboxes.
+              </p>
+              <div class="field" id="f-subject">
+                <label class="req">Subject line</label>
+                <input
+                  type="text"
+                  id="bSubject"
+                  placeholder="e.g. Spring Japan Property Update — April Edition"
+                  oninput="rtePreviewRender('b')"
+                />
+                <span class="err">Subject line is required for emails.</span>
+              </div>
+              <div id="bEditorMount"></div>
+              <div class="tpl-lib">
+                <div class="tpl-lib-head">Use a template</div>
+                <div class="tpl-cards" id="bTplCards"></div>
+              </div>
+            </div>
+
+            <!-- STEP 4 -->
+            <div class="builder-step" data-step="4" style="display: none">
+              <h3 style="font-size: 17px; margin-bottom: 14px">
+                When should this be sent?
+              </h3>
+              <label class="radio-row"
+                ><input
+                  type="radio"
+                  name="sched"
+                  value="now"
+                  checked
+                  onchange="onSchedChange()"
+                />
+                Send immediately (after review)</label
+              >
+              <label class="radio-row"
+                ><input
+                  type="radio"
+                  name="sched"
+                  value="schedule"
+                  onchange="onSchedChange()"
+                />
+                Schedule for specific date &amp; time</label
+              >
+              <div
+                id="schedFields"
+                style="display: none; padding: 4px 0 4px 28px"
+              >
+                <div style="display: flex; gap: 12px; flex-wrap: wrap">
+                  <div class="field" style="flex: 1; min-width: 160px">
+                    <label>Send Date</label><input type="date" id="bDate" />
+                  </div>
+                  <div class="field" style="flex: 1; min-width: 160px">
+                    <label>Send Time</label
+                    ><input type="time" id="bTime" value="09:00" />
+                  </div>
+                </div>
+              </div>
+              <label class="radio-row"
+                ><input
+                  type="radio"
+                  name="sched"
+                  value="recurring"
+                  onchange="onSchedChange()"
+                />
+                Recurring</label
+              >
+              <div
+                id="recurFields"
+                style="display: none; padding: 4px 0 4px 28px"
+              >
+                <div style="display: flex; gap: 12px; flex-wrap: wrap">
+                  <div class="field" style="flex: 1; min-width: 140px">
+                    <label>Frequency</label
+                    ><select id="bFreq">
+                      <option>Daily</option>
+                      <option>Weekly</option>
+                      <option>Monthly</option>
+                    </select>
+                  </div>
+                  <div class="field" style="flex: 1; min-width: 140px">
+                    <label>Send Time</label
+                    ><input type="time" id="bRecurTime" value="09:00" />
+                  </div>
+                  <div class="field" style="flex: 1; min-width: 140px">
+                    <label>End date (optional)</label
+                    ><input type="date" id="bEndDate" />
+                  </div>
+                </div>
+              </div>
+              <div
+                style="
+                  font-size: 12.5px;
+                  color: var(--text-sec);
+                  margin-top: 10px;
+                "
+              >
+                <i class="fas fa-clock"></i> Timezone: Asia/Tokyo — JST (UTC+9)
+              </div>
+            </div>
+
+            <!-- STEP 5 -->
+            <div class="builder-step" data-step="5" style="display: none">
+              <h3 style="font-size: 17px; margin-bottom: 14px">
+                Review &amp; launch
+              </h3>
+              <div class="card-box" id="reviewCard"></div>
+            </div>
+
+            <div class="form-actions" id="builderActions"></div>
+          </div>
+        </section>
+
+        <!-- ===================== SCREEN 2: TEMPLATES ===================== -->
+        <section class="screen" id="screen-templates">
+          <div id="tpl-list">
+            <div class="page-head">
+              <div class="page-title">Email Templates</div>
+              <button class="btn btn-navy" onclick="openTplEditor()">
+                <i class="fas fa-plus"></i> New Template
+              </button>
+            </div>
+            <div class="list-card" id="tplListBody"></div>
+          </div>
+          <div id="tpl-editor" style="display: none">
+            <div class="back-link" onclick="closeTplEditor()">
+              <i class="fas fa-arrow-left"></i> Back to Templates
+            </div>
+            <div class="page-title sm" id="tplEditorTitle">New Template</div>
+            <div style="max-width: 780px; margin-top: 18px">
+              <div class="field" id="t-name">
+                <label class="req">Template Name</label
+                ><input
+                  type="text"
+                  id="tName"
+                  placeholder="e.g. New Property Alert"
+                /><span class="err">Template name is required.</span>
+              </div>
+              <div class="field" style="max-width: 280px">
+                <label class="req">Category</label
+                ><select id="tCat">
+                  <option>Automation</option>
+                  <option>Campaign</option>
+                </select>
+              </div>
+              <div class="field" id="t-subject">
+                <label class="req">Subject Line</label
+                ><input
+                  type="text"
+                  id="tSubject"
+                  placeholder="Email subject line"
+                  oninput="rtePreviewRender('t')"
+                /><span class="err">Subject line is required.</span>
+              </div>
+              <div class="field" id="t-body">
+                <label class="req">Email Body</label>
+                <div id="tEditorMount"></div>
+              </div>
+              <div class="field">
+                <label>Tags</label
+                ><input
+                  type="text"
+                  id="tTags"
+                  placeholder="comma, separated, tags"
+                />
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-outline" onclick="closeTplEditor()">
+                  Cancel
+                </button>
+                <button class="btn btn-navy" onclick="saveTemplate()">
+                  Save Template
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== SCREEN 3: AUTOMATED EMAILS ===================== -->
+        <section class="screen" id="screen-automations">
+          <style id="autoTabCss">
+            .auto-intro {
+              font-size: 12.5px;
+              color: var(--text-sec);
+              margin: -8px 0 16px;
+              max-width: 760px;
+            }
+            .auto-filter {
+              display: flex;
+              gap: 10px;
+              align-items: center;
+              flex-wrap: wrap;
+              margin-bottom: 14px;
+            }
+            .auto-filter .srch {
+              position: relative;
+              flex: 1;
+              min-width: 220px;
+              max-width: 380px;
+            }
+            .auto-filter .srch i {
+              position: absolute;
+              left: 11px;
+              top: 50%;
+              transform: translateY(-50%);
+              color: var(--text-sec);
+              font-size: 12px;
+            }
+            .auto-filter .srch input {
+              width: 100%;
+              height: 36px;
+              padding: 0 12px 0 32px;
+              border: 1px solid var(--border);
+              border-radius: 8px;
+              font-size: 13px;
+              font-family: inherit;
+              background: #fff;
+              color: var(--navy);
+              outline: none;
+            }
+            .auto-filter select {
+              height: 36px;
+              border: 1px solid var(--border);
+              border-radius: 8px;
+              font-size: 13px;
+              padding: 0 10px;
+              font-family: inherit;
+              background: #fff;
+              color: var(--navy);
+            }
+            .auto-filter .auto-count {
+              font-size: 12px;
+              color: var(--text-sec);
+              margin-left: auto;
+            }
+            .auto-table-wrap {
+              background: #fff;
+              border: 1px solid var(--border);
+              border-radius: 12px;
+              overflow: hidden;
+            }
+            .auto-table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 13px;
+            }
+            .auto-table thead th {
+              text-align: left;
+              padding: 11px 14px;
+              font-size: 11px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.04em;
+              color: var(--text-sec);
+              background: #f7f4ef;
+              border-bottom: 1px solid var(--border);
+              white-space: nowrap;
+            }
+            .auto-table tbody td {
+              padding: 11px 14px;
+              border-bottom: 1px solid #f1ece4;
+              vertical-align: middle;
+            }
+            .auto-table tbody tr {
+              cursor: pointer;
+              transition: background 0.12s;
+            }
+            .auto-table tbody tr:hover {
+              background: #faf7f1;
+            }
+            .auto-table tbody tr:last-child td {
+              border-bottom: none;
+            }
+            .at-name {
+              font-weight: 600;
+              color: var(--navy);
+            }
+            .at-id {
+              font-size: 11px;
+              color: var(--text-sec);
+              margin-top: 1px;
+            }
+            .at-edit {
+              text-align: right;
+            }
+            .auto-empty {
+              text-align: center;
+              color: var(--text-sec);
+              padding: 26px;
+            }
+            .ab {
+              display: inline-flex;
+              align-items: center;
+              padding: 3px 9px;
+              border-radius: 999px;
+              font-size: 10.5px;
+              font-weight: 700;
+              letter-spacing: 0.02em;
+            }
+            .ab-blue {
+              background: #e8f1fb;
+              color: #2c5fa5;
+              border: 1px solid #c5dbf3;
+            }
+            .ab-grey {
+              background: #f1efea;
+              color: #7b7468;
+              border: 1px solid #ddd6cb;
+            }
+            .switch.locked {
+              opacity: 0.55;
+            }
+            .switch.locked .slider {
+              cursor: not-allowed;
+            }
+            .auto-drawer-backdrop {
+              position: fixed;
+              inset: 0;
+              background: rgba(30, 22, 12, 0.4);
+              z-index: 120;
+              display: none;
+            }
+            .auto-drawer-backdrop.open {
+              display: block;
+            }
+            .auto-drawer {
+              position: fixed;
+              top: 0;
+              right: 0;
+              height: 100vh;
+              width: 520px;
+              max-width: 96vw;
+              background: #fff;
+              box-shadow: -12px 0 36px rgba(40, 30, 20, 0.22);
+              z-index: 130;
+              display: flex;
+              flex-direction: column;
+              transform: translateX(100%);
+              transition: transform 0.22s ease;
+            }
+            .auto-drawer.open {
+              transform: none;
+            }
+            .ad-head {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              gap: 12px;
+              padding: 18px 20px;
+              border-bottom: 1px solid var(--border);
+              background: #faf7f1;
+            }
+            .ad-id {
+              font-size: 11px;
+              font-weight: 700;
+              color: var(--text-sec);
+              letter-spacing: 0.05em;
+            }
+            .ad-name {
+              font-size: 16px;
+              font-weight: 700;
+              color: var(--navy);
+              margin-top: 2px;
+            }
+            .ad-x {
+              border: none;
+              background: transparent;
+              font-size: 22px;
+              line-height: 1;
+              color: var(--text-sec);
+              cursor: pointer;
+            }
+            .ad-body {
+              padding: 16px 20px;
+              overflow: auto;
+              flex: 1;
+            }
+            .ad-meta {
+              background: #f7f4ef;
+              border: 1px solid var(--border);
+              border-radius: 10px;
+              padding: 10px 12px;
+              margin-bottom: 16px;
+            }
+            .ad-meta-row {
+              display: flex;
+              gap: 10px;
+              font-size: 12.5px;
+              padding: 3px 0;
+            }
+            .ad-meta-k {
+              width: 96px;
+              color: var(--text-sec);
+              font-weight: 600;
+              flex-shrink: 0;
+            }
+            .chbadge {
+              display: inline-flex;
+              width: 18px;
+              height: 18px;
+              align-items: center;
+              justify-content: center;
+              border-radius: 50%;
+              font-size: 10px;
+              font-weight: 800;
+              margin: 0 2px;
+            }
+            .chbadge.on {
+              background: #e6f6ef;
+              color: #1f7a4d;
+            }
+            .chbadge.off {
+              background: #f1efea;
+              color: #a39a8c;
+            }
+            .ad-label {
+              display: block;
+              font-size: 12px;
+              font-weight: 700;
+              color: var(--navy);
+              text-transform: uppercase;
+              letter-spacing: 0.03em;
+              margin-bottom: 7px;
+            }
+            .ad-input {
+              width: 100%;
+              height: 38px;
+              border: 1px solid var(--border);
+              border-radius: 9px;
+              padding: 0 12px;
+              font-size: 13.5px;
+              font-family: inherit;
+              color: var(--navy);
+              background: #fff;
+              outline: none;
+            }
+            .ad-input:focus {
+              border-color: var(--accent);
+              box-shadow: 0 0 0 3px rgba(196, 113, 74, 0.14);
+            }
+            .ad-rte {
+              border: 1px solid var(--border);
+              border-radius: 9px;
+              overflow: hidden;
+            }
+            .ad-rte-toolbar {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 2px;
+              padding: 6px;
+              background: #f7f4ef;
+              border-bottom: 1px solid var(--border);
+            }
+            .ad-tb {
+              border: 1px solid transparent;
+              background: transparent;
+              border-radius: 6px;
+              min-width: 28px;
+              height: 28px;
+              padding: 0 7px;
+              font-size: 12.5px;
+              cursor: pointer;
+              color: var(--navy);
+              font-family: inherit;
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .ad-tb:hover {
+              background: #ece4d6;
+            }
+            .ad-rte-body {
+              min-height: 180px;
+              max-height: 300px;
+              overflow: auto;
+              padding: 11px 13px;
+              font-size: 13.5px;
+              line-height: 1.6;
+              color: var(--navy);
+              outline: none;
+              background: #fff;
+            }
+            .ad-rte-body:focus {
+              box-shadow: inset 0 0 0 2px rgba(196, 113, 74, 0.14);
+            }
+            .ad-vars {
+              margin-top: 10px;
+              display: flex;
+              flex-wrap: wrap;
+              gap: 6px;
+              align-items: center;
+            }
+            .ad-vars-lbl {
+              font-size: 11.5px;
+              color: var(--text-sec);
+              margin-right: 2px;
+            }
+            .varchip {
+              display: inline-block;
+              padding: 4px 9px;
+              border: 1px solid var(--border);
+              border-radius: 14px;
+              font-size: 11px;
+              font-family: monospace;
+              color: var(--navy);
+              background: #faf7f1;
+              cursor: pointer;
+            }
+            .varchip:hover {
+              background: var(--navy);
+              color: #fff;
+            }
+            .ad-foot {
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              padding: 14px 20px;
+              border-top: 1px solid var(--border);
+              background: #faf7f1;
+            }
+            .ad-restore {
+              margin-left: auto;
+              font-size: 12.5px;
+              color: var(--accent);
+              cursor: pointer;
+              font-weight: 600;
+            }
+            .ad-restore:hover {
+              text-decoration: underline;
+            }
+          </style>
+          <div class="page-head">
+            <div class="page-title">Automated Emails</div>
+          </div>
+          <div class="auto-filter">
+            <div class="srch">
+              <i class="fas fa-magnifying-glass"></i
+              ><input
+                id="autoSearch"
+                type="text"
+                placeholder="Search by trigger name"
+                oninput="renderAutomations()"
+              />
+            </div>
+            <select id="autoStatusFilter" onchange="renderAutomations()">
+              <option value="all">All status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <span class="auto-count" id="autoCount"></span>
+          </div>
+          <div class="auto-table-wrap">
+            <table class="auto-table">
+              <thead>
+                <tr>
+                  <th style="width: 64px">Active</th>
+                  <th>Trigger</th>
+                  <th style="width: 200px">Timing</th>
+                  <th style="width: 150px">Admin Can Disable</th>
+                  <th style="width: 48px"></th>
+                </tr>
+              </thead>
+              <tbody id="autoTbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ===================== SCREEN 4: ANALYTICS ===================== -->
+        <section class="screen" id="screen-analytics">
+          <style>
+            .an-filter {
+              display: flex;
+              gap: 10px;
+              flex-wrap: wrap;
+              align-items: center;
+              margin-bottom: 14px;
+            }
+            .an-filter select,
+            .an-filter input {
+              height: 36px;
+              border: 1px solid var(--border);
+              border-radius: 8px;
+              padding: 0 10px;
+              font-size: 13px;
+              font-family: inherit;
+              background: #fff;
+              color: var(--navy);
+              outline: none;
+            }
+            .an-filter input[type="text"] {
+              flex: 1;
+              min-width: 200px;
+            }
+            .an-table th.sortable {
+              cursor: pointer;
+              user-select: none;
+              white-space: nowrap;
+            }
+            .an-table th.sortable:hover {
+              color: var(--accent);
+            }
+            .an-sort-ind {
+              font-size: 10px;
+              margin-left: 3px;
+            }
+            .an-exp {
+              border: none;
+              background: transparent;
+              cursor: pointer;
+              color: var(--text-sec);
+              font-size: 11px;
+              width: 18px;
+            }
+            .an-sub td {
+              background: #fbf8f2;
+              font-size: 12.5px;
+            }
+            .an-sub td:first-child {
+              padding-left: 34px;
+            }
+            #anCustomRange {
+              display: none;
+              gap: 8px;
+              align-items: center;
+            }
+            #anCustomRange.on {
+              display: flex;
+            }
+          </style>
+          <div class="page-head">
+            <div class="page-title">Email Delivery Analytics</div>
+          </div>
+          <div class="analytics-card">
+            <h3>Campaign Performance Detail</h3>
+            <div class="an-filter">
+              <select id="anTime" onchange="onAnTimeChange()">
+                <option value="all">All time</option>
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="custom">Custom</option>
+              </select>
+              <span id="anCustomRange">
+                <input type="date" id="anFrom" onchange="renderPerf()" />
+                <span style="font-size: 12px; color: var(--text-sec)">to</span>
+                <input type="date" id="anTo" onchange="renderPerf()" />
+              </span>
+              <select id="anAud" onchange="renderPerf()">
+                <option value="">All Audiences</option>
+                <option value="End User">End User</option>
+                <option value="Agent">Agent</option>
+                <option value="Custom">Custom Group</option>
+              </select>
+              <input
+                type="text"
+                id="anSearch"
+                placeholder="Search campaign name..."
+                oninput="renderPerf()"
+              />
+            </div>
+            <div class="tbl-wrap an-wrap">
+              <table class="an-table">
+                <thead id="perfHead"></thead>
+                <tbody id="perfBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <h3>Email Trend (Last 10 Days)</h3>
+            <canvas id="trendChart" height="110"></canvas>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- create group modal -->
+    <div class="modal-ov" id="cgModal">
+      <div class="modal">
+        <h3>Create new group</h3>
+        <div class="field">
+          <label class="req">Group name</label
+          ><input
+            type="text"
+            id="cgName"
+            placeholder="e.g. VIP Buyers — Tokyo"
+          />
+        </div>
+        <div class="field">
+          <label>Audience base</label>
+          <div style="display: flex; gap: 18px">
+            <label class="radio-row" style="padding: 4px 0"
+              ><input type="radio" name="cgBase" value="End User" checked /> End
+              User</label
+            >
+            <label class="radio-row" style="padding: 4px 0"
+              ><input type="radio" name="cgBase" value="Agent" /> Agent</label
+            >
+            <label class="radio-row" style="padding: 4px 0"
+              ><input type="radio" name="cgBase" value="Both" /> Both</label
+            >
+          </div>
+        </div>
+        <div class="field">
+          <label>Filter (optional)</label>
+          <div style="display: flex; gap: 10px">
+            <select id="cgFilter" style="flex: 1">
+              <option value="">— None —</option>
+              <option>Plan type</option>
+              <option>Registration date</option>
+              <option>Activity level</option>
+            </select>
+            <input
+              type="text"
+              id="cgFilterVal"
+              placeholder="value"
+              style="flex: 1"
+            />
+          </div>
+        </div>
+        <div class="form-actions" style="border: none; padding-top: 6px">
+          <button class="btn btn-outline" onclick="closeCreateGroup()">
+            Cancel
+          </button>
+          <button class="btn btn-navy" onclick="saveNewGroup()">
+            Save Group
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Insert Property picker modal (reuses Property Management filter + grid/list) -->
+    <style id="epCss">
+      .modal.ep-modal {
+        width: 920px;
+        max-width: calc(100% - 32px);
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        max-height: 90vh;
+      }
+      .ep-head {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .ep-head h3 {
+        margin: 0;
+        font-size: 16px;
+      }
+      .ep-head .ep-sub {
+        font-size: 12px;
+        color: var(--text-sec);
+        margin-top: 2px;
+      }
+      .ep-x {
+        border: none;
+        background: transparent;
+        font-size: 20px;
+        line-height: 1;
+        cursor: pointer;
+        color: var(--text-sec);
+      }
+      .ep-body {
+        padding: 14px 20px;
+        overflow: auto;
+      }
+      .ep-foot {
+        padding: 12px 20px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        align-items: center;
+      }
+      .ep-foot .ep-selinfo {
+        margin-right: auto;
+        font-size: 12px;
+        color: var(--text-sec);
+      }
+      .ep-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .ep-filters select,
+      .ep-filters input {
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        padding: 7px 10px;
+        font-size: 12.5px;
+        background: #fff;
+        color: #2a2118;
+        font-family: inherit;
+      }
+      .ep-filters input[type="text"] {
+        min-width: 180px;
+        flex: 1;
+      }
+      .ep-vt {
+        display: inline-flex;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .ep-vt button {
+        border: none;
+        background: #fff;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-sec);
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .ep-vt button.on {
+        background: var(--navy);
+        color: #fff;
+      }
+      .ep-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 12px;
+      }
+      .ep-card {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+        background: #fff;
+        cursor: pointer;
+        position: relative;
+        transition:
+          border-color 0.12s,
+          box-shadow 0.12s;
+      }
+      .ep-card:hover {
+        border-color: var(--accent);
+      }
+      .ep-card.sel {
+        border-color: var(--navy);
+        box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.18);
+      }
+      .ep-card-img {
+        width: 100%;
+        height: 110px;
+        object-fit: cover;
+        background: #efe6d6;
+        display: block;
+      }
+      .ep-card-b {
+        padding: 8px 10px;
+      }
+      .ep-card-t {
+        font-weight: 700;
+        font-size: 12.5px;
+        line-height: 1.25;
+        margin-bottom: 3px;
+      }
+      .ep-card-s {
+        font-size: 11px;
+        color: var(--text-sec);
+      }
+      .ep-card-p {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--navy);
+        margin-top: 3px;
+      }
+      .ep-card .ep-radio {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        transform: scale(1.15);
+      }
+      .ep-badge-nd {
+        display: inline-block;
+        background: #fdeee6;
+        color: var(--accent-dark);
+        border-radius: 999px;
+        padding: 1px 7px;
+        font-size: 9.5px;
+        font-weight: 700;
+      }
+      .ep-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+      }
+      .ep-table th,
+      .ep-table td {
+        padding: 8px 9px;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+      }
+      .ep-table th {
+        font-size: 11px;
+        color: var(--text-sec);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        white-space: nowrap;
+      }
+      .ep-table tbody tr {
+        cursor: pointer;
+      }
+      .ep-table tbody tr:hover {
+        background: #faf6ef;
+      }
+      .ep-table tbody tr.sel {
+        background: #eef3f8;
+      }
+      .ep-empty {
+        text-align: center;
+        color: var(--text-sec);
+        padding: 26px;
+        font-size: 13px;
+      }
+      /* Property block rendered inside the email body */
+      .epb {
+        position: relative;
+        display: flex;
+        gap: 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px;
+        margin: 10px 0;
+        background: #fffaf2;
+        max-width: 460px;
+      }
+      .epb-thumb {
+        width: 120px;
+        height: 84px;
+        object-fit: cover;
+        border-radius: 8px;
+        background: #efe6d6;
+        flex-shrink: 0;
+      }
+      .epb-body {
+        min-width: 0;
+      }
+      .epb-name {
+        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 2px;
+      }
+      .epb-loc {
+        font-size: 12px;
+        color: var(--text-sec);
+      }
+      .epb-price {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--navy);
+        margin: 4px 0 6px;
+      }
+      .epb-link {
+        display: inline-block;
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .epb-x {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(40, 30, 20, 0.55);
+        color: #fff;
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .epb-x:hover {
+        background: var(--accent-dark);
+      }
+      /* Hide the remove button when the block is shown inside the read-only preview */
+      .pv-email .epb-x {
+        display: none;
+      }
+      .ep-pgbtn {
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 8px;
+        padding: 5px 11px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--navy);
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .ep-pgbtn:hover:not(:disabled) {
+        background: #faf6ef;
+      }
+      .ep-pgbtn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .ep-pginfo {
+        font-size: 12px;
+        color: var(--text-sec);
+      }
+      .agref {
+        background: #eef3f8;
+        border-radius: 5px;
+        padding: 0 4px;
+        color: var(--navy);
+        font-weight: 600;
+      }
+    </style>
+    <div
+      class="modal-ov"
+      id="epModal"
+      onclick="if (event.target === this) closePropertyPicker();"
+    >
+      <div class="modal ep-modal">
+        <div class="ep-head">
+          <div>
+            <h3>Insert property</h3>
+          </div>
+          <button
+            class="ep-x"
+            type="button"
+            onclick="closePropertyPicker()"
+            aria-label="Close"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="ep-body">
+          <div class="ep-filters">
+            <select id="epStatus" onchange="renderEPPicker()">
+              <option value="">Status: All</option>
+              <option value="Published">Published</option>
+              <option value="Members Only">Members Only</option>
+            </select>
+            <select id="epTx" onchange="renderEPPicker()">
+              <option value="">Listing Type: All</option>
+              <option value="For Sale">For Sale</option>
+              <option value="For Rent">For Rent</option>
+              <option value="Sale + Rent">Sale + Rent</option>
+            </select>
+            <select id="epType" onchange="renderEPPicker()">
+              <option value="">Property Type: All</option>
+            </select>
+            <select id="epPref" onchange="onEpPrefChange()">
+              <option value="">Prefecture: All</option>
+            </select>
+            <select id="epCity" onchange="renderEPPicker()">
+              <option value="">City: All</option>
+            </select>
+            <input
+              id="epPriceMin"
+              type="number"
+              min="0"
+              placeholder="Price min ¥M"
+              oninput="renderEPPicker()"
+              style="width: 110px"
+            />
+            <input
+              id="epPriceMax"
+              type="number"
+              min="0"
+              placeholder="Price max ¥M"
+              oninput="renderEPPicker()"
+              style="width: 110px"
+            />
+            <select id="epOwner" onchange="renderEPPicker()">
+              <option value="">Owner Type: All</option>
+              <option value="Agency">Agency</option>
+              <option value="Direct Owner">Direct Owner</option>
+            </select>
+            <select id="epVerif" onchange="renderEPPicker()">
+              <option value="">Verification: All</option>
+              <option value="Verified">Verified</option>
+              <option value="Pending">Pending</option>
+            </select>
+            <input
+              id="epSearch"
+              type="text"
+              placeholder="Search by name or ID"
+              oninput="renderEPPicker()"
+            />
+            <div class="ep-vt">
+              <button
+                type="button"
+                id="epVtGrid"
+                class="on"
+                onclick="setEPView('grid')"
+              >
+                <i class="fas fa-table-cells-large"></i> Grid
+              </button>
+              <button type="button" id="epVtTable" onclick="setEPView('table')">
+                <i class="fas fa-table-list"></i> Table
+              </button>
+            </div>
+          </div>
+          <div
+            id="epCount"
+            style="font-size: 12px; color: var(--text-sec); margin-bottom: 10px"
+          ></div>
+          <div id="epResult"></div>
+          <div
+            id="epPager"
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+              margin-top: 14px;
+            "
+          ></div>
+        </div>
+        <div class="ep-foot">
+          <span class="ep-selinfo" id="epSelInfo">No property selected</span>
+          <button
+            class="btn btn-outline"
+            type="button"
+            onclick="closePropertyPicker()"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-navy"
+            type="button"
+            onclick="confirmEPPicker()"
+          >
+            Insert property
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Insert Agency picker modal (mirrors Agent Management list) -->
+    <div
+      class="modal-ov"
+      id="agModal"
+      onclick="if (event.target === this) closeAgencyPicker();"
+    >
+      <div class="modal ep-modal">
+        <div class="ep-head">
+          <div>
+            <h3>Insert agent</h3>
+          </div>
+          <button
+            class="ep-x"
+            type="button"
+            onclick="closeAgencyPicker()"
+            aria-label="Close"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="ep-body">
+          <div class="ep-filters">
+            <select id="agStatus" onchange="renderAGPicker()">
+              <option value="">Status: All</option>
+              <option value="Active">Active</option>
+              <option value="Suspended">Suspended</option>
+              <option value="Withdrawn">Withdrawn</option>
+            </select>
+            <select id="agPlan" onchange="renderAGPicker()">
+              <option value="">Plan: All</option>
+              <option value="Free">Free</option>
+              <option value="Bronze">Bronze</option>
+              <option value="Silver">Silver</option>
+              <option value="Gold">Gold</option>
+            </select>
+            <select id="agArea" onchange="renderAGPicker()">
+              <option value="">Service Area: All</option>
+              <option value="Tokyo">Tokyo</option>
+              <option value="Kanagawa">Kanagawa</option>
+              <option value="Osaka">Osaka</option>
+              <option value="Saitama">Saitama</option>
+              <option value="Chiba">Chiba</option>
+              <option value="Kyoto">Kyoto</option>
+            </select>
+            <select id="agLang" onchange="renderAGPicker()">
+              <option value="">Language: All</option>
+              <option value="Japanese">Japanese</option>
+              <option value="English">English</option>
+              <option value="Chinese (Simplified)">Chinese (Simplified)</option>
+              <option value="Chinese (Traditional)">
+                Chinese (Traditional)
+              </option>
+              <option value="Vietnamese">Vietnamese</option>
+              <option value="Korean">Korean</option>
+              <option value="Other">Other</option>
+            </select>
+            <select id="agSpec" onchange="renderAGPicker()">
+              <option value="">Specialism: All</option>
+              <option value="Real Estate Brokerage">
+                Real Estate Brokerage
+              </option>
+              <option value="Direct Property Acquisition">
+                Direct Property Acquisition
+              </option>
+              <option value="Rental Brokerage">Rental Brokerage</option>
+              <option value="Property Management">Property Management</option>
+              <option value="Short Sale">Short Sale</option>
+              <option value="Inheritance Consultation">
+                Inheritance Consultation
+              </option>
+            </select>
+            <input
+              id="agSearch"
+              type="text"
+              placeholder="Search by name or ID"
+              oninput="renderAGPicker()"
+            />
+            <div class="ep-vt">
+              <button
+                type="button"
+                id="agVtGrid"
+                class="on"
+                onclick="setAGView('grid')"
+              >
+                <i class="fas fa-table-cells-large"></i> Grid
+              </button>
+              <button type="button" id="agVtTable" onclick="setAGView('table')">
+                <i class="fas fa-table-list"></i> Table
+              </button>
+            </div>
+          </div>
+          <div
+            id="agCount"
+            style="font-size: 12px; color: var(--text-sec); margin-bottom: 10px"
+          ></div>
+          <div id="agResult"></div>
+          <div
+            id="agPager"
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+              margin-top: 14px;
+            "
+          ></div>
+        </div>
+        <div class="ep-foot">
+          <span class="ep-selinfo" id="agSelInfo">No agency selected</span>
+          <button
+            class="btn btn-outline"
+            type="button"
+            onclick="closeAgencyPicker()"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-navy"
+            type="button"
+            onclick="confirmAGPicker()"
+          >
+            Insert agent
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Automation edit drawer -->
+    <div
+      class="auto-drawer-backdrop"
+      id="autoBackdrop"
+      onclick="if (event.target === this) closeAutoDrawer();"
+    ></div>
+    <aside class="auto-drawer" id="autoDrawer" aria-hidden="true">
+      <div class="ad-head">
+        <div>
+          <div class="ad-id" id="adId">—</div>
+          <div class="ad-name" id="adName">—</div>
+        </div>
+        <button
+          class="ad-x"
+          type="button"
+          onclick="closeAutoDrawer()"
+          aria-label="Close"
+        >
+          &times;
+        </button>
+      </div>
+      <div class="ad-body">
+        <div class="ad-meta">
+          <div class="ad-meta-row">
+            <span class="ad-meta-k">Timing</span><span id="adTiming">—</span>
+          </div>
+          <div class="ad-meta-row">
+            <span class="ad-meta-k">Channels</span
+            ><span id="adChannels">—</span>
+          </div>
+          <div class="ad-meta-row">
+            <span class="ad-meta-k">Email Pattern</span
+            ><span id="adPattern">—</span>
+          </div>
+        </div>
+
+        <label class="ad-label">Email Subject</label>
+        <input
+          id="adSubject"
+          class="ad-input"
+          type="text"
+          placeholder="Email subject…"
+          oninput="autoDirty = true"
+        />
+        <div class="ad-vars" id="adSubjectVars"></div>
+
+        <label class="ad-label" style="margin-top: 18px">Email Body</label>
+        <div class="ad-rte">
+          <div class="ad-rte-toolbar">
+            <button
+              type="button"
+              class="ad-tb"
+              title="Bold"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('bold')"
+            >
+              <b>B</b>
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Italic"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('italic')"
+            >
+              <i>I</i>
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Underline"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('underline')"
+            >
+              <u>U</u>
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Heading 1"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('formatBlock', '<h1>')"
+            >
+              H1
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Heading 2"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('formatBlock', '<h2>')"
+            >
+              H2
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Heading 3"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('formatBlock', '<h3>')"
+            >
+              H3
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Bullet list"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('insertUnorderedList')"
+            >
+              <i class="fas fa-list-ul"></i>
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Numbered list"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('insertOrderedList')"
+            >
+              <i class="fas fa-list-ol"></i>
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Link"
+              onmousedown="event.preventDefault()"
+              onclick="adLink()"
+            >
+              <i class="fas fa-link"></i>
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Align left"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('justifyLeft')"
+            >
+              <i class="fas fa-align-left"></i>
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Align center"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('justifyCenter')"
+            >
+              <i class="fas fa-align-center"></i>
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Align right"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('justifyRight')"
+            >
+              <i class="fas fa-align-right"></i>
+            </button>
+          </div>
+          <div
+            id="adBody"
+            class="ad-rte-body"
+            contenteditable="true"
+            oninput="autoDirty = true"
+          ></div>
+        </div>
+        <div class="ad-vars" id="adBodyVars"></div>
+      </div>
+      <div class="ad-foot">
+        <button class="btn btn-navy" type="button" onclick="saveAutoDrawer()">
+          Save
+        </button>
+        <button
+          class="btn btn-outline"
+          type="button"
+          onclick="closeAutoDrawer()"
+        >
+          Cancel
+        </button>
+        <span class="ad-restore" onclick="restoreAutoDrawer()"
+          >Restore default</span
+        >
+      </div>
+    </aside>
+
+    <div class="toast" id="toast"></div>
+    <script src="automation-catalog.js"></script>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+
+      /* ===================== MOCK DATA ===================== */
+      /* Each campaign carries enough to drive list + analytics:
+         - timing: "one-time" | "recurring"
+         - sentDate (one-time) or sends[] (recurring, each with its own metrics)
+         - body: stored HTML (used to count <a href> links for Click Rate N/A)
+         - recipients/opened/clicked/converted: actuals at send time */
+      let campaigns = [
+        {
+          id: "c1",
+          name: "Spring Japan Investment EDM",
+          desc: "High-net-worth spring investment push.",
+          audience: "End User — High-Net-Worth Investors",
+          audType: "End User",
+          status: "Sent",
+          timing: "one-time",
+          sentDate: "2026-06-12",
+          template: "t2",
+          subject: "Spring Japan Property Update — April Edition",
+          body: 'Hi {full_name}, explore this season&#39;s top opportunities. <a href="https://yuushi.jp/listings">Browse listings</a>.',
+          recipients: 3240,
+          opened: 1782,
+          clicked: 612,
+          converted: 184,
+        },
+        {
+          id: "c2",
+          name: "Agent Monthly Performance Digest",
+          desc: "Monthly KPIs for premium agents.",
+          audience: "Agent — Premium Plan",
+          audType: "Agent",
+          status: "Sent",
+          timing: "one-time",
+          sentDate: "2026-06-01",
+          template: "t5",
+          subject: "Your monthly performance summary",
+          // no links in this body → Click Rate should show N/A
+          body: "Hi {agent_name}, here is your performance summary for this month. Keep up the great work!",
+          recipients: 185,
+          opened: 92,
+          clicked: 0,
+          converted: 12,
+        },
+        {
+          id: "c5",
+          name: "New Build Showcase — Tokyo",
+          desc: "New development spotlight for Tokyo buyers.",
+          audience: "End User — All Investors",
+          audType: "End User",
+          status: "Sent",
+          timing: "one-time",
+          sentDate: "2026-05-20",
+          template: "t1",
+          subject: "Fresh new builds just listed",
+          body: 'New developments are live. <a href="https://yuushi.jp/new-dev">See projects</a>.',
+          recipients: 2110,
+          opened: 760,
+          clicked: 188,
+          converted: 41,
+        },
+        {
+          id: "c6",
+          name: "Re-engagement: Dormant Investors",
+          desc: "Win-back for inactive investors.",
+          audience: "Custom Group — Dormant Investors",
+          audType: "Custom",
+          status: "Sent",
+          timing: "one-time",
+          sentDate: "2026-04-28",
+          template: "t4",
+          subject: "We miss you — new opportunities inside",
+          body: 'It has been a while, {full_name}. <a href="https://yuushi.jp/welcome-back">Come back</a>.',
+          recipients: 342,
+          opened: 96,
+          clicked: 9,
+          converted: 2,
+        },
+        {
+          id: "c7",
+          name: "Agent Plan Upgrade Offer",
+          desc: "Upsell agents to a higher plan.",
+          audience: "Agent — All Agents",
+          audType: "Agent",
+          status: "Sent",
+          timing: "one-time",
+          sentDate: "2026-04-05",
+          template: "",
+          subject: "Upgrade your plan, win more listings",
+          // no links → Click Rate N/A
+          body: "Hi {agent_name}, premium tools help you close faster. Reply to learn more.",
+          recipients: 430,
+          opened: 215,
+          clicked: 0,
+          converted: 18,
+        },
+        {
+          id: "c8",
+          name: "Weekly Newsletter",
+          desc: "Recurring weekly digest of new listings.",
+          audience: "End User — All Investors",
+          audType: "End User",
+          status: "Sent",
+          timing: "recurring",
+          frequency: "Weekly",
+          template: "t2",
+          subject: "This week on YUUSHI",
+          body: 'Your weekly picks are ready. <a href="https://yuushi.jp/weekly">View this week</a>.',
+          sends: [
+            {
+              sentDate: "2026-05-26",
+              recipients: 2400,
+              opened: 1320,
+              clicked: 410,
+              converted: 58,
+            },
+            {
+              sentDate: "2026-06-02",
+              recipients: 2455,
+              opened: 1280,
+              clicked: 388,
+              converted: 51,
+            },
+            {
+              sentDate: "2026-06-09",
+              recipients: 2510,
+              opened: 1402,
+              clicked: 455,
+              converted: 64,
+            },
+            {
+              sentDate: "2026-06-16",
+              recipients: 2560,
+              opened: 1208,
+              clicked: 372,
+              converted: 47,
+            },
+          ],
+        },
+        {
+          id: "c3",
+          name: "New Listing Spotlight — April",
+          desc: "",
+          audience: "End User — All Investors",
+          audType: "End User",
+          status: "Scheduled",
+          timing: "one-time",
+          template: "t1",
+          subject: "New listings just dropped",
+          body: 'See what is new. <a href="https://yuushi.jp/new">Explore</a>.',
+          recipients: 0,
+          opened: 0,
+          clicked: 0,
+          converted: 0,
+        },
+        {
+          id: "c4",
+          name: "Premium Agent Outreach",
+          desc: "",
+          audience: "Agent — All Agents",
+          audType: "Agent",
+          status: "Draft",
+          timing: "one-time",
+          template: "",
+          subject: "",
+          body: "",
+          recipients: 0,
+          opened: 0,
+          clicked: 0,
+          converted: 0,
+        },
+      ];
+
+      /* ---- deterministic filler so the campaigns list exceeds one page (>=60 rows) ---- */
+      (function padCampaigns() {
+        const audiencePool = [
+          { audience: "End User — All Investors", audType: "End User" },
+          {
+            audience: "End User — High-Net-Worth Investors",
+            audType: "End User",
+          },
+          { audience: "End User — Premium Members", audType: "End User" },
+          { audience: "Agent — All Agents", audType: "Agent" },
+          { audience: "Agent — Premium Plan", audType: "Agent" },
+          { audience: "Custom Group — Dormant Investors", audType: "Custom" },
+          { audience: "Custom Group — VIP Buyers Tokyo", audType: "Custom" },
+        ];
+        const titlePool = [
+          "Seasonal Property Digest",
+          "Yield Opportunities Roundup",
+          "New Development Spotlight",
+          "Market Insights Briefing",
+          "Agent Success Newsletter",
+          "Buyer Re-engagement Push",
+          "Featured Listings Update",
+          "Investor Webinar Invite",
+          "Quarterly Portfolio Recap",
+          "Limited-Time Offer Blast",
+        ];
+        const statusPool = ["Sent", "Sent", "Sent", "Scheduled", "Draft"];
+        const target = 60;
+        let n = 1;
+        while (campaigns.length < target) {
+          const a = audiencePool[n % audiencePool.length];
+          const status = statusPool[n % statusPool.length];
+          const title = titlePool[n % titlePool.length];
+          const isSent = status === "Sent";
+          const recipients = isSent ? 400 + ((n * 137) % 3000) : 0;
+          const opened = isSent
+            ? Math.floor(recipients * (0.28 + (n % 5) * 0.04))
+            : 0;
+          const hasLink = n % 3 !== 0;
+          const clicked =
+            isSent && hasLink
+              ? Math.floor(opened * (0.15 + (n % 4) * 0.03))
+              : 0;
+          const converted = isSent ? Math.floor((clicked || opened) * 0.1) : 0;
+          const mo = ((n % 6) + 1).toString().padStart(2, "0");
+          const da = ((n % 27) + 1).toString().padStart(2, "0");
+          campaigns.push({
+            id: "cf" + n,
+            name: title + " #" + n,
+            desc: "Auto-seeded demo campaign " + n + ".",
+            audience: a.audience,
+            audType: a.audType,
+            status,
+            timing: "one-time",
+            sentDate: isSent ? "2026-" + mo + "-" + da : "",
+            template: "",
+            subject: isSent ? title + " — edition " + n : "",
+            body: hasLink
+              ? 'Hi {full_name}, see the latest. <a href="https://yuushi.jp/listings">Browse</a>.'
+              : "Hi {full_name}, here is your update for this period.",
+            recipients,
+            opened,
+            clicked,
+            converted,
+          });
+          n++;
+        }
+      })();
+
+      /* ---- per-campaign metric helpers ---- */
+      function campLinkCount(html) {
+        if (!html) return 0;
+        const m = html.match(/<a\s+[^>]*href/gi);
+        return m ? m.length : 0;
+      }
+      function rateText(numer, denom, html, isClick) {
+        // isClick=true → respect the "N/A when no links" rule
+        if (isClick && campLinkCount(html) === 0) return "N/A";
+        if (!denom) return "0%";
+        return ((numer / denom) * 100).toFixed(1) + "%";
+      }
+      // aggregate totals for a recurring campaign (sum + weighted means)
+      function campTotals(c) {
+        if (c.timing === "recurring" && c.sends && c.sends.length) {
+          const t = c.sends.reduce(
+            (a, s) => {
+              a.recipients += s.recipients;
+              a.opened += s.opened;
+              a.clicked += s.clicked;
+              a.converted += s.converted;
+              return a;
+            },
+            { recipients: 0, opened: 0, clicked: 0, converted: 0 },
+          );
+          t.firstSentDate = c.sends[0].sentDate;
+          return t;
+        }
+        return {
+          recipients: c.recipients || 0,
+          opened: c.opened || 0,
+          clicked: c.clicked || 0,
+          converted: c.converted || 0,
+          firstSentDate: c.sentDate,
+        };
+      }
+
+      let templates = [
+        {
+          id: "t1",
+          name: "New Property Alert",
+          category: "Automation",
+          subject: "A new property just matched your search",
+          body: "Hi {full_name}, a new property — {property_name} — just hit the market and matches your saved search. Take a look before it's gone!",
+          lastUsed: "2 days ago",
+        },
+        {
+          id: "t2",
+          name: "Investment Opportunity Newsletter",
+          category: "Campaign",
+          subject: "This month's top investment opportunities",
+          body: "Hi {full_name}, here are the standout investment opportunities on {platform_name} this month. Explore the latest high-yield listings.",
+          lastUsed: "1 week ago",
+        },
+        {
+          id: "t3",
+          name: "Price Drop Notification",
+          category: "Automation",
+          subject: "Price drop on {property_name}",
+          body: "Good news {full_name}! The price for {property_name} has just dropped. Don't miss this opportunity.",
+          lastUsed: "Yesterday",
+        },
+        {
+          id: "t4",
+          name: "Welcome Email",
+          category: "Campaign",
+          subject: "Welcome to {platform_name}!",
+          body: "Welcome aboard, {full_name}! We're thrilled to have you on {platform_name}. Let's find your perfect property together.",
+          lastUsed: "2 weeks ago",
+        },
+        {
+          id: "t5",
+          name: "Monthly Portfolio Summary",
+          category: "Automation",
+          subject: "Your monthly portfolio summary",
+          body: "Hi {agent_name}, here is your performance summary for this month. Keep up the great work!",
+          lastUsed: "1 month ago",
+        },
+      ];
+
+      /* Shared custom lead groups — SAME localStorage key Lead Management uses.
+         Shape per group: { id, name, entityType, leadIds[], createdDate }.
+         We surface them in the Audience step's Custom Group picker; groups
+         created here persist so they appear in Lead Management / Messages too. */
+      const GROUP_KEY = "yuushiLeadGroups";
+      const LEAD_GROUP_SEED = [
+        {
+          id: "g1",
+          name: "End User — Dormant Investors",
+          entityType: "end_user",
+          leadIds: new Array(342).fill("U"),
+          createdDate: "2026-04-10",
+        },
+        {
+          id: "g2",
+          name: "End User — All Investors",
+          entityType: "end_user",
+          leadIds: new Array(1240).fill("U"),
+          createdDate: "2026-04-10",
+        },
+        {
+          id: "g3",
+          name: "End User — Premium Members",
+          entityType: "end_user",
+          leadIds: new Array(89).fill("U"),
+          createdDate: "2026-04-12",
+        },
+        {
+          id: "g4",
+          name: "Agent — Premium Plan",
+          entityType: "agent",
+          leadIds: new Array(156).fill("A"),
+          createdDate: "2026-04-12",
+        },
+        {
+          id: "g5",
+          name: "Agent — All Agents",
+          entityType: "agent",
+          leadIds: new Array(430).fill("A"),
+          createdDate: "2026-04-15",
+        },
+        {
+          id: "g6",
+          name: "VIP Buyers — Tokyo",
+          entityType: "end_user",
+          leadIds: new Array(25).fill("U"),
+          createdDate: "2026-05-01",
+        },
+      ];
+      function getLeadGroups() {
+        try {
+          if (!localStorage.getItem(GROUP_KEY))
+            localStorage.setItem(GROUP_KEY, JSON.stringify(LEAD_GROUP_SEED));
+          return JSON.parse(localStorage.getItem(GROUP_KEY)) || [];
+        } catch (e) {
+          return LEAD_GROUP_SEED.slice();
+        }
+      }
+      function saveLeadGroups(groups) {
+        try {
+          localStorage.setItem(GROUP_KEY, JSON.stringify(groups));
+        } catch (e) {}
+      }
+      // view used by the pickers: { id, name, members }
+      function audienceGroupsView() {
+        return getLeadGroups().map((g) => ({
+          id: g.id,
+          name: g.name,
+          members: Array.isArray(g.leadIds) ? g.leadIds.length : 0,
+        }));
+      }
+
+      const VARIABLES = [
+        "{full_name}",
+        "{agent_name}",
+        "{property_name}",
+        "{platform_name}",
+      ];
+
+      /* ===================== NAV ===================== */
+      function navTo(screen) {
+        document
+          .querySelectorAll(".mc-nav-item")
+          .forEach((n) =>
+            n.classList.toggle("active", n.dataset.screen === screen),
+          );
+        document
+          .querySelectorAll(".screen")
+          .forEach((s) => s.classList.remove("active"));
+        $("screen-" + screen).classList.add("active");
+        if (screen === "campaigns") renderCampaigns(true);
+        if (screen === "analytics") setTimeout(initChart, 30);
+      }
+
+      function toast(msg) {
+        const t = $("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        clearTimeout(t._t);
+        t._t = setTimeout(() => t.classList.remove("show"), 3000);
+      }
+
+      /* ===================== PAGINATION (universal 50/page) ===================== */
+      const PAGE_SIZE = 50;
+      let campPage = 1;
+      function buildPager(containerId, totalRows, curPage, onGo) {
+        const el = $(containerId);
+        if (!el) return;
+        const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+        if (totalRows <= PAGE_SIZE) {
+          el.innerHTML = "";
+          return;
+        }
+        const pages = [];
+        if (totalPages <= 7) {
+          for (let i = 1; i <= totalPages; i++) pages.push(i);
+        } else {
+          pages.push(1);
+          let lo = Math.max(2, curPage - 1);
+          let hi = Math.min(totalPages - 1, curPage + 1);
+          if (curPage <= 3) {
+            lo = 2;
+            hi = 4;
+          }
+          if (curPage >= totalPages - 2) {
+            lo = totalPages - 3;
+            hi = totalPages - 1;
+          }
+          if (lo > 2) pages.push("…");
+          for (let i = lo; i <= hi; i++) pages.push(i);
+          if (hi < totalPages - 1) pages.push("…");
+          pages.push(totalPages);
+        }
+        let html =
+          "<button " +
+          (curPage === 1 ? "disabled" : "") +
+          ' data-go="' +
+          (curPage - 1) +
+          '">Previous</button>';
+        pages.forEach((p) => {
+          if (p === "…") {
+            html += '<span class="pager-ellipsis">…</span>';
+          } else {
+            html +=
+              '<button class="' +
+              (p === curPage ? "current" : "") +
+              '" data-go="' +
+              p +
+              '">' +
+              p +
+              "</button>";
+          }
+        });
+        html +=
+          "<button " +
+          (curPage === totalPages ? "disabled" : "") +
+          ' data-go="' +
+          (curPage + 1) +
+          '">Next</button>';
+        el.innerHTML = html;
+        el.querySelectorAll("button[data-go]").forEach((b) => {
+          b.addEventListener("click", () => {
+            if (b.disabled) return;
+            onGo(parseInt(b.dataset.go, 10));
+          });
+        });
+      }
+
+      /* ===================== CAMPAIGNS LIST ===================== */
+      function renderCampaigns(resetPage) {
+        if (resetPage) campPage = 1;
+        const q = ($("campSearch").value || "").toLowerCase();
+        const st = $("campStatus").value;
+        const au = $("campAud").value;
+        const filtered = campaigns.filter((c) => {
+          if (q && !c.name.toLowerCase().includes(q)) return false;
+          if (st && c.status !== st) return false;
+          if (au === "Custom" ? c.audType !== "Custom" : au && c.audType !== au)
+            return false;
+          return true;
+        });
+        const total = filtered.length;
+        const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        if (campPage > totalPages) campPage = totalPages;
+        if (campPage < 1) campPage = 1;
+        const start = total === 0 ? 0 : (campPage - 1) * PAGE_SIZE + 1;
+        const end = Math.min(campPage * PAGE_SIZE, total);
+        $("campCount").textContent =
+          total === 0
+            ? "Showing 0 of 0 campaigns"
+            : "Showing " + start + "–" + end + " of " + total + " campaigns";
+        const rows = filtered.slice(
+          (campPage - 1) * PAGE_SIZE,
+          campPage * PAGE_SIZE,
+        );
+        $("campBody").innerHTML = rows.length
+          ? rows
+              .map((c) => {
+                const t = campTotals(c);
+                const openR = rateText(t.opened, t.recipients, c.body, false);
+                const clickR = rateText(t.clicked, t.recipients, c.body, true);
+                const convR = rateText(
+                  t.converted,
+                  t.recipients,
+                  c.body,
+                  false,
+                );
+                return `
+            <tr>
+              <td class="cell-strong">${escapeHtml(c.name)}</td>
+              <td>${escapeHtml(c.audience)}</td>
+              <td><span class="badge ${c.status.toLowerCase()}">${c.status}</span></td>
+              <td>${t.recipients.toLocaleString()}</td>
+              <td>${openR}</td>
+              <td>${clickR}</td>
+              <td>${convR}</td>
+              <td>
+                <div class="act-wrap">
+                  <button class="act-btn" onclick="toggleActMenu(event,'${c.id}')"><i class="fas fa-ellipsis"></i></button>
+                  <div class="act-menu" id="act-${c.id}">
+                    <div class="act-item" onclick="campAction('edit','${c.id}')">View</div>
+                    <div class="act-item" onclick="campAction('edit','${c.id}')">Edit</div>
+                    <div class="act-item" onclick="campAction('recreate','${c.id}')">Recreate</div>
+                    <div class="act-item danger" onclick="campAction('delete','${c.id}')">Delete</div>
+                  </div>
+                </div>
+              </td>
+            </tr>`;
+              })
+              .join("")
+          : `<tr><td colspan="8" style="text-align:center;color:#999;padding:30px">No campaigns found.</td></tr>`;
+        buildPager("campPager", total, campPage, (p) => {
+          campPage = p;
+          renderCampaigns();
+        });
+      }
+      function toggleActMenu(e, id) {
+        e.stopPropagation();
+        const m = $("act-" + id);
+        const open = m.classList.contains("open");
+        document
+          .querySelectorAll(".act-menu")
+          .forEach((x) => x.classList.remove("open"));
+        if (!open) m.classList.add("open");
+      }
+      function campAction(action, id) {
+        document
+          .querySelectorAll(".act-menu")
+          .forEach((x) => x.classList.remove("open"));
+        const c = campaigns.find((x) => x.id === id);
+        if (action === "edit") {
+          openBuilder(c);
+          return;
+        }
+        if (action === "recreate") {
+          recreateCampaign(c);
+          return;
+        }
+        if (action === "delete") {
+          campaigns = campaigns.filter((x) => x.id !== id);
+          renderCampaigns();
+          toast("Campaign deleted");
+        }
+      }
+
+      /* ===================== CAMPAIGN BUILDER ===================== */
+      let currentStep = 1;
+      let editingCampaign = null;
+      let recreateMode = false;
+
+      function audTypeToRadio(t) {
+        return t === "Agent"
+          ? "all_agents"
+          : t === "Custom"
+            ? "custom"
+            : "all_users";
+      }
+      function openBuilder(camp, opts) {
+        opts = opts || {};
+        recreateMode = !!opts.recreate;
+        // in recreate mode we do NOT bind to the original campaign
+        editingCampaign = recreateMode ? null : camp || null;
+        currentStep = 1;
+        $("camp-list").style.display = "none";
+        $("camp-builder").style.display = "block";
+        $("builderTitle").textContent = recreateMode
+          ? "Recreate Campaign"
+          : camp
+            ? "Edit Campaign"
+            : "New Email Campaign";
+        const src = camp || null;
+        $("bName").value = src
+          ? recreateMode
+            ? src.name + " (Copy)"
+            : src.name
+          : "";
+        $("bDesc").value = src && src.desc ? src.desc : "";
+        $("bSubject").value = src && src.subject ? src.subject : "";
+        // audience radios
+        if (src) {
+          const rv = audTypeToRadio(src.audType);
+          const r = document.querySelector(
+            'input[name="aud"][value="' + rv + '"]',
+          );
+          if (r) r.checked = true;
+        } else {
+          const r = document.querySelector(
+            'input[name="aud"][value="all_users"]',
+          );
+          if (r) r.checked = true;
+        }
+        // schedule: recreate always resets to "Send immediately"
+        const now = document.querySelector('input[name="sched"][value="now"]');
+        if (now) now.checked = true;
+        buildRTE("bEditorMount", "b");
+        renderTplCards("bTplCards", "b");
+        renderGroupPicker();
+        onAudChange();
+        onSchedChange();
+        // restore body HTML (incl. property blocks) after the editor mounts
+        if (src && src.body) {
+          setTimeout(() => {
+            if ($("b_rteBody")) {
+              $("b_rteBody").innerHTML = src.body;
+              rtePreviewRender("b");
+            }
+          }, 10);
+        }
+        renderStep();
+      }
+      function recreateCampaign(c) {
+        if (!c) return;
+        openBuilder(c, { recreate: true });
+        toast('Recreated from "' + c.name + '". Adjust and launch when ready.');
+      }
+      function closeBuilder() {
+        $("camp-builder").style.display = "none";
+        $("camp-list").style.display = "block";
+      }
+
+      function renderStep() {
+        const labels = ["Details", "Audience", "Message", "Schedule", "Review"];
+        $("stepIndicator").innerHTML = labels
+          .map((l, i) => {
+            const n = i + 1;
+            const cls =
+              n === currentStep ? "active" : n < currentStep ? "done" : "";
+            return `<div class="step ${cls}"><div class="step-num">${n < currentStep ? '<i class="fas fa-check"></i>' : n}</div><div class="step-label">${l}</div></div>${n < 5 ? '<div class="step-line"></div>' : ""}`;
+          })
+          .join("");
+        document.querySelectorAll(".builder-step").forEach((s) => {
+          s.style.display = +s.dataset.step === currentStep ? "block" : "none";
+        });
+        let html = "";
+        if (currentStep > 1)
+          html += `<button class="btn btn-outline" onclick="prevStep()"><i class="fas fa-arrow-left"></i> Back</button>`;
+        if (currentStep < 5)
+          html += `<button class="btn btn-navy" onclick="nextStep()">Next <i class="fas fa-arrow-right"></i></button>`;
+        else
+          html += `<button class="btn btn-outline" onclick="saveDraft()">Save as Draft</button><button class="btn btn-navy" onclick="launchCampaign()">Launch Campaign</button>`;
+        $("builderActions").innerHTML = html;
+        if (currentStep === 5) renderReview();
+      }
+
+      function nextStep() {
+        if (currentStep === 1) {
+          const ok = $("bName").value.trim();
+          $("f-name").classList.toggle("invalid", !ok);
+          if (!ok) return;
+        }
+        if (currentStep === 3) {
+          const ok = $("bSubject").value.trim();
+          $("f-subject").classList.toggle("invalid", !ok);
+          if (!ok) return;
+        }
+        if (currentStep < 5) {
+          currentStep++;
+          renderStep();
+        }
+      }
+      function prevStep() {
+        if (currentStep > 1) {
+          currentStep--;
+          renderStep();
+        }
+      }
+
+      function pickCard(el, group) {
+        document
+          .querySelectorAll("#" + group + " .radio-card")
+          .forEach((c) => c.classList.remove("on"));
+        el.classList.add("on");
+      }
+      function onAudChange() {
+        const v = document.querySelector('input[name="aud"]:checked').value;
+        $("groupPicker").style.display = v === "custom" ? "block" : "none";
+        updateReach();
+      }
+      function renderGroupPicker() {
+        const q = ($("groupSearch").value || "").toLowerCase();
+        $("groupOpts").innerHTML = audienceGroupsView()
+          .filter((g) => g.name.toLowerCase().includes(q))
+          .map(
+            (g) => `
+          <label class="group-opt"><input type="checkbox" value="${g.id}" onchange="updateReach()"> ${g.name} <span class="gcount">${g.members.toLocaleString()} members</span></label>`,
+          )
+          .join("");
+      }
+      function updateReach() {
+        const v = document.querySelector('input[name="aud"]:checked').value;
+        let n = 0;
+        if (v === "all_users") n = 1240;
+        else if (v === "all_agents") n = 430;
+        else if (v === "all_leads") n = 1670;
+        else {
+          const view = audienceGroupsView();
+          document
+            .querySelectorAll("#groupOpts input:checked")
+            .forEach((cb) => {
+              const g = view.find((x) => x.id === cb.value);
+              if (g) n += g.members;
+            });
+        }
+        $("reachNote").textContent =
+          "Estimated recipients: ~" + n.toLocaleString();
+      }
+      function onSchedChange() {
+        const v = document.querySelector('input[name="sched"]:checked').value;
+        $("schedFields").style.display = v === "schedule" ? "block" : "none";
+        $("recurFields").style.display = v === "recurring" ? "block" : "none";
+      }
+
+      function renderReview() {
+        const c = editingCampaign;
+        const name =
+          $("bName").value.trim() || (c ? c.name : "Untitled campaign");
+        const audV = document.querySelector('input[name="aud"]:checked').value;
+        let audText =
+          {
+            all_users: "All End Users",
+            all_agents: "All Agents",
+            all_leads: "All Leads",
+          }[audV] || "Custom Group";
+        const reach = $("reachNote").textContent.replace(
+          "Estimated recipients: ~",
+          "",
+        );
+        const schedV = document.querySelector(
+          'input[name="sched"]:checked',
+        ).value;
+        let sched = "Immediately";
+        if (schedV === "schedule")
+          sched =
+            ($("bDate").value || "[date]") +
+            " " +
+            ($("bTime").value || "[time]") +
+            " JST";
+        if (schedV === "recurring")
+          sched =
+            $("bFreq").value +
+            " at " +
+            ($("bRecurTime").value || "[time]") +
+            " JST";
+        const subj = $("bSubject").value.trim();
+        const bodyText = (
+          $("b_rteBody") ? $("b_rteBody").innerText : ""
+        ).trim();
+        $("reviewCard").innerHTML = `
+          <div style="display:grid;gap:10px;font-size:13.5px">
+            <div><b>Campaign name:</b> ${name}</div>
+            <div><b>Audience:</b> ${audText} — Estimated ${reach} recipients</div>
+            <div><b>Channel:</b> Email</div>
+            <div><b>Scheduled:</b> ${sched}</div>
+            <div><b>Subject:</b> ${subj ? escapeHtml(subj) : "<span style='color:#999'>(none)</span>"}</div>
+            <div><b>Email preview:</b> ${bodyText ? escapeHtml(bodyText.slice(0, 100)) + (bodyText.length > 100 ? "…" : "") : "<span style='color:#999'>(empty)</span>"}</div>
+          </div>`;
+      }
+
+      function saveDraft() {
+        persistCampaign("Draft");
+        toast("Draft saved successfully.");
+        closeBuilder();
+      }
+      function launchCampaign() {
+        persistCampaign("Sent");
+        toast("Campaign launched successfully.");
+        closeBuilder();
+      }
+      function persistCampaign(status) {
+        const name = $("bName").value.trim() || "Untitled campaign";
+        const subject = $("bSubject").value.trim();
+        const body = $("b_rteBody") ? $("b_rteBody").innerHTML : "";
+        const desc = $("bDesc").value.trim();
+        const audV = document.querySelector('input[name="aud"]:checked').value;
+        const audType =
+          audV === "all_agents"
+            ? "Agent"
+            : audV === "custom"
+              ? "Custom"
+              : audV === "all_leads"
+                ? "Lead"
+                : "End User";
+        const audience =
+          {
+            all_users: "End User — All Investors",
+            all_agents: "Agent — All Agents",
+            all_leads: "All Leads (End Users + Agents)",
+          }[audV] || "Custom Group";
+        const schedV = document.querySelector(
+          'input[name="sched"]:checked',
+        ).value;
+        const timing = schedV === "recurring" ? "recurring" : "one-time";
+        if (editingCampaign) {
+          Object.assign(editingCampaign, {
+            name,
+            subject,
+            body,
+            desc,
+            audType,
+            audience,
+            status,
+            timing,
+          });
+        } else {
+          campaigns.push({
+            id: "c" + Date.now(),
+            name,
+            desc,
+            audience,
+            audType,
+            status,
+            timing,
+            template: "",
+            subject,
+            body,
+            sentDate: status === "Sent" ? "2026-06-21" : "",
+            recipients: 0,
+            opened: 0,
+            clicked: 0,
+            converted: 0,
+          });
+        }
+        renderCampaigns();
+      }
+
+      /* ===================== TEMPLATES ===================== */
+      let editingTemplate = null;
+      function renderTemplates() {
+        $("tplListBody").innerHTML = templates
+          .map(
+            (t) => `
+          <div class="list-row" onclick="openTplEditor(templates.find(x=>x.id==='${t.id}'))">
+            <div class="lr-main">
+              <div class="lr-name">${t.name}</div>
+              <div><span class="lr-cat">${t.category}</span></div>
+            </div>
+            <div class="lr-right">Last used: ${t.lastUsed}</div>
+            <div class="lr-icons"><button class="lr-icon" title="Edit" onclick="event.stopPropagation();openTplEditor(templates.find(x=>x.id==='${t.id}'))"><i class="fas fa-pen"></i></button><button class="lr-icon" title="Delete" onclick="event.stopPropagation();deleteTemplate('${t.id}')"><i class="fas fa-trash"></i></button></div>
+          </div>`,
+          )
+          .join("");
+      }
+      function deleteTemplate(id) {
+        const t = templates.find((x) => x.id === id);
+        if (!t) return;
+        if (!confirm(`Delete template "${t.name}"? This cannot be undone.`))
+          return;
+        templates = templates.filter((x) => x.id !== id);
+        renderTemplates();
+        refreshAutoTplSelect();
+        toast("Template deleted");
+      }
+      function openTplEditor(tpl) {
+        editingTemplate = tpl || null;
+        $("tpl-list").style.display = "none";
+        $("tpl-editor").style.display = "block";
+        $("tplEditorTitle").textContent = tpl
+          ? "Edit Template"
+          : "New Template";
+        $("tName").value = tpl ? tpl.name : "";
+        $("tCat").value = tpl ? tpl.category : "Automation";
+        $("tSubject").value = tpl ? tpl.subject : "";
+        $("tTags").value = "";
+        buildRTE("tEditorMount", "t");
+        if (tpl)
+          setTimeout(() => {
+            if ($("t_rteBody")) {
+              $("t_rteBody").innerText = tpl.body;
+              rtePreviewRender("t");
+            }
+          }, 10);
+      }
+      function closeTplEditor() {
+        $("tpl-editor").style.display = "none";
+        $("tpl-list").style.display = "block";
+      }
+      function saveTemplate() {
+        const name = $("tName").value.trim();
+        const subj = $("tSubject").value.trim();
+        $("t-name").classList.toggle("invalid", !name);
+        $("t-subject").classList.toggle("invalid", !subj);
+        if (!name || !subj) return;
+        const body = $("t_rteBody") ? $("t_rteBody").innerText.trim() : "";
+        if (editingTemplate)
+          Object.assign(editingTemplate, {
+            name,
+            category: $("tCat").value,
+            subject: subj,
+            body,
+          });
+        else
+          templates.push({
+            id: "t" + Date.now(),
+            name,
+            category: $("tCat").value,
+            subject: subj,
+            body,
+            lastUsed: "Just now",
+          });
+        renderTemplates();
+        refreshAutoTplSelect();
+        closeTplEditor();
+        toast("Template saved");
+      }
+
+      /* ===================== AUTOMATED EMAILS (no add / no delete) ===================== */
+      /* Automated Emails — catalog-driven list + edit drawer (email channel) */
+      let autoEditingId = null;
+      let autoDirty = false;
+      function autoVisible() {
+        return AUTOMATION_CATALOG.filter((e) => e.email === "O");
+      }
+      function renderAutomations() {
+        const store = AutoStore.get();
+        const q = ($("autoSearch") ? $("autoSearch").value : "")
+          .toLowerCase()
+          .trim();
+        const sf = $("autoStatusFilter") ? $("autoStatusFilter").value : "all";
+        const rows = autoVisible().filter((e) => {
+          const st = store[e.id];
+          if (sf === "active" && !st.active) return false;
+          if (sf === "inactive" && st.active) return false;
+          if (
+            q &&
+            !(
+              e.name.toLowerCase().includes(q) || e.id.toLowerCase().includes(q)
+            )
+          )
+            return false;
+          return true;
+        });
+        if ($("autoCount"))
+          $("autoCount").textContent =
+            rows.length + " trigger" + (rows.length === 1 ? "" : "s");
+        const tb = $("autoTbody");
+        if (!tb) return;
+        if (!rows.length) {
+          tb.innerHTML =
+            '<tr><td colspan="5" class="auto-empty">No triggers match your filters.</td></tr>';
+          return;
+        }
+        tb.innerHTML = rows
+          .map((e) => {
+            const st = store[e.id];
+            const locked = AutoStore.isLocked(e);
+            const badge =
+              e.userConfig === "Yes"
+                ? '<span class="ab ab-blue">Admin can disable</span>'
+                : '<span class="ab ab-grey">Required</span>';
+            const tog = `<label class="switch ${locked ? "locked" : ""}" ${locked ? 'title="This notification is required and cannot be disabled."' : ""} onclick="event.stopPropagation()"><input type="checkbox" ${st.active ? "checked" : ""} ${locked ? "disabled" : ""} onchange="toggleAuto('${e.id}',this.checked)"><span class="slider"></span></label>`;
+            return `<tr onclick="openAutoDrawer('${e.id}')"><td>${tog}</td><td><div class="at-name">${escapeHtml(e.name)}</div><div class="at-id">${e.id}</div></td><td>${escapeHtml(e.timing)}</td><td>${badge}</td><td class="at-edit"><button class="lr-icon" title="Edit" onclick="event.stopPropagation();openAutoDrawer('${e.id}')"><i class="fas fa-pen"></i></button></td></tr>`;
+          })
+          .join("");
+      }
+      function toggleAuto(id, val) {
+        const e = AutoStore.byId(id);
+        if (!e || AutoStore.isLocked(e)) {
+          renderAutomations();
+          return;
+        }
+        AutoStore.setActive(id, val);
+        toast(e.name + (val ? " enabled" : " disabled"));
+      }
+      function channelBadge(on) {
+        return on === "O"
+          ? '<span class="chbadge on">O</span>'
+          : '<span class="chbadge off">X</span>';
+      }
+      function renderAutoVars(mountId, kind) {
+        const el = $(mountId);
+        if (!el) return;
+        el.innerHTML =
+          '<span class="ad-vars-lbl">Insert variables:</span>' +
+          VARIABLES.map(
+            (v) =>
+              `<span class="varchip" onclick="insertAutoVar('${kind}','${v}')">${v}</span>`,
+          ).join("");
+      }
+      // remembers where a subject-bar chip should insert resolved text
+      let autoSubjectInsertAt = null;
+      function insertAutoVarText(target, v) {
+        // target: 'body' (contenteditable #adBody) or 'subject' (input #adSubject)
+        if (target === "body") {
+          $("adBody").focus();
+          document.execCommand("insertText", false, v + " ");
+        } else {
+          const inp = $("adSubject");
+          inp.focus();
+          const at =
+            autoSubjectInsertAt != null
+              ? autoSubjectInsertAt
+              : inp.selectionStart != null
+                ? inp.selectionStart
+                : inp.value.length;
+          inp.value = inp.value.slice(0, at) + v + " " + inp.value.slice(at);
+          inp.selectionStart = inp.selectionEnd = at + v.length + 1;
+          autoSubjectInsertAt = null;
+        }
+        autoDirty = true;
+      }
+      function insertAutoVar(kind, v) {
+        if (v === "{property_name}" || v === "{agent_name}") {
+          if (kind === "subject") {
+            const inp = $("adSubject");
+            autoSubjectInsertAt =
+              inp.selectionStart != null
+                ? inp.selectionStart
+                : inp.value.length;
+          }
+          // route through the picker; remember whether we came from subject/body
+          autoPickerKind = kind;
+          if (v === "{property_name}") openPropertyPickerForBody($("adBody"));
+          else openAgencyPickerForBody($("adBody"));
+          return;
+        }
+        insertAutoVarText(kind, v);
+      }
+      function adExec(cmd, val) {
+        $("adBody").focus();
+        document.execCommand(cmd, false, val || null);
+        autoDirty = true;
+      }
+      function adLink() {
+        const url = prompt("Enter URL:", "https://");
+        if (url) {
+          $("adBody").focus();
+          document.execCommand("createLink", false, url);
+          autoDirty = true;
+        }
+      }
+      function openAutoDrawer(id) {
+        const e = AutoStore.byId(id);
+        if (!e) return;
+        const st = AutoStore.state(id);
+        autoEditingId = id;
+        autoDirty = false;
+        $("adId").textContent = e.id;
+        $("adName").textContent = e.name;
+        $("adTiming").textContent = e.timing;
+        $("adChannels").innerHTML =
+          "Chat " + channelBadge(e.chat) + " · Email " + channelBadge(e.email);
+        $("adPattern").innerHTML =
+          "<b>" +
+          e.pattern +
+          "</b> — " +
+          escapeHtml(AUTO_PATTERN_DESC[e.pattern]);
+        $("adSubject").value = st.emailSubject || "";
+        $("adBody").innerHTML = st.emailBody || "";
+        renderAutoVars("adSubjectVars", "subject");
+        renderAutoVars("adBodyVars", "body");
+        $("autoBackdrop").classList.add("open");
+        $("autoDrawer").classList.add("open");
+        $("autoDrawer").setAttribute("aria-hidden", "false");
+      }
+      function closeAutoDrawer() {
+        if (autoDirty && !confirm("You have unsaved changes. Discard them?"))
+          return;
+        $("autoBackdrop").classList.remove("open");
+        $("autoDrawer").classList.remove("open");
+        $("autoDrawer").setAttribute("aria-hidden", "true");
+        autoEditingId = null;
+        autoDirty = false;
+      }
+      function saveAutoDrawer() {
+        if (!autoEditingId) return;
+        AutoStore.save(autoEditingId, {
+          emailSubject: $("adSubject").value,
+          emailBody: $("adBody").innerHTML,
+        });
+        autoDirty = false;
+        renderAutomations();
+        toast("Automated email saved");
+        $("autoBackdrop").classList.remove("open");
+        $("autoDrawer").classList.remove("open");
+        autoEditingId = null;
+      }
+      function restoreAutoDrawer() {
+        if (!autoEditingId) return;
+        if (
+          !confirm(
+            "Restore this email to the catalog default? Your edits will be replaced.",
+          )
+        )
+          return;
+        const st = AutoStore.restore(autoEditingId);
+        $("adSubject").value = st.emailSubject || "";
+        $("adBody").innerHTML = st.emailBody || "";
+        autoDirty = false;
+        renderAutomations();
+        toast("Restored to default");
+      }
+      // kept (null-safe) for campaign / group / template flows on other tabs
+      function renderAutoGroupPicker() {
+        const box = $("autoGroupOpts");
+        if (!box) return;
+        const q = (
+          ($("autoGroupSearch") && $("autoGroupSearch").value) ||
+          ""
+        ).toLowerCase();
+        box.innerHTML = audienceGroupsView()
+          .filter((g) => g.name.toLowerCase().includes(q))
+          .map(
+            (g) => `
+          <label class="group-opt"><input type="checkbox" value="${g.id}"> ${g.name} <span class="gcount">${g.members.toLocaleString()} members</span></label>`,
+          )
+          .join("");
+      }
+      function refreshAutoTplSelect() {
+        const sel = $("autoTplSelect");
+        if (!sel) return;
+        sel.innerHTML = templates
+          .map((t) => `<option value="${t.id}">${t.name}</option>`)
+          .join("");
+      }
+
+      /* ===================== RICH TEXT EDITOR (email) ===================== */
+      function buildRTE(mountId, prefix) {
+        $(mountId).innerHTML = `
+          <div class="rte">
+            <div class="rte-main">
+              <div class="rte-toolbar">
+                <button type="button" class="rte-tb" title="Bold" onmousedown="event.preventDefault()" onclick="rteExec(this,'bold')"><b>B</b></button>
+                <button type="button" class="rte-tb" title="Italic" onmousedown="event.preventDefault()" onclick="rteExec(this,'italic')"><i>I</i></button>
+                <button type="button" class="rte-tb" title="Underline" onmousedown="event.preventDefault()" onclick="rteExec(this,'underline')"><u>U</u></button>
+                <button type="button" class="rte-tb" title="Heading" onmousedown="event.preventDefault()" onclick="rteExec(this,'formatBlock','<h2>')">H2</button>
+                <button type="button" class="rte-tb" title="Bullet list" onmousedown="event.preventDefault()" onclick="rteExec(this,'insertUnorderedList')"><i class="fas fa-list-ul"></i></button>
+                <button type="button" class="rte-tb" title="Numbered list" onmousedown="event.preventDefault()" onclick="rteExec(this,'insertOrderedList')"><i class="fas fa-list-ol"></i></button>
+                <button type="button" class="rte-tb" title="Link" onmousedown="event.preventDefault()" onclick="rteLink(this)"><i class="fas fa-link"></i></button>
+                <button type="button" class="rte-tb" title="Insert image" onmousedown="event.preventDefault()" onclick="rteImage(this)"><i class="fas fa-image"></i></button>
+                <button type="button" class="rte-tb" title="Insert variable" onmousedown="event.preventDefault()" onclick="rteVarToggle(this)"><i class="fas fa-code"></i></button>
+                <div class="var-dropdown">${VARIABLES.map((v) => `<span class="var-chip" onmousedown="event.preventDefault()" onclick="rteInsertVar(this,'${v}')">${v}</span>`).join("")}</div>
+                <button type="button" class="rte-tb" title="Insert property" onmousedown="event.preventDefault()" onclick="openPropertyPicker(this)"><i class="fas fa-building"></i> Property</button>
+              </div>
+              <div class="rte-body" id="${prefix}_rteBody" contenteditable="true" data-ph="Write your email content here..."></div>
+              <div style="font-size:11.5px;color:var(--text-sec);margin:14px 0 6px;font-weight:700">Email preview</div>
+              <div class="preview-frame" id="${prefix}_preview"></div>
+            </div>
+            <div class="rte-vars">
+              <div class="rte-vars-head">Insert Variables</div>
+              <div>${VARIABLES.map((v) => `<span class="var-chip" onmousedown="event.preventDefault()" onclick="rteInsertVarFromPanel('${prefix}','${v}')">${v}</span>`).join("")}</div>
+            </div>
+          </div>`;
+        rtePreviewRender(prefix);
+        $(prefix + "_rteBody").addEventListener("input", () =>
+          rtePreviewRender(prefix),
+        );
+      }
+      function rteBody(el) {
+        return el.closest(".rte").querySelector(".rte-body");
+      }
+      function rteExec(el, cmd, val) {
+        rteBody(el).focus();
+        document.execCommand(cmd, false, val || null);
+      }
+      function rteLink(el) {
+        const url = prompt("Enter URL:", "https://");
+        if (url) {
+          rteBody(el).focus();
+          document.execCommand("createLink", false, url);
+        }
+      }
+      function rteImage(el) {
+        const url = prompt("Enter image URL:", "https://");
+        if (url) {
+          rteBody(el).focus();
+          document.execCommand("insertImage", false, url);
+        }
+      }
+      function rteVarToggle(el) {
+        el.closest(".rte-toolbar")
+          .querySelector(".var-dropdown")
+          .classList.toggle("open");
+      }
+      function rteInsertVar(el, v) {
+        const body = rteBody(el);
+        el.closest(".var-dropdown").classList.remove("open");
+        if (v === "{property_name}") {
+          openPropertyPickerForBody(body);
+          return;
+        }
+        if (v === "{agent_name}") {
+          openAgencyPickerForBody(body);
+          return;
+        }
+        body.focus();
+        document.execCommand("insertText", false, v + " ");
+      }
+      function rteInsertVarFromPanel(prefix, v) {
+        const body = $(prefix + "_rteBody");
+        if (v === "{property_name}") {
+          openPropertyPickerForBody(body);
+          return;
+        }
+        if (v === "{agent_name}") {
+          openAgencyPickerForBody(body);
+          return;
+        }
+        body.focus();
+        document.execCommand("insertText", false, v + " ");
+      }
+      function rtePreviewRender(prefix) {
+        if (!$(prefix + "_rteBody")) return;
+        const html =
+          $(prefix + "_rteBody").innerHTML ||
+          '<span style="color:#999">Your email preview will appear here…</span>';
+        const subjEl =
+          prefix === "b"
+            ? $("bSubject")
+            : prefix === "t"
+              ? $("tSubject")
+              : $("aSubject");
+        const subj = subjEl && subjEl.value ? subjEl.value : "(no subject)";
+        $(prefix + "_preview").innerHTML =
+          `<div class="pv-email"><div class="pv-email-head">From: YUUSHI &lt;no-reply@yuushi.jp&gt;<div class="pe-subj">${escapeHtml(subj)}</div></div><div class="pv-email-body">${html}</div></div>`;
+      }
+
+      /* ===================== INSERT PROPERTY BLOCK ===================== */
+      /* Deterministic generator (no Math.random) mirroring the Property
+         Management list. Only Active/Published listings appear here.
+         New Development listings (group 5/6) are included in the same list. */
+      function buildPropertyPool() {
+        const cityByPref = {
+          Tokyo: ["Minato", "Shinjuku", "Shibuya", "Setagaya", "Shinagawa"],
+          Osaka: ["Osaka", "Sakai", "Toyonaka"],
+          Kanagawa: ["Yokohama", "Kawasaki", "Kamakura"],
+          Kyoto: ["Kyoto", "Uji"],
+          Hokkaido: ["Sapporo", "Hakodate"],
+          Fukuoka: ["Fukuoka", "Kitakyushu"],
+          Saitama: ["Saitama", "Kawagoe"],
+          Chiba: ["Chiba", "Funabashi"],
+          Aichi: ["Nagoya", "Toyota"],
+          Hyogo: ["Kobe", "Himeji"],
+        };
+        const prefs = Object.keys(cityByPref);
+        // group: 1 Single Unit, 2 Whole Building, 3 Land, 5 New Dev Apt, 6 New Dev House
+        const typeByGroup = {
+          1: ["Apartment", "Tower Mansion", "Detached House"],
+          2: ["Mixed-Use Building", "Residential Building", "Office Building"],
+          3: ["Residential Land", "Commercial Land"],
+          5: ["New Dev Apartment"],
+          6: ["New Dev House"],
+        };
+        const txByGroup = {
+          1: ["For Sale", "For Rent", "Sale + Rent"],
+          2: ["For Sale", "Sale + Rent"],
+          3: ["For Sale"],
+          5: ["For Sale"],
+          6: ["For Sale"],
+        };
+        const groupPlan = [
+          // group, count
+          [1, 12],
+          [2, 6],
+          [3, 4],
+          [5, 4],
+          [6, 3],
+        ];
+        const names = {
+          1: [
+            "Minami-Aoyama Penthouse",
+            "Shinjuku Studio Apartment",
+            "Shibuya Designer Loft",
+            "Setagaya Family Residence",
+            "Shinagawa Riverside Flat",
+            "Osaka Bay High-Yield Unit",
+            "Sakai Compact Condo",
+            "Yokohama Harbour View",
+            "Kawasaki Commuter Flat",
+            "Kyoto Machiya Apartment",
+            "Sapporo Snow Pine Condo",
+            "Fukuoka Tenjin Studio",
+          ],
+          2: [
+            "Shibuya Mixed-Use Building",
+            "Nagoya Office Tower",
+            "Kobe Portside Block",
+            "Saitama Retail Building",
+            "Chiba Residential Block",
+            "Hakodate Heritage Building",
+          ],
+          3: [
+            "Setagaya Residential Land",
+            "Uji Riverside Land",
+            "Toyota Industrial Plot",
+            "Himeji Castle-View Land",
+          ],
+          5: [
+            "Shinagawa Bayfront Residence",
+            "Umeda Sky Towers",
+            "Minato Grand Terrace",
+            "Kobe Marina Residences",
+          ],
+          6: [
+            "Kohoku New Town Houses",
+            "Sapporo Garden Villas",
+            "Kawagoe Heritage Homes",
+          ],
+        };
+        const pool = [];
+        let seq = 0;
+        groupPlan.forEach(([g, count]) => {
+          for (let i = 0; i < count; i++) {
+            seq++;
+            const pref = prefs[seq % prefs.length];
+            const cities = cityByPref[pref];
+            const city = cities[seq % cities.length];
+            const types = typeByGroup[g];
+            const propType = types[i % types.length];
+            const txs = txByGroup[g];
+            const txType = txs[i % txs.length];
+            const newDev = g === 5 || g === 6;
+            const id = newDev ? "PRJ-" + (1000 + seq) : "PROP-" + (58100 + seq);
+            // deterministic price in ¥M
+            const priceM = newDev
+              ? 40 + ((seq * 7) % 60)
+              : g === 3
+                ? 30 + ((seq * 11) % 120)
+                : g === 2
+                  ? 200 + ((seq * 37) % 700)
+                  : 45 + ((seq * 13) % 220);
+            const rentMonthly =
+              txType === "For Rent" || txType === "Sale + Rent"
+                ? 80000 + ((seq * 9000) % 320000)
+                : 0;
+            const nm = names[g][i % names[g].length];
+            const owner = newDev
+              ? "Agency"
+              : seq % 3 === 0
+                ? "Direct Owner"
+                : "Agency";
+            const verif = seq % 4 === 0 ? "Pending" : "Verified";
+            const status = seq % 5 === 0 ? "Members Only" : "Published";
+            pool.push({
+              id,
+              group: g,
+              name: nm,
+              propType,
+              txType,
+              prefecture: pref,
+              city,
+              priceM,
+              rentMonthly,
+              owner,
+              verif,
+              status, // all Published-equivalent (Published / Members Only)
+              newDev,
+              agent:
+                owner === "Direct Owner"
+                  ? "Direct Owner"
+                  : "Agency #" + ((seq % 9) + 1),
+            });
+          }
+        });
+        return pool;
+      }
+      const PROPERTY_POOL = buildPropertyPool();
+      const propImg = (id) =>
+        "https://picsum.photos/seed/" + encodeURIComponent(id) + "/300/180";
+      const propDetailUrl = (id) =>
+        "../property/property-detail-view.html?id=" + encodeURIComponent(id);
+      // price display matching Property Management format rules
+      function propPriceText(p) {
+        const buy =
+          "¥" + (p.priceM >= 1000 ? p.priceM / 1000 + "B" : p.priceM + "M");
+        if (p.txType === "For Rent")
+          return "¥" + p.rentMonthly.toLocaleString() + "/mo";
+        if (p.txType === "Sale + Rent")
+          return buy + " · ¥" + p.rentMonthly.toLocaleString() + "/mo";
+        return buy;
+      }
+
+      const EP_PAGE_SIZE = 10;
+      let epView = "grid";
+      let epSelectedId = null;
+      let epPage = 1;
+      let epTargetBody = null; // the rte-body the block will be inserted into
+      let epSavedRange = null; // cursor position captured before the modal stole focus
+
+      function openPropertyPicker(el) {
+        openPropertyPickerForBody(rteBody(el));
+      }
+      function openPropertyPickerForBody(body) {
+        epTargetBody = body;
+        const sel = window.getSelection();
+        epSavedRange =
+          sel &&
+          sel.rangeCount &&
+          epTargetBody &&
+          epTargetBody.contains(sel.anchorNode)
+            ? sel.getRangeAt(0).cloneRange()
+            : null;
+        epSelectedId = null;
+        epPage = 1;
+        // populate prefecture + type dropdowns from the pool
+        const prefs = Array.from(
+          new Set(PROPERTY_POOL.map((p) => p.prefecture)),
+        ).sort();
+        $("epPref").innerHTML =
+          '<option value="">Prefecture: All</option>' +
+          prefs.map((p) => `<option value="${p}">${p}</option>`).join("");
+        const types = Array.from(
+          new Set(PROPERTY_POOL.map((p) => p.propType)),
+        ).sort();
+        $("epType").innerHTML =
+          '<option value="">Property Type: All</option>' +
+          types.map((t) => `<option value="${t}">${t}</option>`).join("");
+        $("epCity").innerHTML = '<option value="">City: All</option>';
+        [
+          "epStatus",
+          "epTx",
+          "epType",
+          "epPref",
+          "epCity",
+          "epOwner",
+          "epVerif",
+        ].forEach((id) => ($(id).value = ""));
+        $("epPriceMin").value = "";
+        $("epPriceMax").value = "";
+        $("epSearch").value = "";
+        setEPView(epView);
+        $("epModal").classList.add("open");
+      }
+      function onEpPrefChange() {
+        const pref = $("epPref").value;
+        const cities = Array.from(
+          new Set(
+            PROPERTY_POOL.filter((p) => !pref || p.prefecture === pref).map(
+              (p) => p.city,
+            ),
+          ),
+        ).sort();
+        $("epCity").innerHTML =
+          '<option value="">City: All</option>' +
+          cities.map((c) => `<option value="${c}">${c}</option>`).join("");
+        renderEPPicker();
+      }
+      function closePropertyPicker() {
+        $("epModal").classList.remove("open");
+      }
+      function setEPView(v) {
+        epView = v;
+        $("epVtGrid").classList.toggle("on", v === "grid");
+        $("epVtTable").classList.toggle("on", v === "table");
+        renderEPPicker();
+      }
+      function epFiltered() {
+        const st = $("epStatus").value,
+          tx = $("epTx").value,
+          ty = $("epType").value,
+          pref = $("epPref").value,
+          city = $("epCity").value,
+          owner = $("epOwner").value,
+          verif = $("epVerif").value;
+        const pmin = parseFloat($("epPriceMin").value);
+        const pmax = parseFloat($("epPriceMax").value);
+        const q = $("epSearch").value.toLowerCase().trim();
+        return PROPERTY_POOL.filter((p) => {
+          if (st && p.status !== st) return false;
+          if (tx && p.txType !== tx) return false;
+          if (ty && p.propType !== ty) return false;
+          if (pref && p.prefecture !== pref) return false;
+          if (city && p.city !== city) return false;
+          if (owner && p.owner !== owner) return false;
+          if (verif && p.verif !== verif) return false;
+          if (!isNaN(pmin) && p.priceM < pmin) return false;
+          if (!isNaN(pmax) && p.priceM > pmax) return false;
+          // search matches Property Name AND Property ID only
+          if (
+            q &&
+            !(
+              p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q)
+            )
+          )
+            return false;
+          return true;
+        });
+      }
+      function selectEP(id) {
+        epSelectedId = id;
+        renderEPPicker();
+      }
+      function updateEPSel() {
+        const p = PROPERTY_POOL.find((x) => x.id === epSelectedId);
+        $("epSelInfo").textContent = p
+          ? "Selected: " + p.name
+          : "No property selected";
+      }
+      function renderEPPager(total) {
+        const pages = Math.ceil(total / EP_PAGE_SIZE);
+        const pg = $("epPager");
+        if (total <= EP_PAGE_SIZE) {
+          pg.innerHTML = "";
+          return;
+        }
+        if (epPage > pages) epPage = pages;
+        pg.innerHTML =
+          `<button class="ep-pgbtn" ${epPage <= 1 ? "disabled" : ""} onclick="epGoPage(${epPage - 1})">Prev</button>` +
+          `<span class="ep-pginfo">Page ${epPage} of ${pages}</span>` +
+          `<button class="ep-pgbtn" ${epPage >= pages ? "disabled" : ""} onclick="epGoPage(${epPage + 1})">Next</button>`;
+      }
+      function epGoPage(n) {
+        epPage = n;
+        renderEPPicker();
+      }
+      function renderEPPicker() {
+        const all = epFiltered();
+        const box = $("epResult");
+        const s = epSelectedId;
+        $("epCount").textContent =
+          all.length + " published propert" + (all.length === 1 ? "y" : "ies");
+        if (!all.length) {
+          box.innerHTML =
+            '<div class="ep-empty">No properties match the filters.</div>';
+          $("epPager").innerHTML = "";
+          updateEPSel();
+          return;
+        }
+        const pages = Math.ceil(all.length / EP_PAGE_SIZE);
+        if (epPage > pages) epPage = pages;
+        if (epPage < 1) epPage = 1;
+        const list = all.slice(
+          (epPage - 1) * EP_PAGE_SIZE,
+          epPage * EP_PAGE_SIZE,
+        );
+        if (epView === "grid") {
+          box.innerHTML =
+            '<div class="ep-grid">' +
+            list
+              .map(
+                (p) => `
+            <div class="ep-card ${s === p.id ? "sel" : ""}" data-id="${p.id}" onclick="selectEP('${p.id}')">
+              <input type="radio" class="ep-radio" name="epPick" ${s === p.id ? "checked" : ""} onclick="event.stopPropagation();selectEP('${p.id}')">
+              <img class="ep-card-img" src="${propImg(p.id)}" alt="">
+              <div class="ep-card-b">
+                <div class="ep-card-t">${escapeHtml(p.name)}</div>
+                <div class="ep-card-s">${escapeHtml(p.city)}, ${escapeHtml(p.prefecture)} · ${escapeHtml(p.propType)}</div>
+                <div class="ep-card-p">${p.newDev ? '<span class="ep-badge-nd">New Dev</span> ' : ""}${escapeHtml(propPriceText(p))}</div>
+              </div>
+            </div>`,
+              )
+              .join("") +
+            "</div>";
+        } else {
+          box.innerHTML =
+            '<table class="ep-table"><thead><tr><th style="width:30px"></th><th>Property</th><th>Type</th><th>Listing Type</th><th>Price</th><th>Address</th><th>Status</th></tr></thead><tbody>' +
+            list
+              .map(
+                (p) => `
+              <tr class="${s === p.id ? "sel" : ""}" onclick="selectEP('${p.id}')">
+                <td><input type="radio" name="epPick" ${s === p.id ? "checked" : ""} onclick="event.stopPropagation();selectEP('${p.id}')"></td>
+                <td><strong>${escapeHtml(p.name)}</strong>${p.newDev ? ' <span class="ep-badge-nd">New Dev</span>' : ""}<br><span style="font-size:11px;color:var(--text-sec)">${escapeHtml(p.id)}</span></td>
+                <td>${escapeHtml(p.propType)}</td>
+                <td>${escapeHtml(p.txType)}</td>
+                <td>${escapeHtml(propPriceText(p))}</td>
+                <td>${escapeHtml(p.prefecture)} · ${escapeHtml(p.city)}</td>
+                <td>${escapeHtml(p.status)}</td>
+              </tr>`,
+              )
+              .join("") +
+            "</tbody></table>";
+        }
+        renderEPPager(all.length);
+        updateEPSel();
+      }
+      function propBlockHtml(p) {
+        return (
+          '<div class="epb" contenteditable="false" data-prop-id="' +
+          escapeHtml(p.id) +
+          '">' +
+          '<button class="epb-x" type="button" contenteditable="false" onclick="removePropBlock(this)" title="Remove">&times;</button>' +
+          '<img class="epb-thumb" src="' +
+          propImg(p.id) +
+          '" alt="">' +
+          '<div class="epb-body">' +
+          '<div class="epb-name">' +
+          escapeHtml(p.name) +
+          "</div>" +
+          '<div class="epb-loc">' +
+          escapeHtml(p.city) +
+          ", " +
+          escapeHtml(p.prefecture) +
+          "</div>" +
+          '<div class="epb-price">' +
+          escapeHtml(propPriceText(p)) +
+          "</div>" +
+          '<a class="epb-link" href="' +
+          propDetailUrl(p.id) +
+          '" target="_blank" rel="noopener">View Property</a>' +
+          "</div>" +
+          "</div><p><br></p>"
+        );
+      }
+      function insertPropertyBlock(p) {
+        const body = epTargetBody;
+        if (!body) return;
+        body.focus();
+        const sel = window.getSelection();
+        if (epSavedRange) {
+          try {
+            sel.removeAllRanges();
+            sel.addRange(epSavedRange);
+          } catch (e) {}
+        }
+        const html = propBlockHtml(p);
+        if (sel.rangeCount && body.contains(sel.anchorNode)) {
+          document.execCommand("insertHTML", false, html);
+        } else {
+          body.innerHTML += html;
+        }
+        // update the saved range so multiple inserts land sequentially
+        const newSel = window.getSelection();
+        if (newSel.rangeCount && body.contains(newSel.anchorNode))
+          epSavedRange = newSel.getRangeAt(0).cloneRange();
+        body.dispatchEvent(new Event("input"));
+      }
+      // when the picker was opened from the Automation drawer subject chip,
+      // insert resolved plain text into the subject input instead of a block
+      let autoPickerKind = null;
+      function confirmEPPicker() {
+        const p = PROPERTY_POOL.find((x) => x.id === epSelectedId);
+        if (!p) {
+          toast("Select a property first");
+          return;
+        }
+        if (autoPickerKind === "subject" && epTargetBody === $("adBody")) {
+          insertAutoVarText("subject", p.name);
+          autoPickerKind = null;
+          closePropertyPicker();
+          toast("Property inserted.");
+          return;
+        }
+        autoPickerKind = null;
+        insertPropertyBlock(p);
+        closePropertyPicker();
+        toast("Property inserted.");
+      }
+      function removePropBlock(el) {
+        const block = el.closest(".epb");
+        if (!block) return;
+        const body = block.closest(".rte-body");
+        block.remove();
+        if (body) body.dispatchEvent(new Event("input"));
+      }
+
+      /* ===================== AGENCY PICKER ===================== */
+      function buildAgencyPool() {
+        const cos = [
+          "Yamada Estates Co., Ltd.",
+          "Osaka Premier Realty",
+          "Tokyo Bay Realty",
+          "Sakura Home Partners",
+          "Kanagawa Coast Realty",
+          "Kyoto Heritage Estates",
+          "Hokkaido Snow Realty",
+          "Fukuoka Tenjin Realty",
+          "Saitama Garden Homes",
+          "Chiba Seaside Realty",
+          "Nagoya Central Estates",
+          "Kobe Portside Realty",
+          "Global Reach Realty",
+          "Premier Direct Acquisitions",
+          "Rental Hub Japan",
+          "Inheritance Advisory Realty",
+          "Shibuya Designer Homes",
+          "Yokohama Harbour Estates",
+          "Sapporo Pine Realty",
+          "Himeji Castle Realty",
+        ];
+        const statuses = [
+          "Active",
+          "Active",
+          "Active",
+          "Suspended",
+          "Withdrawn",
+        ];
+        const plans = ["Free", "Bronze", "Silver", "Gold"];
+        const areas = [
+          "Tokyo",
+          "Kanagawa",
+          "Osaka",
+          "Saitama",
+          "Chiba",
+          "Kyoto",
+        ];
+        const langs = [
+          "Japanese",
+          "English",
+          "Chinese (Simplified)",
+          "Chinese (Traditional)",
+          "Vietnamese",
+          "Korean",
+          "Other",
+        ];
+        const specs = [
+          "Real Estate Brokerage",
+          "Direct Property Acquisition",
+          "Rental Brokerage",
+          "Property Management",
+          "Short Sale",
+          "Inheritance Consultation",
+        ];
+        return cos.map((company, i) => {
+          const n = i + 1;
+          const targetCities = [
+            areas[i % areas.length],
+            areas[(i + 2) % areas.length],
+          ];
+          const languages = ["Japanese"];
+          if (i % 2 === 0) languages.push("English");
+          if (i % 3 === 0) languages.push(langs[(i % 5) + 2]);
+          const specServices = [
+            specs[i % specs.length],
+            specs[(i + 3) % specs.length],
+          ];
+          return {
+            id: "AG-" + String(n).padStart(8, "0"),
+            company,
+            status: statuses[i % statuses.length],
+            plan: plans[i % plans.length],
+            targetCities: Array.from(new Set(targetCities)),
+            languages: Array.from(new Set(languages)),
+            specServices: Array.from(new Set(specServices)),
+            rating: (3 + ((i * 7) % 20) / 10).toFixed(1),
+            staffCount: 2 + ((i * 3) % 14),
+            activeListings: 3 + ((i * 11) % 60),
+          };
+        });
+      }
+      const AGENCY_POOL = buildAgencyPool();
+      const AG_PAGE_SIZE = 10;
+      let agView = "grid";
+      let agSelectedId = null;
+      let agPage = 1;
+      let agTargetBody = null;
+      let agSavedRange = null;
+
+      function openAgencyPicker(el) {
+        openAgencyPickerForBody(rteBody(el));
+      }
+      function openAgencyPickerForBody(body) {
+        agTargetBody = body;
+        const sel = window.getSelection();
+        agSavedRange =
+          sel &&
+          sel.rangeCount &&
+          agTargetBody &&
+          agTargetBody.contains(sel.anchorNode)
+            ? sel.getRangeAt(0).cloneRange()
+            : null;
+        agSelectedId = null;
+        agPage = 1;
+        ["agStatus", "agPlan", "agArea", "agLang", "agSpec"].forEach(
+          (id) => ($(id).value = ""),
+        );
+        $("agSearch").value = "";
+        setAGView(agView);
+        $("agModal").classList.add("open");
+      }
+      function closeAgencyPicker() {
+        $("agModal").classList.remove("open");
+      }
+      function setAGView(v) {
+        agView = v;
+        $("agVtGrid").classList.toggle("on", v === "grid");
+        $("agVtTable").classList.toggle("on", v === "table");
+        renderAGPicker();
+      }
+      function agFiltered() {
+        const st = $("agStatus").value,
+          plan = $("agPlan").value,
+          area = $("agArea").value,
+          lang = $("agLang").value,
+          spec = $("agSpec").value;
+        const q = $("agSearch").value.toLowerCase().trim();
+        return AGENCY_POOL.filter((a) => {
+          if (st && a.status !== st) return false;
+          if (plan && a.plan !== plan) return false;
+          if (area && !a.targetCities.includes(area)) return false;
+          if (lang && !a.languages.includes(lang)) return false;
+          if (spec && !a.specServices.includes(spec)) return false;
+          if (
+            q &&
+            !(
+              a.company.toLowerCase().includes(q) ||
+              a.id.toLowerCase().includes(q)
+            )
+          )
+            return false;
+          return true;
+        });
+      }
+      function selectAG(id) {
+        agSelectedId = id;
+        renderAGPicker();
+      }
+      function updateAGSel() {
+        const a = AGENCY_POOL.find((x) => x.id === agSelectedId);
+        $("agSelInfo").textContent = a
+          ? "Selected: " + a.company
+          : "No agency selected";
+      }
+      function agGoPage(n) {
+        agPage = n;
+        renderAGPicker();
+      }
+      function renderAGPager(total) {
+        const pages = Math.ceil(total / AG_PAGE_SIZE);
+        const pg = $("agPager");
+        if (total <= AG_PAGE_SIZE) {
+          pg.innerHTML = "";
+          return;
+        }
+        if (agPage > pages) agPage = pages;
+        pg.innerHTML =
+          `<button class="ep-pgbtn" ${agPage <= 1 ? "disabled" : ""} onclick="agGoPage(${agPage - 1})">Prev</button>` +
+          `<span class="ep-pginfo">Page ${agPage} of ${pages}</span>` +
+          `<button class="ep-pgbtn" ${agPage >= pages ? "disabled" : ""} onclick="agGoPage(${agPage + 1})">Next</button>`;
+      }
+      function renderAGPicker() {
+        const all = agFiltered();
+        const box = $("agResult");
+        const s = agSelectedId;
+        $("agCount").textContent =
+          all.length + " agenc" + (all.length === 1 ? "y" : "ies");
+        if (!all.length) {
+          box.innerHTML =
+            '<div class="ep-empty">No agencies match the filters.</div>';
+          $("agPager").innerHTML = "";
+          updateAGSel();
+          return;
+        }
+        const pages = Math.ceil(all.length / AG_PAGE_SIZE);
+        if (agPage > pages) agPage = pages;
+        if (agPage < 1) agPage = 1;
+        const list = all.slice(
+          (agPage - 1) * AG_PAGE_SIZE,
+          agPage * AG_PAGE_SIZE,
+        );
+        if (agView === "grid") {
+          box.innerHTML =
+            '<div class="ep-grid">' +
+            list
+              .map(
+                (a) => `
+            <div class="ep-card ${s === a.id ? "sel" : ""}" onclick="selectAG('${a.id}')">
+              <input type="radio" class="ep-radio" name="agPick" ${s === a.id ? "checked" : ""} onclick="event.stopPropagation();selectAG('${a.id}')">
+              <div class="ep-card-b" style="padding-top:30px">
+                <div class="ep-card-t">${escapeHtml(a.company)}</div>
+                <div class="ep-card-s">${escapeHtml(a.id)} · ${escapeHtml(a.plan)} · ★${a.rating}</div>
+                <div class="ep-card-s" style="margin-top:3px">${escapeHtml(a.targetCities.join(", "))}</div>
+                <div class="ep-card-s">${escapeHtml(a.languages.join(", "))}</div>
+                <div class="ep-card-p">${escapeHtml(a.status)} · ${a.activeListings} listings</div>
+              </div>
+            </div>`,
+              )
+              .join("") +
+            "</div>";
+        } else {
+          box.innerHTML =
+            '<table class="ep-table"><thead><tr><th style="width:30px"></th><th>Agency</th><th>Plan</th><th>Service Area</th><th>Language</th><th>Specialism</th><th>Status</th></tr></thead><tbody>' +
+            list
+              .map(
+                (a) => `
+              <tr class="${s === a.id ? "sel" : ""}" onclick="selectAG('${a.id}')">
+                <td><input type="radio" name="agPick" ${s === a.id ? "checked" : ""} onclick="event.stopPropagation();selectAG('${a.id}')"></td>
+                <td><strong>${escapeHtml(a.company)}</strong><br><span style="font-size:11px;color:var(--text-sec)">${escapeHtml(a.id)}</span></td>
+                <td>${escapeHtml(a.plan)}</td>
+                <td>${escapeHtml(a.targetCities.join(", "))}</td>
+                <td>${escapeHtml(a.languages.join(", "))}</td>
+                <td>${escapeHtml(a.specServices.join(", "))}</td>
+                <td>${escapeHtml(a.status)}</td>
+              </tr>`,
+              )
+              .join("") +
+            "</tbody></table>";
+        }
+        renderAGPager(all.length);
+        updateAGSel();
+      }
+      function insertAgencyName(a) {
+        const body = agTargetBody;
+        if (!body) return;
+        body.focus();
+        const sel = window.getSelection();
+        if (agSavedRange) {
+          try {
+            sel.removeAllRanges();
+            sel.addRange(agSavedRange);
+          } catch (e) {}
+        }
+        // keep an internal reference via data-agency-id so re-renders can resolve it
+        const span =
+          '<span class="agref" data-agency-id="' +
+          escapeHtml(a.id) +
+          '">' +
+          escapeHtml(a.company) +
+          "</span>&nbsp;";
+        if (sel.rangeCount && body.contains(sel.anchorNode)) {
+          document.execCommand("insertHTML", false, span);
+        } else {
+          body.innerHTML += span;
+        }
+        body.dispatchEvent(new Event("input"));
+      }
+      function confirmAGPicker() {
+        const a = AGENCY_POOL.find((x) => x.id === agSelectedId);
+        if (!a) {
+          toast("Select an agency first");
+          return;
+        }
+        if (autoPickerKind === "subject" && agTargetBody === $("adBody")) {
+          insertAutoVarText("subject", a.company);
+          autoPickerKind = null;
+          closeAgencyPicker();
+          toast("Agent inserted.");
+          return;
+        }
+        autoPickerKind = null;
+        insertAgencyName(a);
+        closeAgencyPicker();
+        toast("Agent inserted.");
+      }
+
+      function renderTplCards(mountId, prefix) {
+        $(mountId).innerHTML = templates
+          .map(
+            (t) => `
+          <div class="tpl-card">
+            <div class="tc-name">${t.name}</div>
+            <div class="tc-prev">${escapeHtml(t.body.slice(0, 80))}…</div>
+            <button class="btn btn-outline btn-sm" onclick="applyTemplate('${t.id}','${prefix}')">Use</button>
+          </div>`,
+          )
+          .join("");
+      }
+      function applyTemplate(id, prefix) {
+        const t = templates.find((x) => x.id === id);
+        if (!t) return;
+        const subjEl =
+          prefix === "b"
+            ? $("bSubject")
+            : prefix === "t"
+              ? $("tSubject")
+              : $("aSubject");
+        if (subjEl && t.subject) subjEl.value = t.subject;
+        if ($(prefix + "_rteBody")) {
+          $(prefix + "_rteBody").innerText = t.body;
+          rtePreviewRender(prefix);
+        }
+        toast("Template applied");
+      }
+
+      /* ===================== CREATE GROUP MODAL ===================== */
+      function openCreateGroup() {
+        $("cgModal").classList.add("open");
+        setTimeout(() => $("cgName").focus(), 30);
+      }
+      function closeCreateGroup() {
+        $("cgModal").classList.remove("open");
+        $("cgName").value = "";
+      }
+      function saveNewGroup() {
+        const name = $("cgName").value.trim();
+        if (!name) {
+          $("cgName").focus();
+          return;
+        }
+        const baseEl = document.querySelector('input[name="cgBase"]:checked');
+        const base = baseEl ? baseEl.value : "End User";
+        const entityType =
+          base === "Agent" ? "agent" : base === "Both" ? "both" : "end_user";
+        // persist to the SHARED Lead Management key so it appears everywhere
+        const groups = getLeadGroups();
+        groups.push({
+          id: "group_" + Date.now(),
+          name,
+          entityType,
+          leadIds: [],
+          createdDate: new Date().toISOString().slice(0, 10),
+        });
+        saveLeadGroups(groups);
+        renderGroupPicker();
+        renderAutoGroupPicker();
+        closeCreateGroup();
+        toast('Group "' + name + '" created successfully.');
+      }
+
+      /* ===================== ANALYTICS ===================== */
+      // 3-state column sort: default Sent Date descending.
+      let anSortKey = "sentDate";
+      let anSortDir = "desc"; // "asc" | "desc" | null(unsorted)
+      const anExpanded = {}; // recurring campaign id -> expanded?
+      const TODAY = new Date("2026-06-21");
+
+      const AN_COLS = [
+        { key: "name", label: "Campaign Name", sortable: true },
+        { key: "audience", label: "Audience", sortable: false },
+        { key: "sentDate", label: "Sent Date", sortable: true },
+        { key: "recipients", label: "Recipients", sortable: true },
+        { key: "opened", label: "Opened", sortable: true },
+        { key: "clicked", label: "Clicked", sortable: true },
+        { key: "converted", label: "Converted", sortable: true },
+        { key: "actions", label: "Actions", sortable: false },
+      ];
+
+      function onAnTimeChange() {
+        $("anCustomRange").classList.toggle(
+          "on",
+          $("anTime").value === "custom",
+        );
+        renderPerf();
+      }
+      function anSortBy(key) {
+        if (anSortKey === key) {
+          // asc -> desc -> unsorted
+          if (anSortDir === "asc") anSortDir = "desc";
+          else if (anSortDir === "desc") {
+            anSortDir = null;
+            anSortKey = null;
+          } else anSortDir = "asc";
+        } else {
+          anSortKey = key;
+          anSortDir = "asc";
+        }
+        renderPerf();
+      }
+      // numeric value of a metric (rate keys derived; N/A click rate -> -1)
+      function anMetric(c, key) {
+        const t = campTotals(c);
+        switch (key) {
+          case "recipients":
+            return t.recipients;
+          case "opened":
+            return t.opened;
+          case "clicked":
+            return t.clicked;
+          case "converted":
+            return t.converted;
+          case "openRate":
+            return t.recipients ? t.opened / t.recipients : 0;
+          case "clickRate":
+            return campLinkCount(c.body) === 0
+              ? -1
+              : t.recipients
+                ? t.clicked / t.recipients
+                : 0;
+          case "conversionRate":
+            return t.recipients ? t.converted / t.recipients : 0;
+          case "sentDate":
+            return t.firstSentDate || "";
+          case "name":
+            return c.name.toLowerCase();
+          default:
+            return 0;
+        }
+      }
+      function openRatePill(numer, denom) {
+        const r = denom ? (numer / denom) * 100 : 0;
+        let cls = "grey";
+        if (!denom) cls = "grey";
+        else if (r >= 50) cls = "green";
+        else if (r >= 30) cls = "amber";
+        else cls = "red";
+        return `<span class="pill ${cls}">${denom ? r.toFixed(1) + "%" : "0%"}</span>`;
+      }
+      function pct(numer, denom) {
+        return denom ? ((numer / denom) * 100).toFixed(1) + "%" : "0%";
+      }
+      // Pill color class per metric (different thresholds for opened/clicked/converted)
+      function ratePillClass(metric, r, denom, hasLink) {
+        if (metric === "clicked" && !hasLink) return "grey"; // N/A
+        if (!denom) return "grey";
+        if (metric === "opened")
+          return r >= 50 ? "green" : r >= 30 ? "amber" : "red";
+        if (metric === "clicked")
+          return r >= 30 ? "green" : r >= 10 ? "amber" : "red";
+        return r >= 10 ? "green" : r >= 5 ? "amber" : "red"; // converted
+      }
+      // Combined analytics cell: count + inline rate pill.
+      // For "clicked", when the body has no <a href> link the pill shows "N/A".
+      function metricCell(metric, count, recipients, body) {
+        const hasLink = metric === "clicked" ? campLinkCount(body) > 0 : true;
+        const r = recipients ? (count / recipients) * 100 : 0;
+        const cls = ratePillClass(metric, r, recipients, hasLink);
+        const label =
+          metric === "clicked" && !hasLink
+            ? "N/A"
+            : recipients
+              ? r.toFixed(1) + "%"
+              : "0%";
+        return `${count.toLocaleString()}<span class="pill ${cls} rate-pill">${label}</span>`;
+      }
+      function fmtDate(d) {
+        return d || "—";
+      }
+      function anWithinRange(dateStr) {
+        const mode = $("anTime").value;
+        if (mode === "all" || !dateStr) return mode === "all" ? true : false;
+        const d = new Date(dateStr);
+        if (mode === "30" || mode === "90") {
+          const days = mode === "30" ? 30 : 90;
+          const cutoff = new Date(TODAY);
+          cutoff.setDate(cutoff.getDate() - days);
+          return d >= cutoff && d <= TODAY;
+        }
+        if (mode === "custom") {
+          const f = $("anFrom").value ? new Date($("anFrom").value) : null;
+          const t = $("anTo").value ? new Date($("anTo").value) : null;
+          if (f && d < f) return false;
+          if (t && d > t) return false;
+          return true;
+        }
+        return true;
+      }
+      function renderPerfHead() {
+        $("perfHead").innerHTML =
+          "<tr>" +
+          AN_COLS.map((col) => {
+            const tip =
+              col.key === "recipients"
+                ? ' title="Actual number of recipients at send time. Users who joined later are not included."'
+                : "";
+            if (!col.sortable) {
+              return `<th${tip}>${col.label}</th>`;
+            }
+            let ind = "";
+            if (anSortKey === col.key)
+              ind = `<span class="an-sort-ind">${anSortDir === "asc" ? "▲" : "▼"}</span>`;
+            return `<th class="sortable"${tip} onclick="anSortBy('${col.key}')">${col.label}${ind}</th>`;
+          }).join("") +
+          "</tr>";
+      }
+      function anAggRowHtml(c) {
+        const t = campTotals(c);
+        const recurring = c.timing === "recurring";
+        const exp = !!anExpanded[c.id];
+        const arrow = recurring
+          ? `<button class="an-exp" onclick="event.stopPropagation();toggleAnExpand('${c.id}')">${exp ? "▼" : "▶"}</button>`
+          : "";
+        const sentCell = recurring
+          ? "since " + fmtDate(t.firstSentDate)
+          : fmtDate(t.firstSentDate);
+        return `<tr>
+          <td class="cell-strong" title="${escapeHtml(c.name)}">${arrow}${escapeHtml(c.name)}</td>
+          <td>${escapeHtml(c.audType)}</td>
+          <td>${sentCell}</td>
+          <td>${t.recipients.toLocaleString()}</td>
+          <td>${metricCell("opened", t.opened, t.recipients)}</td>
+          <td>${metricCell("clicked", t.clicked, t.recipients, c.body)}</td>
+          <td>${metricCell("converted", t.converted, t.recipients)}</td>
+          <td><button class="btn btn-outline btn-sm" onclick="recreateCampaign(campaigns.find(x=>x.id==='${c.id}'))">Recreate</button></td>
+        </tr>`;
+      }
+      function anSubRowHtml(c, s) {
+        return `<tr class="an-sub">
+          <td>${fmtDate(s.sentDate)}</td>
+          <td>${escapeHtml(c.audType)}</td>
+          <td>${fmtDate(s.sentDate)}</td>
+          <td>${s.recipients.toLocaleString()}</td>
+          <td>${metricCell("opened", s.opened, s.recipients)}</td>
+          <td>${metricCell("clicked", s.clicked, s.recipients, c.body)}</td>
+          <td>${metricCell("converted", s.converted, s.recipients)}</td>
+          <td></td>
+        </tr>`;
+      }
+      function toggleAnExpand(id) {
+        anExpanded[id] = !anExpanded[id];
+        renderPerf();
+      }
+      function renderPerf() {
+        renderPerfHead();
+        const aud = $("anAud") ? $("anAud").value : "";
+        const q = ($("anSearch") ? $("anSearch").value : "")
+          .toLowerCase()
+          .trim();
+        // ONLY Sent campaigns
+        let rows = campaigns.filter((c) => c.status === "Sent");
+        rows = rows.filter((c) => {
+          const t = campTotals(c);
+          if (!anWithinRange(t.firstSentDate)) return false;
+          if (aud && c.audType !== aud) return false;
+          if (q && !c.name.toLowerCase().includes(q)) return false;
+          return true;
+        });
+        if (anSortKey && anSortDir) {
+          rows.sort((a, b) => {
+            let va = anMetric(a, anSortKey);
+            let vb = anMetric(b, anSortKey);
+            let cmp;
+            if (typeof va === "string" && typeof vb === "string")
+              cmp = va < vb ? -1 : va > vb ? 1 : 0;
+            else cmp = va - vb;
+            return anSortDir === "asc" ? cmp : -cmp;
+          });
+        }
+        if (!rows.length) {
+          $("perfBody").innerHTML =
+            `<tr><td colspan="${AN_COLS.length}" style="text-align:center;color:#999;padding:30px">No sent campaigns match your filters.</td></tr>`;
+          return;
+        }
+        let html = "";
+        rows.forEach((c) => {
+          html += anAggRowHtml(c);
+          if (c.timing === "recurring" && anExpanded[c.id] && c.sends) {
+            c.sends.forEach((s) => (html += anSubRowHtml(c, s)));
+          }
+        });
+        $("perfBody").innerHTML = html;
+      }
+      let chartInstance = null;
+      function initChart() {
+        renderPerf();
+        if (chartInstance) return;
+        const ctx = $("trendChart");
+        if (!ctx || !window.Chart) return;
+        const labels = [
+          "May 24",
+          "May 25",
+          "May 26",
+          "May 27",
+          "May 28",
+          "May 29",
+          "May 30",
+          "May 31",
+          "Jun 1",
+          "Jun 2",
+        ];
+        const sent = [220, 280, 250, 410, 380, 290, 460, 500, 480, 520];
+        const opened = [120, 150, 140, 220, 200, 160, 250, 280, 270, 300];
+        chartInstance = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: "Sent",
+                data: sent,
+                borderColor: "#1e3a5f",
+                backgroundColor: "rgba(30,58,95,0.08)",
+                tension: 0.35,
+                fill: true,
+                pointRadius: 3,
+              },
+              {
+                label: "Opened",
+                data: opened,
+                borderColor: "#c4714a",
+                backgroundColor: "rgba(196,113,74,0.08)",
+                tension: 0.35,
+                fill: true,
+                pointRadius: 3,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: { usePointStyle: true, boxWidth: 8 },
+              },
+            },
+            scales: {
+              y: { beginAtZero: true, grid: { color: "#f0ebe1" } },
+              x: { grid: { display: false } },
+            },
+          },
+        });
+      }
+
+      /* ===================== HELPERS ===================== */
+      function escapeHtml(s) {
+        return (s || "").replace(
+          /[&<>"]/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+        );
+      }
+
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest(".act-wrap"))
+          document
+            .querySelectorAll(".act-menu")
+            .forEach((x) => x.classList.remove("open"));
+        if (!e.target.closest(".rte-toolbar"))
+          document
+            .querySelectorAll(".var-dropdown")
+            .forEach((x) => x.classList.remove("open"));
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          if ($("autoDrawer").classList.contains("open")) {
+            closeAutoDrawer();
+            return;
+          }
+          closeCreateGroup();
+          closePropertyPicker();
+          closeAgencyPicker();
+          document
+            .querySelectorAll(".act-menu,.var-dropdown")
+            .forEach((x) => x.classList.remove("open"));
+        }
+      });
+
+      /* ===================== INIT ===================== */
+      renderCampaigns();
+      renderTemplates();
+      renderAutomations();
+      refreshAutoTplSelect();
+    </script>
+  </body>
+</html>

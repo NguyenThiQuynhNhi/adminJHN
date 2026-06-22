@@ -3,18 +3,57 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin - CMS Homepage Management</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
       :root {
-        --bg-body: #f5f3ef;
-        --bg-card: #fffaf2;
-        --border-subtle: #eadccd;
-        --accent: #c26b41;
-        --accent-soft: #f3d7c6;
-        --text-main: #3b2f2a;
+        --bg-page: #f5f5f5;
+        --bg-card: #ffffff;
+        --bg-card-warm: #fffaf2;
+        --bg-row-hover: #faf6ee;
+        --bg-header-soft: #faf6ee;
+        --text-primary: #1a1a1a;
         --text-muted: #7a6a5c;
-        --badge-green: #2f855a;
-        --badge-gray: #4a5568;
-        --badge-orange: #b7791f;
+        --text-label: #888;
+        --text-link: #8a5a3b;
+        --border-default: #e0e0e0;
+        --border-warm: #eadccd;
+        --border-soft: #f0f0f0;
+        --color-primary: #8b7340;
+        --color-primary-hover: #6d5a32;
+        --color-primary-light: #c9a85c;
+        --status-success-text: #2a7a2a;
+        --status-success-bg: #d4f0d4;
+        --status-warning-text: #c87a2a;
+        --status-warning-bg: #fff3d4;
+        --status-danger-text: #b23b3b;
+        --status-danger-bg: #fbe9e9;
+        --status-neutral-text: #666;
+        --status-neutral-bg: #e8e8e8;
+        --r-sm: 6px;
+        --r-md: 8px;
+        --r-lg: 12px;
+        --r-full: 999px;
+        --shadow-card: 0 10px 30px rgba(115, 72, 39, 0.05);
+        --shadow-toast: 0 8px 24px rgba(0, 0, 0, 0.3);
+        --shadow-modal: 0 18px 50px rgba(59, 47, 42, 0.28);
+        --font-stack:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+      :root {
+        --bg-body: var(--bg-page);
+        --bg-card: var(--bg-card-warm);
+        --border-subtle: var(--border-warm);
+        --accent: var(--color-primary);
+        --accent-soft: var(--color-primary-light);
+        --text-main: var(--text-primary);
+        --text-muted: var(--text-muted);
+        --badge-green: var(--status-success-text);
+        --badge-gray: var(--status-neutral-text);
+        --badge-orange: var(--status-warning-text);
       }
       * {
         box-sizing: border-box;
@@ -22,12 +61,7 @@
       body {
         margin: 0;
         padding: 20px 24px 32px;
-        font-family:
-          system-ui,
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
-          sans-serif;
+        font-family: var(--font-stack);
         background-color: var(--bg-body);
         color: var(--text-main);
       }
@@ -51,22 +85,22 @@
       }
       .cms-layout {
         margin-top: 20px;
-        border-radius: 14px;
+        border-radius: var(--r-lg);
         overflow: hidden;
         background: var(--bg-card);
         border: 1px solid var(--border-subtle);
-        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
+        box-shadow: var(--shadow-card);
       }
       .cms-content-wrap {
         padding: 20px 20px 24px;
-        background: #f5f3ef;
+        background: var(--bg-page);
       }
       .settings-card {
         background-color: var(--bg-card);
-        border-radius: 14px;
+        border-radius: var(--r-lg);
         border: 1px solid var(--border-subtle);
-        padding: 14px 16px 10px;
-        box-shadow: 0 6px 18px rgba(115, 72, 39, 0.06);
+        padding: 14px 16px 14px;
+        box-shadow: var(--shadow-card);
         margin-bottom: 14px;
       }
       .settings-card-title {
@@ -79,7 +113,7 @@
         justify-content: space-between;
         gap: 16px;
         padding: 10px 0;
-        border-bottom: 1px solid #efe0d4;
+        border-bottom: 1px solid var(--border-warm);
       }
       .setting-info {
         flex: 1.2;
@@ -96,13 +130,14 @@
       .setting-desc {
         font-size: 12px;
         color: var(--text-muted);
-        max-width: 420px;
+        max-width: 440px;
       }
       .cms-inline-actions {
         display: inline-flex;
         gap: 8px;
         align-items: center;
         justify-content: flex-end;
+        flex-wrap: wrap;
       }
       .toggle {
         position: relative;
@@ -118,13 +153,10 @@
       .toggle-slider {
         position: absolute;
         cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #e2d4c2;
+        inset: 0;
+        background-color: var(--status-neutral-bg);
         transition: 0.2s;
-        border-radius: 999px;
+        border-radius: var(--r-full);
       }
       .toggle-slider:before {
         position: absolute;
@@ -133,7 +165,7 @@
         width: 14px;
         left: 2px;
         bottom: 2px;
-        background-color: #ffffff;
+        background-color: #fff;
         transition: 0.2s;
         border-radius: 50%;
       }
@@ -144,24 +176,33 @@
         transform: translateX(16px);
       }
       .btn {
-        border-radius: 999px;
+        border-radius: var(--r-full);
         border: 1px solid var(--border-subtle);
-        padding: 6px 11px;
-        font-size: 11px;
-        background-color: #fff;
+        padding: 6px 12px;
+        font-size: 11.5px;
+        background-color: var(--bg-card);
         cursor: pointer;
         display: inline-flex;
-        gap: 4px;
+        gap: 5px;
         align-items: center;
         color: var(--text-main);
+        font-family: inherit;
       }
       .btn-primary {
-        background: linear-gradient(135deg, #c26b41, #a55232);
-        border-color: #a55232;
-        color: #fffaf3;
+        background: linear-gradient(
+          135deg,
+          var(--color-primary),
+          var(--color-primary-hover)
+        );
+        border-color: var(--color-primary-hover);
+        color: #fff;
       }
       .btn-secondary {
-        background-color: #fffaf3;
+        background-color: var(--bg-card);
+      }
+      .btn-danger {
+        color: var(--status-danger-text);
+        border-color: var(--status-danger-bg);
       }
       .table-mini {
         width: 100%;
@@ -170,9 +211,10 @@
       }
       .table-mini th,
       .table-mini td {
-        padding: 6px 8px;
-        border-bottom: 1px solid #efe0d4;
+        padding: 7px 8px;
+        border-bottom: 1px solid var(--border-warm);
         text-align: left;
+        vertical-align: middle;
       }
       .table-mini th {
         font-size: 11px;
@@ -180,41 +222,56 @@
         font-weight: 600;
         white-space: nowrap;
       }
+      .table-mini tbody tr.sel {
+        background: var(--bg-row-hover);
+      }
       .icon-btn {
         width: 28px;
         height: 28px;
-        border-radius: 999px;
+        border-radius: var(--r-full);
         border: 1px solid var(--border-subtle);
-        background: #fff;
+        background: var(--bg-card);
         color: var(--text-muted);
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 14px;
+        font-size: 13px;
         line-height: 1;
       }
       .icon-btn:hover {
-        background: #f8f1ea;
+        background: var(--bg-row-hover);
       }
-      .icon-btn--remove {
-        color: #b42318;
+      .icon-btn--remove,
+      .icon-btn--delete {
+        color: var(--status-danger-text);
+      }
+      .icon-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
       }
       .preview-carousel {
         display: flex;
         gap: 12px;
         overflow-x: auto;
-        padding: 12px 0;
+        padding: 12px;
         margin-bottom: 12px;
         border: 1px dashed var(--border-subtle);
-        border-radius: 10px;
-        background: #fffaf1;
+        border-radius: var(--r-md);
+        background: var(--bg-card-warm);
+        min-height: 60px;
+      }
+      .preview-carousel:empty:before {
+        content: "No properties selected yet — use “Customize selection”.";
+        color: var(--text-muted);
+        font-size: 12px;
       }
       .preview-card {
         min-width: 180px;
-        background: white;
+        max-width: 180px;
+        background: var(--bg-card);
         border: 1px solid var(--border-subtle);
-        border-radius: 10px;
+        border-radius: var(--r-md);
         overflow: hidden;
         position: relative;
       }
@@ -258,6 +315,43 @@
         width: 100%;
         overflow-x: auto;
       }
+      .thumb {
+        width: 40px;
+        height: 40px;
+        border-radius: var(--r-md);
+        object-fit: cover;
+        background: var(--border-warm);
+        display: inline-block;
+        vertical-align: middle;
+      }
+      .review-trunc {
+        max-width: 320px;
+        color: var(--text-muted);
+        display: inline-block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        vertical-align: middle;
+      }
+      .hint {
+        font-size: 11px;
+        color: var(--text-muted);
+        background: var(--status-warning-bg);
+        border: 1px solid var(--color-primary-light);
+        border-radius: var(--r-md);
+        padding: 7px 10px;
+        margin: 8px 0 10px;
+        line-height: 1.5;
+      }
+      .hint code {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--r-sm);
+        padding: 0 4px;
+        color: var(--text-link);
+      }
+
+      /* Modal */
       .modal-backdrop {
         position: fixed;
         inset: 0;
@@ -266,21 +360,25 @@
         align-items: center;
         justify-content: center;
         z-index: 999;
+        padding: 16px;
       }
       .modal-backdrop.open {
         display: flex;
       }
       .modal-shell {
-        width: 880px;
-        max-width: 95%;
+        width: 920px;
+        max-width: 100%;
         max-height: 90vh;
         background: var(--bg-card);
-        border-radius: 14px;
+        border-radius: var(--r-lg);
         border: 1px solid var(--border-subtle);
-        box-shadow: 0 18px 45px rgba(115, 72, 39, 0.45);
+        box-shadow: var(--shadow-modal);
         display: flex;
         flex-direction: column;
         overflow: hidden;
+      }
+      .modal-shell.sm {
+        width: 480px;
       }
       .modal-header {
         padding: 12px 16px;
@@ -289,7 +387,7 @@
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        background: #fffaf6;
+        background: var(--bg-header-soft);
       }
       .modal-header-main {
         display: flex;
@@ -317,7 +415,7 @@
         padding: 12px 16px 10px;
         overflow: auto;
         font-size: 12px;
-        background: #fffaf2;
+        background: var(--bg-card-warm);
       }
       .modal-footer {
         padding: 10px 16px 12px;
@@ -325,20 +423,40 @@
         display: flex;
         justify-content: flex-end;
         gap: 8px;
-        background: #f7efe6;
+        background: var(--bg-header-soft);
+        align-items: center;
+      }
+      .modal-footer .left {
+        margin-right: auto;
+        color: var(--text-muted);
+        font-size: 12px;
       }
       .badge-success {
-        background: #e6f6ef;
-        color: #2f855a;
-        border-radius: 999px;
-        padding: 2px 7px;
+        background: var(--status-success-bg);
+        color: var(--status-success-text);
+        border-radius: var(--r-full);
+        padding: 2px 8px;
         font-size: 10px;
       }
       .badge-warning {
-        background: #fff6e0;
-        color: #b7791f;
-        border-radius: 999px;
-        padding: 2px 7px;
+        background: var(--status-warning-bg);
+        color: var(--status-warning-text);
+        border-radius: var(--r-full);
+        padding: 2px 8px;
+        font-size: 10px;
+      }
+      .badge-group {
+        background: var(--status-neutral-bg);
+        color: var(--status-neutral-text);
+        border-radius: var(--r-full);
+        padding: 2px 8px;
+        font-size: 10px;
+      }
+      .badge-nd {
+        background: var(--status-warning-bg);
+        color: var(--status-warning-text);
+        border-radius: var(--r-full);
+        padding: 2px 8px;
         font-size: 10px;
       }
       .btn-text {
@@ -349,102 +467,417 @@
         font-size: 12px;
         cursor: pointer;
       }
+      .fld {
+        width: 100%;
+        border-radius: var(--r-md);
+        border: 1px solid var(--border-subtle);
+        padding: 7px 9px;
+        font-size: 12px;
+        background-color: var(--bg-card);
+        color: var(--text-main);
+        font-family: inherit;
+      }
+      .fld-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+      .req {
+        color: var(--status-danger-text);
+      }
+      .fld-hint {
+        font-size: 10.5px;
+        color: var(--text-muted);
+        margin-top: 3px;
+      }
+
+      /* Picker filter bar + grid */
+      .pk-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .pk-filters select,
+      .pk-filters input {
+        border-radius: var(--r-full);
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        font-size: 12px;
+        background-color: var(--bg-card);
+        color: var(--text-main);
+        font-family: inherit;
+      }
+      .pk-filters input[type="text"] {
+        min-width: 180px;
+      }
+      .pk-viewtoggle {
+        margin-left: auto;
+        display: inline-flex;
+        gap: 3px;
+        background: var(--bg-row-hover);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--r-full);
+        padding: 3px;
+      }
+      .pk-vt {
+        border: none;
+        background: transparent;
+        border-radius: var(--r-full);
+        padding: 4px 11px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .pk-vt.on {
+        background: var(--accent);
+        color: #fff;
+      }
+      .pk-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 12px;
+      }
+      .pk-card {
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--r-md);
+        overflow: hidden;
+        background: var(--bg-card);
+        cursor: pointer;
+        position: relative;
+      }
+      .pk-card.sel {
+        outline: 2px solid var(--accent);
+      }
+      .pk-card-img {
+        height: 96px;
+        background-size: cover;
+        background-position: center;
+        background-color: var(--border-warm);
+      }
+      .pk-card-body {
+        padding: 8px 9px;
+      }
+      .pk-card-title {
+        font-weight: 600;
+        font-size: 12px;
+        line-height: 1.25;
+      }
+      .pk-card-sub {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+      .pk-card-chk {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        width: 20px;
+        height: 20px;
+      }
+      .pk-empty {
+        text-align: center;
+        color: var(--text-muted);
+        padding: 22px;
+        font-size: 12px;
+      }
+
+      /* Excel modals */
+      .ex-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 200;
+        padding: 20px;
+      }
+      .ex-backdrop.open {
+        display: flex;
+      }
+      .ex-modal {
+        background: var(--bg-card);
+        border-radius: var(--r-lg);
+        max-width: 860px;
+        width: 100%;
+        max-height: 78vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: var(--shadow-modal);
+        overflow: hidden;
+      }
+      .ex-header {
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border-default);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .ex-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+      .ex-close {
+        background: transparent;
+        border: 0;
+        font-size: 22px;
+        line-height: 1;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: var(--r-sm);
+      }
+      .ex-close:hover {
+        background: var(--bg-row-hover);
+        color: var(--text-primary);
+      }
+      .ex-body {
+        padding: 18px;
+        overflow: auto;
+        flex: 1;
+      }
+      .ex-footer {
+        padding: 12px 18px;
+        border-top: 1px solid var(--border-default);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        background: var(--bg-card);
+      }
+      .ex-note {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-style: italic;
+        text-align: center;
+        margin-top: 16px;
+      }
+      .ex-btn {
+        padding: 8px 18px;
+        border-radius: var(--r-sm);
+        font-size: 13px;
+        font-weight: 500;
+        border: 1px solid var(--border-default);
+        background: var(--bg-card);
+        color: var(--text-primary);
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .ex-btn:hover {
+        background: var(--bg-row-hover);
+      }
+      .ex-btn-primary {
+        background: var(--color-primary);
+        border-color: var(--color-primary);
+        color: #fff;
+      }
+      .ex-btn-primary:hover {
+        background: var(--color-primary-hover);
+        border-color: var(--color-primary-hover);
+      }
+
+      /* Popular Estates display */
+      .estates-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+      @media (max-width: 720px) {
+        .estates-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 480px) {
+        .estates-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .estate-card {
+        border: 1px solid var(--border-default);
+        border-radius: var(--r-md);
+        overflow: hidden;
+        background: var(--bg-card);
+      }
+      .estate-city-name {
+        background: var(--bg-header-soft);
+        padding: 8px;
+        font-weight: 700;
+        text-align: center;
+        font-size: 13px;
+        border-bottom: 1px solid var(--border-default);
+        color: var(--text-primary);
+      }
+      .estate-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      .estate-table th {
+        background: var(--bg-header-soft);
+        padding: 6px 8px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-default);
+        font-weight: 600;
+        font-size: 10.5px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .estate-table td {
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--border-soft);
+        background: var(--bg-card);
+      }
+      .estate-table tr:nth-child(even) td {
+        background: var(--bg-row-hover);
+      }
+      .estate-change-up {
+        color: var(--status-success-text);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .estate-change-down {
+        color: var(--status-danger-text);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      /* Land Prices display */
+      .land-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        border-bottom: 1px solid var(--border-default);
+        margin-bottom: 14px;
+      }
+      .land-tab {
+        padding: 8px 16px;
+        background: var(--bg-header-soft);
+        border: 0;
+        border-radius: var(--r-sm) var(--r-sm) 0 0;
+        cursor: pointer;
+        font-size: 12.5px;
+        color: var(--text-primary);
+        font-weight: 500;
+        font-family: inherit;
+      }
+      .land-tab:hover {
+        background: var(--bg-row-hover);
+      }
+      .land-tab.active {
+        background: var(--color-primary);
+        color: #fff;
+      }
+      .land-heading {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0 0 10px;
+      }
+      .land-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+        border: 1px solid var(--border-default);
+      }
+      .land-table th {
+        background: var(--bg-header-soft);
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-default);
+        font-weight: 600;
+        font-size: 11.5px;
+        color: var(--text-muted);
+      }
+      .land-table td {
+        padding: 10px;
+        border-bottom: 1px solid var(--border-soft);
+        vertical-align: middle;
+        background: var(--bg-card);
+        color: var(--text-primary);
+      }
+      .land-table tr:nth-child(even) td {
+        background: var(--bg-row-hover);
+      }
+      .land-rank {
+        text-align: center;
+        font-weight: 700;
+        min-width: 70px;
+      }
+      .land-rank .num {
+        font-size: 18px;
+        display: block;
+        line-height: 1;
+        color: var(--text-primary);
+      }
+      .land-rank .place {
+        font-size: 11px;
+        color: var(--text-muted);
+        display: block;
+        margin-top: 2px;
+      }
+      .land-station {
+        color: var(--text-link);
+        text-decoration: underline;
+        cursor: pointer;
+      }
+      .land-fluct {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: 1px solid var(--border-default);
+        border-radius: var(--r-sm);
+        padding: 4px 10px;
+        font-weight: 600;
+        font-size: 12px;
+        white-space: nowrap;
+      }
+      .land-fluct.up {
+        color: var(--status-success-text);
+        border-color: var(--status-success-bg);
+        background: var(--status-success-bg);
+      }
+      .land-fluct.down {
+        color: var(--status-danger-text);
+        border-color: var(--status-danger-bg);
+        background: var(--status-danger-bg);
+      }
+
+      /* Toast + confirm */
+      .toast-wrap {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 400;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast {
+        background: var(--text-primary);
+        color: #fff;
+        padding: 10px 16px;
+        border-radius: var(--r-md);
+        font-size: 13px;
+        box-shadow: var(--shadow-toast);
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .toast.ok {
+        background: var(--status-success-text);
+      }
+      .toast.err {
+        background: var(--status-danger-text);
+      }
     </style>
-    <style id="uxTableOverflowFix">
-/* Table overflow handling: keep text intact, only enable horizontal scroll on narrow viewport */
-@media (max-width: 1199px) {
-  table {
-    display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-}
-</style>
-  <style id="uxBaselinePolish">
-/* Baseline UI polish — applies only where file CSS doesn't override */
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-/* Pointer cursor on interactive */
-button, .btn, [role="button"], select,
-input[type="checkbox"], input[type="radio"], input[type="submit"],
-input[type="button"], a[href], label[for] {
-  cursor: pointer;
-}
-
-/* Disabled state */
-button:disabled, .btn:disabled, input:disabled, select:disabled, textarea:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/* Focus-visible outline (a11y) */
-button:focus-visible, .btn:focus-visible,
-a:focus-visible, [role="button"]:focus-visible,
-input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 2px solid #c4a25f;
-  outline-offset: 2px;
-}
-
-/* Inherit font family for form controls (fixes browser-default) */
-input, select, textarea, button {
-  font-family: inherit;
-}
-
-/* Responsive media */
-img, svg, video {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Subtle hover for buttons (only if no transition already set, gentle filter) */
-button:hover:not(:disabled), .btn:hover:not(:disabled) {
-  filter: brightness(0.96);
-  transition: filter 0.15s ease;
-}
-
-/* Smooth scrollbar on Webkit */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: #f5ece0;
-}
-::-webkit-scrollbar-thumb {
-  background: #d9c8b4;
-  border-radius: 6px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #c4a25f;
-}
-
-/* Selection highlight on-brand */
-::selection {
-  background: #c4a25f;
-  color: #fff;
-}
-
-/* HR baseline */
-hr {
-  border: none;
-  border-top: 1px solid #eadccd;
-  margin: 12px 0;
-}
-
-/* Anchor baseline color matches brand (no underline by default to match flat UI) */
-a {
-  color: #8a5a3b;
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
-</style>
-</head>
+  </head>
   <body>
     <div class="cms-shell">
       <div class="cms-header">
@@ -452,26 +885,30 @@ a:hover {
       </div>
       <div class="cms-layout">
         <section class="cms-content-wrap">
+          <!-- Properties -->
           <div class="settings-card">
             <div class="settings-card-title">Properties sections</div>
             <div class="setting-row">
               <div class="setting-info">
                 <div class="setting-name">Attractive Properties</div>
                 <div class="setting-desc">
-                  Display attractive properties on homepage
+                  Display attractive properties on homepage. Pick from Property
+                  Management.
                 </div>
               </div>
               <div class="setting-control">
                 <div class="cms-inline-actions">
-                  <label class="toggle">
-                    <input type="checkbox" id="toggle-attractive" checked />
-                    <span class="toggle-slider"></span>
-                  </label>
+                  <label class="toggle"
+                    ><input
+                      type="checkbox"
+                      id="toggle-attractive"
+                      checked /><span class="toggle-slider"></span
+                  ></label>
                   <button
                     class="btn btn-secondary"
-                    onclick="openModal('modal-property')"
+                    onclick="openPropertyPicker()"
                   >
-                    Customize selection
+                    <i class="fas fa-list-check"></i> Customize selection
                   </button>
                 </div>
               </div>
@@ -481,49 +918,208 @@ a:hover {
               <button
                 id="save-attractive-btn"
                 class="btn btn-primary"
-                style="display: none"
                 onclick="saveAttractiveProperties()"
               >
-                Save changes
+                <i class="fas fa-floppy-disk"></i> Save changes
               </button>
             </div>
           </div>
 
+          <!-- Famous Prefecture (rebuilt — source: yuushi.locations) -->
+          <style id="fameCss">
+            .fame-grid {
+              display: grid;
+              grid-template-columns: repeat(6, 1fr);
+              gap: 10px;
+              margin: 2px 0 12px;
+            }
+            @media (max-width: 900px) {
+              .fame-grid {
+                grid-template-columns: repeat(3, 1fr);
+              }
+            }
+            .fame-card {
+              position: relative;
+              border-radius: 10px;
+              overflow: hidden;
+              aspect-ratio: 4 / 3;
+              background: #efe2d2;
+              border: 1px solid var(--border-subtle);
+            }
+            .fame-card img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+              display: block;
+            }
+            .fame-label {
+              position: absolute;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              padding: 16px 8px 6px;
+              font-size: 11px;
+              font-weight: 600;
+              color: #fff;
+              background: linear-gradient(transparent, rgba(0, 0, 0, 0.72));
+              line-height: 1.25;
+            }
+            .fame-sub {
+              display: block;
+              font-weight: 400;
+              opacity: 0.85;
+              font-size: 10px;
+            }
+            .fame-slot {
+              border: 1px dashed var(--border-subtle);
+              border-radius: 10px;
+              aspect-ratio: 4 / 3;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: var(--text-muted);
+              font-size: 11px;
+              background: #fbf6ee;
+              text-align: center;
+              padding: 4px;
+            }
+            .fame-meta {
+              font-size: 12px;
+              color: var(--text-muted);
+              margin-bottom: 8px;
+            }
+            .ord-mini {
+              border: 1px solid var(--border-subtle);
+              background: #fff;
+              color: var(--text-muted);
+              width: 24px;
+              height: 24px;
+              border-radius: 6px;
+              cursor: pointer;
+              font-size: 11px;
+            }
+            .ord-mini:hover:not(:disabled) {
+              background: #f3e8da;
+              color: var(--accent);
+            }
+            .ord-mini:disabled {
+              opacity: 0.4;
+              cursor: default;
+            }
+            .num-mini {
+              width: 60px;
+              border-radius: 8px;
+              border: 1px solid var(--border-subtle);
+              padding: 4px 6px;
+              font-size: 12px;
+              background: #fffcf7;
+              font-family: inherit;
+            }
+            .mini-toggle {
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              cursor: pointer;
+              font-size: 12px;
+            }
+            .fame-thumb {
+              width: 54px;
+              height: 36px;
+              border-radius: 6px;
+              object-fit: cover;
+              background: #efe2d2;
+            }
+            .fp-edit-row td {
+              background: #fbf3e8;
+            }
+            .fp-edit-wrap {
+              display: flex;
+              gap: 16px;
+              align-items: flex-start;
+              padding: 10px 4px;
+            }
+            .fp-edit-img {
+              width: 140px;
+              height: 92px;
+              border-radius: 8px;
+              object-fit: cover;
+              border: 1px solid var(--border-subtle);
+              background: #efe2d2;
+              display: block;
+              margin-bottom: 6px;
+            }
+            .fp-edit-col {
+              flex: 1;
+            }
+            .fp-edit-label {
+              font-size: 11px;
+              font-weight: 600;
+              color: var(--text-muted);
+              text-transform: uppercase;
+              letter-spacing: 0.03em;
+              margin-bottom: 4px;
+            }
+            .fp-edit-desc {
+              width: 100%;
+              border-radius: 8px;
+              border: 1px solid var(--border-subtle);
+              padding: 7px 9px;
+              font-size: 12px;
+              background: #fffcf7;
+              color: var(--text-main);
+              font-family: inherit;
+              min-height: 64px;
+              resize: vertical;
+            }
+            .fp-edit-desc:focus {
+              border-color: var(--accent);
+              box-shadow: 0 0 0 1px rgba(196, 113, 74, 0.2);
+              outline: none;
+            }
+            .fp-edit-actions {
+              margin-top: 8px;
+              display: flex;
+              gap: 8px;
+            }
+          </style>
           <div class="settings-card">
             <div class="settings-card-title">Famous Prefecture list</div>
-            <div class="setting-row" style="border-bottom: none">
+            <div class="setting-row">
               <div class="setting-info">
-                <div class="setting-desc">
-                  Controls 12 major prefectures appears on the homepage.
-                </div>
+                <div class="setting-name">Section visibility</div>
               </div>
               <div class="setting-control">
                 <div class="cms-inline-actions">
-                  <label class="toggle">
-                    <input type="checkbox" id="toggle-prefecture" checked />
-                    <span class="toggle-slider"></span>
-                  </label>
-                  <button
-                    class="btn btn-secondary"
-                    onclick="openModal('modal-prefecture')"
-                  >
+                  <label class="toggle"
+                    ><input type="checkbox" id="toggle-fp" checked /><span
+                      class="toggle-slider"
+                    ></span
+                  ></label>
+                  <button class="btn btn-secondary" onclick="openFpPicker()">
                     Customize prefectures
                   </button>
                 </div>
               </div>
             </div>
+            <div class="settings-card-title" style="margin-top: 16px">
+              Homepage preview
+            </div>
+            <div class="fame-meta">
+              <span id="fp-count">0</span> / 12 prefectures selected
+            </div>
+            <div id="fp-preview" class="fame-grid"></div>
             <div class="save-btn-container">
               <button
-                id="save-prefecture-btn"
+                id="save-fp-btn"
                 class="btn btn-primary"
-                style="display: none"
-                onclick="savePrefectureSettings()"
+                onclick="saveFamousPrefectures()"
               >
-                Save changes
+                <i class="fas fa-floppy-disk"></i> Save changes
               </button>
             </div>
           </div>
 
+          <!-- Testimonials -->
           <div class="settings-card">
             <div class="settings-card-title">Testimonials</div>
             <div class="setting-row">
@@ -535,10 +1131,12 @@ a:hover {
               </div>
               <div class="setting-control">
                 <div class="cms-inline-actions">
-                  <label class="toggle">
-                    <input type="checkbox" id="toggle-testimonial" checked />
-                    <span class="toggle-slider"></span>
-                  </label>
+                  <label class="toggle"
+                    ><input
+                      type="checkbox"
+                      id="toggle-testimonial"
+                      checked /><span class="toggle-slider"></span
+                  ></label>
                   <button
                     class="btn btn-secondary"
                     onclick="saveOtherSection('testimonial')"
@@ -555,60 +1153,14 @@ a:hover {
               <table class="table-mini">
                 <thead>
                   <tr>
-                    <th>Author</th>
-                    <th>Role</th>
+                    <th>Avatar</th>
+                    <th>Name</th>
+                    <th>Content</th>
                     <th>Status</th>
-                    <th>Last updated</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr>
-                    <td>Nguyen Van A</td>
-                    <td>Individual investor</td>
-                    <td><span class="badge-success">Published</span></td>
-                    <td>2026-03-18</td>
-                    <td>
-                      <button
-                        class="icon-btn icon-btn--edit"
-                        onclick="openTestimonialModal('edit')"
-                      >
-                        ✏️
-                      </button>
-                      <button class="icon-btn icon-btn--delete">🗑️</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>ABC Asset Management</td>
-                    <td>Corporate client</td>
-                    <td><span class="badge-success">Published</span></td>
-                    <td>2026-03-02</td>
-                    <td>
-                      <button
-                        class="icon-btn icon-btn--edit"
-                        onclick="openTestimonialModal('edit')"
-                      >
-                        ✏️
-                      </button>
-                      <button class="icon-btn icon-btn--delete">🗑️</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Suzuki Hanako</td>
-                    <td>Tenant</td>
-                    <td><span class="badge-warning">Draft</span></td>
-                    <td>2026-03-25</td>
-                    <td>
-                      <button
-                        class="icon-btn icon-btn--edit"
-                        onclick="openTestimonialModal('edit')"
-                      >
-                        ✏️
-                      </button>
-                      <button class="icon-btn icon-btn--delete">🗑️</button>
-                    </td>
-                  </tr>
-                </tbody>
+                <tbody id="testimonial-tbody"></tbody>
               </table>
             </div>
             <div style="margin-top: 10px">
@@ -616,26 +1168,29 @@ a:hover {
                 class="btn btn-primary"
                 onclick="openTestimonialModal('new')"
               >
-                Add testimonial
+                <i class="fas fa-plus"></i> Add testimonial
               </button>
             </div>
           </div>
 
+          <!-- Video Article -->
           <div class="settings-card">
             <div class="settings-card-title">Video Article section</div>
             <div class="setting-row">
               <div class="setting-info">
                 <div class="setting-name">Section visibility</div>
                 <div class="setting-desc">
-                  Toggle the video carousel ON or OFF
+                  Toggle the video carousel ON or OFF. Items are selected from
+                  Insight Management (video entries).
                 </div>
               </div>
               <div class="setting-control">
                 <div class="cms-inline-actions">
-                  <label class="toggle">
-                    <input type="checkbox" id="toggle-video" checked />
-                    <span class="toggle-slider"></span>
-                  </label>
+                  <label class="toggle"
+                    ><input type="checkbox" id="toggle-video" checked /><span
+                      class="toggle-slider"
+                    ></span
+                  ></label>
                   <button
                     class="btn btn-secondary"
                     onclick="saveOtherSection('video')"
@@ -658,49 +1213,37 @@ a:hover {
                     <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr>
-                    <td>How to evaluate rental yield</td>
-                    <td>News</td>
-                    <td>Real Estate</td>
-                    <td>
-                      <button class="icon-btn icon-btn--delete">🗑️</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Platform walkthrough for new clients</td>
-                    <td>Article</td>
-                    <td>Guides</td>
-                    <td>
-                      <button class="icon-btn icon-btn--delete">🗑️</button>
-                    </td>
-                  </tr>
-                </tbody>
+                <tbody id="video-tbody"></tbody>
               </table>
             </div>
             <div style="margin-top: 10px">
               <button
                 class="btn btn-primary"
-                onclick="openModal('modal-insights')"
+                onclick="openInsightPicker('video-add')"
               >
-                Add Video Article
+                <i class="fas fa-plus"></i> Add Video Article
               </button>
             </div>
           </div>
 
+          <!-- Article -->
           <div class="settings-card">
             <div class="settings-card-title">Article section</div>
             <div class="setting-row">
               <div class="setting-info">
                 <div class="setting-name">Section visibility</div>
-                <div class="setting-desc">Toggle article block ON / OFF.</div>
+                <div class="setting-desc">
+                  Toggle article block ON / OFF. Items are selected from Insight
+                  Management.
+                </div>
               </div>
               <div class="setting-control">
                 <div class="cms-inline-actions">
-                  <label class="toggle">
-                    <input type="checkbox" id="toggle-article" checked />
-                    <span class="toggle-slider"></span>
-                  </label>
+                  <label class="toggle"
+                    ><input type="checkbox" id="toggle-article" checked /><span
+                      class="toggle-slider"
+                    ></span
+                  ></label>
                   <button
                     class="btn btn-secondary"
                     onclick="saveOtherSection('article')"
@@ -711,92 +1254,45 @@ a:hover {
               </div>
             </div>
             <div class="settings-card-title" style="margin-top: 16px">
-              Featured & secondary articles
+              Featured &amp; secondary articles (4 fixed slots)
             </div>
             <div class="table-wrap">
               <table class="table-mini">
                 <thead>
                   <tr>
+                    <th style="width: 60px">Slot</th>
                     <th>Title</th>
                     <th>Type</th>
                     <th>Category</th>
-                    <th></th>
+                    <th style="width: 110px">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr>
-                    <td>Where to start investing in Tokyo</td>
-                    <td>Article</td>
-                    <td>Guides</td>
-                    <td>
-                      <button
-                        class="btn-text"
-                        onclick="openModal('modal-insights')"
-                      >
-                        Change
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Osaka rental market snapshot</td>
-                    <td>Article</td>
-                    <td>Blog</td>
-                    <td>
-                      <button
-                        class="btn-text"
-                        onclick="openModal('modal-insights')"
-                      >
-                        Change
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Guide: reading floor plans</td>
-                    <td>News</td>
-                    <td>Real Estate</td>
-                    <td>
-                      <button
-                        class="btn-text"
-                        onclick="openModal('modal-insights')"
-                      >
-                        Change
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Tax basics for investors</td>
-                    <td>News</td>
-                    <td>Investment</td>
-                    <td>
-                      <button
-                        class="btn-text"
-                        onclick="openModal('modal-insights')"
-                      >
-                        Change
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
+                <tbody id="article-tbody"></tbody>
               </table>
             </div>
           </div>
 
+          <!-- FAQ (homepage) -->
           <div class="settings-card">
             <div class="settings-card-title">FAQ section</div>
             <div class="setting-row">
               <div class="setting-info">
                 <div class="setting-name">Section visibility</div>
-                <div class="setting-desc">Toggle FAQ block ON / OFF.</div>
+                <div class="setting-desc">
+                  Toggle FAQ block ON / OFF. FAQs are selected from the central
+                  FAQ repository (Insight Management).
+                </div>
               </div>
               <div class="setting-control">
                 <div class="cms-inline-actions">
-                  <label class="toggle">
-                    <input type="checkbox" id="toggle-faq" checked />
-                    <span class="toggle-slider"></span>
-                  </label>
+                  <label class="toggle"
+                    ><input type="checkbox" id="toggle-faq-home" checked /><span
+                      class="toggle-slider"
+                    ></span
+                  ></label>
                   <button
                     class="btn btn-secondary"
-                    onclick="saveOtherSection('faq')"
+                    onclick="saveOtherSection('faqHome')"
                   >
                     Save
                   </button>
@@ -815,37 +1311,12 @@ a:hover {
                     <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr>
-                    <td>How do I book a viewing?</td>
-                    <td><button class="icon-btn icon-btn--drag">☰</button></td>
-                    <td>
-                      <button class="icon-btn icon-btn--delete">🗑️</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>How are yields calculated?</td>
-                    <td><button class="icon-btn icon-btn--drag">☰</button></td>
-                    <td>
-                      <button class="icon-btn icon-btn--delete">🗑️</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>How do I reset my password?</td>
-                    <td><button class="icon-btn icon-btn--drag">☰</button></td>
-                    <td>
-                      <button class="icon-btn icon-btn--delete">🗑️</button>
-                    </td>
-                  </tr>
-                </tbody>
+                <tbody id="faqHome-tbody"></tbody>
               </table>
             </div>
             <div style="margin-top: 10px">
-              <button
-                class="btn btn-primary"
-                onclick="alert('Open FAQ editor (mock).')"
-              >
-                Add FAQ
+              <button class="btn btn-primary" onclick="openFaqPicker('home')">
+                <i class="fas fa-plus"></i> Add FAQ
               </button>
             </div>
           </div>
@@ -859,6 +1330,7 @@ a:hover {
       </div>
       <div class="cms-layout">
         <section class="cms-content-wrap">
+          <!-- Average Property Price (unchanged) -->
           <div class="settings-card">
             <div class="setting-row">
               <div class="setting-info">
@@ -871,10 +1343,11 @@ a:hover {
               </div>
               <div class="setting-control">
                 <div class="cms-inline-actions">
-                  <label class="toggle">
-                    <input type="checkbox" id="toggle-price" checked />
-                    <span class="toggle-slider"></span>
-                  </label>
+                  <label class="toggle"
+                    ><input type="checkbox" id="toggle-price" checked /><span
+                      class="toggle-slider"
+                    ></span
+                  ></label>
                   <button
                     class="btn btn-secondary"
                     onclick="saveOtherSection('price')"
@@ -886,41 +1359,48 @@ a:hover {
             </div>
           </div>
 
+          <!-- Famous Cities (rebuilt — source: yuushi.areaGuides featured city guides) -->
           <div class="settings-card">
             <div class="settings-card-title">Famous Cities list</div>
-            <div class="setting-row" style="border-bottom: none">
+            <div class="setting-row">
               <div class="setting-info">
+                <div class="setting-name">Section visibility</div>
                 <div class="setting-desc">
-                  Controls 12 major Cities appears on the Area Guide Page.
+                  Controls which cities are highlighted on the Area Guide page.
                 </div>
               </div>
               <div class="setting-control">
                 <div class="cms-inline-actions">
-                  <label class="toggle">
-                    <input type="checkbox" id="toggle-prefecture" checked />
-                    <span class="toggle-slider"></span>
-                  </label>
-                  <button
-                    class="btn btn-secondary"
-                    onclick="openModal('modal-prefecture')"
-                  >
+                  <label class="toggle"
+                    ><input type="checkbox" id="toggle-fc" checked /><span
+                      class="toggle-slider"
+                    ></span
+                  ></label>
+                  <button class="btn btn-secondary" onclick="openFcPicker()">
                     Customize cities
                   </button>
                 </div>
               </div>
             </div>
+            <div class="settings-card-title" style="margin-top: 16px">
+              Area Guide preview
+            </div>
+            <div class="fame-meta">
+              <span id="fc-count">0</span> featured cities
+            </div>
+            <div id="fc-preview" class="fame-grid"></div>
             <div class="save-btn-container">
               <button
-                id="save-prefecture-btn"
+                id="save-fc-btn"
                 class="btn btn-primary"
-                style="display: none"
-                onclick="savePrefectureSettings()"
+                onclick="saveFamousCities()"
               >
-                Save changes
+                <i class="fas fa-floppy-disk"></i> Save changes
               </button>
             </div>
           </div>
 
+          <!-- Popular Estates -->
           <div class="settings-card">
             <div class="setting-row">
               <div class="setting-info">
@@ -932,15 +1412,19 @@ a:hover {
               </div>
               <div class="setting-control">
                 <div class="cms-inline-actions">
-                  <label class="toggle">
-                    <input type="checkbox" id="toggle-popular" checked />
-                    <span class="toggle-slider"></span>
-                  </label>
+                  <label class="toggle"
+                    ><input type="checkbox" id="toggle-popular" checked /><span
+                      class="toggle-slider"
+                    ></span
+                  ></label>
                   <button
                     class="btn btn-secondary"
-                    onclick="alert('Upload Popular Estates Excel (mock).')"
+                    type="button"
+                    onclick="
+                      document.getElementById('popularExcelFile').click()
+                    "
                   >
-                    Upload Excel
+                    <i class="fas fa-file-excel"></i> Upload Excel
                   </button>
                   <button
                     class="btn btn-secondary"
@@ -951,10 +1435,15 @@ a:hover {
                 </div>
               </div>
             </div>
+            <div class="settings-card-title" style="margin-top: 6px">
+              Live display preview
+            </div>
+            <div class="estates-grid" id="estates-inline"></div>
           </div>
 
+          <!-- Land Prices -->
           <div class="settings-card">
-            <div class="setting-row" style="border-bottom: none">
+            <div class="setting-row">
               <div class="setting-info">
                 <div class="setting-name">Land Prices</div>
                 <div class="setting-desc">
@@ -964,15 +1453,17 @@ a:hover {
               </div>
               <div class="setting-control">
                 <div class="cms-inline-actions">
-                  <label class="toggle">
-                    <input type="checkbox" id="toggle-land" checked />
-                    <span class="toggle-slider"></span>
-                  </label>
+                  <label class="toggle"
+                    ><input type="checkbox" id="toggle-land" checked /><span
+                      class="toggle-slider"
+                    ></span
+                  ></label>
                   <button
                     class="btn btn-secondary"
-                    onclick="alert('Upload Land Prices Excel (mock).')"
+                    type="button"
+                    onclick="document.getElementById('landExcelFile').click()"
                   >
-                    Upload Excel
+                    <i class="fas fa-file-excel"></i> Upload Excel
                   </button>
                   <button
                     class="btn btn-secondary"
@@ -983,24 +1474,34 @@ a:hover {
                 </div>
               </div>
             </div>
+            <div class="settings-card-title" style="margin-top: 6px">
+              Live display preview
+            </div>
+            <div class="land-tabs" id="land-inline-tabs"></div>
+            <div id="land-inline-table"></div>
           </div>
 
+          <!-- FAQ Sell Page -->
           <div class="settings-card">
             <div class="settings-card-title">FAQ section on Sell Page</div>
             <div class="setting-row">
               <div class="setting-info">
                 <div class="setting-name">Section visibility</div>
-                <div class="setting-desc">Toggle FAQ block ON / OFF.</div>
+                <div class="setting-desc">
+                  Toggle FAQ block ON / OFF. FAQs are selected from the central
+                  FAQ repository.
+                </div>
               </div>
               <div class="setting-control">
                 <div class="cms-inline-actions">
-                  <label class="toggle">
-                    <input type="checkbox" id="toggle-faq" checked />
-                    <span class="toggle-slider"></span>
-                  </label>
+                  <label class="toggle"
+                    ><input type="checkbox" id="toggle-faq-sell" checked /><span
+                      class="toggle-slider"
+                    ></span
+                  ></label>
                   <button
                     class="btn btn-secondary"
-                    onclick="saveOtherSection('faq')"
+                    onclick="saveOtherSection('faqSell')"
                   >
                     Save
                   </button>
@@ -1019,37 +1520,12 @@ a:hover {
                     <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr>
-                    <td>How do I book a viewing?</td>
-                    <td><button class="icon-btn icon-btn--drag">☰</button></td>
-                    <td>
-                      <button class="icon-btn icon-btn--delete">🗑️</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>How are yields calculated?</td>
-                    <td><button class="icon-btn icon-btn--drag">☰</button></td>
-                    <td>
-                      <button class="icon-btn icon-btn--delete">🗑️</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>How do I reset my password?</td>
-                    <td><button class="icon-btn icon-btn--drag">☰</button></td>
-                    <td>
-                      <button class="icon-btn icon-btn--delete">🗑️</button>
-                    </td>
-                  </tr>
-                </tbody>
+                <tbody id="faqSell-tbody"></tbody>
               </table>
             </div>
             <div style="margin-top: 10px">
-              <button
-                class="btn btn-primary"
-                onclick="alert('Open FAQ editor (mock).')"
-              >
-                Add FAQ
+              <button class="btn btn-primary" onclick="openFaqPicker('sell')">
+                <i class="fas fa-plus"></i> Add FAQ
               </button>
             </div>
           </div>
@@ -1057,16 +1533,16 @@ a:hover {
       </div>
     </div>
 
-    <!-- Modals -->
+    <!-- ============ Testimonial editor modal ============ -->
     <div id="modal-testimonial-editor" class="modal-backdrop">
-      <div class="modal-shell">
+      <div class="modal-shell sm">
         <div class="modal-header">
           <div class="modal-header-main">
             <div class="modal-title" id="testimonial-modal-title">
               New testimonial
             </div>
             <div class="modal-subtitle" id="testimonial-modal-subtitle">
-              Add or update a testimonial entry for the homepage carousel.
+              Add a testimonial for the homepage carousel.
             </div>
           </div>
           <button
@@ -1079,62 +1555,65 @@ a:hover {
         <div class="modal-body">
           <div
             style="
-              display: grid;
-              grid-template-columns: repeat(2, minmax(0, 1fr));
-              gap: 10px 12px;
+              display: flex;
+              gap: 12px;
+              align-items: flex-start;
+              margin-bottom: 10px;
             "
           >
-            <div style="grid-column: 1/-1">
-              <label for="testimonial-avatar">Avatar upload</label>
+            <img
+              id="testimonial-preview"
+              class="thumb"
+              style="width: 64px; height: 64px"
+              src=""
+              alt=""
+            />
+            <div style="flex: 1">
+              <label class="fld-label" for="testimonial-image"
+                >Avatar <span class="req">*</span></label
+              >
               <input
-                id="testimonial-avatar"
+                id="testimonial-image"
                 type="file"
-                style="
-                  width: 100%;
-                  border-radius: 9px;
-                  border: 1px dashed #deccba;
-                  padding: 8px;
-                  background: #fffaf7;
-                  color: var(--text-muted);
-                "
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
+                class="fld"
+                style="padding: 6px; border-style: dashed; background: #fffaf7"
               />
+              <div class="fld-hint">JPG, JPEG, PNG or WEBP. Max 5MB.</div>
             </div>
-            <div style="grid-column: 1/-1">
-              <label for="testimonial-name">Name</label>
-              <input
-                id="testimonial-name"
-                style="
-                  width: 100%;
-                  border-radius: 9px;
-                  border: 1px solid var(--border-subtle);
-                  padding: 5px 8px;
-                  font-size: 12px;
-                  background-color: #fffcf7;
-                  color: var(--text-main);
-                "
-                type="text"
-                placeholder="Enter name or company"
-              />
-            </div>
-            <div style="grid-column: 1/-1">
-              <label for="testimonial-review">Review content</label>
-              <textarea
-                id="testimonial-review"
-                style="
-                  width: 100%;
-                  border-radius: 9px;
-                  border: 1px solid var(--border-subtle);
-                  padding: 5px 8px;
-                  font-size: 12px;
-                  background-color: #fffcf7;
-                  color: var(--text-main);
-                  min-height: 70px;
-                  resize: vertical;
-                "
-                placeholder="Write the testimonial content here"
-              ></textarea>
-            </div>
+          </div>
+          <div style="margin-bottom: 10px">
+            <label class="fld-label" for="testimonial-name"
+              >Name <span class="req">*</span></label
+            >
+            <input
+              id="testimonial-name"
+              class="fld"
+              type="text"
+              maxlength="255"
+              placeholder="Enter name or company"
+            />
+          </div>
+          <div style="margin-bottom: 10px">
+            <label class="fld-label" for="testimonial-review"
+              >Content <span class="req">*</span></label
+            >
+            <textarea
+              id="testimonial-review"
+              class="fld"
+              maxlength="1000"
+              style="min-height: 84px; resize: vertical"
+              placeholder="Write the testimonial content here"
+            ></textarea>
+          </div>
+          <div>
+            <label class="fld-label" for="testimonial-status"
+              >Status <span class="req">*</span></label
+            >
+            <select id="testimonial-status" class="fld">
+              <option value="Published">Published</option>
+              <option value="Draft">Draft</option>
+            </select>
           </div>
         </div>
         <div class="modal-footer">
@@ -1144,26 +1623,55 @@ a:hover {
           >
             Cancel
           </button>
-          <button
-            class="btn btn-primary"
-            onclick="
-              saveTestimonial();
-              closeModal('modal-testimonial-editor');
-            "
-          >
+          <button class="btn btn-primary" onclick="saveTestimonial()">
             Save
           </button>
         </div>
       </div>
     </div>
 
+    <!-- ============ Testimonial delete confirm modal ============ -->
+    <div id="modal-testimonial-delete" class="modal-backdrop">
+      <div class="modal-shell sm">
+        <div class="modal-header">
+          <div class="modal-header-main">
+            <div class="modal-title">Delete testimonial?</div>
+          </div>
+          <button
+            class="modal-close-btn"
+            onclick="closeModal('modal-testimonial-delete')"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <p
+            id="testimonial-delete-msg"
+            style="margin: 4px 0; line-height: 1.5"
+          >
+            This cannot be undone.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            onclick="closeModal('modal-testimonial-delete')"
+          >
+            Cancel
+          </button>
+          <button class="btn btn-danger" onclick="confirmDeleteTestimonial()">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Property picker (Select property — mirrors Email Center) ============ -->
     <div id="modal-property" class="modal-backdrop">
       <div class="modal-shell">
         <div class="modal-header">
           <div class="modal-header-main">
-            <div class="modal-title">
-              Select properties for homepage sections
-            </div>
+            <div class="modal-title">Select property</div>
           </div>
           <button
             class="modal-close-btn"
@@ -1173,194 +1681,331 @@ a:hover {
           </button>
         </div>
         <div class="modal-body">
-          <div
-            style="
-              display: flex;
-              flex-wrap: wrap;
-              gap: 8px;
-              margin-bottom: 10px;
-            "
-          >
-            <select
-              style="
-                border-radius: 999px;
-                border: 1px solid var(--border-subtle);
-                padding: 6px 10px;
-                font-size: 12px;
-                background-color: #fffcf7;
-                color: var(--text-main);
-              "
-            >
-              <option>Prefecture: All</option>
-              <option>Tokyo</option>
-              <option>Osaka</option>
-              <option>Fukuoka</option>
+          <div class="pk-filters">
+            <select id="pp-status" onchange="renderPropertyPicker()">
+              <option value="">Status: All</option>
+              <option value="Published">Published</option>
+              <option value="Members Only">Members Only</option>
             </select>
-            <select
-              style="
-                border-radius: 999px;
-                border: 1px solid var(--border-subtle);
-                padding: 6px 10px;
-                font-size: 12px;
-                background-color: #fffcf7;
-                color: var(--text-main);
-              "
-            >
-              <option>Property type: All</option>
-              <option>Condo</option>
-              <option>House</option>
-              <option>Building</option>
+            <select id="pp-tx" onchange="renderPropertyPicker()">
+              <option value="">Listing Type: All</option>
+              <option value="For Sale">For Sale</option>
+              <option value="For Rent">For Rent</option>
+              <option value="Sale + Rent">Sale + Rent</option>
             </select>
-            <select
-              style="
-                border-radius: 999px;
-                border: 1px solid var(--border-subtle);
-                padding: 6px 10px;
-                font-size: 12px;
-                background-color: #fffcf7;
-                color: var(--text-main);
-              "
-            >
-              <option>Source: All</option>
-              <option>Sponsored (Ads)</option>
-              <option>Organic</option>
+            <select id="pp-type" onchange="renderPropertyPicker()">
+              <option value="">Property Type: All</option>
+            </select>
+            <select id="pp-pref" onchange="renderPropertyPicker()">
+              <option value="">Prefecture: All</option>
+            </select>
+            <select id="pp-kind" onchange="renderPropertyPicker()">
+              <option value="">Kind: All</option>
+              <option value="regular">Regular listings</option>
+              <option value="newdev">New Development</option>
             </select>
             <input
+              id="pp-search"
               type="text"
-              style="
-                border-radius: 999px;
-                border: 1px solid var(--border-subtle);
-                padding: 6px 10px;
-                font-size: 12px;
-                background-color: #fffcf7;
-                color: var(--text-main);
-                min-width: 180px;
-              "
-              placeholder="Search by Property name"
+              placeholder="Search by name or ID"
+              oninput="renderPropertyPicker()"
             />
+            <div class="pk-viewtoggle">
+              <button
+                class="pk-vt on"
+                id="pp-vt-table"
+                onclick="setPickView('table')"
+              >
+                <i class="fas fa-table-list"></i> Table
+              </button>
+              <button
+                class="pk-vt"
+                id="pp-vt-grid"
+                onclick="setPickView('grid')"
+              >
+                <i class="fas fa-table-cells-large"></i> Grid
+              </button>
+            </div>
           </div>
-          <div class="table-wrap">
-            <table class="table-mini">
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Prefecture</th>
-                  <th>Type</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr onclick="selectProperty(this)">
-                  <td>New build condo near Shinjuku</td>
-                  <td>Tokyo</td>
-                  <td>Condo</td>
-                  <td><button class="btn-text">Select</button></td>
-                </tr>
-                <tr onclick="selectProperty(this)">
-                  <td>Osaka rental unit with high yield</td>
-                  <td>Osaka</td>
-                  <td>Apartment</td>
-                  <td><button class="btn-text">Select</button></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <div
+            id="pp-result-count"
+            style="
+              font-size: 11px;
+              color: var(--text-muted);
+              margin-bottom: 8px;
+            "
+          ></div>
+          <div id="pp-result"></div>
+          <div
+            id="pp-pager"
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+              margin-top: 12px;
+            "
+          ></div>
         </div>
         <div class="modal-footer">
+          <span class="left"><span id="pp-count">0</span> selected</span>
           <button
             class="btn btn-secondary"
             onclick="closeModal('modal-property')"
           >
             Cancel
           </button>
-          <button
-            class="btn btn-primary"
-            onclick="
-              savePropertySelection();
-              closeModal('modal-property');
-            "
-          >
-            Save selection
+          <button class="btn btn-primary" onclick="confirmPropertyPicker()">
+            Confirm selection
           </button>
         </div>
       </div>
     </div>
 
-    <div id="modal-prefecture" class="modal-backdrop">
+    <!-- ============ Famous Prefecture picker (source: yuushi.locations) ============ -->
+    <div id="modal-fp" class="modal-backdrop">
       <div class="modal-shell">
         <div class="modal-header">
           <div class="modal-header-main">
-            <div class="modal-title">Configure famous prefectures</div>
+            <div class="modal-title">Select famous prefectures</div>
+          </div>
+          <button class="modal-close-btn" onclick="closeModal('modal-fp')">
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="settings-card-title">Selected (homepage order)</div>
+          <div id="fp-selected" class="table-wrap"></div>
+          <div class="pk-filters" style="margin-top: 14px">
+            <input
+              id="fp-search"
+              type="text"
+              placeholder="Filter prefectures by name"
+              oninput="renderFpPicker()"
+            />
+            <span class="modal-field-hint"
+              ><span id="fp-pick-count">0</span> / 12 selected</span
+            >
+          </div>
+          <div id="fp-all" class="table-wrap"></div>
+        </div>
+        <div class="modal-footer">
+          <span class="left"
+            ><span id="fp-foot-count">0</span> / 12 selected</span
+          >
+          <button class="btn btn-secondary" onclick="closeModal('modal-fp')">
+            Cancel
+          </button>
+          <button class="btn btn-primary" onclick="confirmFpPicker()">
+            Confirm selection
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Famous Cities picker (source: yuushi.areaGuides city guides) ============ -->
+    <div id="modal-fc" class="modal-backdrop">
+      <div class="modal-shell">
+        <div class="modal-header">
+          <div class="modal-header-main">
+            <div class="modal-title">Customize famous cities</div>
+          </div>
+          <button class="modal-close-btn" onclick="closeModal('modal-fc')">
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="pk-filters">
+            <input
+              id="fc-search"
+              type="text"
+              placeholder="Filter by city / prefecture"
+              oninput="renderFcPicker()"
+            />
+          </div>
+          <div id="fc-result"></div>
+        </div>
+        <div class="modal-footer">
+          <span class="left"><span id="fc-pick-count">0</span> featured</span>
+          <button class="btn btn-secondary" onclick="closeModal('modal-fc')">
+            Cancel
+          </button>
+          <button class="btn btn-primary" onclick="confirmFcPicker()">
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Insight picker (Articles / Video) ============ -->
+    <div id="modal-insights" class="modal-backdrop">
+      <div class="modal-shell">
+        <div class="modal-header">
+          <div class="modal-header-main">
+            <div class="modal-title" id="ip-title">
+              Select content from Insight Management
+            </div>
+            <div class="modal-subtitle" id="ip-subtitle">
+              Article / News / Video list.
+            </div>
           </div>
           <button
             class="modal-close-btn"
-            onclick="closeModal('modal-prefecture')"
+            onclick="closeModal('modal-insights')"
           >
             ×
           </button>
         </div>
         <div class="modal-body">
-          <div
-            style="
-              display: flex;
-              flex-wrap: wrap;
-              gap: 8px;
-              margin-bottom: 10px;
-            "
-          >
+          <div class="pk-filters">
+            <select id="ip-type" onchange="renderInsightPicker()">
+              <option value="">Type: All</option>
+              <option value="Article">Article</option>
+              <option value="News">News</option>
+              <option value="Video">Video</option>
+            </select>
+            <select id="ip-cat" onchange="renderInsightPicker()">
+              <option value="">Category tag: All</option>
+            </select>
             <input
+              id="ip-search"
               type="text"
-              style="
-                border-radius: 999px;
-                border: 1px solid var(--border-subtle);
-                padding: 6px 10px;
-                font-size: 12px;
-                background-color: #fffcf7;
-                color: var(--text-main);
-                min-width: 180px;
-              "
-              placeholder="Filter prefectures by name"
+              placeholder="Search by title"
+              oninput="renderInsightPicker()"
             />
           </div>
           <div class="table-wrap">
             <table class="table-mini">
               <thead>
                 <tr>
-                  <th>Prefecture</th>
-
-                  <th>Homepage highlight</th>
+                  <th id="ip-selhead" style="width: 34px"></th>
+                  <th>ID</th>
+                  <th>Title</th>
+                  <th>Type</th>
+                  <th>Category tag</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td>Tokyo</td>
-                  <td><input type="checkbox" checked /></td>
-                </tr>
-                <tr>
-                  <td>Osaka</td>
-                  <td><input type="checkbox" checked /></td>
-                </tr>
-                <tr>
-                  <td>Fukuoka</td>
-                  <td><input type="checkbox" /></td>
-                </tr>
-              </tbody>
+              <tbody id="ip-tbody"></tbody>
             </table>
           </div>
         </div>
         <div class="modal-footer">
+          <span class="left" id="ip-count"></span>
           <button
             class="btn btn-secondary"
-            onclick="closeModal('modal-prefecture')"
+            onclick="closeModal('modal-insights')"
           >
-            Close
+            Cancel
           </button>
           <button
             class="btn btn-primary"
-            onclick="
-              savePrefectureConfig();
-              closeModal('modal-prefecture');
-            "
+            onclick="confirmInsightPicker()"
+            id="ip-confirm"
+          >
+            Add selected
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ FAQ picker ============ -->
+    <div id="modal-faqpick" class="modal-backdrop">
+      <div class="modal-shell">
+        <div class="modal-header">
+          <div class="modal-header-main">
+            <div class="modal-title" id="fp-title">Select FAQs</div>
+          </div>
+          <button class="modal-close-btn" onclick="closeModal('modal-faqpick')">
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="pk-filters">
+            <input
+              id="fp-search"
+              type="text"
+              placeholder="Search FAQ question"
+              oninput="renderFaqPicker()"
+            />
+            <select id="fp-status" onchange="renderFaqPicker()">
+              <option value="">All status</option>
+              <option value="Published">Published</option>
+              <option value="Draft">Draft</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table class="table-mini">
+              <thead>
+                <tr>
+                  <th style="width: 34px"></th>
+                  <th>Question</th>
+                  <th>Status</th>
+                  <th>Author</th>
+                </tr>
+              </thead>
+              <tbody id="fp-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <span class="left" id="fp-count">0 selected</span>
+          <button
+            class="btn btn-secondary"
+            onclick="closeModal('modal-faqpick')"
+          >
+            Cancel
+          </button>
+          <button class="btn btn-primary" onclick="confirmFaqPicker()">
+            Add selected
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Excel preview modals ============ -->
+    <input
+      type="file"
+      id="popularExcelFile"
+      accept=".xlsx,.xls"
+      style="display: none"
+    />
+    <input
+      type="file"
+      id="landExcelFile"
+      accept=".xlsx,.xls"
+      style="display: none"
+    />
+
+    <div class="ex-backdrop" id="estatesModal" role="dialog" aria-modal="true">
+      <div class="ex-modal">
+        <div class="ex-header">
+          <div class="ex-title">Preview — Popular Estates</div>
+          <button
+            type="button"
+            class="ex-close"
+            onclick="closeExcelModal('estatesModal')"
+          >
+            ×
+          </button>
+        </div>
+        <div class="ex-body">
+          <div class="estates-grid" id="estatesGrid"></div>
+          <div class="ex-note">
+            Review the parsed data, then Save to commit it to the live display.
+          </div>
+        </div>
+        <div class="ex-footer">
+          <button
+            type="button"
+            class="ex-btn"
+            onclick="closeExcelModal('estatesModal')"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="ex-btn ex-btn-primary"
+            onclick="commitEstates()"
           >
             Save
           </button>
@@ -1368,268 +2013,2046 @@ a:hover {
       </div>
     </div>
 
-    <div id="modal-insights" class="modal-backdrop">
-      <div class="modal-shell">
-        <div class="modal-header">
-          <div class="modal-header-main">
-            <div class="modal-title">
-              Select content from Article/ News List
-            </div>
-          </div>
+    <div class="ex-backdrop" id="landModal" role="dialog" aria-modal="true">
+      <div class="ex-modal">
+        <div class="ex-header">
+          <div class="ex-title">Preview — Land Prices</div>
           <button
-            class="modal-close-btn"
-            onclick="closeModal('modal-insights')"
+            type="button"
+            class="ex-close"
+            onclick="closeExcelModal('landModal')"
           >
             ×
           </button>
         </div>
-        <div class="modal-body">
-          <div
-            style="
-              display: flex;
-              flex-wrap: wrap;
-              gap: 8px;
-              margin-bottom: 10px;
-            "
-          >
-            <select
-              style="
-                border-radius: 999px;
-                border: 1px solid var(--border-subtle);
-                padding: 6px 10px;
-                font-size: 12px;
-                background-color: #fffcf7;
-                color: var(--text-main);
-              "
-            >
-              <option>Type: All</option>
-              <option>Article</option>
-              <option>News</option>
-            </select>
-            <select
-              style="
-                border-radius: 999px;
-                border: 1px solid var(--border-subtle);
-                padding: 6px 10px;
-                font-size: 12px;
-                background-color: #fffcf7;
-                color: var(--text-main);
-              "
-            >
-              <option>Category tag: All</option>
-              <option>Guides</option>
-              <option>Blog</option>
-              <option>Market Analysis</option>
-            </select>
-            <input
-              type="text"
-              style="
-                border-radius: 999px;
-                border: 1px solid var(--border-subtle);
-                padding: 6px 10px;
-                font-size: 12px;
-                background-color: #fffcf7;
-                color: var(--text-main);
-                min-width: 180px;
-              "
-              placeholder="Search by blog title"
-            />
-          </div>
-          <div class="table-wrap">
-            <table class="table-mini">
-              <thead>
-                <tr>
-                  <th>Blog ID</th>
-                  <th>Title</th>
-                  <th>Type</th>
-                  <th>Category tag</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr onclick="selectInsight(this)">
-                  <td>B-2026-001</td>
-                  <td>How to evaluate rental yield</td>
-                  <td>Article</td>
-                  <td>Guides</td>
-                  <td><button class="btn-text">Select</button></td>
-                </tr>
-                <tr onclick="selectInsight(this)">
-                  <td>B-2026-002</td>
-                  <td>Where to start investing in Tokyo</td>
-                  <td>News</td>
-                  <td>Real Estate</td>
-                  <td><button class="btn-text">Select</button></td>
-                </tr>
-              </tbody>
-            </table>
+        <div class="ex-body">
+          <div class="land-tabs" id="landTabs"></div>
+          <div id="landTableWrap"></div>
+          <div class="ex-note">
+            Review the parsed data, then Save to commit it to the live display.
           </div>
         </div>
-        <div class="modal-footer">
+        <div class="ex-footer">
           <button
-            class="btn btn-secondary"
-            onclick="closeModal('modal-insights')"
+            type="button"
+            class="ex-btn"
+            onclick="closeExcelModal('landModal')"
           >
             Cancel
           </button>
           <button
-            class="btn btn-primary"
-            onclick="
-              saveInsightSelection();
-              closeModal('modal-insights');
-            "
+            type="button"
+            class="ex-btn ex-btn-primary"
+            onclick="commitLand()"
           >
-            Save selection
+            Save
           </button>
         </div>
       </div>
     </div>
 
+    <div class="toast-wrap" id="toastWrap"></div>
+
     <script>
+      // ===================== helpers / store =====================
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      const LS = {
+        get(k, def) {
+          try {
+            const v = localStorage.getItem(k);
+            return v ? JSON.parse(v) : def;
+          } catch (e) {
+            return def;
+          }
+        },
+        set(k, v) {
+          try {
+            localStorage.setItem(k, JSON.stringify(v));
+          } catch (e) {}
+        },
+      };
+      const K = {
+        attractive: "yuushi.cmsHome.attractive",
+        testimonials: "yuushi.cmsHome.testimonials",
+        video: "yuushi.cmsHome.video",
+        articles: "yuushi.cmsHome.articles",
+        faqHome: "yuushi.cmsHome.faqHome",
+        faqSell: "yuushi.cmsHome.faqSell",
+        estates: "yuushi.cmsHome.popularEstates",
+        land: "yuushi.cmsHome.landPrices",
+        toggles: "yuushi.cmsHome.toggles",
+      };
+      function toast(msg, kind) {
+        const el = document.createElement("div");
+        el.className = "toast " + (kind || "ok");
+        el.innerHTML =
+          '<i class="fas fa-' +
+          (kind === "err" ? "circle-exclamation" : "circle-check") +
+          '"></i> ' +
+          esc(msg);
+        $("toastWrap").appendChild(el);
+        setTimeout(() => el.remove(), 2600);
+      }
       function openModal(id) {
-        const el = document.getElementById(id);
+        const el = $(id);
         if (el) el.classList.add("open");
       }
-
       function closeModal(id) {
-        const el = document.getElementById(id);
+        const el = $(id);
         if (el) el.classList.remove("open");
       }
+      // simple confirm (uses native confirm for destructive steps)
+      function confirmAction(msg, cb) {
+        if (window.confirm(msg)) cb();
+      }
 
-      function openTestimonialModal(mode) {
-        const title = document.getElementById("testimonial-modal-title");
-        const subtitle = document.getElementById("testimonial-modal-subtitle");
-        if (mode === "edit") {
-          title.textContent = "Edit testimonial";
-          subtitle.textContent = "Update avatar, name, and review content.";
-        } else {
-          title.textContent = "New testimonial";
-          subtitle.textContent =
-            "Add or update a testimonial entry for the homepage carousel.";
+      // ===================== source pools =====================
+      // Regular listings mirror the Property Management / email-center seed set;
+      // New Development projects (PRJ-xxxx, group 5/6) mirror Project Management
+      // and are flagged newDev:true so they appear here as special properties.
+      const PROPERTY_POOL = [
+        // ----- Regular listings (group 1: single unit) -----
+        {
+          id: "PROP-58101",
+          group: 1,
+          name: "Minami-Aoyama Penthouse",
+          propType: "Tower Mansion",
+          txType: "For Sale",
+          prefecture: "Tokyo",
+          city: "Minato",
+          price: "¥240M",
+          status: "Published",
+        },
+        {
+          id: "PROP-58102",
+          group: 1,
+          name: "Shinjuku Studio Apartment",
+          propType: "Apartment",
+          txType: "For Rent",
+          prefecture: "Tokyo",
+          city: "Shinjuku",
+          price: "¥98,000/mo",
+          status: "Published",
+        },
+        {
+          id: "PROP-58103",
+          group: 1,
+          name: "Shibuya Designer Loft",
+          propType: "Apartment",
+          txType: "Sale + Rent",
+          prefecture: "Tokyo",
+          city: "Shibuya",
+          price: "¥68M · ¥185,000/mo",
+          status: "Published",
+        },
+        {
+          id: "PROP-58104",
+          group: 1,
+          name: "Setagaya Family Residence",
+          propType: "Detached House",
+          txType: "For Sale",
+          prefecture: "Tokyo",
+          city: "Setagaya",
+          price: "¥132M",
+          status: "Members Only",
+        },
+        {
+          id: "PROP-58105",
+          group: 1,
+          name: "Osaka Bay High-Yield Unit",
+          propType: "Apartment",
+          txType: "For Rent",
+          prefecture: "Osaka",
+          city: "Osaka",
+          price: "¥110,000/mo",
+          status: "Published",
+        },
+        {
+          id: "PROP-58106",
+          group: 1,
+          name: "Yokohama Harbour View",
+          propType: "Tower Mansion",
+          txType: "For Sale",
+          prefecture: "Kanagawa",
+          city: "Yokohama",
+          price: "¥95M",
+          status: "Published",
+        },
+        {
+          id: "PROP-58107",
+          group: 1,
+          name: "Kyoto Machiya Apartment",
+          propType: "Apartment",
+          txType: "For Sale",
+          prefecture: "Kyoto",
+          city: "Kyoto",
+          price: "¥54M",
+          status: "Published",
+        },
+        {
+          id: "PROP-58108",
+          group: 1,
+          name: "Fukuoka Tenjin Studio",
+          propType: "Apartment",
+          txType: "For Rent",
+          prefecture: "Fukuoka",
+          city: "Fukuoka",
+          price: "¥82,000/mo",
+          status: "Published",
+        },
+        // ----- Regular listings (group 2: whole building) -----
+        {
+          id: "PROP-58201",
+          group: 2,
+          name: "Shibuya Mixed-Use Building",
+          propType: "Mixed-Use Building",
+          txType: "Sale + Rent",
+          prefecture: "Tokyo",
+          city: "Shibuya",
+          price: "¥850M",
+          status: "Published",
+        },
+        {
+          id: "PROP-58202",
+          group: 2,
+          name: "Nagoya Office Tower",
+          propType: "Office Building",
+          txType: "For Sale",
+          prefecture: "Aichi",
+          city: "Nagoya",
+          price: "¥620M",
+          status: "Members Only",
+        },
+        {
+          id: "PROP-58203",
+          group: 2,
+          name: "Kobe Portside Block",
+          propType: "Residential Building",
+          txType: "For Sale",
+          prefecture: "Hyogo",
+          city: "Kobe",
+          price: "¥320M",
+          status: "Published",
+        },
+        // ----- Regular listings (group 3: land) -----
+        {
+          id: "PROP-58301",
+          group: 3,
+          name: "Setagaya Residential Land",
+          propType: "Residential Land",
+          txType: "For Sale",
+          prefecture: "Tokyo",
+          city: "Setagaya",
+          price: "¥120M",
+          status: "Published",
+        },
+        {
+          id: "PROP-58302",
+          group: 3,
+          name: "Himeji Castle-View Land",
+          propType: "Commercial Land",
+          txType: "For Sale",
+          prefecture: "Hyogo",
+          city: "Himeji",
+          price: "¥78M",
+          status: "Published",
+        },
+        // ----- New Development projects (mirror Project Management seed) -----
+        {
+          id: "PRJ-1042",
+          group: 5,
+          name: "Shinonome Condominium",
+          propType: "New Dev Apartment",
+          txType: "For Sale",
+          prefecture: "Tokyo",
+          city: "Koto",
+          price: "¥35M~¥180M",
+          status: "Published",
+          newDev: true,
+        },
+        {
+          id: "PRJ-1051",
+          group: 5,
+          name: "Umeda Sky Towers",
+          propType: "New Dev Apartment",
+          txType: "For Sale",
+          prefecture: "Osaka",
+          city: "Osaka",
+          price: "¥48M~¥120M",
+          status: "Published",
+          newDev: true,
+        },
+        {
+          id: "PRJ-1067",
+          group: 5,
+          name: "Minato Grand Terrace",
+          propType: "New Dev Apartment",
+          txType: "For Sale",
+          prefecture: "Tokyo",
+          city: "Minato",
+          price: "¥92M~¥260M",
+          status: "Members Only",
+          newDev: true,
+        },
+        {
+          id: "PRJ-1158",
+          group: 6,
+          name: "Karuizawa Villa Development",
+          propType: "New Dev House",
+          txType: "For Sale",
+          prefecture: "Hokkaido",
+          city: "Sapporo",
+          price: "¥85M~¥150M",
+          status: "Published",
+          newDev: true,
+        },
+        {
+          id: "PRJ-1163",
+          group: 6,
+          name: "Kohoku New Town Houses",
+          propType: "New Dev House",
+          txType: "For Sale",
+          prefecture: "Kanagawa",
+          city: "Yokohama",
+          price: "¥54M~¥98M",
+          status: "Published",
+          newDev: true,
+        },
+        {
+          id: "PRJ-1175",
+          group: 6,
+          name: "Kawagoe Heritage Homes",
+          propType: "New Dev House",
+          txType: "For Sale",
+          prefecture: "Saitama",
+          city: "Kawagoe",
+          price: "¥41M~¥72M",
+          status: "Published",
+          newDev: true,
+        },
+      ];
+      const INSIGHT_POOL = [
+        {
+          id: "B-2026-001",
+          title: "How to evaluate rental yield",
+          type: "Video",
+          category: "Guides",
+          status: "Published",
+          author: "Anna",
+        },
+        {
+          id: "B-2026-002",
+          title: "Platform walkthrough for new clients",
+          type: "Video",
+          category: "Guides",
+          status: "Published",
+          author: "John Doe",
+        },
+        {
+          id: "B-2026-003",
+          title: "Tokyo market 2026 outlook (video)",
+          type: "Video",
+          category: "Market analysis",
+          status: "Published",
+          author: "Anna",
+        },
+        {
+          id: "B-2026-010",
+          title: "Where to start investing in Tokyo",
+          type: "Article",
+          category: "Guides",
+          status: "Published",
+          author: "John Doe",
+        },
+        {
+          id: "B-2026-011",
+          title: "Osaka rental market snapshot",
+          type: "Article",
+          category: "Blog",
+          status: "Published",
+          author: "Michael",
+        },
+        {
+          id: "B-2026-012",
+          title: "Guide: reading floor plans",
+          type: "News",
+          category: "Real estate",
+          status: "Published",
+          author: "Anna",
+        },
+        {
+          id: "B-2026-013",
+          title: "Tax basics for investors",
+          type: "News",
+          category: "Investment",
+          status: "Draft",
+          author: "John Doe",
+        },
+        {
+          id: "B-2026-014",
+          title: "Understanding key money & deposits",
+          type: "Article",
+          category: "Guides",
+          status: "Published",
+          author: "Michael",
+        },
+        {
+          id: "B-2026-015",
+          title: "Japan property news roundup",
+          type: "News",
+          category: "Japan",
+          status: "Published",
+          author: "Anna",
+        },
+      ];
+      const FAQ_POOL = [
+        {
+          id: "F-001",
+          question: "How do I book a viewing?",
+          status: "Published",
+          author: "Anna",
+        },
+        {
+          id: "F-002",
+          question: "How are yields calculated?",
+          status: "Published",
+          author: "John Doe",
+        },
+        {
+          id: "F-003",
+          question: "What fees are associated with buying?",
+          status: "Draft",
+          author: "John Doe",
+        },
+        {
+          id: "F-004",
+          question: "How do I list my property?",
+          status: "Draft",
+          author: "Michael",
+        },
+        {
+          id: "F-005",
+          question: "How do I reset my password?",
+          status: "Published",
+          author: "Anna",
+        },
+        {
+          id: "F-006",
+          question: "Can foreigners buy property in Japan?",
+          status: "Published",
+          author: "Anna",
+        },
+        {
+          id: "F-007",
+          question: "What is the appraisal process?",
+          status: "Published",
+          author: "Michael",
+        },
+      ];
+      const propImg = (id) =>
+        "https://picsum.photos/seed/" + encodeURIComponent(id) + "/300/180";
+
+      // ===================== state =====================
+      let attractive = LS.get(K.attractive, [
+        PROPERTY_POOL[0],
+        PROPERTY_POOL[1],
+      ]);
+      let testimonials = LS.get(K.testimonials, [
+        {
+          id: "T1",
+          image: "https://i.pravatar.cc/100?img=11",
+          name: "Nguyen Van A",
+          review:
+            "The platform made buying my first investment property in Tokyo painless. Great agents and clear data.",
+          status: "Published",
+        },
+        {
+          id: "T2",
+          image: "https://i.pravatar.cc/100?img=32",
+          name: "ABC Asset Management",
+          review:
+            "We manage a sizeable portfolio through YUUSHI — reporting and yield analytics are excellent.",
+          status: "Published",
+        },
+        {
+          id: "T3",
+          image: "https://i.pravatar.cc/100?img=45",
+          name: "Suzuki Hanako",
+          review:
+            "Found a lovely rental near my university within a week. The filters are very helpful.",
+          status: "Draft",
+        },
+      ]);
+      let videoArticles = LS.get(K.video, [INSIGHT_POOL[0], INSIGHT_POOL[1]]);
+      let articles = LS.get(K.articles, [
+        INSIGHT_POOL[3],
+        INSIGHT_POOL[4],
+        INSIGHT_POOL[5],
+        INSIGHT_POOL[6],
+      ]);
+      let faqHome = LS.get(K.faqHome, [FAQ_POOL[0], FAQ_POOL[1], FAQ_POOL[4]]);
+      let faqSell = LS.get(K.faqSell, [FAQ_POOL[0], FAQ_POOL[1], FAQ_POOL[4]]);
+
+      // ----- FAQ delete cascade (consumer side) -----
+      // On load, drop any faqId from the homepage / sell lists that no longer
+      // exists in the FAQ source (deletes happen in Insight Management). This
+      // only cleans stale references; it never deletes from the source.
+      function cleanupStaleFaqs() {
+        const valid = new Set(FAQ_POOL.map((f) => f.id));
+        const beforeHome = faqHome.length,
+          beforeSell = faqSell.length;
+        faqHome = faqHome.filter((f) => valid.has(f.id));
+        faqSell = faqSell.filter((f) => valid.has(f.id));
+        if (faqHome.length !== beforeHome) LS.set(K.faqHome, faqHome);
+        if (faqSell.length !== beforeSell) LS.set(K.faqSell, faqSell);
+      }
+
+      // ===================== Attractive Properties =====================
+      function renderAttractive() {
+        const wrap = $("attractive-preview");
+        wrap.innerHTML = attractive
+          .map(
+            (p) => `
+          <div class="preview-card" data-id="${esc(p.id)}">
+            <div style="position:relative;">
+              <img src="${propImg(p.id)}" alt="">
+              <div class="preview-delete" onclick="removeAttractive('${esc(p.id)}')">×</div>
+            </div>
+            <div class="preview-card-info">
+              <div class="preview-card-title">${esc(p.name)}</div>
+              <div class="preview-card-subtitle">${esc(p.city || p.prefecture)} • ${esc(p.propType)}</div>
+            </div>
+          </div>`,
+          )
+          .join("");
+      }
+      function removeAttractive(id) {
+        attractive = attractive.filter((p) => p.id !== id);
+        LS.set(K.attractive, attractive);
+        renderAttractive();
+      }
+      function saveAttractiveProperties() {
+        LS.set(K.attractive, attractive);
+        toast("Attractive Properties saved.");
+      }
+
+      // ----- Property picker (mirrors Email Center "Insert property" picker) -----
+      // Multi-select (the homepage Attractive section shows a carousel of
+      // properties), with email-center-style filters, result count, view
+      // toggle and pagination. New Development projects are included and tagged.
+      const PP_PAGE_SIZE = 10;
+      let ppSelected = new Set();
+      let pickView = "table";
+      let ppPage = 1;
+      function openPropertyPicker() {
+        ppSelected = new Set(attractive.map((p) => p.id));
+        ppPage = 1;
+        // prefecture options from pool
+        const prefs = Array.from(
+          new Set(PROPERTY_POOL.map((p) => p.prefecture)),
+        ).sort();
+        $("pp-pref").innerHTML =
+          '<option value="">Prefecture: All</option>' +
+          prefs
+            .map((p) => `<option value="${esc(p)}">${esc(p)}</option>`)
+            .join("");
+        // property-type options from pool
+        const types = Array.from(
+          new Set(PROPERTY_POOL.map((p) => p.propType)),
+        ).sort();
+        $("pp-type").innerHTML =
+          '<option value="">Property Type: All</option>' +
+          types
+            .map((t) => `<option value="${esc(t)}">${esc(t)}</option>`)
+            .join("");
+        ["pp-status", "pp-tx", "pp-type", "pp-pref", "pp-kind"].forEach(
+          (id) => ($(id).value = ""),
+        );
+        $("pp-search").value = "";
+        renderPropertyPicker();
+        openModal("modal-property");
+      }
+      function setPickView(v) {
+        pickView = v;
+        $("pp-vt-table").classList.toggle("on", v === "table");
+        $("pp-vt-grid").classList.toggle("on", v === "grid");
+        renderPropertyPicker();
+      }
+      function ppFiltered() {
+        const st = $("pp-status").value,
+          tx = $("pp-tx").value,
+          ty = $("pp-type").value,
+          pref = $("pp-pref").value,
+          kind = $("pp-kind").value,
+          q = $("pp-search").value.toLowerCase().trim();
+        return PROPERTY_POOL.filter((p) => {
+          if (st && p.status !== st) return false;
+          if (tx && p.txType !== tx) return false;
+          if (ty && p.propType !== ty) return false;
+          if (pref && p.prefecture !== pref) return false;
+          if (kind === "newdev" && !p.newDev) return false;
+          if (kind === "regular" && p.newDev) return false;
+          // search matches Property Name AND Property ID only
+          if (
+            q &&
+            !(
+              p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q)
+            )
+          )
+            return false;
+          return true;
+        });
+      }
+      function togglePp(id, on) {
+        if (on) ppSelected.add(id);
+        else ppSelected.delete(id);
+        $("pp-count").textContent = ppSelected.size;
+        document
+          .querySelectorAll('.pk-card[data-id="' + CSS.escape(id) + '"]')
+          .forEach((c) => c.classList.toggle("sel", on));
+        document
+          .querySelectorAll('tr[data-id="' + CSS.escape(id) + '"]')
+          .forEach((r) => r.classList.toggle("sel", on));
+      }
+      function ppGoPage(n) {
+        ppPage = n;
+        renderPropertyPicker();
+      }
+      function renderPpPager(total) {
+        const pager = $("pp-pager");
+        const pages = Math.ceil(total / PP_PAGE_SIZE);
+        if (total <= PP_PAGE_SIZE) {
+          pager.innerHTML = "";
+          return;
         }
+        if (ppPage > pages) ppPage = pages;
+        if (ppPage < 1) ppPage = 1;
+        pager.innerHTML =
+          `<button class="btn btn-secondary" ${ppPage <= 1 ? "disabled" : ""} onclick="ppGoPage(${ppPage - 1})">Prev</button>` +
+          `<span style="font-size:12px;color:var(--text-muted)">Page ${ppPage} of ${pages}</span>` +
+          `<button class="btn btn-secondary" ${ppPage >= pages ? "disabled" : ""} onclick="ppGoPage(${ppPage + 1})">Next</button>`;
+      }
+      function renderPropertyPicker() {
+        const all = ppFiltered();
+        $("pp-count").textContent = ppSelected.size;
+        $("pp-result-count").textContent =
+          all.length + " propert" + (all.length === 1 ? "y" : "ies") + " found";
+        const box = $("pp-result");
+        if (!all.length) {
+          box.innerHTML =
+            '<div class="pk-empty">No properties match the filters.</div>';
+          $("pp-pager").innerHTML = "";
+          return;
+        }
+        const pages = Math.ceil(all.length / PP_PAGE_SIZE);
+        if (ppPage > pages) ppPage = pages;
+        if (ppPage < 1) ppPage = 1;
+        const list = all.slice(
+          (ppPage - 1) * PP_PAGE_SIZE,
+          ppPage * PP_PAGE_SIZE,
+        );
+        if (pickView === "grid") {
+          box.innerHTML =
+            '<div class="pk-grid">' +
+            list
+              .map(
+                (p) => `
+            <div class="pk-card ${ppSelected.has(p.id) ? "sel" : ""}" data-id="${esc(p.id)}">
+              <input type="checkbox" class="pk-card-chk" ${ppSelected.has(p.id) ? "checked" : ""} onchange="togglePp('${esc(p.id)}', this.checked)">
+              <div class="pk-card-img" style="background-image:url('${propImg(p.id)}')"></div>
+              <div class="pk-card-body">
+                <div class="pk-card-title">${p.newDev ? '<span class="badge-nd">New Dev</span> ' : ""}${esc(p.name)}</div>
+                <div class="pk-card-sub">${esc(p.id)} • ${esc(p.propType)}</div>
+                <div class="pk-card-sub">${esc(p.prefecture)} · ${esc(p.city)} • ${esc(p.txType)}</div>
+                <div class="pk-card-sub">${esc(p.price)}</div>
+              </div>
+            </div>`,
+              )
+              .join("") +
+            "</div>";
+        } else {
+          box.innerHTML =
+            '<div class="table-wrap"><table class="table-mini"><thead><tr><th style="width:34px"></th><th>Property</th><th>Type</th><th>Listing Type</th><th>Price</th><th>Address</th><th>Status</th></tr></thead><tbody>' +
+            list
+              .map(
+                (p) => `
+              <tr class="${ppSelected.has(p.id) ? "sel" : ""}" data-id="${esc(p.id)}">
+                <td><input type="checkbox" ${ppSelected.has(p.id) ? "checked" : ""} onchange="togglePp('${esc(p.id)}', this.checked)"></td>
+                <td><strong>${esc(p.name)}</strong>${p.newDev ? ' <span class="badge-nd">New Dev</span>' : ""}<br><span style="font-size:11px;color:var(--text-muted)">${esc(p.id)}</span></td>
+                <td>${esc(p.propType)}</td>
+                <td>${esc(p.txType)}</td>
+                <td>${esc(p.price)}</td>
+                <td>${esc(p.prefecture)} · ${esc(p.city)}</td>
+                <td>${p.status === "Published" ? '<span class="badge-success">Published</span>' : '<span class="badge-warning">' + esc(p.status) + "</span>"}</td>
+              </tr>`,
+              )
+              .join("") +
+            "</tbody></table></div>";
+        }
+        renderPpPager(all.length);
+      }
+      function confirmPropertyPicker() {
+        attractive = PROPERTY_POOL.filter((p) => ppSelected.has(p.id));
+        LS.set(K.attractive, attractive);
+        renderAttractive();
+        closeModal("modal-property");
+        toast(attractive.length + " properties selected.");
+      }
+
+      // ===================== Testimonials =====================
+      let editingTestimonialId = null;
+      let tImage = "";
+      function renderTestimonials() {
+        $("testimonial-tbody").innerHTML =
+          testimonials
+            .map(
+              (t) => `
+          <tr>
+            <td><img class="thumb" src="${esc(t.image || "")}" alt=""></td>
+            <td><strong>${esc(t.name)}</strong></td>
+            <td><span class="review-trunc" title="${esc(t.review)}">${esc(t.review)}</span></td>
+            <td>${t.status === "Published" ? '<span class="badge-success">Published</span>' : '<span class="badge-warning">Draft</span>'}</td>
+            <td>
+              <button class="icon-btn" onclick="openTestimonialModal('edit','${esc(t.id)}')" title="Edit"><i class="fas fa-pen"></i></button>
+              <button class="icon-btn icon-btn--delete" onclick="deleteTestimonial('${esc(t.id)}')" title="Delete"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>`,
+            )
+            .join("") ||
+          '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:14px">No testimonials yet.</td></tr>';
+      }
+      function openTestimonialModal(mode, id) {
+        editingTestimonialId = mode === "edit" ? id : null;
+        const t = editingTestimonialId
+          ? testimonials.find((x) => x.id === id)
+          : null;
+        $("testimonial-modal-title").textContent = t
+          ? "Edit testimonial"
+          : "New testimonial";
+        $("testimonial-modal-subtitle").textContent = t
+          ? "Update image, name, review and status."
+          : "Add a testimonial for the homepage carousel.";
+        $("testimonial-name").value = t ? t.name : "";
+        $("testimonial-review").value = t ? t.review : "";
+        $("testimonial-status").value = t ? t.status : "Draft";
+        tImage = t ? t.image || "" : "";
+        $("testimonial-preview").src = tImage;
+        $("testimonial-image").value = "";
         openModal("modal-testimonial-editor");
       }
-
+      const TESTIMONIAL_TYPES = ["image/jpeg", "image/png", "image/webp"];
+      $("testimonial-image").addEventListener("change", (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        if (!TESTIMONIAL_TYPES.includes(f.type)) {
+          toast("Invalid file type. JPG/PNG/WEBP only.", "err");
+          e.target.value = "";
+          return;
+        }
+        if (f.size > 5 * 1024 * 1024) {
+          toast("Avatar must not exceed 5MB.", "err");
+          e.target.value = "";
+          return;
+        }
+        const r = new FileReader();
+        r.onload = (ev) => {
+          tImage = ev.target.result;
+          $("testimonial-preview").src = tImage;
+        };
+        r.readAsDataURL(f);
+      });
       function saveTestimonial() {
-        alert("Save testimonial (mock).");
+        const name = $("testimonial-name").value.trim();
+        const review = $("testimonial-review").value.trim();
+        if (!name) {
+          toast("Name is required.", "err");
+          return;
+        }
+        if (!review) {
+          toast("Content is required.", "err");
+          return;
+        }
+        if (!tImage) {
+          toast("Avatar is required.", "err");
+          return;
+        }
+        const data = {
+          name,
+          review,
+          status: $("testimonial-status").value,
+          image: tImage,
+        };
+        if (editingTestimonialId) {
+          const t = testimonials.find((x) => x.id === editingTestimonialId);
+          Object.assign(t, data);
+        } else {
+          testimonials.push(Object.assign({ id: "T" + Date.now() }, data));
+        }
+        LS.set(K.testimonials, testimonials);
+        renderTestimonials();
+        closeModal("modal-testimonial-editor");
+        toast("Testimonial saved.");
+      }
+      let pendingDeleteTestimonialId = null;
+      function deleteTestimonial(id) {
+        const t = testimonials.find((x) => x.id === id);
+        if (!t) return;
+        pendingDeleteTestimonialId = id;
+        $("testimonial-delete-msg").textContent =
+          'Delete the testimonial by "' + t.name + '"? This cannot be undone.';
+        openModal("modal-testimonial-delete");
+      }
+      function confirmDeleteTestimonial() {
+        const id = pendingDeleteTestimonialId;
+        if (id == null) return;
+        testimonials = testimonials.filter((t) => t.id !== id);
+        LS.set(K.testimonials, testimonials);
+        renderTestimonials();
+        pendingDeleteTestimonialId = null;
+        closeModal("modal-testimonial-delete");
+        toast("Testimonial deleted.");
       }
 
-      function selectProperty(row) {
-        const preview = document.getElementById("attractive-preview");
-        const id = row.cells[0].textContent;
-        const title = row.cells[1].textContent;
-        const pref = row.cells[2].textContent;
-        const type = row.cells[3].textContent;
-        const html = `
-                <div class="preview-card" data-id="${id}">
-                    <div style="position:relative;">
-                        <img src="https://picsum.photos/200/110?random=${Math.random()}" alt="Property">
-                        <div class="preview-delete" onclick="removePreviewCard(this)">×</div>
-                    </div>
-                    <div class="preview-card-info">
-                        <div class="preview-card-title">${title}</div>
-                        <div class="preview-card-subtitle">${pref} • ${type}</div>
-                    </div>
-                </div>
-            `;
-        preview.innerHTML += html;
-        showSaveButton("attractive");
+      // ===================== Video / Article (Insight picker) =====================
+      function renderVideo() {
+        $("video-tbody").innerHTML =
+          videoArticles
+            .map(
+              (v) => `
+          <tr>
+            <td>${esc(v.title)}</td><td>${esc(v.type)}</td><td>${esc(v.category)}</td>
+            <td><button class="icon-btn icon-btn--delete" onclick="removeVideo('${esc(v.id)}')" title="Remove"><i class="fas fa-trash"></i></button></td>
+          </tr>`,
+            )
+            .join("") ||
+          '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:14px">No video articles selected.</td></tr>';
+      }
+      function removeVideo(id) {
+        videoArticles = videoArticles.filter((v) => v.id !== id);
+        LS.set(K.video, videoArticles);
+        renderVideo();
+      }
+      // Article section = exactly 4 fixed slots (change-only). A slot may be
+      // empty (null); use the row "Change" button to pick / replace.
+      const ARTICLE_SLOTS = 4;
+      function renderArticles() {
+        let html = "";
+        for (let i = 0; i < ARTICLE_SLOTS; i++) {
+          const a = articles[i] || null;
+          html += `
+          <tr>
+            <td><strong>Slot ${i + 1}</strong></td>
+            ${
+              a
+                ? `<td>${esc(a.title)}</td><td>${esc(a.type)}</td><td>${esc(a.category)}</td>`
+                : `<td colspan="3" style="color:var(--text-muted)">No article selected — click Change to pick one.</td>`
+            }
+            <td>
+              <button class="btn btn-secondary" onclick="openInsightPicker('article-change', ${i})">Change</button>
+            </td>
+          </tr>`;
+        }
+        $("article-tbody").innerHTML = html;
       }
 
-      function removePreviewCard(el) {
-        el.closest(".preview-card").remove();
-        showSaveButton("attractive");
+      let ipMode = "article-change";
+      let ipSlot = null;
+      let ipSelected = new Set();
+      function openInsightPicker(mode, slot) {
+        ipMode = mode;
+        ipSlot = slot != null ? slot : null;
+        ipSelected = new Set();
+        const single = mode === "article-change";
+        $("ip-title").textContent =
+          mode === "video-add" ? "Select Video Articles" : "Change article";
+        $("ip-subtitle").textContent =
+          mode === "video-add"
+            ? "Insight Management — video entries (multi-select)."
+            : "Pick one item to replace this slot.";
+        $("ip-confirm").textContent = single ? "Replace" : "Add selected";
+        // category options
+        const cats = Array.from(
+          new Set(INSIGHT_POOL.map((x) => x.category)),
+        ).sort();
+        $("ip-cat").innerHTML =
+          '<option value="">Category tag: All</option>' +
+          cats
+            .map((c) => `<option value="${esc(c)}">${esc(c)}</option>`)
+            .join("");
+        // pre-filter video for the video section, lock type
+        if (mode === "video-add") {
+          $("ip-type").value = "Video";
+          $("ip-type").disabled = true;
+        } else {
+          $("ip-type").value = "";
+          $("ip-type").disabled = false;
+        }
+        $("ip-cat").value = "";
+        $("ip-search").value = "";
+        renderInsightPicker();
+        openModal("modal-insights");
+      }
+      function ipFiltered() {
+        const type = $("ip-type").value,
+          cat = $("ip-cat").value,
+          q = $("ip-search").value.toLowerCase().trim();
+        return INSIGHT_POOL.filter((x) => {
+          if (type && x.type !== type) return false;
+          if (cat && x.category !== cat) return false;
+          if (q && !x.title.toLowerCase().includes(q)) return false;
+          return true;
+        });
+      }
+      function toggleIp(id, on, single) {
+        if (single) {
+          ipSelected = new Set([id]);
+          document
+            .querySelectorAll(".ip-radio")
+            .forEach((r) => (r.checked = r.value === id));
+        } else {
+          if (on) ipSelected.add(id);
+          else ipSelected.delete(id);
+        }
+        $("ip-count").textContent = ipSelected.size + " selected";
+      }
+      function renderInsightPicker() {
+        const single = ipMode === "article-change";
+        $("ip-selhead").textContent = "";
+        const list = ipFiltered();
+        $("ip-count").textContent = ipSelected.size + " selected";
+        $("ip-tbody").innerHTML = list.length
+          ? list
+              .map(
+                (x) => `
+          <tr>
+            <td>${
+              single
+                ? `<input type="radio" class="ip-radio" name="ipPick" value="${esc(x.id)}" ${ipSelected.has(x.id) ? "checked" : ""} onchange="toggleIp('${esc(x.id)}', true, true)">`
+                : `<input type="checkbox" ${ipSelected.has(x.id) ? "checked" : ""} onchange="toggleIp('${esc(x.id)}', this.checked, false)">`
+            }</td>
+            <td>${esc(x.id)}</td><td>${esc(x.title)}</td>
+            <td>${esc(x.type)}</td><td>${esc(x.category)}</td>
+          </tr>`,
+              )
+              .join("")
+          : '<tr><td colspan="5" class="pk-empty">No content matches the filters.</td></tr>';
+      }
+      function confirmInsightPicker() {
+        const chosen = INSIGHT_POOL.filter((x) => ipSelected.has(x.id));
+        if (!chosen.length) {
+          toast("Select at least one item.", "err");
+          return;
+        }
+        if (ipMode === "video-add") {
+          chosen.forEach((c) => {
+            if (!videoArticles.some((v) => v.id === c.id))
+              videoArticles.push(c);
+          });
+          LS.set(K.video, videoArticles);
+          renderVideo();
+        } else if (ipMode === "article-change") {
+          articles[ipSlot] = chosen[0];
+          LS.set(K.articles, articles);
+          renderArticles();
+        }
+        closeModal("modal-insights");
+        toast("Content updated.");
       }
 
-      function showSaveButton(section) {
-        if (section === "attractive") {
-          document.getElementById("save-attractive-btn").style.display =
-            "inline-block";
-        } else if (section === "prefecture") {
-          document.getElementById("save-prefecture-btn").style.display =
-            "inline-block";
+      // ===================== FAQ (homepage + sell) =====================
+      function faqList(target) {
+        return target === "sell" ? faqSell : faqHome;
+      }
+      function setFaqList(target, arr) {
+        if (target === "sell") {
+          faqSell = arr;
+          LS.set(K.faqSell, arr);
+        } else {
+          faqHome = arr;
+          LS.set(K.faqHome, arr);
         }
       }
-
-      function saveAttractiveProperties() {
-        alert("Attractive Properties changes saved successfully.");
-        document.getElementById("save-attractive-btn").style.display = "none";
+      function renderFaq(target) {
+        const arr = faqList(target);
+        const tbody = $((target === "sell" ? "faqSell" : "faqHome") + "-tbody");
+        tbody.innerHTML =
+          arr
+            .map(
+              (f, i) => `
+          <tr>
+            <td>${esc(f.question)}</td>
+            <td style="white-space:nowrap">
+              <button class="icon-btn" ${i === 0 ? "disabled" : ""} onclick="moveFaq('${target}',${i},-1)" title="Up"><i class="fas fa-chevron-up"></i></button>
+              <button class="icon-btn" ${i === arr.length - 1 ? "disabled" : ""} onclick="moveFaq('${target}',${i},1)" title="Down"><i class="fas fa-chevron-down"></i></button>
+            </td>
+            <td><button class="icon-btn icon-btn--delete" onclick="removeFaq('${target}',${i})" title="Remove"><i class="fas fa-trash"></i></button></td>
+          </tr>`,
+            )
+            .join("") ||
+          '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:14px">No FAQs selected.</td></tr>';
       }
-
-      function savePrefectureSettings() {
-        alert("Famous Prefecture settings saved successfully.");
-        document.getElementById("save-prefecture-btn").style.display = "none";
+      function moveFaq(target, i, dir) {
+        const arr = faqList(target).slice();
+        const j = i + dir;
+        if (j < 0 || j >= arr.length) return;
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+        setFaqList(target, arr);
+        renderFaq(target);
       }
-
-      function savePropertySelection() {
-        alert("Property selection saved (mock).");
+      function removeFaq(target, i) {
+        const arr = faqList(target).slice();
+        arr.splice(i, 1);
+        setFaqList(target, arr);
+        renderFaq(target);
       }
-
-      function savePrefectureConfig() {
-        alert("Prefecture configuration saved (mock).");
+      let fpTarget = "home";
+      let fpSelected = new Set();
+      function openFaqPicker(target) {
+        fpTarget = target;
+        fpSelected = new Set();
+        $("fp-title").textContent =
+          target === "sell" ? "Add FAQs — Sell Page" : "Add FAQs — Homepage";
+        $("fp-search").value = "";
+        $("fp-status").value = "";
+        renderFaqPicker();
+        openModal("modal-faqpick");
       }
-
-      function saveOtherSection(section) {
-        let msg = "";
-        switch (section) {
-          case "price":
-            msg = "Average Property Price section";
-            break;
-          case "popular":
-            msg = "Popular Estates section";
-            break;
-          case "land":
-            msg = "Land Prices section";
-            break;
-          case "testimonial":
-            msg = "Testimonials visibility";
-            break;
-          case "video":
-            msg = "Video Article section";
-            break;
-          case "article":
-            msg = "Article section";
-            break;
-          case "faq":
-            msg = "FAQ section";
-            break;
+      function fpFiltered() {
+        const q = $("fp-search").value.toLowerCase().trim(),
+          st = $("fp-status").value;
+        return FAQ_POOL.filter((f) => {
+          if (st && f.status !== st) return false;
+          if (q && !f.question.toLowerCase().includes(q)) return false;
+          return true;
+        });
+      }
+      function toggleFp(id, on) {
+        if (on) fpSelected.add(id);
+        else fpSelected.delete(id);
+        $("fp-count").textContent = fpSelected.size + " selected";
+      }
+      function renderFaqPicker() {
+        const list = fpFiltered();
+        const existing = new Set(faqList(fpTarget).map((f) => f.id));
+        $("fp-count").textContent = fpSelected.size + " selected";
+        $("fp-tbody").innerHTML = list.length
+          ? list
+              .map(
+                (f) => `
+          <tr>
+            <td><input type="checkbox" ${fpSelected.has(f.id) ? "checked" : ""} ${existing.has(f.id) ? "disabled title='Already added'" : ""} onchange="toggleFp('${esc(f.id)}', this.checked)"></td>
+            <td>${esc(f.question)}${existing.has(f.id) ? ' <span class="badge-group">added</span>' : ""}</td>
+            <td>${f.status === "Published" ? '<span class="badge-success">Published</span>' : '<span class="badge-warning">Draft</span>'}</td>
+            <td>${esc(f.author)}</td>
+          </tr>`,
+              )
+              .join("")
+          : '<tr><td colspan="4" class="pk-empty">No FAQs match.</td></tr>';
+      }
+      function confirmFaqPicker() {
+        const chosen = FAQ_POOL.filter((f) => fpSelected.has(f.id));
+        if (!chosen.length) {
+          toast("Select at least one FAQ.", "err");
+          return;
         }
-        alert(msg + " saved successfully.");
+        const arr = faqList(fpTarget).slice();
+        chosen.forEach((c) => {
+          if (!arr.some((f) => f.id === c.id)) arr.push(c);
+        });
+        setFaqList(fpTarget, arr);
+        renderFaq(fpTarget);
+        closeModal("modal-faqpick");
+        toast("FAQs added.");
       }
 
-      function selectInsight(row) {
-        alert("Selected: " + row.cells[1].textContent);
-      }
-
-      function saveInsightSelection() {
-        alert("Content selection saved (mock).");
-      }
-
-      window.onload = function () {
-        const preview = document.getElementById("attractive-preview");
-        preview.innerHTML = `
-                <div class="preview-card" data-id="P-202603-0012">
-                    <div style="position:relative;">
-                        <img src="https://picsum.photos/200/110?random=11" alt="Property">
-                        <div class="preview-delete" onclick="removePreviewCard(this)">×</div>
-                    </div>
-                    <div class="preview-card-info">
-                        <div class="preview-card-title">New build condo near Shinjuku</div>
-                        <div class="preview-card-subtitle">Tokyo • Condo</div>
-                    </div>
-                </div>
-                <div class="preview-card" data-id="P-202602-0098">
-                    <div style="position:relative;">
-                        <img src="https://picsum.photos/200/110?random=22" alt="Property">
-                        <div class="preview-delete" onclick="removePreviewCard(this)">×</div>
-                    </div>
-                    <div class="preview-card-info">
-                        <div class="preview-card-title">Osaka rental unit with high yield</div>
-                        <div class="preview-card-subtitle">Osaka • Apartment</div>
-                    </div>
-                </div>
-            `;
+      // ===================== Famous Prefecture & Famous Cities =====================
+      const FAME_K = {
+        locations: "yuushi.locations",
+        areaGuides: "yuushi.areaGuides",
+        famousPrefectures: "yuushi.famousPrefectures",
+        famousCities: "yuushi.famousCities",
       };
+      // Same seed as the Locations master page so the two stay consistent.
+      const LOC_SEED = [
+        [
+          "Hokkaido",
+          "Japan's northernmost prefecture, known for vast nature, ski resorts and fresh seafood.",
+        ],
+        [
+          "Aomori",
+          "Famous for apples, the Nebuta festival and the scenic Shirakami mountains.",
+        ],
+        [
+          "Iwate",
+          "A rugged coastal prefecture with hot springs and the historic temples of Hiraizumi.",
+        ],
+        [
+          "Miyagi",
+          "Home to Sendai city and the pine-covered islands of Matsushima Bay.",
+        ],
+        [
+          "Akita",
+          "Rural prefecture celebrated for rice, sake and the Kanto lantern festival.",
+        ],
+        [
+          "Yamagata",
+          "Renowned for cherries, hot-spring towns and the sacred Dewa Sanzan mountains.",
+        ],
+        [
+          "Fukushima",
+          "A diverse prefecture of coastline, mountains, fruit orchards and samurai history.",
+        ],
+        [
+          "Ibaraki",
+          "Known for Hitachi Seaside Park, natto and the great Ushiku Buddha.",
+        ],
+        [
+          "Tochigi",
+          "Gateway to Nikko's shrines, waterfalls and the resort town of Kinugawa.",
+        ],
+        [
+          "Gunma",
+          "A landlocked prefecture famous for hot springs such as Kusatsu and Ikaho.",
+        ],
+        [
+          "Saitama",
+          "A populous Tokyo-adjacent prefecture blending suburbs, parks and old town districts.",
+        ],
+        [
+          "Chiba",
+          "Coastal prefecture hosting Narita Airport, Tokyo Disney Resort and surf beaches.",
+        ],
+        [
+          "Tokyo",
+          "Japan's capital and largest metropolis — a global hub of business, culture and nightlife.",
+        ],
+        [
+          "Kanagawa",
+          "Home to Yokohama, the seaside city of Kamakura and the hot springs of Hakone.",
+        ],
+        [
+          "Niigata",
+          "Snow-country prefecture known for premium rice, sake and ski resorts.",
+        ],
+        [
+          "Toyama",
+          "Coastal prefecture beneath the Northern Alps, famed for the Tateyama route.",
+        ],
+        [
+          "Ishikawa",
+          "Cultural prefecture centred on Kanazawa's gardens, crafts and samurai districts.",
+        ],
+        [
+          "Fukui",
+          "Known for Eiheiji temple, dinosaur fossils and the dramatic Tojinbo cliffs.",
+        ],
+        [
+          "Yamanashi",
+          "Wine and fruit country at the foot of Mount Fuji and the Five Lakes.",
+        ],
+        [
+          "Nagano",
+          "Mountain prefecture of ski resorts, hot springs and the historic Zenko-ji temple.",
+        ],
+        [
+          "Gifu",
+          "Home to the thatched villages of Shirakawa-go and the old town of Takayama.",
+        ],
+        [
+          "Shizuoka",
+          "Tea-growing coastal prefecture with iconic views of Mount Fuji.",
+        ],
+        [
+          "Aichi",
+          "Industrial heartland centred on Nagoya, blending commerce and castle history.",
+        ],
+        [
+          "Mie",
+          "Spiritual home of the Ise Grand Shrine and the pearl-diving Ago Bay.",
+        ],
+        [
+          "Shiga",
+          "Wraps around Lake Biwa, Japan's largest lake, with castles and lakeside towns.",
+        ],
+        [
+          "Kyoto",
+          "Ancient capital renowned for temples, geisha districts and traditional gardens.",
+        ],
+        [
+          "Osaka",
+          "Vibrant commercial city famed for street food, comedy and friendly locals.",
+        ],
+        [
+          "Hyogo",
+          "Spans Kobe's port, Himeji's white castle and the Arima hot springs.",
+        ],
+        [
+          "Nara",
+          "Japan's first permanent capital, known for free-roaming deer and giant Buddha.",
+        ],
+        [
+          "Wakayama",
+          "Pilgrimage prefecture of the Kumano trails, Mount Koya and coastal hot springs.",
+        ],
+        [
+          "Tottori",
+          "Home to Japan's largest sand dunes and the scenic San'in coastline.",
+        ],
+        [
+          "Shimane",
+          "Mythic prefecture of Izumo Grand Shrine and Matsue's lakeside castle.",
+        ],
+        [
+          "Okayama",
+          "Sunny prefecture known for Korakuen garden, peaches and Kurashiki's canals.",
+        ],
+        [
+          "Hiroshima",
+          "Site of the Peace Memorial and the floating torii gate of Miyajima.",
+        ],
+        [
+          "Yamaguchi",
+          "Western tip of Honshu, known for Akiyoshido cave and the Kintai Bridge.",
+        ],
+        [
+          "Tokushima",
+          "Famous for the Awa Odori dance festival and the Naruto whirlpools.",
+        ],
+        [
+          "Kagawa",
+          "Japan's smallest prefecture, celebrated for Sanuki udon and art islands.",
+        ],
+        [
+          "Ehime",
+          "Citrus-growing prefecture home to the ancient Dogo Onsen hot spring.",
+        ],
+        [
+          "Kochi",
+          "Pacific-facing prefecture of clear rivers, surf beaches and Katsuo cuisine.",
+        ],
+        [
+          "Fukuoka",
+          "Kyushu's largest city, known for Hakata ramen, yatai stalls and commerce.",
+        ],
+        [
+          "Saga",
+          "Pottery-town prefecture famed for Arita and Imari porcelain and balloon festivals.",
+        ],
+        [
+          "Nagasaki",
+          "Historic port city of international trade, churches and dramatic harbour views.",
+        ],
+        [
+          "Kumamoto",
+          "Home to a mighty castle, Mount Aso's caldera and clear spring water.",
+        ],
+        [
+          "Oita",
+          "Hot-spring capital of Japan, home to Beppu and Yufuin onsen towns.",
+        ],
+        [
+          "Miyazaki",
+          "Sun-soaked Pacific coast known for surf, mango and ancient mythology.",
+        ],
+        [
+          "Kagoshima",
+          "Southern prefecture overlooking the active Sakurajima volcano and the sea.",
+        ],
+        [
+          "Okinawa",
+          "Subtropical island chain of coral reefs, beaches and distinctive Ryukyu culture.",
+        ],
+      ];
+      const slugify = (n) => n.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const fameImg = (seed) =>
+        "https://picsum.photos/seed/jp-" +
+        encodeURIComponent(seed) +
+        "/400/240";
+
+      function loadLocations() {
+        const list = LS.get(FAME_K.locations, null);
+        if (Array.isArray(list) && list.length)
+          return list.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+        // fallback (before the Locations page has been opened) — full seed
+        return LOC_SEED.map((row, i) => ({
+          id: slugify(row[0]),
+          nameEN: row[0],
+          descriptionEN: row[1],
+          imageUrl: fameImg(slugify(row[0])),
+          order: i + 1,
+        }));
+      }
+      function persistLocations() {
+        LS.set(FAME_K.locations, locationsData);
+      }
+      function loadFameAreaGuides() {
+        const list = LS.get(FAME_K.areaGuides, null);
+        if (Array.isArray(list) && list.length) return list;
+        // fallback mirrors the Insight Management seed city guides
+        return [
+          {
+            id: 1,
+            level: "city",
+            city: "Shibuya",
+            prefecture: "Tokyo",
+            status: "published",
+            featured: true,
+            displayOrder: 1,
+            heroImageName: "",
+          },
+          {
+            id: 3,
+            level: "city",
+            city: "Kita",
+            prefecture: "Osaka",
+            status: "published",
+            featured: true,
+            displayOrder: 2,
+            heroImageName: "",
+          },
+          {
+            id: 4,
+            level: "city",
+            city: "Hakata",
+            prefecture: "Fukuoka",
+            status: "draft",
+            featured: false,
+            displayOrder: 3,
+            heroImageName: "",
+          },
+        ];
+      }
+
+      let locationsData = loadLocations();
+      if (!LS.get(FAME_K.locations, null)) persistLocations(); // seed master if not yet created
+      let fameAreaGuides = loadFameAreaGuides();
+      const DEFAULT_FP = [
+        "tokyo",
+        "osaka",
+        "kyoto",
+        "kanagawa",
+        "hokkaido",
+        "fukuoka",
+        "aichi",
+        "hyogo",
+        "chiba",
+        "saitama",
+        "hiroshima",
+        "okinawa",
+      ];
+      let famousPrefectures = LS.get(FAME_K.famousPrefectures, null);
+      if (!Array.isArray(famousPrefectures)) {
+        famousPrefectures = DEFAULT_FP.filter((id) =>
+          locationsData.some((l) => l.id === id),
+        ).slice(0, 12);
+      }
+      const prefById = (id) => locationsData.find((l) => l.id === id);
+      const cityImg = (g) => fameImg("city-" + (g.id ?? g.city));
+
+      // ---- Famous Prefecture preview ----
+      function renderFamousPrefectures() {
+        const wrap = $("fp-preview");
+        if (!wrap) return;
+        const chosen = famousPrefectures
+          .map(prefById)
+          .filter(Boolean)
+          .slice(0, 12);
+        $("fp-count").textContent = chosen.length;
+        let html = chosen
+          .map(
+            (p) => `
+          <div class="fame-card">
+            <img src="${esc(p.imageUrl)}" alt="${esc(p.nameEN)}">
+            <div class="fame-label">${esc(p.nameEN)}</div>
+          </div>`,
+          )
+          .join("");
+        for (let i = chosen.length; i < 12; i++)
+          html += '<div class="fame-slot">Empty slot</div>';
+        wrap.innerHTML = html;
+      }
+      function saveFamousPrefectures() {
+        LS.set(FAME_K.famousPrefectures, famousPrefectures);
+        toast("Famous Prefecture list saved.");
+      }
+
+      // ---- Famous Prefecture picker ----
+      let fpSel = [];
+      function openFpPicker() {
+        locationsData = loadLocations(); // refresh in case the Locations page changed
+        fpSel = famousPrefectures
+          .filter((id) => locationsData.some((l) => l.id === id))
+          .slice(0, 12);
+        fpEditId = null;
+        fpEditImg = "";
+        $("fp-search").value = "";
+        renderFpPicker();
+        openModal("modal-fp");
+      }
+      function fpUpdateCounts() {
+        $("fp-pick-count").textContent = fpSel.length;
+        $("fp-foot-count").textContent = fpSel.length;
+      }
+      function renderFpPicker() {
+        // selected (ordered)
+        const selBox = $("fp-selected");
+        if (!fpSel.length) {
+          selBox.innerHTML =
+            '<div class="pk-empty">No prefectures selected yet — add up to 12 below.</div>';
+        } else {
+          selBox.innerHTML =
+            '<table class="table-mini"><thead><tr><th style="width:84px">Order</th><th>Image</th><th>Prefecture</th><th style="width:80px"></th></tr></thead><tbody>' +
+            fpSel
+              .map((id, i) => {
+                const p = prefById(id);
+                if (!p) return "";
+                return `<tr>
+                <td style="white-space:nowrap">
+                  <button class="ord-mini" ${i === 0 ? "disabled" : ""} onclick="moveFp(${i},-1)"><i class="fas fa-chevron-up"></i></button>
+                  <button class="ord-mini" ${i === fpSel.length - 1 ? "disabled" : ""} onclick="moveFp(${i},1)"><i class="fas fa-chevron-down"></i></button>
+                </td>
+                <td><img class="fame-thumb" src="${esc(p.imageUrl)}" alt=""></td>
+                <td><strong>${esc(p.nameEN)}</strong></td>
+                <td><button class="btn btn-secondary" onclick="removeFp('${esc(id)}')">Remove</button></td>
+              </tr>`;
+              })
+              .join("") +
+            "</tbody></table>";
+        }
+        // all prefectures
+        const q = $("fp-search").value.toLowerCase().trim();
+        const list = locationsData.filter(
+          (p) => !q || p.nameEN.toLowerCase().includes(q),
+        );
+        const allBox = $("fp-all");
+        allBox.innerHTML =
+          '<table class="table-mini"><thead><tr><th style="width:34px"></th><th>Image</th><th>Prefecture</th><th>Description</th><th style="width:60px"></th></tr></thead><tbody>' +
+          list
+            .map((p) => {
+              const on = fpSel.includes(p.id);
+              const full = !on && fpSel.length >= 12;
+              const row = `<tr>
+              <td><input type="checkbox" ${on ? "checked" : ""} ${full ? "disabled" : ""} onchange="toggleFp('${esc(p.id)}', this.checked)"></td>
+              <td><img class="fame-thumb" src="${esc(p.imageUrl)}" alt=""></td>
+              <td><strong>${esc(p.nameEN)}</strong></td>
+              <td style="color:var(--text-muted)">${esc(p.descriptionEN || "")}</td>
+              <td style="text-align:right"><button class="btn btn-secondary" title="Edit image &amp; description" onclick="fpEdit('${esc(p.id)}')"><i class="fas fa-pen"></i></button></td>
+            </tr>`;
+              if (fpEditId !== p.id) return row;
+              // inline editor row
+              return (
+                row +
+                `<tr class="fp-edit-row"><td colspan="5">
+              <div class="fp-edit-wrap">
+                <div>
+                  <img id="fpEditPreview" class="fp-edit-img" src="${esc(fpEditImg || p.imageUrl)}" alt="">
+                  <input id="fpEditFile" type="file" accept="image/*" onchange="fpEditFile(this)">
+                </div>
+                <div class="fp-edit-col">
+                  <div class="fp-edit-label">Description (English) <span class="req">*</span> — ${esc(p.nameEN)}</div>
+                  <textarea id="fpEditDesc" class="fp-edit-desc" placeholder="Short English description…">${esc(p.descriptionEN || "")}</textarea>
+                  <div class="fp-edit-actions">
+                    <button class="btn btn-primary" onclick="fpEditSave('${esc(p.id)}')"><i class="fas fa-floppy-disk"></i> Save</button>
+                    <button class="btn btn-secondary" onclick="fpEditCancel()">Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </td></tr>`
+              );
+            })
+            .join("") +
+          "</tbody></table>";
+        fpUpdateCounts();
+      }
+      // ---- inline prefecture edit (writes to yuushi.locations) ----
+      let fpEditId = null;
+      let fpEditImg = "";
+      function fpEdit(id) {
+        fpEditId = fpEditId === id ? null : id;
+        fpEditImg = "";
+        renderFpPicker();
+      }
+      function fpEditCancel() {
+        fpEditId = null;
+        fpEditImg = "";
+        renderFpPicker();
+      }
+      function fpEditFile(input) {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          fpEditImg = e.target.result;
+          const prev = $("fpEditPreview");
+          if (prev) prev.src = fpEditImg;
+        };
+        reader.readAsDataURL(file);
+      }
+      function fpEditSave(id) {
+        const p = prefById(id);
+        if (!p) return;
+        const descEl = $("fpEditDesc");
+        if (descEl) p.descriptionEN = descEl.value.trim();
+        if (fpEditImg) p.imageUrl = fpEditImg;
+        persistLocations(); // single source of truth shared with the Locations tab
+        fpEditId = null;
+        fpEditImg = "";
+        renderFpPicker();
+        renderFamousPrefectures(); // refresh homepage preview thumbnails
+        toast(p.nameEN + " updated.");
+      }
+      function toggleFp(id, on) {
+        if (on) {
+          if (fpSel.length >= 12 || fpSel.includes(id)) return;
+          fpSel.push(id);
+        } else {
+          fpSel = fpSel.filter((x) => x !== id);
+        }
+        renderFpPicker();
+      }
+      function removeFp(id) {
+        fpSel = fpSel.filter((x) => x !== id);
+        renderFpPicker();
+      }
+      function moveFp(i, dir) {
+        const j = i + dir;
+        if (j < 0 || j >= fpSel.length) return;
+        const t = fpSel[i];
+        fpSel[i] = fpSel[j];
+        fpSel[j] = t;
+        renderFpPicker();
+      }
+      function confirmFpPicker() {
+        famousPrefectures = fpSel.slice(0, 12);
+        LS.set(FAME_K.famousPrefectures, famousPrefectures);
+        renderFamousPrefectures();
+        closeModal("modal-fp");
+        toast(famousPrefectures.length + " prefectures selected.");
+      }
+
+      // ---- Famous Cities preview ----
+      // Famous Cities has NO selection limit — show ALL featured cities.
+      function featuredCities() {
+        return fameAreaGuides
+          .filter((g) => g.level === "city" && g.featured)
+          .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+      }
+      function renderFamousCities() {
+        const wrap = $("fc-preview");
+        if (!wrap) return;
+        const chosen = featuredCities();
+        $("fc-count").textContent = chosen.length;
+        wrap.innerHTML = chosen.length
+          ? chosen
+              .map(
+                (g) => `
+          <div class="fame-card">
+            <img src="${cityImg(g)}" alt="${esc(g.city)}">
+            <div class="fame-label">${esc(g.city)}<span class="fame-sub">${esc(g.prefecture)}</span></div>
+          </div>`,
+              )
+              .join("")
+          : '<div class="pk-empty" style="grid-column:1/-1">No featured cities yet — use “Customize cities”.</div>';
+      }
+      function saveFamousCities() {
+        LS.set(
+          FAME_K.famousCities,
+          featuredCities().map((g) => g.id),
+        );
+        toast("Famous Cities list saved.");
+      }
+
+      // ---- Famous Cities picker ----
+      let fcWork = [];
+      function openFcPicker() {
+        fameAreaGuides = loadFameAreaGuides(); // refresh from Insight Management
+        fcWork = fameAreaGuides
+          .filter((g) => g.level === "city")
+          .map((g) => ({
+            id: g.id,
+            city: g.city,
+            prefecture: g.prefecture,
+            status: g.status,
+            featured: !!g.featured,
+            displayOrder: g.displayOrder || 0,
+          }));
+        $("fc-search").value = "";
+        renderFcPicker();
+        openModal("modal-fc");
+      }
+      function renderFcPicker() {
+        const q = $("fc-search").value.toLowerCase().trim();
+        const list = fcWork.filter(
+          (g) => !q || (g.city + " " + g.prefecture).toLowerCase().includes(q),
+        );
+        const box = $("fc-result");
+        if (!fcWork.length) {
+          box.innerHTML =
+            '<div class="pk-empty">No city guides found. Create city guides in Insight Management first.</div>';
+        } else if (!list.length) {
+          box.innerHTML =
+            '<div class="pk-empty">No cities match the filter.</div>';
+        } else {
+          box.innerHTML =
+            '<div class="table-wrap"><table class="table-mini"><thead><tr><th>Image</th><th>City</th><th>Prefecture</th><th>Status</th><th>Featured</th><th>Order</th></tr></thead><tbody>' +
+            list
+              .map(
+                (g) => `
+              <tr>
+                <td><img class="fame-thumb" src="${cityImg(g)}" alt=""></td>
+                <td><strong>${esc(g.city)}</strong></td>
+                <td>${esc(g.prefecture)}</td>
+                <td>${g.status === "published" ? '<span class="badge-success">Published</span>' : '<span class="badge-warning">Draft</span>'}</td>
+                <td><label class="mini-toggle"><input type="checkbox" ${g.featured ? "checked" : ""} onchange="fcToggle('${esc(String(g.id))}', this.checked)"> Featured</label></td>
+                <td><input type="number" class="num-mini" min="1" step="1" value="${g.displayOrder}" onchange="fcOrder('${esc(String(g.id))}', this.value)"></td>
+              </tr>`,
+              )
+              .join("") +
+            "</tbody></table></div>";
+        }
+        $("fc-pick-count").textContent = fcWork.filter(
+          (g) => g.featured,
+        ).length;
+      }
+      function fcFind(id) {
+        return fcWork.find((g) => String(g.id) === String(id));
+      }
+      function fcToggle(id, on) {
+        const g = fcFind(id);
+        if (g) {
+          g.featured = on;
+          $("fc-pick-count").textContent = fcWork.filter(
+            (x) => x.featured,
+          ).length;
+        }
+      }
+      // Display order must be UNIQUE whole numbers (>=1). When the admin sets a
+      // city to order N and another city already holds N, bump the conflicting
+      // city by +1, cascading until every order is unique. Silently resolved
+      // (no error toast); the picker table re-renders immediately.
+      function fcNormalizeOrders(changedId) {
+        const g = fcFind(changedId);
+        // Resolve conflicts: keep the just-edited city fixed, shift others up.
+        const taken = new Set();
+        if (g) taken.add(g.displayOrder);
+        fcWork
+          .filter((x) => String(x.id) !== String(changedId))
+          .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+          .forEach((x) => {
+            let o =
+              Number.isFinite(x.displayOrder) && x.displayOrder >= 1
+                ? x.displayOrder
+                : 1;
+            while (taken.has(o)) o++;
+            x.displayOrder = o;
+            taken.add(o);
+          });
+        renderFcPicker();
+      }
+      function fcOrder(id, val) {
+        const g = fcFind(id);
+        if (g) {
+          const n = parseInt(val, 10);
+          g.displayOrder = Number.isFinite(n) && n >= 1 ? n : 1;
+        }
+        fcNormalizeOrders(id);
+      }
+      function confirmFcPicker() {
+        // write featured + displayOrder back to yuushi.areaGuides
+        fcWork.forEach((w) => {
+          const g = fameAreaGuides.find((x) => String(x.id) === String(w.id));
+          if (g) {
+            g.featured = w.featured;
+            g.displayOrder = w.displayOrder;
+          }
+        });
+        LS.set(FAME_K.areaGuides, fameAreaGuides);
+        LS.set(
+          FAME_K.famousCities,
+          featuredCities().map((g) => g.id),
+        );
+        renderFamousCities();
+        closeModal("modal-fc");
+        toast("Famous Cities updated.");
+      }
+
+      // ===================== section visibility persistence =====================
+      const TOGGLE_IDS = [
+        "toggle-attractive",
+        "toggle-fp",
+        "toggle-testimonial",
+        "toggle-video",
+        "toggle-article",
+        "toggle-faq-home",
+        "toggle-price",
+        "toggle-fc",
+        "toggle-popular",
+        "toggle-land",
+        "toggle-faq-sell",
+      ];
+      function persistToggles() {
+        const map = {};
+        TOGGLE_IDS.forEach((id) => {
+          const el = $(id);
+          if (el) map[id] = el.checked;
+        });
+        LS.set(K.toggles, map);
+      }
+      function applyToggles() {
+        const map = LS.get(K.toggles, null);
+        if (!map) return;
+        TOGGLE_IDS.forEach((id) => {
+          const el = $(id);
+          if (el && typeof map[id] === "boolean") el.checked = map[id];
+        });
+      }
+      function saveOtherSection(section) {
+        persistToggles();
+        const names = {
+          price: "Average Property Price",
+          popular: "Popular Estates",
+          land: "Land Prices",
+          testimonial: "Testimonials",
+          video: "Video Article",
+          article: "Article",
+          faqHome: "Homepage FAQ",
+          faqSell: "Sell-Page FAQ",
+        };
+        toast((names[section] || "Section") + " saved.");
+      }
+
+      // ===================== Excel: Popular Estates & Land Prices =====================
+      const SAMPLE_ESTATES = (() => {
+        const rows = [
+          { estate: "Taikoo Shing", indices: 123456, change: -8.74 },
+          { estate: "South Horizons", indices: 134200, change: 8.74 },
+          { estate: "Dynasty Court", indices: 118900, change: -3.12 },
+          { estate: "Island Resort", indices: 142000, change: 5.4 },
+          { estate: "Park Vale", indices: 99800, change: -1.9 },
+        ];
+        return { Tokyo: rows, Osaka: rows, Sapporo: rows };
+      })();
+      const SAMPLE_LAND = (() => {
+        const stations = [
+          "Toranomon Station",
+          "National Diet Bldg Station",
+          "Uchisaiwaicho Station",
+          "Shimbashi Station",
+          "Kamiyacho Station",
+        ];
+        const flucts = [8.74, 6.2, 4.1, -3.5, 2.9];
+        const rows = stations.map((s, i) => ({
+          rank: i + 1,
+          station: s,
+          avgLand: "12,800,000 yen/m²",
+          avgTsubo: "42,314,049 yen/tsubo",
+          fluct: flucts[i],
+        }));
+        return {
+          Tokyo: rows,
+          Osaka: rows,
+          Kyoto: rows,
+          Fukuoka: rows,
+          Nagoya: rows,
+          Hokkaido: rows,
+        };
+      })();
+
+      let estatesData = LS.get(K.estates, SAMPLE_ESTATES);
+      let landData = LS.get(K.land, SAMPLE_LAND);
+      let pendingEstates = null,
+        pendingLand = null;
+      let landActiveCity = null; // for preview modal
+      let landInlineCity = null; // for inline display
+
+      function ordinalPlace(n) {
+        const s = ["th", "st", "nd", "rd"],
+          v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+      }
+
+      function estatesHtml(data) {
+        const cities = Object.keys(data || {});
+        if (!cities.length)
+          return '<div style="grid-column:1/-1;text-align:center;color:#6b7280;padding:24px">No data.</div>';
+        return cities
+          .map((city) => {
+            const rows = (data[city] || []).slice(0, 5);
+            return `<div class="estate-card"><div class="estate-city-name">${esc(city)}</div>
+            <table class="estate-table"><thead><tr><th>Estate</th><th>Indices</th><th>Change</th></tr></thead><tbody>
+            ${rows
+              .map((r) => {
+                const up = Number(r.change) >= 0,
+                  v = Math.abs(Number(r.change) || 0);
+                return `<tr><td>${esc(r.estate)}</td><td>¥${Number(r.indices || 0).toLocaleString("en-US")}</td>
+                <td class="${up ? "estate-change-up" : "estate-change-down"}">${up ? "↑ +" : "↓ -"}${v.toFixed(2)}%</td></tr>`;
+              })
+              .join("")}</tbody></table></div>`;
+          })
+          .join("");
+      }
+      function renderEstatesInline() {
+        $("estates-inline").innerHTML = estatesHtml(estatesData);
+      }
+      function renderEstatesPreview(data) {
+        $("estatesGrid").innerHTML = estatesHtml(data);
+      }
+
+      function landTableHtml(data, city) {
+        const rows = (data[city] || []).slice(0, 5);
+        if (!rows.length)
+          return '<div style="color:#6b7280;text-align:center;padding:24px">No data for this city.</div>';
+        return `<h4 class="land-heading">${esc(city)} – Ward Station Land Price Ranking</h4>
+          <table class="land-table"><thead><tr>
+            <th style="text-align:center">Rank</th><th>Station</th><th>Average land price (yen/m²)</th><th>Average price per tsubo (yen/tsubo)</th><th>Fluctuation rate</th>
+          </tr></thead><tbody>
+          ${rows
+            .map((r) => {
+              const up = Number(r.fluct) >= 0,
+                v = Math.abs(Number(r.fluct) || 0);
+              return `<tr>
+              <td class="land-rank"><span class="num">${Number(r.rank) || ""}</span><span class="place">${ordinalPlace(Number(r.rank) || 0).replace(/^\d+/, "")} place</span></td>
+              <td><span class="land-station">${esc(r.station)}</span></td>
+              <td>${esc(r.avgLand)}</td><td>${esc(r.avgTsubo)}</td>
+              <td><span class="land-fluct ${up ? "up" : "down"}">${up ? "↑ +" : "↓ -"}${v.toFixed(2)}%</span></td>
+            </tr>`;
+            })
+            .join("")}</tbody></table>`;
+      }
+      function landTabsHtml(data, active, onclickName) {
+        return Object.keys(data || {})
+          .map(
+            (city) =>
+              `<button type="button" class="land-tab ${city === active ? "active" : ""}" onclick="${onclickName}('${esc(city).replace(/'/g, "\\'")}')">${esc(city)}</button>`,
+          )
+          .join("");
+      }
+      function renderLandInline() {
+        if (!landInlineCity || !landData[landInlineCity])
+          landInlineCity = Object.keys(landData)[0] || null;
+        $("land-inline-tabs").innerHTML = landTabsHtml(
+          landData,
+          landInlineCity,
+          "setLandInlineTab",
+        );
+        $("land-inline-table").innerHTML = landInlineCity
+          ? landTableHtml(landData, landInlineCity)
+          : "";
+      }
+      function setLandInlineTab(city) {
+        landInlineCity = city;
+        renderLandInline();
+      }
+      // preview modal land
+      function renderLandPreview() {
+        $("landTabs").innerHTML = landTabsHtml(
+          pendingLand,
+          landActiveCity,
+          "setLandTab",
+        );
+        $("landTableWrap").innerHTML = landActiveCity
+          ? landTableHtml(pendingLand, landActiveCity)
+          : "";
+      }
+      function setLandTab(city) {
+        landActiveCity = city;
+        renderLandPreview();
+      }
+
+      // file parsing
+      function exErr(msg) {
+        toast(msg, "err");
+      }
+      function validateExcelFile(file) {
+        const name = (file.name || "").toLowerCase();
+        if (!name.endsWith(".xlsx") && !name.endsWith(".xls"))
+          return { ok: false, error: "Only .xlsx or .xls files are accepted." };
+        if (file.size > 10 * 1024 * 1024)
+          return { ok: false, error: "File size must not exceed 10MB." };
+        return { ok: true };
+      }
+      function parseExcelFile(file, cb) {
+        if (typeof XLSX === "undefined") {
+          cb(null);
+          return;
+        }
+        const r = new FileReader();
+        r.onload = (e) => {
+          try {
+            cb(XLSX.read(e.target.result, { type: "array" }));
+          } catch (err) {
+            cb(null);
+          }
+        };
+        r.onerror = () => cb(null);
+        r.readAsArrayBuffer(file);
+      }
+      function pickKey(row, cands) {
+        const keys = Object.keys(row);
+        for (const want of cands) {
+          const k = keys.find(
+            (k) => k.toLowerCase().trim() === want.toLowerCase(),
+          );
+          if (k) return row[k];
+        }
+        return "";
+      }
+      function workbookToEstates(wb) {
+        const res = {};
+        wb.SheetNames.forEach((name) => {
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {
+            defval: "",
+          });
+          res[name] = rows.slice(0, 5).map((r) => ({
+            estate: pickKey(r, ["Estate", "Name", "Property"]),
+            indices: Number(pickKey(r, ["Indices", "Index", "Price"]) || 0),
+            change: Number(
+              String(pickKey(r, ["Change", "Change %", "Fluctuation"])).replace(
+                /[%+\s]/g,
+                "",
+              ),
+            ),
+          }));
+        });
+        return res;
+      }
+      function workbookToLand(wb) {
+        const res = {};
+        wb.SheetNames.forEach((name) => {
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {
+            defval: "",
+          });
+          res[name] = rows.slice(0, 5).map((r, idx) => ({
+            rank: Number(pickKey(r, ["Rank"])) || idx + 1,
+            station: pickKey(r, ["Station", "Name"]),
+            avgLand: pickKey(r, [
+              "Average land price",
+              "Avg land price",
+              "Land price",
+            ]),
+            avgTsubo: pickKey(r, [
+              "Average price per tsubo",
+              "Avg tsubo",
+              "Tsubo price",
+            ]),
+            fluct: Number(
+              String(
+                pickKey(r, ["Fluctuation rate", "Fluctuation", "Change"]),
+              ).replace(/[%+\s]/g, ""),
+            ),
+          }));
+        });
+        return res;
+      }
+      function onPopularFileChange(e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const v = validateExcelFile(file);
+        if (!v.ok) {
+          exErr(v.error);
+          e.target.value = "";
+          return;
+        }
+        parseExcelFile(file, (wb) => {
+          pendingEstates = wb
+            ? workbookToEstates(wb)
+            : JSON.parse(JSON.stringify(SAMPLE_ESTATES));
+          renderEstatesPreview(pendingEstates);
+          $("estatesModal").classList.add("open");
+        });
+        e.target.value = "";
+      }
+      function onLandFileChange(e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const v = validateExcelFile(file);
+        if (!v.ok) {
+          exErr(v.error);
+          e.target.value = "";
+          return;
+        }
+        parseExcelFile(file, (wb) => {
+          pendingLand = wb
+            ? workbookToLand(wb)
+            : JSON.parse(JSON.stringify(SAMPLE_LAND));
+          landActiveCity = Object.keys(pendingLand)[0] || null;
+          renderLandPreview();
+          $("landModal").classList.add("open");
+        });
+        e.target.value = "";
+      }
+      function closeExcelModal(id) {
+        const m = $(id);
+        if (m) m.classList.remove("open");
+      }
+      function commitEstates() {
+        if (pendingEstates) {
+          estatesData = pendingEstates;
+          LS.set(K.estates, estatesData);
+          renderEstatesInline();
+        }
+        closeExcelModal("estatesModal");
+        toast("Popular Estates data saved.");
+      }
+      function commitLand() {
+        if (pendingLand) {
+          landData = pendingLand;
+          LS.set(K.land, landData);
+          landInlineCity = Object.keys(landData)[0] || null;
+          renderLandInline();
+        }
+        closeExcelModal("landModal");
+        toast("Land Prices data saved.");
+      }
+
+      // ===================== init =====================
+      $("popularExcelFile").addEventListener("change", onPopularFileChange);
+      $("landExcelFile").addEventListener("change", onLandFileChange);
+      document.querySelectorAll(".ex-backdrop").forEach((bd) =>
+        bd.addEventListener("click", (e) => {
+          if (e.target === bd) bd.classList.remove("open");
+        }),
+      );
+      document.querySelectorAll(".modal-backdrop").forEach((bd) =>
+        bd.addEventListener("click", (e) => {
+          if (e.target === bd) bd.classList.remove("open");
+        }),
+      );
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape")
+          document
+            .querySelectorAll(".ex-backdrop.open, .modal-backdrop.open")
+            .forEach((m) => m.classList.remove("open"));
+      });
+      TOGGLE_IDS.forEach((id) => {
+        const el = $(id);
+        if (el) el.addEventListener("change", persistToggles);
+      });
+
+      applyToggles();
+      renderAttractive();
+      renderTestimonials();
+      renderVideo();
+      renderArticles();
+      cleanupStaleFaqs();
+      renderFaq("home");
+      renderFaq("sell");
+      renderEstatesInline();
+      renderLandInline();
+      renderFamousPrefectures();
+      renderFamousCities();
     </script>
   </body>
 </html>

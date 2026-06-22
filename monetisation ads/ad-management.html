@@ -1,0 +1,3681 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin — Ad Management</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --bg-body: #f5f0e8;
+        --bg-card: #ffffff;
+        --bg-soft: #fffaf2;
+        --border-subtle: #eadccd;
+        --border-strong: #d9c8b4;
+        --accent: #c4714a;
+        --accent-dark: #a5572d;
+        --accent-deep: #8a4324;
+        --gold: #c4a25f;
+        --text-main: #2a1f18;
+        --text-muted: #7a6a5c;
+        --text-dim: #9b8568;
+        --badge-green: #2f855a;
+        --badge-red: #c53030;
+        --badge-gray: #4a5568;
+        --badge-amber: #b7791f;
+        --badge-blue: #2c5282;
+        --badge-purple: #6b46c1;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        padding: clamp(14px, 2vw, 22px);
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background: var(--bg-body);
+        color: var(--text-main);
+        font-size: 13px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+      .page-subtitle {
+        margin: 0 0 14px;
+        font-size: 12.5px;
+        color: var(--text-muted);
+        max-width: 760px;
+      }
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      .card {
+        background: var(--bg-card);
+        border-radius: 12px;
+        border: 1px solid var(--border-subtle);
+        padding: 16px;
+        box-shadow: 0 6px 20px rgba(115, 72, 39, 0.05);
+        margin-bottom: 14px;
+      }
+      .card-title {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f5ece0;
+      }
+      .card-title i {
+        color: var(--accent);
+        font-size: 13px;
+        width: 18px;
+        text-align: center;
+      }
+      .card-title small {
+        margin-left: auto;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-dim);
+      }
+
+      /* ========== Tabs ========== */
+      .tabs {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+        background: var(--bg-card);
+        border-radius: 12px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px;
+        margin-bottom: 14px;
+        box-shadow: 0 6px 20px rgba(115, 72, 39, 0.05);
+      }
+      .tab {
+        background: transparent;
+        border: 0;
+        padding: 9px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-muted);
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition:
+          background 0.15s,
+          color 0.15s;
+        position: relative;
+      }
+      .tab:hover {
+        background: #f9f3e6;
+        color: var(--text-main);
+      }
+      .tab.active {
+        background: var(--accent);
+        color: #fffaf3;
+      }
+      .tab .count-badge {
+        background: var(--badge-red);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 800;
+        padding: 1px 7px;
+        border-radius: 999px;
+        min-width: 18px;
+        text-align: center;
+      }
+      .tab.active .count-badge {
+        background: #fffaf3;
+        color: var(--badge-red);
+      }
+      .tab-pane {
+        display: none;
+      }
+      .tab-pane.active {
+        display: block;
+        animation: fadeIn 0.18s ease;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ========== Filter bar ========== */
+      .filter-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .filter-row input[type="text"],
+      .filter-row input[type="date"],
+      .filter-row select {
+        height: 34px;
+        padding: 5px 11px;
+        border: 1px solid var(--border-subtle);
+        border-radius: 6px;
+        background: #fffcf7;
+        font-size: 12.5px;
+        color: var(--text-main);
+        outline: none;
+        font-family: inherit;
+      }
+      .filter-row input:focus,
+      .filter-row select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(196, 113, 74, 0.18);
+      }
+      .filter-row .search-input {
+        flex: 1;
+        min-width: 180px;
+        max-width: 320px;
+      }
+      .filter-row label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      /* ========== Buttons ========== */
+      .btn {
+        border-radius: 8px;
+        border: 1px solid var(--border-subtle);
+        padding: 7px 14px;
+        font-size: 12.5px;
+        background: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-main);
+        font-family: inherit;
+        font-weight: 500;
+        min-height: 32px;
+        transition:
+          background 0.15s,
+          transform 0.1s;
+      }
+      .btn:hover {
+        background: #f9f6f0;
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn-primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: var(--accent-dark);
+        border-color: var(--accent-dark);
+      }
+      .btn-success {
+        background: var(--badge-green);
+        border-color: var(--badge-green);
+        color: #fff;
+      }
+      .btn-success:hover {
+        background: #226a48;
+      }
+      .btn-danger {
+        background: var(--badge-red);
+        border-color: var(--badge-red);
+        color: #fff;
+      }
+      .btn-danger:hover {
+        background: #962d24;
+      }
+      .btn-ghost {
+        background: transparent;
+        border-color: transparent;
+      }
+      .btn-ghost:hover {
+        background: #f3ece1;
+      }
+      .btn-sm {
+        padding: 4px 9px;
+        font-size: 11.5px;
+        min-height: 28px;
+      }
+      .btn-outline-danger {
+        color: var(--badge-red);
+        border-color: #fbcaca;
+        background: #fff;
+      }
+      .btn-outline-danger:hover {
+        background: #fde8e8;
+      }
+      .btn-outline-success {
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+        background: #fff;
+      }
+      .btn-outline-success:hover {
+        background: #e6f6ef;
+      }
+
+      /* ========== Tables ========== */
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table.data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      .data-table thead {
+        background: #f7efe6;
+      }
+      .data-table th,
+      .data-table td {
+        padding: 9px 11px;
+        text-align: left;
+        border-bottom: 1px solid #efe0d4;
+        vertical-align: middle;
+      }
+      .data-table th {
+        font-weight: 700;
+        font-size: 10.5px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+        cursor: pointer;
+        user-select: none;
+      }
+      .data-table th .sort-ico {
+        color: var(--text-dim);
+        font-size: 9px;
+        margin-left: 3px;
+      }
+      .data-table th.sort-asc .sort-ico::before {
+        content: "▲";
+        color: var(--accent);
+      }
+      .data-table th.sort-desc .sort-ico::before {
+        content: "▼";
+        color: var(--accent);
+      }
+      .data-table tbody tr {
+        transition: background 0.1s;
+      }
+      .data-table tbody tr:hover {
+        background: #f8f1ea;
+      }
+      .data-table td.actions {
+        white-space: nowrap;
+      }
+      .data-table td.actions button {
+        margin-right: 4px;
+      }
+      .num-cell {
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ========== Badges ========== */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+      .badge-pending {
+        background: #fff6e0;
+        color: var(--badge-amber);
+        border-color: #fbd38d;
+      }
+      .badge-active {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+      .badge-rejected {
+        background: #fde8e8;
+        color: var(--badge-red);
+        border-color: #fbcaca;
+      }
+      .badge-paused {
+        background: #f7f7f8;
+        color: var(--badge-gray);
+        border-color: #d2d6dc;
+      }
+      .badge-expired {
+        background: #2d3748;
+        color: #fff;
+        border-color: #2d3748;
+      }
+      .badge-occupied {
+        background: #fdebd0;
+        color: #92400e;
+        border-color: #fcd9bf;
+      }
+      .badge-available {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+      .badge-house {
+        background: #f3e8ff;
+        color: var(--badge-purple);
+        border-color: #ddd6fe;
+      }
+      .badge-warn {
+        background: #fff6e0;
+        color: var(--badge-amber);
+        border-color: #fbd38d;
+      }
+      .badge-critical {
+        background: #fde8e8;
+        color: var(--badge-red);
+        border-color: #fbcaca;
+      }
+      .badge-type {
+        background: #e0f2fe;
+        color: var(--badge-blue);
+        border-color: #bae6fd;
+        font-size: 10.5px;
+        font-weight: 600;
+      }
+      .alert-up {
+        color: var(--badge-green);
+        font-weight: 700;
+      }
+      .alert-down {
+        color: var(--badge-red);
+        font-weight: 700;
+      }
+      .alert-flat {
+        color: var(--text-dim);
+      }
+
+      /* ========== KPI cards ========== */
+      .kpi-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .kpi {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 10px;
+        padding: 14px;
+      }
+      .kpi-label {
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 5px;
+      }
+      .kpi-value {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--text-main);
+        line-height: 1.1;
+      }
+      .kpi-delta {
+        font-size: 11px;
+        margin-top: 4px;
+      }
+
+      /* ========== Modal ========== */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(28, 18, 12, 0.55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 200;
+        padding: 20px;
+      }
+      .modal-backdrop.open {
+        display: flex;
+      }
+      .modal-box {
+        background: #fff;
+        border-radius: 14px;
+        max-width: 720px;
+        width: 100%;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
+      .modal-header {
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modal-title {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .modal-body {
+        padding: 18px;
+        overflow: auto;
+        flex: 1;
+      }
+      .modal-footer {
+        padding: 12px 18px;
+        border-top: 1px solid var(--border-subtle);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        background: #fbf6ec;
+      }
+      .modal-footer .right {
+        display: flex;
+        gap: 8px;
+      }
+
+      /* ========== Detail kv (in modal) ========== */
+      .kv-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+        gap: 10px 16px;
+        margin-bottom: 16px;
+      }
+      .kv {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+      }
+      .kv-label {
+        font-size: 10.5px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .kv-value {
+        font-size: 12.5px;
+        color: var(--text-main);
+        word-break: break-word;
+      }
+      .kv-full {
+        grid-column: 1 / -1;
+      }
+
+      .section-divider {
+        margin: 14px 0 10px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--accent-deep);
+        border-bottom: 1px solid #f0e3d2;
+        padding-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .section-divider i {
+        color: var(--accent);
+      }
+
+      /* Creative preview */
+      .creative-banner {
+        width: 100%;
+        height: 180px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 700;
+        text-align: center;
+        padding: 16px;
+        position: relative;
+        overflow: hidden;
+      }
+      .creative-banner::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          circle at 30% 20%,
+          rgba(255, 255, 255, 0.18),
+          transparent 50%
+        );
+      }
+      .creative-banner .ag-name {
+        font-size: 11px;
+        font-weight: 600;
+        opacity: 0.85;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+      .creative-banner .ag-tagline {
+        font-size: 18px;
+        font-weight: 800;
+        line-height: 1.2;
+      }
+      .creative-banner .ag-cta {
+        margin-top: 12px;
+        background: #fff;
+        color: var(--accent-dark);
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .property-card {
+        display: flex;
+        gap: 12px;
+        background: #fffcf7;
+        border: 1px solid var(--border-subtle);
+        border-radius: 10px;
+        padding: 12px;
+      }
+      .property-card .thumb {
+        width: 110px;
+        height: 80px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        flex-shrink: 0;
+      }
+      .property-card .info {
+        flex: 1;
+        min-width: 0;
+      }
+      .property-card .info .name {
+        font-size: 13.5px;
+        font-weight: 700;
+        margin-bottom: 2px;
+      }
+      .property-card .info .meta {
+        font-size: 11.5px;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+      .property-card .info .price {
+        font-size: 14px;
+        font-weight: 800;
+        color: var(--accent-dark);
+      }
+
+      /* Reject form */
+      .reject-form {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 14px;
+        display: none;
+      }
+      .reject-form.open {
+        display: block;
+      }
+      .reject-form select,
+      .reject-form textarea {
+        width: 100%;
+        padding: 7px 10px;
+        border: 1px solid #fbcaca;
+        border-radius: 6px;
+        background: #fff;
+        font-size: 12.5px;
+        font-family: inherit;
+        margin-top: 4px;
+      }
+      .reject-form textarea {
+        min-height: 50px;
+        resize: vertical;
+      }
+      .reject-form label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--badge-red);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .reject-form .form-row {
+        margin-bottom: 8px;
+      }
+
+      /* Pool / waitlist mini-panel */
+      .pool-panel {
+        background: #fbf6ec;
+        border-radius: 8px;
+        padding: 10px;
+        margin-top: 10px;
+      }
+      .pool-row {
+        display: grid;
+        grid-template-columns: 1fr auto auto auto;
+        gap: 10px;
+        align-items: center;
+        padding: 8px 4px;
+        border-bottom: 1px solid #f0e3d2;
+        font-size: 12px;
+      }
+      .pool-row:last-child {
+        border-bottom: 0;
+      }
+      .pool-bar {
+        width: 80px;
+        height: 6px;
+        background: #e5d9c0;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .pool-bar > span {
+        display: block;
+        height: 100%;
+        background: var(--accent);
+      }
+
+      /* Toast */
+      .toast-wrap {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast {
+        background: var(--text-main);
+        color: #fffaf3;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+        animation: toastIn 0.2s ease;
+        max-width: 360px;
+      }
+      .toast.success {
+        background: var(--badge-green);
+      }
+      .toast.error {
+        background: var(--badge-red);
+      }
+      .toast.warn {
+        background: var(--badge-amber);
+        color: #2a1f18;
+      }
+      @keyframes toastIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .results-count {
+        font-size: 11.5px;
+        color: var(--text-muted);
+        margin-left: auto;
+      }
+      .results-count strong {
+        color: var(--text-main);
+      }
+
+      /* ========== Pagination ========== */
+      .result-line {
+        font-size: 11.5px;
+        color: var(--text-muted);
+        margin: 8px 2px 4px;
+      }
+      .result-line strong {
+        color: var(--text-main);
+      }
+      .pagination {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        margin-top: 10px;
+      }
+      .pagination button {
+        min-width: 30px;
+        height: 30px;
+        padding: 0 9px;
+        border-radius: 6px;
+        border: 1px solid var(--border-subtle);
+        background: #fff;
+        color: var(--text-main);
+        font-size: 12px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s,
+          border-color 0.15s;
+      }
+      .pagination button:hover:not(:disabled):not(.active) {
+        background: #f9f3e6;
+      }
+      .pagination button.active {
+        background: var(--gold);
+        border-color: var(--gold);
+        color: #fff;
+        cursor: default;
+      }
+      .pagination button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .pagination .ellipsis {
+        min-width: 22px;
+        text-align: center;
+        color: var(--text-dim);
+        font-weight: 700;
+        user-select: none;
+      }
+
+      @media (max-width: 720px) {
+        .modal-box {
+          max-width: 100%;
+        }
+        .heatmap {
+          font-size: 8px;
+          grid-template-columns: 30px repeat(24, 1fr);
+        }
+        .heatmap .hm-cell {
+          height: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-header">
+      <div>
+        <h1>Ad Management</h1>
+      </div>
+    </div>
+
+    <!-- ============ TABS ============ -->
+    <div class="tabs">
+      <button
+        class="tab active"
+        data-tab="approval"
+        onclick="switchTab('approval')"
+      >
+        <i class="fas fa-clipboard-check"></i> Approval Queue
+        <span class="count-badge" id="pendingBadge">0</span>
+      </button>
+      <button class="tab" data-tab="active" onclick="switchTab('active')">
+        <i class="fas fa-bullhorn"></i> Active Ads
+      </button>
+      <button class="tab" data-tab="inventory" onclick="switchTab('inventory')">
+        <i class="fas fa-grip"></i> Slot Inventory
+      </button>
+      <button class="tab" data-tab="vacant" onclick="switchTab('vacant')">
+        <i class="fas fa-circle-half-stroke"></i> Vacant Slots
+        <span
+          class="count-badge"
+          id="vacantBadge"
+          style="background: var(--badge-red); color: #fff"
+          >0</span
+        >
+      </button>
+      <button class="tab" data-tab="pricing" onclick="switchTab('pricing')">
+        <i class="fas fa-chart-line"></i> Pricing Intelligence
+        <span
+          class="count-badge"
+          id="priceAlertBadge"
+          style="background: var(--badge-amber); color: #2a1f18"
+          >0</span
+        >
+      </button>
+    </div>
+
+    <!-- ============ TAB 1: APPROVAL QUEUE ============ -->
+    <div class="tab-pane active" id="tab-approval">
+      <section class="card">
+        <div class="card-title">
+          <i class="fas fa-clipboard-check"></i> Pending Ad Requests
+          <small id="approvalCount"></small>
+        </div>
+        <div class="filter-row">
+          <label>Agent</label>
+          <select id="apAgent" onchange="renderApproval()">
+            <option value="">All agents</option>
+          </select>
+          <label>Ad Type</label>
+          <select id="apType" onchange="renderApproval()">
+            <option value="">All ad types</option>
+            <option value="1">Homepage Carousel</option>
+            <option value="2">Standalone Page Banner</option>
+            <option value="3">Search Results Top 3</option>
+            <option value="4">In-Article Banner</option>
+            <option value="5">Property Detail Banner</option>
+          </select>
+          <label>Advertises</label>
+          <select id="apAdvertises" onchange="renderApproval()">
+            <option value="">All</option>
+            <option value="Property">Property</option>
+            <option value="Agent">Agent</option>
+          </select>
+          <label>Status</label>
+          <select id="apStatus" onchange="renderApproval()">
+            <option value="Pending">Pending only</option>
+            <option value="">All statuses</option>
+          </select>
+          <label>From</label>
+          <input type="date" id="apFrom" onchange="renderApproval()" />
+          <label>To</label>
+          <input type="date" id="apTo" onchange="renderApproval()" />
+          <span class="results-count"
+            >Total: <strong id="apTotal">0</strong></span
+          >
+        </div>
+        <div class="result-line" id="apResultLine">Showing 0 of 0 ads</div>
+        <div class="table-wrap">
+          <table class="data-table" id="apTable">
+            <thead>
+              <tr>
+                <th data-sort="id">
+                  Request ID <span class="sort-ico"></span>
+                </th>
+                <th data-sort="submittedAt">
+                  Submitted <span class="sort-ico"></span>
+                </th>
+                <th data-sort="agentName">
+                  Agent <span class="sort-ico"></span>
+                </th>
+                <th data-sort="adType">
+                  Ad Type <span class="sort-ico"></span>
+                </th>
+                <th>Slot</th>
+                <th data-sort="budget" class="num-cell">
+                  Budget <span class="sort-ico"></span>
+                </th>
+                <th data-sort="durationDays" class="num-cell">
+                  Duration <span class="sort-ico"></span>
+                </th>
+                <th data-sort="status">
+                  Status <span class="sort-ico"></span>
+                </th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="apBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="apPager"></div>
+      </section>
+    </div>
+
+    <!-- ============ TAB 2: ACTIVE ADS ============ -->
+    <div class="tab-pane" id="tab-active">
+      <section class="card">
+        <div class="card-title">
+          <i class="fas fa-bullhorn"></i> Active Ads
+          <small id="activeCount"></small>
+        </div>
+        <div class="filter-row">
+          <label>Agent</label>
+          <select id="actAgent" onchange="renderActiveAds()">
+            <option value="">All agents</option>
+          </select>
+          <label>Ad Type</label>
+          <select id="actType" onchange="renderActiveAds()">
+            <option value="">All types</option>
+            <option value="1">Homepage Carousel</option>
+            <option value="2">Standalone Page Banner</option>
+            <option value="3">Search Results Top 3</option>
+            <option value="4">In-Article Banner</option>
+            <option value="5">Property Detail Banner</option>
+          </select>
+          <label>Advertises</label>
+          <select id="actAdvertises" onchange="renderActiveAds()">
+            <option value="">All</option>
+            <option value="Property">Property</option>
+            <option value="Agent">Agent</option>
+          </select>
+          <label>Status</label>
+          <select id="actStatus" onchange="renderActiveAds()">
+            <option value="">All statuses</option>
+            <option value="Active">Active</option>
+            <option value="Paused">Paused</option>
+          </select>
+          <span class="results-count"
+            >Total: <strong id="actTotal">0</strong></span
+          >
+        </div>
+        <div class="result-line" id="actResultLine">Showing 0 of 0 ads</div>
+        <div class="table-wrap">
+          <table class="data-table" id="actTable">
+            <thead>
+              <tr>
+                <th data-sort="agentName">
+                  Agent <span class="sort-ico"></span>
+                </th>
+                <th data-sort="adType">Type <span class="sort-ico"></span></th>
+                <th>Slot</th>
+                <th>Creative</th>
+                <th data-sort="startDate">
+                  Start <span class="sort-ico"></span>
+                </th>
+                <th data-sort="endDate">End <span class="sort-ico"></span></th>
+                <th data-sort="impressions" class="num-cell">
+                  IMP <span class="sort-ico"></span>
+                </th>
+                <th data-sort="deliveredPct" class="num-cell">
+                  Delivered% <span class="sort-ico"></span>
+                </th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="actBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="actPager"></div>
+      </section>
+    </div>
+
+    <!-- ============ TAB 3: SLOT INVENTORY ============ -->
+    <div class="tab-pane" id="tab-inventory">
+      <!-- 1. Homepage Carousel — Property · Fixed -->
+      <section class="card">
+        <div class="card-title">
+          <i class="fas fa-images"></i> Homepage Carousel
+          <span
+            class="badge badge-type"
+            style="
+              background: #e0f2fe;
+              color: #2c5282;
+              border-color: #bae6fd;
+              margin-left: 6px;
+            "
+            >Property · Fixed</span
+          >
+          <small
+            >5 ranked positions in homepage carousel · 1 agent per position ·
+            fixed monthly price per rank</small
+          >
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Position</th>
+                <th>Current Occupant</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Next Up</th>
+                <th class="num-cell">Waitlist</th>
+                <th class="num-cell">Price</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="invHomepageBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 2. Standalone Page Banner — Agent · Fixed -->
+      <section class="card">
+        <div class="card-title">
+          <i class="fas fa-rectangle-ad"></i> Standalone Page Banner
+          <span
+            class="badge badge-type"
+            style="
+              background: #f3e8ff;
+              color: #6b46c1;
+              border-color: #ddd6fe;
+              margin-left: 6px;
+            "
+            >Agent · Fixed</span
+          >
+          <small
+            >1 banner slot per standalone page (Area Guide, Mortgage Calculator)
+            · 1 agent per page, first-come-first-served</small
+          >
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Page</th>
+                <th>Current Occupant</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Next Up</th>
+                <th class="num-cell">Waitlist</th>
+                <th class="num-cell">Price</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="invStaticBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 3. Search Results Top 3 — Property · Dynamic -->
+      <section class="card">
+        <div class="card-title">
+          <i class="fas fa-magnifying-glass"></i> Search Results Top 3
+          <span
+            class="badge badge-type"
+            style="
+              background: #e0f2fe;
+              color: #2c5282;
+              border-color: #bae6fd;
+              margin-left: 6px;
+            "
+            >Property · Dynamic</span
+          >
+          <small
+            >Slot = Location × Property Type × <strong>Rank</strong> · each rank
+            is its own pool · multiple agents compete per rank, weighted by
+            budget × time</small
+          >
+        </div>
+        <div class="filter-row">
+          <label>Location</label>
+          <select id="invSearchLoc" onchange="renderInventory()">
+            <option value="">All locations</option>
+          </select>
+          <label>Property Type</label>
+          <select id="invSearchType" onchange="renderInventory()">
+            <option value="">All types</option>
+          </select>
+          <label>Rank</label>
+          <select id="invSearchRank" onchange="renderInventory()">
+            <option value="">All ranks</option>
+            <option value="1">Rank 1 only</option>
+            <option value="2">Rank 2 only</option>
+            <option value="3">Rank 3 only</option>
+          </select>
+          <label>Alert</label>
+          <select id="invSearchAlert" onchange="renderInventory()">
+            <option value="">All alerts</option>
+            <option value="increase">🔔↑ Recommend ↑</option>
+            <option value="decrease">🔔↓ Recommend ↓</option>
+            <option value="healthy">Healthy</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Slot (Location × Type × Rank)</th>
+                <th class="num-cell">Active Agents</th>
+                <th class="num-cell">Contracted IMP</th>
+                <th class="num-cell">Available IMP</th>
+                <th class="num-cell">Occupancy</th>
+                <th class="num-cell">CPM</th>
+                <th class="num-cell">Avg Delivered%</th>
+                <th>Alert</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="invSearchBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 4. In-Article Banner — Agent · Dynamic by Article Category -->
+      <section class="card">
+        <div class="card-title">
+          <i class="fas fa-newspaper"></i> In-Article Banner
+          <span
+            class="badge badge-type"
+            style="
+              background: #f3e8ff;
+              color: #6b46c1;
+              border-color: #ddd6fe;
+              margin-left: 6px;
+            "
+            >Agent · Dynamic</span
+          >
+          <small
+            >Slot = Article Category · 1 purchase shows banner in
+            <strong>all articles</strong> of that category · multiple agents per
+            category, weighted rotation</small
+          >
+        </div>
+        <div class="filter-row">
+          <label>Category</label>
+          <select id="invArticleCat" onchange="renderInventory()">
+            <option value="">All categories</option>
+          </select>
+          <label>Alert</label>
+          <select id="invArticleAlert" onchange="renderInventory()">
+            <option value="">All alerts</option>
+            <option value="increase">🔔↑ Recommend ↑</option>
+            <option value="decrease">🔔↓ Recommend ↓</option>
+            <option value="healthy">Healthy</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Article Category</th>
+                <th class="num-cell">Articles in Category</th>
+                <th class="num-cell">Active Agents</th>
+                <th class="num-cell">Contracted IMP</th>
+                <th class="num-cell">Available IMP</th>
+                <th class="num-cell">Occupancy</th>
+                <th class="num-cell">CPM</th>
+                <th class="num-cell">Avg Delivered%</th>
+                <th>Alert</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="invArticleBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 5. Property Detail Banner — Agent · Dynamic by Property Filter -->
+      <section class="card">
+        <div class="card-title">
+          <i class="fas fa-house-flag"></i> Property Detail Banner
+          <span
+            class="badge badge-type"
+            style="
+              background: #f3e8ff;
+              color: #6b46c1;
+              border-color: #ddd6fe;
+              margin-left: 6px;
+            "
+            >Agent · Dynamic</span
+          >
+          <small
+            >Slot = Location × Property Type filter · 1 purchase shows banner on
+            <strong>all property detail pages</strong> matching the filter ·
+            multiple agents per filter, weighted rotation</small
+          >
+        </div>
+        <div class="filter-row">
+          <label>Location</label>
+          <select id="invDetailLoc" onchange="renderInventory()">
+            <option value="">All locations</option>
+          </select>
+          <label>Property Type</label>
+          <select id="invDetailType" onchange="renderInventory()">
+            <option value="">All types</option>
+          </select>
+          <label>Alert</label>
+          <select id="invDetailAlert" onchange="renderInventory()">
+            <option value="">All alerts</option>
+            <option value="increase">🔔↑ Recommend ↑</option>
+            <option value="decrease">🔔↓ Recommend ↓</option>
+            <option value="healthy">Healthy</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Filter (Location × Property Type)</th>
+                <th class="num-cell">Matching Properties</th>
+                <th class="num-cell">Active Agents</th>
+                <th class="num-cell">Contracted IMP</th>
+                <th class="num-cell">Available IMP</th>
+                <th class="num-cell">Occupancy</th>
+                <th class="num-cell">CPM</th>
+                <th class="num-cell">Avg Delivered%</th>
+                <th>Alert</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="invDetailBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ TAB 3.5: VACANT SLOTS ============ -->
+    <div class="tab-pane" id="tab-vacant">
+      <div class="kpi-row" id="vacantKpi"></div>
+
+      <section class="card">
+        <div class="card-title">
+          <i class="fas fa-images"></i> Homepage Carousel — Vacant Positions
+          <small id="vacHomepageCount"></small>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Position</th>
+                <th class="num-cell">Price</th>
+              </tr>
+            </thead>
+            <tbody id="vacHomepageBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <i class="fas fa-rectangle-ad"></i> Standalone Page Banner — Vacant
+          Pages
+          <small id="vacStaticCount"></small>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Page</th>
+                <th class="num-cell">Price</th>
+              </tr>
+            </thead>
+            <tbody id="vacStaticBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <i class="fas fa-magnifying-glass"></i> Search Results Top 3 — Empty
+          Slots
+          <small id="vacSearchCount"></small>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Slot (Location × Type × Rank)</th>
+                <th class="num-cell">CPM</th>
+              </tr>
+            </thead>
+            <tbody id="vacSearchBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <i class="fas fa-newspaper"></i> In-Article Banner — Empty Categories
+          <small id="vacArticleCount"></small>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th class="num-cell">Articles</th>
+                <th class="num-cell">CPM</th>
+              </tr>
+            </thead>
+            <tbody id="vacArticleBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <i class="fas fa-house-flag"></i> Property Detail Banner — Empty
+          Filters
+          <small id="vacDetailCount"></small>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Filter (Location × Property Type)</th>
+                <th class="num-cell">Properties</th>
+                <th class="num-cell">CPM</th>
+              </tr>
+            </thead>
+            <tbody id="vacDetailBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ TAB 4: PRICING INTELLIGENCE ============ -->
+    <div class="tab-pane" id="tab-pricing">
+      <div class="kpi-row" id="pricingKpi"></div>
+
+      <section class="card">
+        <div class="card-title">
+          <i class="fas fa-tags"></i> Price Alert Panel
+          <small>Demand-driven CPM / monthly price recommendations</small>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Slot</th>
+                <th class="num-cell">Current Price</th>
+                <th class="num-cell">Demand Score</th>
+                <th class="num-cell">3M Occupancy</th>
+                <th>Recommended Change</th>
+                <th class="num-cell">Suggested New Price</th>
+                <th>Alert Type</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="priceAlertBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <i class="fas fa-triangle-exclamation"></i> Underdelivery Alert Panel
+          <small>Bookings delivering &lt; 90% of contracted impressions</small>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Booking ID</th>
+                <th>Agent</th>
+                <th>Slot</th>
+                <th class="num-cell">Contracted IMP</th>
+                <th class="num-cell">Delivered IMP</th>
+                <th class="num-cell">Delivered%</th>
+                <th>Severity</th>
+                <th class="num-cell">Days Left</th>
+                <th>Recommended Action</th>
+              </tr>
+            </thead>
+            <tbody id="underBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ APPROVAL MODAL ============ -->
+    <div class="modal-backdrop" id="approvalModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <i class="fas fa-clipboard-check"></i> Review Ad Request
+            <span
+              id="amId"
+              style="color: var(--accent); margin-left: 6px"
+            ></span>
+          </h3>
+          <button
+            class="btn btn-ghost btn-sm"
+            type="button"
+            onclick="closeApproval()"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body" id="approvalBody"></div>
+        <div class="modal-footer">
+          <span
+            id="amStatus"
+            style="font-size: 12px; color: var(--text-muted)"
+          ></span>
+          <div class="right">
+            <button
+              class="btn btn-outline-danger"
+              type="button"
+              onclick="toggleReject()"
+            >
+              <i class="fas fa-circle-xmark"></i> Reject
+            </button>
+            <button class="btn btn-success" type="button" onclick="doApprove()">
+              <i class="fas fa-circle-check"></i> Approve
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ POOL MODAL (Dynamic slot view pool) ============ -->
+    <div class="modal-backdrop" id="poolModal">
+      <div class="modal-box" style="max-width: 560px">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <i class="fas fa-users"></i> Slot Pool —
+            <span id="poolSlotName" style="color: var(--accent)"></span>
+          </h3>
+          <button
+            class="btn btn-ghost btn-sm"
+            type="button"
+            onclick="closePool()"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body" id="poolBody"></div>
+        <div class="modal-footer">
+          <span></span>
+          <div class="right">
+            <button class="btn" type="button" onclick="closePool()">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+      // ========================================================================
+      // OPTIONS / CONSTANTS
+      // ========================================================================
+      // Five named ad products. Internal numeric keys preserved for compatibility.
+      const AD_TYPE = {
+        1: {
+          label: "Homepage Carousel",
+          icon: "fa-images",
+          short: "Homepage Carousel",
+          advertises: "Property",
+          placement: "Fixed",
+          desc: "Homepage carousel section — 5 ranked positions. Position 1 most expensive. Exclusive: 1 agent per position per booking period.",
+        },
+        2: {
+          label: "Standalone Page Banner",
+          icon: "fa-rectangle-ad",
+          short: "Page Banner",
+          advertises: "Agent",
+          placement: "Fixed",
+          desc: "Single banner on each standalone page (Area Guide, Mortgage Calculator). Exclusive: 1 agent per page, first-come-first-served.",
+        },
+        3: {
+          label: "Search Results Top 3",
+          icon: "fa-magnifying-glass",
+          short: "Search Top 3",
+          advertises: "Property",
+          placement: "Dynamic — weighted rotation",
+          desc: "Top 3 positions of property search results. Slot = (Location × Property Type × Rank). Each rank is its own slot pool — multiple agents compete per slot, rotation weighted by budget × time.",
+        },
+        4: {
+          label: "In-Article Banner",
+          icon: "fa-newspaper",
+          short: "In-Article",
+          advertises: "Agent",
+          placement: "Dynamic — weighted rotation",
+          desc: "Mid-article banner across News &amp; Blog. Slot = (Article Category). Banner appears in ALL articles of that category. Multiple agents per category — weighted rotation.",
+        },
+        5: {
+          label: "Property Detail Banner",
+          icon: "fa-house-flag",
+          short: "Prop. Detail",
+          advertises: "Agent",
+          placement: "Dynamic — weighted rotation",
+          desc: "Banner on property detail pages. Slot = (Location × Property Type filter). Banner appears across ALL property detail pages matching the filter. Multiple agents per filter — weighted rotation.",
+        },
+      };
+      const REJECT_REASONS = [
+        "Creative quality issue",
+        "Inappropriate content",
+        "Slot already occupied",
+        "Incorrect targeting",
+        "Misleading information",
+        "Other",
+      ];
+      const AGENTS = [
+        {
+          id: "AG-101",
+          name: "Yamada Hiroshi",
+          company: "Tokyo Realty Co.",
+          rating: 4.7,
+        },
+        {
+          id: "AG-102",
+          name: "Sato Mei",
+          company: "Osaka Property Group",
+          rating: 4.5,
+        },
+        {
+          id: "AG-103",
+          name: "Tanaka Kenji",
+          company: "Yokohama Estates Ltd.",
+          rating: 4.8,
+        },
+        {
+          id: "AG-104",
+          name: "Lee Min-jun",
+          company: "Shibuya Living Co.",
+          rating: 4.3,
+        },
+        {
+          id: "AG-105",
+          name: "Watanabe Aiko",
+          company: "Kyoto Heritage Realty",
+          rating: 4.9,
+        },
+        {
+          id: "AG-106",
+          name: "Suzuki Daichi",
+          company: "Fukuoka Bay Realty",
+          rating: 4.4,
+        },
+      ];
+
+      // ========================================================================
+      // MOCK DATA — Ad Requests / Active Ads
+      // ========================================================================
+      let ads = [
+        // -------- PENDING (Approval Queue) --------
+        {
+          id: "ADR-2041",
+          status: "Pending",
+          adType: 1,
+          agentId: "AG-101",
+          slot: { position: 1 },
+          slotLabel: "Homepage Carousel — Position 1",
+          creative: {
+            kind: "property",
+            propertyId: "PROP-58102",
+            propertyName: "Minami-Aoyama Penthouse",
+            propertyLocation: "Minato, Tokyo",
+            propertyPrice: "¥98,000,000",
+          },
+          startDate: "2026-06-01",
+          endDate: "2026-06-30",
+          durationDays: 30,
+          budget: 1200000,
+          cpm: 0,
+          submittedAt: "2026-05-19 10:23",
+        },
+        {
+          id: "ADR-2042",
+          status: "Pending",
+          adType: 3,
+          agentId: "AG-102",
+          slot: { location: "Shibuya Ward", propType: "Apartment", rank: 1 },
+          slotLabel: "Sponsored — Shibuya Ward · Apartment · Rank #1",
+          creative: {
+            kind: "property",
+            propertyId: "PROP-58145",
+            propertyName: "Shinjuku Studio Apartment",
+            propertyLocation: "Shinjuku, Tokyo",
+            propertyPrice: "¥120,000/mo",
+          },
+          startDate: "2026-06-01",
+          endDate: "2026-06-30",
+          durationDays: 30,
+          budget: 380000,
+          cpm: 850,
+          estImpressions: 447000,
+          submittedAt: "2026-05-19 11:42",
+        },
+        {
+          id: "ADR-2043",
+          status: "Pending",
+          adType: 4,
+          agentId: "AG-103",
+          slot: { category: "Investment Tips" },
+          slotLabel: "In-Article — Category: Investment Tips",
+          creative: {
+            kind: "banner",
+            tagline: "Yokohama Estates — Trusted by 1,200+ investors",
+            cta: "Talk to an advisor",
+          },
+          startDate: "2026-06-01",
+          endDate: "2026-07-31",
+          durationDays: 61,
+          budget: 240000,
+          cpm: 620,
+          estImpressions: 387000,
+          submittedAt: "2026-05-19 14:18",
+        },
+        {
+          id: "ADR-2044",
+          status: "Pending",
+          adType: 2,
+          agentId: "AG-104",
+          slot: { page: "Area Guide" },
+          slotLabel: "Static Banner — Area Guide page",
+          creative: {
+            kind: "banner",
+            tagline: "Shibuya Living — Find your dream apartment",
+            cta: "Browse listings",
+          },
+          startDate: "2026-06-01",
+          endDate: "2026-08-31",
+          durationDays: 92,
+          budget: 1080000,
+          cpm: 0,
+          submittedAt: "2026-05-19 16:05",
+        },
+        {
+          id: "ADR-2045",
+          status: "Pending",
+          adType: 5,
+          agentId: "AG-105",
+          slot: { propType: "Tower Mansion", location: "Kyoto" },
+          slotLabel: "Property Detail — Tower Mansion × Kyoto",
+          creative: {
+            kind: "banner",
+            tagline: "Kyoto Heritage — Premium tower mansions",
+            cta: "View listings",
+          },
+          startDate: "2026-06-01",
+          endDate: "2026-06-30",
+          durationDays: 30,
+          budget: 195000,
+          cpm: 540,
+          estImpressions: 361000,
+          submittedAt: "2026-05-19 18:30",
+        },
+        {
+          id: "ADR-2046",
+          status: "Pending",
+          adType: 3,
+          agentId: "AG-106",
+          slot: { location: "Fukuoka Station", propType: "House", rank: 2 },
+          slotLabel: "Sponsored — Fukuoka Station · House · Rank #2",
+          creative: {
+            kind: "property",
+            propertyId: "PROP-58200",
+            propertyName: "Hakata Riverside House",
+            propertyLocation: "Fukuoka",
+            propertyPrice: "¥68,000,000",
+          },
+          startDate: "2026-06-01",
+          endDate: "2026-07-15",
+          durationDays: 45,
+          budget: 285000,
+          cpm: 720,
+          estImpressions: 396000,
+          submittedAt: "2026-05-19 19:12",
+        },
+        {
+          id: "ADR-2047",
+          status: "Pending",
+          adType: 1,
+          agentId: "AG-103",
+          slot: { position: 3 },
+          slotLabel: "Homepage Carousel — Position 3",
+          creative: {
+            kind: "property",
+            propertyId: "PROP-58300",
+            propertyName: "Yokohama Bay Tower",
+            propertyLocation: "Yokohama, Kanagawa",
+            propertyPrice: "¥175,000,000",
+          },
+          startDate: "2026-06-15",
+          endDate: "2026-07-14",
+          durationDays: 30,
+          budget: 600000,
+          cpm: 0,
+          submittedAt: "2026-05-19 20:01",
+        },
+        // -------- ACTIVE --------
+        {
+          id: "AD-1820",
+          status: "Active",
+          adType: 1,
+          agentId: "AG-101",
+          slot: { position: 2 },
+          slotLabel: "Homepage Carousel — Position 2",
+          creative: {
+            kind: "property",
+            propertyName: "Minami-Aoyama Penthouse",
+          },
+          startDate: "2026-05-01",
+          endDate: "2026-05-31",
+          durationDays: 31,
+          budget: 900000,
+          cpm: 0,
+          impressions: 2400000,
+          clicks: 38400,
+          conversions: 1248,
+          deliveredPct: 92,
+        },
+        {
+          id: "AD-1821",
+          status: "Active",
+          adType: 3,
+          agentId: "AG-102",
+          slot: { location: "Shibuya Ward", propType: "Apartment", rank: 2 },
+          slotLabel: "Sp. Search — Shibuya · Apartment · #2",
+          creative: { kind: "property", propertyName: "Shinjuku Studio" },
+          startDate: "2026-05-01",
+          endDate: "2026-05-31",
+          durationDays: 31,
+          budget: 280000,
+          cpm: 800,
+          contractedIMP: 350000,
+          impressions: 308000,
+          clicks: 5544,
+          conversions: 187,
+          deliveredPct: 88,
+        },
+        {
+          id: "AD-1822",
+          status: "Active",
+          adType: 4,
+          agentId: "AG-103",
+          slot: { category: "Area Guide" },
+          slotLabel: "In-Article — Category: Area Guide",
+          creative: { kind: "banner", tagline: "Yokohama Estates" },
+          startDate: "2026-04-01",
+          endDate: "2026-06-30",
+          durationDays: 91,
+          budget: 540000,
+          cpm: 600,
+          contractedIMP: 900000,
+          impressions: 612000,
+          clicks: 9180,
+          conversions: 245,
+          deliveredPct: 68,
+        },
+        {
+          id: "AD-1823",
+          status: "Active",
+          adType: 5,
+          agentId: "AG-104",
+          slot: { propType: "Apartment", location: "Tokyo" },
+          slotLabel: "Prop. Detail — Apartment × Tokyo",
+          creative: { kind: "banner", tagline: "Shibuya Living" },
+          startDate: "2026-05-10",
+          endDate: "2026-06-09",
+          durationDays: 31,
+          budget: 240000,
+          cpm: 480,
+          contractedIMP: 500000,
+          impressions: 215000,
+          clicks: 4730,
+          conversions: 142,
+          deliveredPct: 65,
+        },
+        {
+          id: "AD-1824",
+          status: "Active",
+          adType: 2,
+          agentId: "AG-105",
+          slot: { page: "Mortgage Calculator" },
+          slotLabel: "Static Banner — Mortgage Calculator",
+          creative: { kind: "banner", tagline: "Kyoto Heritage Realty" },
+          startDate: "2026-05-01",
+          endDate: "2026-07-31",
+          durationDays: 92,
+          budget: 990000,
+          cpm: 0,
+          impressions: 480000,
+          clicks: 6720,
+          conversions: 224,
+          deliveredPct: 96,
+        },
+        {
+          id: "AD-1825",
+          status: "Active",
+          adType: 3,
+          agentId: "AG-106",
+          slot: { location: "Osaka Station", propType: "Office Unit", rank: 1 },
+          slotLabel: "Sp. Search — Osaka Stn · Office · #1",
+          creative: { kind: "property", propertyName: "Umeda Sky Office" },
+          startDate: "2026-05-01",
+          endDate: "2026-05-31",
+          durationDays: 31,
+          budget: 420000,
+          cpm: 920,
+          contractedIMP: 456000,
+          impressions: 412000,
+          clicks: 7416,
+          conversions: 198,
+          deliveredPct: 90,
+        },
+        {
+          id: "AD-1826",
+          status: "Paused",
+          adType: 4,
+          agentId: "AG-101",
+          slot: { category: "Market News" },
+          slotLabel: "In-Article — Category: Market News",
+          creative: { kind: "banner", tagline: "Tokyo Realty" },
+          startDate: "2026-05-05",
+          endDate: "2026-06-04",
+          durationDays: 31,
+          budget: 180000,
+          cpm: 540,
+          impressions: 145000,
+          clicks: 2030,
+          conversions: 58,
+          deliveredPct: 56,
+        },
+        {
+          id: "AD-1827",
+          status: "Active",
+          adType: 1,
+          agentId: "AG-105",
+          slot: { position: 5 },
+          slotLabel: "Homepage Carousel — Position 5",
+          creative: {
+            kind: "property",
+            propertyName: "Kyoto Machiya Renovation",
+          },
+          startDate: "2026-05-15",
+          endDate: "2026-06-14",
+          durationDays: 31,
+          budget: 360000,
+          cpm: 0,
+          impressions: 540000,
+          clicks: 8100,
+          conversions: 270,
+          deliveredPct: 78,
+        },
+        // -------- REJECTED (history) --------
+        {
+          id: "ADR-2040",
+          status: "Rejected",
+          adType: 2,
+          agentId: "AG-104",
+          slot: { page: "Area Guide" },
+          slotLabel: "Static Banner — Area Guide page",
+          creative: { kind: "banner", tagline: "Shibuya Living" },
+          startDate: "2026-05-15",
+          endDate: "2026-07-15",
+          durationDays: 61,
+          budget: 720000,
+          cpm: 0,
+          submittedAt: "2026-05-12 09:40",
+          rejectReason: "Creative quality issue",
+          rejectNote:
+            "Image resolution below 1200×400px. Please re-upload with higher quality.",
+          refundedAt: "2026-05-12 11:15",
+        },
+      ];
+
+      // ========================================================================
+      // SEED FILLER — deterministic realistic rows so each record list has ≥60
+      // entries for pagination demos. No randomness: every value is derived from
+      // the row index so the data is identical on every load.
+      // ========================================================================
+      (function seedAdFiller() {
+        const agentIds = AGENTS.map((a) => a.id);
+        const locations = [
+          "Shibuya Ward",
+          "Shinjuku Ward",
+          "Minato Ward",
+          "Osaka Station",
+          "Fukuoka Station",
+          "Yokohama",
+          "Kyoto",
+          "Sapporo",
+          "Nagoya",
+          "Kobe",
+        ];
+        const propTypes = [
+          "Apartment",
+          "House",
+          "Tower Mansion",
+          "Office Unit",
+          "Land",
+          "Machiya",
+        ];
+        const categories = [
+          "Investment Tips",
+          "Area Guide",
+          "Market News",
+          "Lifestyle",
+          "Buying Guide",
+          "Mortgage Advice",
+        ];
+        const pages = [
+          "Area Guide",
+          "Mortgage Calculator",
+          "Market Data",
+          "School Finder",
+          "Commute Planner",
+        ];
+        const propertyNames = [
+          "Aoyama Residence",
+          "Ginza Sky Loft",
+          "Meguro Garden House",
+          "Umeda Sky Office",
+          "Hakata Riverside House",
+          "Sapporo Snow Villa",
+          "Nagoya Central Flat",
+          "Kobe Harbor Suite",
+          "Setagaya Family Home",
+          "Roppongi Hills Studio",
+        ];
+        const taglines = [
+          "Find your dream home today",
+          "Trusted by thousands of buyers",
+          "Premium listings, expert advice",
+          "Your local property specialist",
+          "Smart investments start here",
+          "Move in with confidence",
+        ];
+        const ctas = [
+          "Browse listings",
+          "Talk to an advisor",
+          "View listings",
+          "Get a quote",
+          "Book a viewing",
+        ];
+        // Deterministic pseudo-spread helper
+        const pick = (arr, i) => arr[i % arr.length];
+        const pad = (n) => String(n).padStart(2, "0");
+
+        // ----- Pending / Rejected filler (Approval Queue scope) -----
+        for (let i = 0; i < 58; i++) {
+          const adType = (i % 5) + 1;
+          const agentId = pick(agentIds, i + 1);
+          const isRejected = i % 6 === 5; // ~1 in 6 are rejected history
+          const day = (i % 27) + 1;
+          const month = i % 2 === 0 ? "05" : "06";
+          const durationDays = [30, 45, 61, 92][i % 4];
+          const budget = 150000 + ((i * 37000) % 1150000);
+          const cpm = adType === 1 || adType === 2 ? 0 : 420 + ((i * 70) % 600);
+          let slot, slotLabel, creative;
+          if (adType === 1) {
+            const position = (i % 5) + 1;
+            slot = { position };
+            slotLabel = `Homepage Carousel — Position ${position}`;
+            creative = {
+              kind: "property",
+              propertyId: "PROP-" + (59000 + i),
+              propertyName: pick(propertyNames, i),
+              propertyLocation: pick(locations, i),
+              propertyPrice:
+                "¥" + (40 + ((i * 7) % 160)) + ",000,000",
+            };
+          } else if (adType === 2) {
+            const page = pick(pages, i);
+            slot = { page };
+            slotLabel = `Static Banner — ${page} page`;
+            creative = {
+              kind: "banner",
+              tagline: pick(taglines, i),
+              cta: pick(ctas, i),
+            };
+          } else if (adType === 3) {
+            const location = pick(locations, i);
+            const propType = pick(propTypes, i);
+            const rank = (i % 3) + 1;
+            slot = { location, propType, rank };
+            slotLabel = `Sponsored — ${location} · ${propType} · Rank #${rank}`;
+            creative = {
+              kind: "property",
+              propertyId: "PROP-" + (59000 + i),
+              propertyName: pick(propertyNames, i),
+              propertyLocation: location,
+              propertyPrice: "¥" + (8 + ((i * 3) % 40)) + "0,000/mo",
+            };
+          } else if (adType === 4) {
+            const category = pick(categories, i);
+            slot = { category };
+            slotLabel = `In-Article — Category: ${category}`;
+            creative = {
+              kind: "banner",
+              tagline: pick(taglines, i + 1),
+              cta: pick(ctas, i + 1),
+            };
+          } else {
+            const propType = pick(propTypes, i);
+            const location = pick(locations, i + 2);
+            slot = { propType, location };
+            slotLabel = `Property Detail — ${propType} × ${location}`;
+            creative = {
+              kind: "banner",
+              tagline: pick(taglines, i + 2),
+              cta: pick(ctas, i + 2),
+            };
+          }
+          const a = {
+            id: "ADR-" + (1900 + i),
+            status: isRejected ? "Rejected" : "Pending",
+            adType,
+            agentId,
+            slot,
+            slotLabel,
+            creative,
+            startDate: `2026-${month}-${pad(day)}`,
+            endDate: `2026-07-${pad(((day + durationDays) % 27) + 1)}`,
+            durationDays,
+            budget,
+            cpm,
+            submittedAt: `2026-05-${pad((i % 27) + 1)} ${pad(8 + (i % 11))}:${pad((i * 13) % 60)}`,
+          };
+          if (cpm) a.estImpressions = Math.round((budget / cpm) * 1000);
+          if (isRejected) {
+            a.rejectReason = REJECT_REASONS[i % REJECT_REASONS.length];
+            a.rejectNote =
+              "Auto-generated demo rejection note for queue padding.";
+            a.refundedAt = a.submittedAt;
+          }
+          ads.push(a);
+        }
+
+        // ----- Active / Paused filler (Active Ads scope) -----
+        for (let i = 0; i < 58; i++) {
+          const adType = (i % 5) + 1;
+          const agentId = pick(agentIds, i + 2);
+          const isPaused = i % 7 === 6;
+          const durationDays = [30, 31, 61, 92][i % 4];
+          const budget = 160000 + ((i * 41000) % 1100000);
+          const cpm = adType === 1 || adType === 2 ? 0 : 460 + ((i * 60) % 520);
+          const deliveredPct = 50 + ((i * 9) % 50); // 50..99
+          const impressions = 120000 + ((i * 53000) % 2400000);
+          let slot, slotLabel, creative, contractedIMP;
+          if (adType === 1) {
+            const position = (i % 5) + 1;
+            slot = { position };
+            slotLabel = `Homepage Carousel — Position ${position}`;
+            creative = {
+              kind: "property",
+              propertyName: pick(propertyNames, i),
+            };
+          } else if (adType === 2) {
+            const page = pick(pages, i);
+            slot = { page };
+            slotLabel = `Static Banner — ${page}`;
+            creative = { kind: "banner", tagline: pick(taglines, i) };
+          } else if (adType === 3) {
+            const location = pick(locations, i);
+            const propType = pick(propTypes, i);
+            const rank = (i % 3) + 1;
+            slot = { location, propType, rank };
+            slotLabel = `Sp. Search — ${location} · ${propType} · #${rank}`;
+            creative = {
+              kind: "property",
+              propertyName: pick(propertyNames, i),
+            };
+            contractedIMP = Math.round(impressions / (deliveredPct / 100));
+          } else if (adType === 4) {
+            const category = pick(categories, i);
+            slot = { category };
+            slotLabel = `In-Article — Category: ${category}`;
+            creative = { kind: "banner", tagline: pick(taglines, i + 1) };
+            contractedIMP = Math.round(impressions / (deliveredPct / 100));
+          } else {
+            const propType = pick(propTypes, i);
+            const location = pick(locations, i + 2);
+            slot = { propType, location };
+            slotLabel = `Prop. Detail — ${propType} × ${location}`;
+            creative = { kind: "banner", tagline: pick(taglines, i + 2) };
+            contractedIMP = Math.round(impressions / (deliveredPct / 100));
+          }
+          const a = {
+            id: "AD-" + (1700 + i),
+            status: isPaused ? "Paused" : "Active",
+            adType,
+            agentId,
+            slot,
+            slotLabel,
+            creative,
+            startDate: `2026-05-${pad((i % 27) + 1)}`,
+            endDate: `2026-06-${pad((i % 27) + 1)}`,
+            durationDays,
+            budget,
+            cpm,
+            impressions,
+            clicks: Math.round(impressions * 0.015),
+            conversions: Math.round(impressions * 0.0005),
+            deliveredPct,
+          };
+          if (contractedIMP) a.contractedIMP = contractedIMP;
+          ads.push(a);
+        }
+      })();
+
+      // Compute estImpressions for fixed-price slots if missing (rough)
+      ads.forEach((a) => {
+        if (!a.estImpressions && a.cpm && a.budget)
+          a.estImpressions = Math.round((a.budget / a.cpm) * 1000);
+      });
+
+      // ========================================================================
+      // FIXED SLOTS (Type 1 & 2) inventory
+      // ========================================================================
+      const fixedSlots = [
+        {
+          id: "HP-1",
+          name: "Homepage Carousel — Position 1",
+          type: 1,
+          price: 1200000,
+          period: "/month",
+          occupant: "Tokyo Realty Co.",
+          start: "2026-05-01",
+          end: "2026-05-31",
+          next: "Yokohama Estates Ltd.",
+          waitlist: 2,
+          status: "Occupied",
+        },
+        {
+          id: "HP-2",
+          name: "Homepage Carousel — Position 2",
+          type: 1,
+          price: 900000,
+          period: "/month",
+          occupant: "Tokyo Realty Co.",
+          start: "2026-05-01",
+          end: "2026-05-31",
+          next: "—",
+          waitlist: 0,
+          status: "Occupied",
+        },
+        {
+          id: "HP-3",
+          name: "Homepage Carousel — Position 3",
+          type: 1,
+          price: 750000,
+          period: "/month",
+          occupant: null,
+          start: "—",
+          end: "—",
+          next: "Yokohama Estates Ltd.",
+          waitlist: 1,
+          status: "House Ad",
+        },
+        {
+          id: "HP-4",
+          name: "Homepage Carousel — Position 4",
+          type: 1,
+          price: 600000,
+          period: "/month",
+          occupant: "Osaka Property Group",
+          start: "2026-05-10",
+          end: "2026-06-09",
+          next: "—",
+          waitlist: 0,
+          status: "Occupied",
+        },
+        {
+          id: "HP-5",
+          name: "Homepage Carousel — Position 5",
+          type: 1,
+          price: 480000,
+          period: "/month",
+          occupant: "Kyoto Heritage Realty",
+          start: "2026-05-15",
+          end: "2026-06-14",
+          next: "—",
+          waitlist: 0,
+          status: "Occupied",
+        },
+        {
+          id: "SB-AG",
+          name: "Static Banner — Area Guide page",
+          type: 2,
+          price: 360000,
+          period: "/month",
+          occupant: null,
+          start: "—",
+          end: "—",
+          next: "Shibuya Living Co.",
+          waitlist: 1,
+          status: "Available",
+        },
+        {
+          id: "SB-MC",
+          name: "Static Banner — Mortgage Calculator",
+          type: 2,
+          price: 330000,
+          period: "/month",
+          occupant: "Kyoto Heritage Realty",
+          start: "2026-05-01",
+          end: "2026-07-31",
+          next: "—",
+          waitlist: 0,
+          status: "Occupied",
+        },
+      ];
+
+      // ========================================================================
+      // DYNAMIC SLOTS (Type 3, 4, 5) — pool data
+      // ========================================================================
+      const dynamicSlots = [
+        // Search Results Top 3 (Ward / Station × PropType × Rank)
+        {
+          id: "SS-SBY-APT-1",
+          type: 3,
+          label: "Shibuya Ward · Apartment · Rank #1",
+          cpm: 850,
+          activeAgents: 4,
+          contractedIMP: 1800000,
+          deliveredAvg: 92,
+          occupancyRate: 91,
+          demand: 4.0,
+          alert: "increase",
+          waitlistCount: 3,
+          ctrIndex: 1.65,
+        },
+        {
+          id: "SS-SBY-APT-2",
+          type: 3,
+          label: "Shibuya Ward · Apartment · Rank #2",
+          cpm: 700,
+          activeAgents: 3,
+          contractedIMP: 1200000,
+          deliveredAvg: 88,
+          occupancyRate: 86,
+          demand: 3.0,
+          alert: "increase",
+          waitlistCount: 1,
+          ctrIndex: 1.42,
+        },
+        {
+          id: "SS-SBY-APT-3",
+          type: 3,
+          label: "Shibuya Ward · Apartment · Rank #3",
+          cpm: 540,
+          activeAgents: 2,
+          contractedIMP: 700000,
+          deliveredAvg: 95,
+          occupancyRate: 78,
+          demand: 1.5,
+          alert: "healthy",
+          waitlistCount: 0,
+          ctrIndex: 1.1,
+        },
+        {
+          id: "SS-OSK-OFC-1",
+          type: 3,
+          label: "Osaka Station · Office Unit · Rank #1",
+          cpm: 920,
+          activeAgents: 3,
+          contractedIMP: 1100000,
+          deliveredAvg: 90,
+          occupancyRate: 88,
+          demand: 3.5,
+          alert: "increase",
+          waitlistCount: 2,
+          ctrIndex: 1.55,
+        },
+        {
+          id: "SS-FKK-HOU-2",
+          type: 3,
+          label: "Fukuoka Station · House · Rank #2",
+          cpm: 720,
+          activeAgents: 1,
+          contractedIMP: 420000,
+          deliveredAvg: 64,
+          occupancyRate: 24,
+          demand: 0.5,
+          alert: "decrease",
+          waitlistCount: 0,
+          ctrIndex: 0.88,
+        },
+        {
+          id: "SS-KYT-MAC-1",
+          type: 3,
+          label: "Kyoto · Machiya · Rank #1",
+          cpm: 480,
+          activeAgents: 0,
+          contractedIMP: 0,
+          deliveredAvg: 0,
+          occupancyRate: 0,
+          demand: 0,
+          alert: "decrease",
+          waitlistCount: 0,
+          ctrIndex: 0,
+          occ3M: 12,
+        },
+        {
+          id: "SS-FKK-HOU-3",
+          type: 3,
+          label: "Fukuoka Station · House · Rank #3",
+          cpm: 380,
+          activeAgents: 0,
+          contractedIMP: 0,
+          deliveredAvg: 0,
+          occupancyRate: 0,
+          demand: 0,
+          alert: "decrease",
+          waitlistCount: 0,
+          ctrIndex: 0,
+          occ3M: 8,
+        },
+        // In-Article Banner (Category)
+        {
+          id: "IA-INV",
+          type: 4,
+          label: "In-Article · Investment Tips",
+          cpm: 620,
+          activeAgents: 5,
+          contractedIMP: 1500000,
+          deliveredAvg: 85,
+          occupancyRate: 89,
+          demand: 3.5,
+          alert: "increase",
+          waitlistCount: 2,
+          ctrIndex: 1.32,
+        },
+        {
+          id: "IA-AG",
+          type: 4,
+          label: "In-Article · Area Guide",
+          cpm: 600,
+          activeAgents: 4,
+          contractedIMP: 1200000,
+          deliveredAvg: 79,
+          occupancyRate: 71,
+          demand: 1.5,
+          alert: "healthy",
+          waitlistCount: 0,
+          ctrIndex: 1.12,
+        },
+        {
+          id: "IA-MN",
+          type: 4,
+          label: "In-Article · Market News",
+          cpm: 540,
+          activeAgents: 0,
+          contractedIMP: 0,
+          deliveredAvg: 0,
+          occupancyRate: 0,
+          demand: 0.5,
+          alert: "decrease",
+          waitlistCount: 0,
+          ctrIndex: 0.94,
+          occ3M: 28,
+        },
+        {
+          id: "IA-LF",
+          type: 4,
+          label: "In-Article · Lifestyle",
+          cpm: 480,
+          activeAgents: 3,
+          contractedIMP: 800000,
+          deliveredAvg: 83,
+          occupancyRate: 75,
+          demand: 2.0,
+          alert: "healthy",
+          waitlistCount: 0,
+          ctrIndex: 1.05,
+        },
+        // Property Detail Banner (PropType × Location)
+        {
+          id: "PD-APT-TKY",
+          type: 5,
+          label: "Property Detail · Apartment × Tokyo",
+          cpm: 540,
+          activeAgents: 5,
+          contractedIMP: 2400000,
+          deliveredAvg: 80,
+          occupancyRate: 92,
+          demand: 3.5,
+          alert: "increase",
+          waitlistCount: 2,
+          ctrIndex: 1.28,
+        },
+        {
+          id: "PD-TWR-KYT",
+          type: 5,
+          label: "Property Detail · Tower Mansion × Kyoto",
+          cpm: 480,
+          activeAgents: 2,
+          contractedIMP: 720000,
+          deliveredAvg: 76,
+          occupancyRate: 64,
+          demand: 1.0,
+          alert: "healthy",
+          waitlistCount: 0,
+          ctrIndex: 1.08,
+        },
+        {
+          id: "PD-LND-HKK",
+          type: 5,
+          label: "Property Detail · Land × Hokkaido",
+          cpm: 360,
+          activeAgents: 1,
+          contractedIMP: 180000,
+          deliveredAvg: 52,
+          occupancyRate: 22,
+          demand: 0,
+          alert: "decrease",
+          waitlistCount: 0,
+          ctrIndex: 0.78,
+        },
+      ];
+
+      // ========================================================================
+      // POOLS — per-dynamic-slot agent budget distribution
+      // ========================================================================
+      const pools = {
+        "SS-SBY-APT-1": [
+          {
+            agent: "Tokyo Realty Co.",
+            budget: 850000,
+            share: 38,
+            deliveredPct: 95,
+            badge: "good",
+          },
+          {
+            agent: "Yokohama Estates Ltd.",
+            budget: 620000,
+            share: 28,
+            deliveredPct: 91,
+            badge: "good",
+          },
+          {
+            agent: "Shibuya Living Co.",
+            budget: 480000,
+            share: 22,
+            deliveredPct: 88,
+            badge: "warn",
+          },
+          {
+            agent: "Osaka Property Group",
+            budget: 260000,
+            share: 12,
+            deliveredPct: 78,
+            badge: "warn",
+          },
+        ],
+        "IA-INV": [
+          {
+            agent: "Tokyo Realty Co.",
+            budget: 540000,
+            share: 32,
+            deliveredPct: 92,
+            badge: "good",
+          },
+          {
+            agent: "Yokohama Estates Ltd.",
+            budget: 420000,
+            share: 25,
+            deliveredPct: 86,
+            badge: "good",
+          },
+          {
+            agent: "Kyoto Heritage Realty",
+            budget: 380000,
+            share: 22,
+            deliveredPct: 84,
+            badge: "warn",
+          },
+          {
+            agent: "Fukuoka Bay Realty",
+            budget: 220000,
+            share: 13,
+            deliveredPct: 76,
+            badge: "warn",
+          },
+          {
+            agent: "Shibuya Living Co.",
+            budget: 140000,
+            share: 8,
+            deliveredPct: 68,
+            badge: "bad",
+          },
+        ],
+        "PD-APT-TKY": [
+          {
+            agent: "Tokyo Realty Co.",
+            budget: 480000,
+            share: 30,
+            deliveredPct: 88,
+            badge: "good",
+          },
+          {
+            agent: "Shibuya Living Co.",
+            budget: 360000,
+            share: 22,
+            deliveredPct: 82,
+            badge: "warn",
+          },
+          {
+            agent: "Osaka Property Group",
+            budget: 320000,
+            share: 20,
+            deliveredPct: 78,
+            badge: "warn",
+          },
+          {
+            agent: "Yokohama Estates Ltd.",
+            budget: 280000,
+            share: 17,
+            deliveredPct: 74,
+            badge: "warn",
+          },
+          {
+            agent: "Kyoto Heritage Realty",
+            budget: 180000,
+            share: 11,
+            deliveredPct: 70,
+            badge: "bad",
+          },
+        ],
+      };
+
+      // ========================================================================
+      // HELPERS
+      // ========================================================================
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      const fmtYen = (n) =>
+        n == null || n === "" ? "—" : "¥" + Number(n).toLocaleString("en-US");
+      const fmtNum = (n) =>
+        n == null || n === "" ? "—" : Number(n).toLocaleString("en-US");
+      const fmtPct = (n, d = 1) =>
+        n == null || isNaN(n) ? "—" : Number(n).toFixed(d) + "%";
+      const agentById = (id) => AGENTS.find((a) => a.id === id);
+      const agentName = (id) => {
+        const a = agentById(id);
+        return a ? a.name + " · " + a.company : id;
+      };
+      ads.forEach((a) => {
+        a.agentName = agentName(a.agentId);
+      });
+
+      function badgeStatus(s) {
+        const m = {
+          Pending: "badge-pending",
+          Active: "badge-active",
+          Rejected: "badge-rejected",
+          Paused: "badge-paused",
+          Terminated: "badge-expired",
+          Expired: "badge-expired",
+        };
+        return `<span class="badge ${m[s] || "badge-pending"}">${esc(s)}</span>`;
+      }
+      function badgeType(t) {
+        return `<span class="badge badge-type"><i class="fas ${AD_TYPE[t].icon}"></i> ${AD_TYPE[t].short}</span>`;
+      }
+
+      function toast(msg, kind) {
+        const wrap = $("toastWrap");
+        const el = document.createElement("div");
+        el.className = "toast " + (kind || "success");
+        el.innerHTML = `<i class="fas fa-${kind === "error" ? "circle-exclamation" : kind === "warn" ? "triangle-exclamation" : "circle-check"}"></i> <span>${esc(msg)}</span>`;
+        wrap.appendChild(el);
+        setTimeout(() => {
+          el.style.opacity = "0";
+          el.style.transform = "translateY(8px)";
+          el.style.transition = "all 0.2s";
+        }, 2600);
+        setTimeout(() => el.remove(), 2900);
+      }
+
+      // ========================================================================
+      // UNIVERSAL PAGINATION — fixed 50 rows/page
+      // ========================================================================
+      const PAGE_SIZE = 50;
+      // Current page per list (1-based). Reset to 1 on filter/sort/search/tab/reload.
+      const pageState = { ap: 1, act: 1 };
+
+      // Clamp page, slice the list, and render the result line + numbered controls.
+      // key: pageState key · entity: lowercase plural noun · onChange: re-render cb
+      function paginate(key, list, entity, resultLineId, pagerId, onChange) {
+        const total = list.length;
+        const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        if (pageState[key] > pages) pageState[key] = pages;
+        if (pageState[key] < 1) pageState[key] = 1;
+        const cur = pageState[key];
+        const start = total === 0 ? 0 : (cur - 1) * PAGE_SIZE + 1;
+        const end = Math.min(total, cur * PAGE_SIZE);
+        const rl = $(resultLineId);
+        if (rl) {
+          rl.innerHTML =
+            total === 0
+              ? `Showing 0 of 0 ${entity}`
+              : `Showing <strong>${start}</strong>–<strong>${end}</strong> of <strong>${total}</strong> ${entity}`;
+        }
+        renderPager(pagerId, cur, pages, (p) => {
+          pageState[key] = p;
+          onChange();
+        });
+        return list.slice(start === 0 ? 0 : start - 1, end);
+      }
+
+      // Build Previous | numbered (≤7 with "…") | Next. Hidden when ≤1 page.
+      function renderPager(pagerId, cur, pages, go) {
+        const el = $(pagerId);
+        if (!el) return;
+        el.innerHTML = "";
+        if (pages <= 1) {
+          el.style.display = "none";
+          return;
+        }
+        el.style.display = "flex";
+        const mkBtn = (label, page, opts = {}) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.innerHTML = label;
+          if (opts.active) b.classList.add("active");
+          if (opts.disabled) b.disabled = true;
+          if (!opts.disabled && !opts.active)
+            b.addEventListener("click", () => go(page));
+          return b;
+        };
+        el.appendChild(
+          mkBtn(
+            '<i class="fas fa-chevron-left"></i> Prev',
+            cur - 1,
+            { disabled: cur === 1 },
+          ),
+        );
+        // Build the numbered window (max 7 slots, with "…" placeholders).
+        let nums = [];
+        if (pages <= 7) {
+          for (let p = 1; p <= pages; p++) nums.push(p);
+        } else {
+          nums.push(1);
+          let lo = Math.max(2, cur - 1);
+          let hi = Math.min(pages - 1, cur + 1);
+          if (cur <= 3) {
+            lo = 2;
+            hi = 4;
+          } else if (cur >= pages - 2) {
+            lo = pages - 3;
+            hi = pages - 1;
+          }
+          if (lo > 2) nums.push("…");
+          for (let p = lo; p <= hi; p++) nums.push(p);
+          if (hi < pages - 1) nums.push("…");
+          nums.push(pages);
+        }
+        nums.forEach((n) => {
+          if (n === "…") {
+            const s = document.createElement("span");
+            s.className = "ellipsis";
+            s.textContent = "…";
+            el.appendChild(s);
+          } else {
+            el.appendChild(mkBtn(String(n), n, { active: n === cur }));
+          }
+        });
+        el.appendChild(
+          mkBtn('Next <i class="fas fa-chevron-right"></i>', cur + 1, {
+            disabled: cur === pages,
+          }),
+        );
+      }
+
+      // ========================================================================
+      // TAB SWITCHING
+      // ========================================================================
+      function switchTab(name) {
+        document
+          .querySelectorAll(".tab")
+          .forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
+        document
+          .querySelectorAll(".tab-pane")
+          .forEach((p) => p.classList.toggle("active", p.id === "tab-" + name));
+        if (name === "active") renderActiveAds();
+        if (name === "inventory") {
+          renderInventory();
+        }
+        if (name === "vacant") renderVacant();
+        if (name === "pricing") {
+          renderPricingKpi();
+          renderPriceAlerts();
+          renderUnderdelivery();
+        }
+      }
+
+      // ========================================================================
+      // TAB 1 — APPROVAL QUEUE
+      // ========================================================================
+      let apSort = { col: "submittedAt", dir: "desc" };
+      function bindSort(tableId, callback) {
+        document
+          .querySelectorAll("#" + tableId + " th[data-sort]")
+          .forEach((th) => {
+            th.addEventListener("click", () => {
+              const col = th.dataset.sort;
+              const state = callback.sort;
+              if (state.col === col)
+                state.dir = state.dir === "asc" ? "desc" : "asc";
+              else {
+                state.col = col;
+                state.dir = "asc";
+              }
+              document
+                .querySelectorAll("#" + tableId + " th")
+                .forEach((t) => t.classList.remove("sort-asc", "sort-desc"));
+              th.classList.add(state.dir === "asc" ? "sort-asc" : "sort-desc");
+              callback();
+            });
+          });
+      }
+
+      function applySort(arr, sort) {
+        if (!sort.col) return arr;
+        return arr.slice().sort((a, b) => {
+          const va = a[sort.col],
+            vb = b[sort.col];
+          if (va == null) return 1;
+          if (vb == null) return -1;
+          if (typeof va === "number")
+            return sort.dir === "asc" ? va - vb : vb - va;
+          return sort.dir === "asc"
+            ? String(va).localeCompare(String(vb))
+            : String(vb).localeCompare(String(va));
+        });
+      }
+
+      // Public entry — called by filters, sort, search, tab, reload. Resets page.
+      function renderApproval() {
+        pageState.ap = 1;
+        drawApproval();
+      }
+      // Internal draw — keeps the current page (used by the pager itself).
+      function drawApproval() {
+        const agentFilter = $("apAgent").value;
+        const tFilter = $("apType").value;
+        const advertisesFilter = $("apAdvertises").value;
+        const sFilter = $("apStatus").value;
+        const from = $("apFrom").value;
+        const to = $("apTo").value;
+        let list = ads.filter((a) => {
+          if (sFilter && a.status !== sFilter) return false;
+          if (!sFilter && a.status !== "Pending" && a.status !== "Rejected")
+            return false;
+          if (tFilter && a.adType !== Number(tFilter)) return false;
+          if (agentFilter && a.agentId !== agentFilter) return false;
+          if (
+            advertisesFilter &&
+            AD_TYPE[a.adType].advertises !== advertisesFilter
+          )
+            return false;
+          if (from && a.submittedAt && a.submittedAt.slice(0, 10) < from)
+            return false;
+          if (to && a.submittedAt && a.submittedAt.slice(0, 10) > to)
+            return false;
+          return true;
+        });
+        list = applySort(list, apSort);
+        const pendingCount = ads.filter((a) => a.status === "Pending").length;
+        $("pendingBadge").textContent = pendingCount;
+        $("pendingBadge").style.display = pendingCount > 0 ? "" : "none";
+        $("apTotal").textContent = list.length;
+        $("approvalCount").textContent =
+          `${pendingCount} pending · ${list.length} shown`;
+        const body = $("apBody");
+        if (!list.length) {
+          $("apResultLine").innerHTML = "Showing 0 of 0 ads";
+          renderPager("apPager", 1, 1, () => {});
+          body.innerHTML =
+            '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">No requests match the filter.</td></tr>';
+          return;
+        }
+        const pageRows = paginate(
+          "ap",
+          list,
+          "ads",
+          "apResultLine",
+          "apPager",
+          drawApproval,
+        );
+        body.innerHTML = pageRows
+          .map(
+            (a) => `
+          <tr>
+            <td><strong>${esc(a.id)}</strong></td>
+            <td>${esc(a.submittedAt || "")}</td>
+            <td>${esc(a.agentName)}</td>
+            <td>${badgeType(a.adType)}</td>
+            <td>${esc(a.slotLabel)}</td>
+            <td class="num-cell">${fmtYen(a.budget)}</td>
+            <td class="num-cell">${a.durationDays}d</td>
+            <td>${badgeStatus(a.status)}</td>
+            <td class="actions">
+              ${
+                a.status === "Pending"
+                  ? `<button class="btn btn-sm btn-primary" type="button" onclick="openApproval('${a.id}')"><i class="fas fa-magnifying-glass"></i> Review</button>`
+                  : `<button class="btn btn-sm" type="button" onclick="openApproval('${a.id}')"><i class="fas fa-eye"></i> View</button>`
+              }
+            </td>
+          </tr>`,
+          )
+          .join("");
+      }
+      renderApproval.sort = apSort;
+
+      // ----- Approval Modal -----
+      let activeReviewAd = null;
+
+      function openApproval(id) {
+        const a = ads.find((x) => x.id === id);
+        if (!a) return;
+        activeReviewAd = a;
+        $("amId").textContent = a.id;
+        $("amStatus").innerHTML = `Current status: ${badgeStatus(a.status)}`;
+        const ag = agentById(a.agentId) || {};
+        const cre = a.creative || {};
+        let creativeHtml;
+        if (cre.kind === "banner") {
+          creativeHtml = `
+            <div class="creative-banner">
+              <div class="ag-name">${esc(ag.company || a.agentName)}</div>
+              <div class="ag-tagline">${esc(cre.tagline || "Banner creative preview")}</div>
+              ${cre.cta ? `<div class="ag-cta">${esc(cre.cta)}</div>` : ""}
+            </div>`;
+        } else {
+          creativeHtml = `
+            <div class="property-card">
+              <div class="thumb"><i class="fas fa-house"></i></div>
+              <div class="info">
+                <div class="name">${esc(cre.propertyName || "Property listing")}</div>
+                <div class="meta">${esc(cre.propertyId || "")} · ${esc(cre.propertyLocation || "")}</div>
+                <div class="price">${esc(cre.propertyPrice || "")}</div>
+              </div>
+            </div>`;
+        }
+        const rej =
+          a.status === "Rejected"
+            ? `
+          <div class="section-divider"><i class="fas fa-circle-xmark"></i> Rejection record</div>
+          <div class="kv-grid">
+            <div class="kv kv-full"><span class="kv-label">Reason</span><div class="kv-value"><strong>${esc(a.rejectReason)}</strong></div></div>
+            ${a.rejectNote ? `<div class="kv kv-full"><span class="kv-label">Note</span><div class="kv-value">${esc(a.rejectNote)}</div></div>` : ""}
+            ${a.refundedAt ? `<div class="kv"><span class="kv-label">Refunded at</span><div class="kv-value">${esc(a.refundedAt)}</div></div>` : ""}
+          </div>`
+            : "";
+
+        $("approvalBody").innerHTML = `
+          <div class="section-divider"><i class="fas fa-cube"></i> Slot &amp; Targeting</div>
+          <div class="kv-grid">
+            <div class="kv"><span class="kv-label">Ad Type</span><div class="kv-value">${badgeType(a.adType)} ${esc(AD_TYPE[a.adType].label)}</div></div>
+            <div class="kv"><span class="kv-label">Advertises</span><div class="kv-value">${AD_TYPE[a.adType].advertises}</div></div>
+            <div class="kv kv-full"><span class="kv-label">Slot</span><div class="kv-value">${esc(a.slotLabel)}</div></div>
+            <div class="kv"><span class="kv-label">Start Date</span><div class="kv-value">${esc(a.startDate)}</div></div>
+            <div class="kv"><span class="kv-label">End Date</span><div class="kv-value">${esc(a.endDate)}</div></div>
+            <div class="kv"><span class="kv-label">Duration</span><div class="kv-value">${a.durationDays} days</div></div>
+          </div>
+
+          <div class="section-divider"><i class="fas fa-user-tie"></i> Agent</div>
+          <div class="kv-grid">
+            <div class="kv"><span class="kv-label">Agent</span><div class="kv-value"><strong>${esc(ag.name || "")}</strong></div></div>
+            <div class="kv"><span class="kv-label">Company</span><div class="kv-value">${esc(ag.company || "")}</div></div>
+            <div class="kv"><span class="kv-label">Agent ID</span><div class="kv-value">${esc(a.agentId)}</div></div>
+            <div class="kv"><span class="kv-label">Rating</span><div class="kv-value">★ ${ag.rating || "—"} / 5</div></div>
+          </div>
+
+          <div class="section-divider"><i class="fas fa-yen-sign"></i> Budget &amp; Pricing</div>
+          <div class="kv-grid">
+            <div class="kv"><span class="kv-label">Total Spend</span><div class="kv-value"><strong>${fmtYen(a.budget)}</strong></div></div>
+            ${a.cpm ? `<div class="kv"><span class="kv-label">CPM</span><div class="kv-value">${fmtYen(a.cpm)}</div></div>` : ""}
+            ${a.estImpressions ? `<div class="kv"><span class="kv-label">Est. Impressions</span><div class="kv-value">${fmtNum(a.estImpressions)}</div></div>` : `<div class="kv"><span class="kv-label">Slot Model</span><div class="kv-value">Fixed monthly (no CPM)</div></div>`}
+          </div>
+
+          <div class="section-divider"><i class="fas fa-image"></i> Creative Preview</div>
+          ${creativeHtml}
+
+          ${rej}
+
+          <div class="reject-form" id="rejectForm">
+            <div class="form-row">
+              <label>Rejection reason</label>
+              <select id="rejReason">
+                <option value="">— Select reason —</option>
+                ${REJECT_REASONS.map((r) => `<option>${esc(r)}</option>`).join("")}
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Note to agent (optional)</label>
+              <textarea id="rejNote" placeholder="Specific feedback for the agent — image dimensions, content guideline, etc."></textarea>
+            </div>
+            <div style="display:flex;gap:6px;justify-content:flex-end">
+              <button class="btn btn-sm" type="button" onclick="toggleReject()">Cancel</button>
+              <button class="btn btn-sm btn-danger" type="button" onclick="confirmReject()"><i class="fas fa-circle-xmark"></i> Confirm reject &amp; refund</button>
+            </div>
+          </div>`;
+        $("approvalModal").classList.add("open");
+      }
+      function closeApproval() {
+        $("approvalModal").classList.remove("open");
+        activeReviewAd = null;
+      }
+      function toggleReject() {
+        $("rejectForm").classList.toggle("open");
+      }
+      function doApprove() {
+        if (!activeReviewAd) return;
+        if (activeReviewAd.status !== "Pending") {
+          toast("Already actioned.", "warn");
+          return;
+        }
+        activeReviewAd.status = "Active";
+        activeReviewAd.approvedAt = new Date()
+          .toISOString()
+          .slice(0, 16)
+          .replace("T", " ");
+        toast(
+          `Approved ${activeReviewAd.id}. Ad will go live on ${activeReviewAd.startDate}.`,
+          "success",
+        );
+        closeApproval();
+        drawApproval();
+        drawActiveAds();
+      }
+      function confirmReject() {
+        if (!activeReviewAd) return;
+        if (activeReviewAd.status !== "Pending") {
+          toast("Already actioned.", "warn");
+          return;
+        }
+        const reason = $("rejReason").value;
+        const note = $("rejNote").value.trim();
+        if (!reason) {
+          toast("Please select a rejection reason.", "error");
+          return;
+        }
+        activeReviewAd.status = "Rejected";
+        activeReviewAd.rejectReason = reason;
+        activeReviewAd.rejectNote = note;
+        activeReviewAd.refundedAt = new Date()
+          .toISOString()
+          .slice(0, 16)
+          .replace("T", " ");
+        toast(
+          `Rejected ${activeReviewAd.id}. ${fmtYen(activeReviewAd.budget)} refunded to ${activeReviewAd.agentName}.`,
+          "warn",
+        );
+        closeApproval();
+        drawApproval();
+      }
+
+      // ========================================================================
+      // TAB 2 — ACTIVE ADS
+      // ========================================================================
+      let actSort = { col: "agentName", dir: "asc" };
+      // Public entry — called by filters, sort, search, tab, reload. Resets page.
+      function renderActiveAds() {
+        pageState.act = 1;
+        drawActiveAds();
+      }
+      // Internal draw — keeps the current page (used by the pager itself).
+      function drawActiveAds() {
+        const agentFilter = $("actAgent").value;
+        const tFilter = $("actType").value;
+        const advertisesFilter = $("actAdvertises").value;
+        const sFilter = $("actStatus").value;
+        let list = ads.filter((a) => {
+          if (!["Active", "Paused"].includes(a.status)) return false;
+          if (sFilter && a.status !== sFilter) return false;
+          if (tFilter && a.adType !== Number(tFilter)) return false;
+          if (agentFilter && a.agentId !== agentFilter) return false;
+          if (
+            advertisesFilter &&
+            AD_TYPE[a.adType].advertises !== advertisesFilter
+          )
+            return false;
+          return true;
+        });
+        list = applySort(list, actSort);
+        $("actTotal").textContent = list.length;
+        $("activeCount").textContent = `${list.length} ads`;
+        const body = $("actBody");
+        if (!list.length) {
+          $("actResultLine").innerHTML = "Showing 0 of 0 ads";
+          renderPager("actPager", 1, 1, () => {});
+          body.innerHTML =
+            '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted)">No active ads match the filter.</td></tr>';
+          return;
+        }
+        const pageRows = paginate(
+          "act",
+          list,
+          "ads",
+          "actResultLine",
+          "actPager",
+          drawActiveAds,
+        );
+        body.innerHTML = pageRows
+          .map((a) => {
+            const creative =
+              a.creative.kind === "banner"
+                ? `<span class="badge badge-type" style="background:#fef3c7;color:#92400e;border-color:#fcd34d"><i class="fas fa-rectangle-ad"></i> Banner</span>`
+                : `<span class="badge badge-type"><i class="fas fa-house"></i> ${esc((a.creative.propertyName || "").slice(0, 22))}</span>`;
+            return `
+            <tr>
+              <td><strong>${esc(a.agentName)}</strong><br><span style="font-size:10px;color:var(--text-dim)">${esc(a.id)}</span></td>
+              <td>${badgeType(a.adType)}</td>
+              <td>${esc(a.slotLabel)}</td>
+              <td>${creative}</td>
+              <td>${esc(a.startDate)}</td>
+              <td>${esc(a.endDate)}</td>
+              <td class="num-cell">${fmtNum(a.impressions)}</td>
+              <td class="num-cell"><strong style="color:${a.deliveredPct < 70 ? "var(--badge-red)" : a.deliveredPct < 90 ? "var(--badge-amber)" : "var(--badge-green)"}">${a.deliveredPct}%</strong></td>
+              <td>${badgeStatus(a.status)}</td>
+              <td class="actions">
+                ${
+                  a.status === "Active"
+                    ? `<button class="btn btn-sm" type="button" onclick="pauseAd('${a.id}')"><i class="fas fa-pause"></i> Pause</button>`
+                    : `<button class="btn btn-sm btn-success" type="button" onclick="resumeAd('${a.id}')"><i class="fas fa-play"></i> Resume</button>`
+                }
+                <button class="btn btn-sm btn-outline-danger" type="button" onclick="terminateAd('${a.id}')"><i class="fas fa-stop"></i> Terminate</button>
+              </td>
+            </tr>`;
+          })
+          .join("");
+      }
+      renderActiveAds.sort = actSort;
+
+      function pauseAd(id) {
+        const a = ads.find((x) => x.id === id);
+        if (!a) return;
+        if (
+          !confirm(
+            `Pause ${id}? Agent will not be charged for paused days — end date will be extended accordingly.`,
+          )
+        )
+          return;
+        a.status = "Paused";
+        toast(
+          `${id} paused. Delivery suspended; end date will adjust on resume.`,
+          "warn",
+        );
+        drawActiveAds();
+      }
+      function resumeAd(id) {
+        const a = ads.find((x) => x.id === id);
+        if (!a) return;
+        a.status = "Active";
+        toast(`${id} resumed. Delivery restarted.`);
+        drawActiveAds();
+      }
+      function terminateAd(id) {
+        const a = ads.find((x) => x.id === id);
+        if (!a) return;
+        const undeliveredPct = Math.max(0, 100 - (a.deliveredPct || 0));
+        const refund = Math.round(((a.budget || 0) * undeliveredPct) / 100);
+        if (
+          !confirm(
+            `Terminate ${id}? This will refund ${fmtYen(refund)} (prorated for ${undeliveredPct}% undelivered impressions).`,
+          )
+        )
+          return;
+        a.status = "Terminated";
+        toast(
+          `${id} terminated. ${fmtYen(refund)} refunded to ${a.agentName}.`,
+          "warn",
+        );
+        drawActiveAds();
+      }
+
+      // ========================================================================
+      // TAB 3 — SLOT INVENTORY
+      // ========================================================================
+      // Helper: extracted rank from Search Top 3 slot label "… · Rank #N"
+      function rankOf(slot) {
+        const m = (slot.label || "").match(/Rank #(\d)/);
+        return m ? Number(m[1]) : null;
+      }
+
+      // Demo data: how many articles fall under each Article Category (Type 4)
+      const ARTICLE_COUNT = {
+        "IA-INV": 142,
+        "IA-AG": 218,
+        "IA-MN": 96,
+        "IA-LF": 184,
+      };
+      // Demo data: how many property listings match each Property Detail filter (Type 5)
+      const PROPERTY_COUNT = {
+        "PD-APT-TKY": 1240,
+        "PD-TWR-KYT": 86,
+        "PD-LND-HKK": 48,
+      };
+
+      function alertBadge(alert) {
+        if (alert === "increase")
+          return `<span class="badge badge-active">🔔↑ Recommend ↑</span>`;
+        if (alert === "decrease")
+          return `<span class="badge badge-rejected">🔔↓ Recommend ↓</span>`;
+        return `<span class="badge badge-paused">Healthy</span>`;
+      }
+
+      function statusBadgeFixed(status) {
+        const cls =
+          status === "Occupied"
+            ? "badge-occupied"
+            : status === "Available"
+              ? "badge-available"
+              : "badge-house";
+        return `<span class="badge ${cls}">${esc(status)}</span>`;
+      }
+
+      // ===== 1. Homepage Carousel inventory =====
+      function renderHomepageSlots() {
+        const body = $("invHomepageBody");
+        const list = fixedSlots.filter((s) => s.type === 1);
+        body.innerHTML = list
+          .map((s) => {
+            const rank = (s.name.match(/Position (\d)/) || [])[1] || "—";
+            return `
+            <tr>
+              <td><strong>Position ${rank}</strong><br><span style="font-size:10.5px;color:var(--text-dim)">${esc(s.id)}</span></td>
+              <td>${s.occupant ? esc(s.occupant) : '<em style="color:var(--text-muted)">—</em>'}</td>
+              <td>${esc(s.start)}</td>
+              <td>${esc(s.end)}</td>
+              <td>${s.next === "—" ? '<em style="color:var(--text-muted)">—</em>' : esc(s.next)}</td>
+              <td class="num-cell">${s.waitlist}</td>
+              <td class="num-cell"><strong>${fmtYen(s.price)}</strong>${esc(s.period)}</td>
+              <td>${statusBadgeFixed(s.status)}</td>
+              <td class="actions">
+                <button class="btn btn-sm" onclick="alert('Edit price for Position ' + '${rank}')"><i class="fas fa-pen"></i> Price</button>
+                <button class="btn btn-sm" onclick="alert('Booking history')"><i class="fas fa-clock-rotate-left"></i> History</button>
+              </td>
+            </tr>`;
+          })
+          .join("");
+      }
+
+      // ===== 2. Standalone Page Banner inventory =====
+      function renderStaticBannerSlots() {
+        const body = $("invStaticBody");
+        const list = fixedSlots.filter((s) => s.type === 2);
+        body.innerHTML = list
+          .map(
+            (s) => `
+          <tr>
+            <td><strong>${esc(s.name.replace("Static Banner — ", ""))}</strong><br><span style="font-size:10.5px;color:var(--text-dim)">${esc(s.id)}</span></td>
+            <td>${s.occupant ? esc(s.occupant) : '<em style="color:var(--text-muted)">—</em>'}</td>
+            <td>${esc(s.start)}</td>
+            <td>${esc(s.end)}</td>
+            <td>${s.next === "—" ? '<em style="color:var(--text-muted)">—</em>' : esc(s.next)}</td>
+            <td class="num-cell">${s.waitlist}</td>
+            <td class="num-cell"><strong>${fmtYen(s.price)}</strong>${esc(s.period)}</td>
+            <td>${statusBadgeFixed(s.status)}</td>
+            <td class="actions">
+              <button class="btn btn-sm" onclick="alert('Edit price')"><i class="fas fa-pen"></i> Price</button>
+              <button class="btn btn-sm" onclick="alert('Booking history')"><i class="fas fa-clock-rotate-left"></i> History</button>
+            </td>
+          </tr>`,
+          )
+          .join("");
+      }
+
+      // Generic dynamic slot row renderer (with optional extra column at start)
+      function dynRow(s, extraCol) {
+        const availIMP = Math.max(
+          0,
+          Math.round(s.contractedIMP * (1 - s.occupancyRate / 100)),
+        );
+        return `
+          <tr>
+            <td><strong>${esc(s.label.replace(/^(Property Detail · |In-Article · )/, ""))}</strong><br><span style="font-size:10.5px;color:var(--text-dim)">${esc(s.id)}</span></td>
+            ${extraCol != null ? `<td class="num-cell">${extraCol}</td>` : ""}
+            <td class="num-cell">${s.activeAgents}</td>
+            <td class="num-cell">${fmtNum(s.contractedIMP)}</td>
+            <td class="num-cell">${fmtNum(availIMP)}</td>
+            <td class="num-cell">${fmtPct(s.occupancyRate, 0)}</td>
+            <td class="num-cell">${fmtYen(s.cpm)}</td>
+            <td class="num-cell">${fmtPct(s.deliveredAvg, 0)}</td>
+            <td>${alertBadge(s.alert)}</td>
+            <td class="actions">
+              <button class="btn btn-sm" onclick="alert('Edit CPM for ' + ${JSON.stringify(s.label)})"><i class="fas fa-pen"></i> CPM</button>
+              <button class="btn btn-sm" onclick="openPool('${s.id}', ${JSON.stringify(s.label).replace(/"/g, "&quot;")})"><i class="fas fa-users"></i> Pool</button>
+              <button class="btn btn-sm btn-outline-danger" onclick="alert('Block list added (demo)')"><i class="fas fa-ban"></i> Block</button>
+            </td>
+          </tr>`;
+      }
+
+      // Parse structured fields from slot label
+      function slotMeta(s) {
+        if (s.type === 3) {
+          const m = (s.label || "").match(/^(.+?) · (.+?) · Rank #(\d)$/);
+          if (m) return { location: m[1], propType: m[2], rank: Number(m[3]) };
+        }
+        if (s.type === 4) {
+          const m = (s.label || "").match(/^In-Article · (.+)$/);
+          if (m) return { category: m[1] };
+        }
+        if (s.type === 5) {
+          const m = (s.label || "").match(/^Property Detail · (.+?) × (.+)$/);
+          if (m) return { propType: m[1], location: m[2] };
+        }
+        return {};
+      }
+
+      // ===== 3. Search Results Top 3 inventory =====
+      function renderSearchSlots() {
+        const locF = $("invSearchLoc").value;
+        const ptF = $("invSearchType").value;
+        const rankF = $("invSearchRank").value;
+        const aF = $("invSearchAlert").value;
+        const list = dynamicSlots.filter((s) => {
+          if (s.type !== 3) return false;
+          const m = slotMeta(s);
+          if (locF && m.location !== locF) return false;
+          if (ptF && m.propType !== ptF) return false;
+          if (rankF && m.rank !== Number(rankF)) return false;
+          if (aF && s.alert !== aF) return false;
+          return true;
+        });
+        const body = $("invSearchBody");
+        if (!list.length) {
+          body.innerHTML =
+            '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">No slots match.</td></tr>';
+          return;
+        }
+        body.innerHTML = list.map((s) => dynRow(s)).join("");
+      }
+
+      // ===== 4. In-Article Banner inventory =====
+      function renderArticleSlots() {
+        const catF = $("invArticleCat").value;
+        const aF = $("invArticleAlert").value;
+        const list = dynamicSlots.filter((s) => {
+          if (s.type !== 4) return false;
+          const m = slotMeta(s);
+          if (catF && m.category !== catF) return false;
+          if (aF && s.alert !== aF) return false;
+          return true;
+        });
+        const body = $("invArticleBody");
+        if (!list.length) {
+          body.innerHTML =
+            '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted)">No categories match.</td></tr>';
+          return;
+        }
+        body.innerHTML = list
+          .map((s) => dynRow(s, ARTICLE_COUNT[s.id] || 0))
+          .join("");
+      }
+
+      // ===== 5. Property Detail Banner inventory =====
+      function renderDetailSlots() {
+        const locF = $("invDetailLoc").value;
+        const ptF = $("invDetailType").value;
+        const aF = $("invDetailAlert").value;
+        const list = dynamicSlots.filter((s) => {
+          if (s.type !== 5) return false;
+          const m = slotMeta(s);
+          if (locF && m.location !== locF) return false;
+          if (ptF && m.propType !== ptF) return false;
+          if (aF && s.alert !== aF) return false;
+          return true;
+        });
+        const body = $("invDetailBody");
+        if (!list.length) {
+          body.innerHTML =
+            '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted)">No filters match.</td></tr>';
+          return;
+        }
+        body.innerHTML = list
+          .map((s) => dynRow(s, fmtNum(PROPERTY_COUNT[s.id] || 0)))
+          .join("");
+      }
+
+      // Single entry point — call all 5
+      function renderInventory() {
+        renderHomepageSlots();
+        renderStaticBannerSlots();
+        renderSearchSlots();
+        renderArticleSlots();
+        renderDetailSlots();
+      }
+
+      // ========================================================================
+      // VACANT SLOTS — track currently empty inventory
+      // ========================================================================
+      function isFixedVacant(s) {
+        return s.occupant == null;
+      }
+      function isDynamicVacant(s) {
+        return s.activeAgents === 0;
+      }
+      function vacantFixed(type) {
+        return fixedSlots.filter((s) => s.type === type && isFixedVacant(s));
+      }
+      function vacantDynamic(type) {
+        return dynamicSlots.filter(
+          (s) => s.type === type && isDynamicVacant(s),
+        );
+      }
+
+      function renderVacant() {
+        const vHP = vacantFixed(1);
+        const vSB = vacantFixed(2);
+        const vSR = vacantDynamic(3);
+        const vIA = vacantDynamic(4);
+        const vPD = vacantDynamic(5);
+
+        const totalVacant = vHP.length + vSB.length + vSR.length + vIA.length + vPD.length;
+        const fixedVacant = vHP.length + vSB.length;
+        const dynamicVacant = vSR.length + vIA.length + vPD.length;
+
+        $("vacantKpi").innerHTML = `
+          <div class="kpi"><div class="kpi-label">Total Vacant Slots</div><div class="kpi-value">${totalVacant}</div><div class="kpi-delta alert-flat">${vHP.length} HP · ${vSB.length} Page · ${vSR.length} Search · ${vIA.length} Article · ${vPD.length} Detail</div></div>
+          <div class="kpi"><div class="kpi-label">Fixed Vacant</div><div class="kpi-value" style="color:${fixedVacant > 0 ? "var(--badge-amber)" : "var(--badge-green)"}">${fixedVacant}</div><div class="kpi-delta alert-flat">Homepage + Standalone Page</div></div>
+          <div class="kpi"><div class="kpi-label">Dynamic Pools Empty</div><div class="kpi-value" style="color:${dynamicVacant > 0 ? "var(--badge-amber)" : "var(--badge-green)"}">${dynamicVacant}</div><div class="kpi-delta alert-flat">No agent bought this slot yet</div></div>`;
+
+        $("vacantBadge").textContent = totalVacant;
+        $("vacantBadge").style.display = totalVacant > 0 ? "" : "none";
+
+        // 1. Homepage Carousel
+        $("vacHomepageCount").textContent = `${vHP.length} vacant of 5 positions`;
+        $("vacHomepageBody").innerHTML = vHP.length
+          ? vHP.map(s => `
+            <tr>
+              <td><strong>${esc(s.name.replace("Homepage Carousel — ", ""))}</strong></td>
+              <td class="num-cell"><strong>${fmtYen(s.price)}</strong>/mo</td>
+            </tr>`).join("")
+          : '<tr><td colspan="2" style="text-align:center;padding:18px;color:var(--badge-green)"><i class="fas fa-circle-check"></i> All 5 positions are occupied.</td></tr>';
+
+        // 2. Standalone Page Banner
+        $("vacStaticCount").textContent = `${vSB.length} vacant of ${fixedSlots.filter((s) => s.type === 2).length} pages`;
+        $("vacStaticBody").innerHTML = vSB.length
+          ? vSB.map(s => `
+            <tr>
+              <td><strong>${esc(s.name.replace("Static Banner — ", ""))}</strong></td>
+              <td class="num-cell"><strong>${fmtYen(s.price)}</strong>/mo</td>
+            </tr>`).join("")
+          : '<tr><td colspan="2" style="text-align:center;padding:18px;color:var(--badge-green)"><i class="fas fa-circle-check"></i> All standalone page banners are occupied.</td></tr>';
+
+        // 3. Search Top 3
+        $("vacSearchCount").textContent = `${vSR.length} empty slot(s)`;
+        $("vacSearchBody").innerHTML = vSR.length
+          ? vSR.map(s => `
+            <tr>
+              <td><strong>${esc(s.label)}</strong></td>
+              <td class="num-cell">${fmtYen(s.cpm)}</td>
+            </tr>`).join("")
+          : '<tr><td colspan="2" style="text-align:center;padding:18px;color:var(--badge-green)"><i class="fas fa-circle-check"></i> All search slots have active agents.</td></tr>';
+
+        // 4. In-Article (Categories)
+        $("vacArticleCount").textContent = `${vIA.length} empty categor${vIA.length === 1 ? "y" : "ies"}`;
+        $("vacArticleBody").innerHTML = vIA.length
+          ? vIA.map(s => `
+            <tr>
+              <td><strong>${esc(slotMeta(s).category || s.label)}</strong></td>
+              <td class="num-cell">${ARTICLE_COUNT[s.id] || 0}</td>
+              <td class="num-cell">${fmtYen(s.cpm)}</td>
+            </tr>`).join("")
+          : '<tr><td colspan="3" style="text-align:center;padding:18px;color:var(--badge-green)"><i class="fas fa-circle-check"></i> All article categories have active agents.</td></tr>';
+
+        // 5. Property Detail (Filters)
+        $("vacDetailCount").textContent = `${vPD.length} empty filter(s)`;
+        $("vacDetailBody").innerHTML = vPD.length
+          ? vPD.map(s => {
+              const m = slotMeta(s);
+              return `
+            <tr>
+              <td><strong>${esc(m.propType + " × " + m.location)}</strong></td>
+              <td class="num-cell">${fmtNum(PROPERTY_COUNT[s.id] || 0)}</td>
+              <td class="num-cell">${fmtYen(s.cpm)}</td>
+            </tr>`;
+            }).join("")
+          : '<tr><td colspan="3" style="text-align:center;padding:18px;color:var(--badge-green)"><i class="fas fa-circle-check"></i> All property detail filters have active agents.</td></tr>';
+      }
+
+      function openPool(slotId, label) {
+        $("poolSlotName").textContent = label;
+        const pool = pools[slotId];
+        const body = $("poolBody");
+        if (!pool) {
+          body.innerHTML =
+            '<div style="color:var(--text-muted);padding:14px;text-align:center"><em>No active agents in this slot pool.</em></div>';
+        } else {
+          body.innerHTML = `<div class="pool-panel">${pool
+            .map(
+              (p) => `
+            <div class="pool-row">
+              <div><strong>${esc(p.agent)}</strong><br><span style="font-size:11px;color:var(--text-muted)">Budget: ${fmtYen(p.budget)}</span></div>
+              <div style="text-align:right"><strong>${p.share}%</strong><br><span style="font-size:10.5px;color:var(--text-muted)">share</span></div>
+              <div><div class="pool-bar"><span style="width:${p.deliveredPct}%"></span></div></div>
+              <div><span class="badge ${p.badge === "good" ? "badge-active" : p.badge === "warn" ? "badge-pending" : "badge-rejected"}">${p.deliveredPct}%</span></div>
+            </div>`,
+            )
+            .join("")}</div>`;
+        }
+        $("poolModal").classList.add("open");
+      }
+      function closePool() {
+        $("poolModal").classList.remove("open");
+      }
+
+      // ========================================================================
+      // TAB 4 — PRICING INTELLIGENCE
+      // ========================================================================
+      function renderPricingKpi() {
+        const totalRev = ads
+          .filter((a) => ["Active", "Paused"].includes(a.status))
+          .reduce((s, a) => s + (a.budget || 0), 0);
+        const lastMonthRev = Math.round(totalRev * 0.82);
+        const occ = Math.round(
+          dynamicSlots.reduce((s, d) => s + d.occupancyRate, 0) /
+            dynamicSlots.length,
+        );
+        const priceAlerts = dynamicSlots.filter(
+          (d) => d.alert !== "healthy",
+        ).length;
+        const underdeliver = ads.filter(
+          (a) => a.status === "Active" && a.deliveredPct < 90,
+        ).length;
+        const delta = (
+          ((totalRev - lastMonthRev) / lastMonthRev) *
+          100
+        ).toFixed(1);
+        $("pricingKpi").innerHTML = `
+          <div class="kpi"><div class="kpi-label">Total Ad Revenue (MTD)</div><div class="kpi-value">${fmtYen(totalRev)}</div><div class="kpi-delta alert-up">▲ ${delta}% vs last month</div></div>
+          <div class="kpi"><div class="kpi-label">Platform Occupancy</div><div class="kpi-value">${occ}%</div><div class="kpi-delta alert-flat">Across ${dynamicSlots.length} dynamic slots</div></div>
+          <div class="kpi"><div class="kpi-label">Active Price Alerts</div><div class="kpi-value">${priceAlerts}</div><div class="kpi-delta alert-flat">Demand-driven adjustments</div></div>
+          <div class="kpi"><div class="kpi-label">Underdelivery Alerts</div><div class="kpi-value">${underdeliver}</div><div class="kpi-delta ${underdeliver > 0 ? "alert-down" : "alert-flat"}">${underdeliver > 0 ? "Refund / extension required" : "All bookings on track"}</div></div>`;
+      }
+
+      function renderPriceAlerts() {
+        const list = dynamicSlots.filter((d) => d.alert !== "healthy");
+        $("priceAlertBadge").textContent = list.length;
+        $("priceAlertBadge").style.display = list.length > 0 ? "" : "none";
+        const body = $("priceAlertBody");
+        if (!list.length) {
+          body.innerHTML =
+            '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted)">No price alerts. All slots are healthy.</td></tr>';
+          return;
+        }
+        body.innerHTML = list
+          .map((d) => {
+            let newPrice, changePct;
+            if (d.alert === "increase") {
+              changePct = Math.min(20, d.demand * 5);
+              newPrice = Math.round(d.cpm * (1 + changePct / 100));
+            } else {
+              changePct = -Math.min(30, (1 - d.occupancyRate / 100) * 40);
+              newPrice = Math.round(d.cpm * (1 + changePct / 100));
+            }
+            return `
+            <tr>
+              <td><strong>${esc(d.label)}</strong></td>
+              <td class="num-cell">${fmtYen(d.cpm)}</td>
+              <td class="num-cell"><strong>${d.demand.toFixed(1)}</strong> / 4.0</td>
+              <td class="num-cell">${fmtPct(d.occupancyRate, 0)}</td>
+              <td>${changePct >= 0 ? `<span class="alert-up">▲ +${changePct.toFixed(1)}%</span>` : `<span class="alert-down">▼ ${changePct.toFixed(1)}%</span>`}</td>
+              <td class="num-cell"><strong>${fmtYen(newPrice)}</strong></td>
+              <td>${alertBadge(d.alert)}</td>
+              <td class="actions">
+                <button class="btn btn-sm btn-success" onclick="approvePriceChange('${d.id}', ${newPrice})"><i class="fas fa-check"></i> Approve</button>
+                <button class="btn btn-sm" onclick="dismissPriceAlert('${d.id}')"><i class="fas fa-xmark"></i> Dismiss</button>
+              </td>
+            </tr>`;
+          })
+          .join("");
+      }
+      function approvePriceChange(id, newPrice) {
+        const d = dynamicSlots.find((x) => x.id === id);
+        if (!d) return;
+        d.cpm = newPrice;
+        d.alert = "healthy";
+        toast(`${d.label} → new CPM ${fmtYen(newPrice)} applied.`);
+        renderPriceAlerts();
+        renderInventory();
+        renderPricingKpi();
+      }
+      function dismissPriceAlert(id) {
+        const d = dynamicSlots.find((x) => x.id === id);
+        if (!d) return;
+        d.alert = "healthy";
+        toast(`${d.label} alert dismissed.`, "warn");
+        renderPriceAlerts();
+        renderInventory();
+        renderPricingKpi();
+      }
+
+      function renderUnderdelivery() {
+        const list = ads.filter(
+          (a) => a.status === "Active" && a.deliveredPct < 90,
+        );
+        const body = $("underBody");
+        if (!list.length) {
+          body.innerHTML =
+            '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">All active bookings delivering ≥ 90%. No alerts.</td></tr>';
+          return;
+        }
+        body.innerHTML = list
+          .map((a) => {
+            const severity = a.deliveredPct < 70 ? "Critical" : "Warning";
+            const sevCls =
+              severity === "Critical" ? "badge-critical" : "badge-warn";
+            const today = new Date("2026-05-19");
+            const end = new Date(a.endDate);
+            const daysLeft = Math.max(0, Math.ceil((end - today) / 86400000));
+            const undeliveredPct = 100 - a.deliveredPct;
+            const refund = Math.round(((a.budget || 0) * undeliveredPct) / 100);
+            const extendDays = Math.ceil(
+              ((a.durationDays || 30) * undeliveredPct) / 100,
+            );
+            const action =
+              severity === "Critical"
+                ? `<button class="btn btn-sm btn-success" onclick="alert('Issue wallet credit: ${fmtYen(refund)}')"><i class="fas fa-wallet"></i> Credit ${fmtYen(refund)}</button>`
+                : `<button class="btn btn-sm" onclick="alert('Extend booking by ${extendDays} days')"><i class="fas fa-calendar-plus"></i> Extend +${extendDays}d</button>`;
+            return `
+            <tr>
+              <td><strong>${esc(a.id)}</strong></td>
+              <td>${esc(a.agentName)}</td>
+              <td>${esc(a.slotLabel)}</td>
+              <td class="num-cell">${fmtNum(a.contractedIMP || a.estImpressions || 0)}</td>
+              <td class="num-cell">${fmtNum(a.impressions)}</td>
+              <td class="num-cell"><strong style="color:${a.deliveredPct < 70 ? "var(--badge-red)" : "var(--badge-amber)"}">${a.deliveredPct}%</strong></td>
+              <td><span class="badge ${sevCls}">${severity}</span></td>
+              <td class="num-cell">${daysLeft}d</td>
+              <td class="actions">${action} <button class="btn btn-sm btn-outline-danger" onclick="alert('Flagged for investigation')"><i class="fas fa-flag"></i> Flag</button></td>
+            </tr>`;
+          })
+          .join("");
+      }
+
+      // ========================================================================
+      // POPULATE DROPDOWNS
+      // ========================================================================
+      function populateFilters() {
+        // Agent dropdown — Approval + Active
+        AGENTS.forEach((a) => {
+          const opt1 = new Option(a.company + " — " + a.name, a.id);
+          const opt2 = new Option(a.company + " — " + a.name, a.id);
+          $("apAgent").add(opt1);
+          $("actAgent").add(opt2);
+        });
+        // Search Top 3 — Location + PropType (unique values)
+        const t3 = dynamicSlots.filter((s) => s.type === 3).map(slotMeta);
+        const t3Loc = [
+          ...new Set(t3.map((m) => m.location).filter(Boolean)),
+        ].sort();
+        const t3Pt = [
+          ...new Set(t3.map((m) => m.propType).filter(Boolean)),
+        ].sort();
+        t3Loc.forEach((v) => $("invSearchLoc").add(new Option(v, v)));
+        t3Pt.forEach((v) => $("invSearchType").add(new Option(v, v)));
+        // In-Article — Category
+        const t4 = dynamicSlots.filter((s) => s.type === 4).map(slotMeta);
+        const t4Cat = [
+          ...new Set(t4.map((m) => m.category).filter(Boolean)),
+        ].sort();
+        t4Cat.forEach((v) => $("invArticleCat").add(new Option(v, v)));
+        // Property Detail — Location + PropType
+        const t5 = dynamicSlots.filter((s) => s.type === 5).map(slotMeta);
+        const t5Loc = [
+          ...new Set(t5.map((m) => m.location).filter(Boolean)),
+        ].sort();
+        const t5Pt = [
+          ...new Set(t5.map((m) => m.propType).filter(Boolean)),
+        ].sort();
+        t5Loc.forEach((v) => $("invDetailLoc").add(new Option(v, v)));
+        t5Pt.forEach((v) => $("invDetailType").add(new Option(v, v)));
+      }
+
+      // ========================================================================
+      // INIT
+      // ========================================================================
+      populateFilters();
+      bindSort("apTable", renderApproval);
+      bindSort("actTable", renderActiveAds);
+      $("apStatus").value = "Pending";
+      renderApproval();
+      // Initialize price-alert badge count
+      $("priceAlertBadge").textContent = dynamicSlots.filter(
+        (d) => d.alert !== "healthy",
+      ).length;
+      // Initialize vacant badge count
+      const vacCount =
+        fixedSlots.filter((s) => s.occupant == null).length +
+        dynamicSlots.filter((s) => s.activeAgents === 0).length;
+      $("vacantBadge").textContent = vacCount;
+      $("vacantBadge").style.display = vacCount > 0 ? "" : "none";
+    </script>
+  </body>
+</html>

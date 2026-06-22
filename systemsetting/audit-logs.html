@@ -6,21 +6,19 @@
     <title>Admin - Audit Logs</title>
     <style>
       :root {
-        --bg-body: #f5f3ef;
-        --bg-card: #fffaf2;
-        --border-subtle: #eadccd;
-        --accent: #c26b41;
-        --text-main: #3b2f2a;
+        --bg-body: #f5f5f5;
+        --bg-card: #ffffff;
+        --border-subtle: #e0e0e0;
+        --accent: #8B7340;
+        --text-main: #1a1a1a;
         --text-muted: #7a6a5c;
         --badge-green: #2f855a;
         --badge-gray: #4a5568;
         --badge-red: #c53030;
       }
-
       * {
         box-sizing: border-box;
       }
-
       body {
         margin: 0;
         padding: 20px 24px 32px;
@@ -33,17 +31,27 @@
         background-color: var(--bg-body);
         color: var(--text-main);
       }
-
       h1 {
         margin: 0 0 4px;
         font-size: 22px;
         letter-spacing: 0.02em;
       }
-
       .page-subtitle {
-        margin: 0 0 16px;
+        margin: 0 0 14px;
         font-size: 13px;
         color: var(--text-muted);
+      }
+      .retention {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--text-muted);
+        background: #faf6ee;
+        border: 1px solid var(--border-subtle);
+        border-radius: 999px;
+        padding: 3px 12px;
+        margin: 0 0 14px;
       }
 
       .layout {
@@ -52,46 +60,50 @@
         gap: 16px;
         align-items: flex-start;
       }
-
       .card {
         background-color: var(--bg-card);
         border-radius: 14px;
         border: 1px solid var(--border-subtle);
         padding: 14px 16px 16px;
-        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
       }
-
       .card-header {
         display: flex;
         justify-content: space-between;
-        align-items: baseline;
+        align-items: center;
+        gap: 10px;
         margin-bottom: 10px;
+        flex-wrap: wrap;
       }
-
       .card-title {
         font-size: 14px;
         font-weight: 600;
       }
-
-      .card-subtitle {
-        font-size: 12px;
-        color: var(--text-muted);
+      .title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
       }
 
+      .filter-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
       .filters {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
         margin-bottom: 10px;
       }
-
       .field-group {
         display: flex;
         flex-direction: column;
         gap: 4px;
-        min-width: 140px;
+        min-width: 150px;
       }
-
       .field-label {
         font-size: 11px;
         font-weight: 500;
@@ -99,20 +111,96 @@
       }
 
       select,
-      input[type="text"] {
+      input[type="text"],
+      input[type="date"] {
         border-radius: 999px;
         border: 1px solid var(--border-subtle);
         padding: 6px 10px;
         font-size: 12px;
-        background-color: #fffcf7;
+        background-color: #ffffff;
         color: var(--text-main);
         outline: none;
+        font-family: inherit;
+      }
+      select:focus,
+      input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(139, 115, 64, 0.2);
       }
 
-      select:focus,
-      input[type="text"]:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
+      /* Multi-select */
+      .ms {
+        position: relative;
+      }
+      .ms-btn {
+        width: 100%;
+        text-align: left;
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 26px 6px 10px;
+        font-size: 12px;
+        background: #ffffff
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a6a5c' fill='none' stroke-width='1.5'/%3E%3C/svg%3E")
+          no-repeat right 11px center;
+        color: var(--text-main);
+        cursor: pointer;
+        font-family: inherit;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .ms-panel {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        z-index: 50;
+        min-width: 220px;
+        max-width: 300px;
+        background: #fff;
+        border: 1px solid var(--border-subtle);
+        border-radius: 10px;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+        padding: 8px;
+        display: none;
+      }
+      .ms-panel.open {
+        display: block;
+      }
+      .ms-search {
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid var(--border-subtle);
+        padding: 6px 9px;
+        font-size: 12px;
+        margin-bottom: 6px;
+      }
+      .ms-list {
+        max-height: 200px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+      .ms-opt {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 6px;
+        font-size: 12px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      .ms-opt:hover {
+        background: #faf6ee;
+      }
+      .ms-opt input {
+        width: 14px;
+        height: 14px;
+        accent-color: var(--accent);
+      }
+      .ms-empty {
+        font-size: 11px;
+        color: var(--text-muted);
+        padding: 6px;
       }
 
       table {
@@ -120,37 +208,57 @@
         border-collapse: collapse;
         font-size: 12px;
       }
-
       thead {
-        background: #f7efe6;
+        background: #faf6ee;
       }
-
       th,
       td {
         padding: 7px 8px;
         text-align: left;
-        border-bottom: 1px solid #efe0d4;
+        border-bottom: 1px solid #e0e0e0;
       }
-
       th {
         font-weight: 500;
         font-size: 11px;
         color: var(--text-muted);
         text-transform: uppercase;
         letter-spacing: 0.04em;
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
       }
-
+      th .sort-ind {
+        color: var(--accent);
+        margin-left: 3px;
+        font-size: 10px;
+      }
       tbody tr {
         cursor: pointer;
         transition: background 0.12s ease;
       }
-
       tbody tr:hover {
-        background-color: #f8f1ea;
+        background-color: #faf6ee;
+      }
+      tbody tr.selected-row {
+        background-color: #faf6ee;
+      }
+      td.empty-cell {
+        text-align: center;
+        color: var(--text-muted);
+        padding: 22px 8px;
       }
 
-      tbody tr.selected-row {
-        background-color: #f1e3d5;
+      .action-code {
+        border-bottom: 1px dotted #c9a85c;
+        cursor: help;
+      }
+      a.link {
+        color: #8a5a3b;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      a.link:hover {
+        text-decoration: underline;
       }
 
       .badge {
@@ -163,23 +271,63 @@
         border: 1px solid transparent;
         white-space: nowrap;
       }
-
       .badge-info {
         background: #edf2f7;
         color: var(--badge-gray);
         border-color: #cbd5e0;
       }
-
       .badge-success {
         background: #e6f6ef;
         color: var(--badge-green);
         border-color: #b7e4cc;
       }
-
       .badge-danger {
         background: #fff5f5;
         color: var(--badge-red);
         border-color: #fed7d7;
+      }
+
+      /* Result count + pager */
+      .result-count {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin: 4px 0 8px;
+      }
+      .pager {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+      .pg-btn {
+        min-width: 30px;
+        height: 30px;
+        padding: 0 9px;
+        border: 1px solid var(--border-subtle);
+        background: #fff;
+        border-radius: 8px;
+        font-size: 12px;
+        color: var(--text-main);
+        cursor: pointer;
+      }
+      .pg-btn:hover:not(:disabled) {
+        background: #faf6ee;
+      }
+      .pg-btn.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        font-weight: 600;
+      }
+      .pg-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .pg-ellipsis {
+        padding: 0 4px;
+        color: var(--text-muted);
       }
 
       .detail-section-title {
@@ -190,29 +338,44 @@
         color: var(--text-muted);
         margin-bottom: 6px;
       }
-
       .detail-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px 12px;
         margin-bottom: 8px;
       }
-
       .detail-label {
         font-size: 11px;
         color: var(--text-muted);
         margin-bottom: 2px;
       }
-
       .detail-value {
         font-size: 12px;
       }
-
+      .detail-placeholder {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 8px;
+      }
+      .detail-close {
+        background: transparent;
+        border: 1px solid var(--border-subtle);
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        cursor: pointer;
+        color: var(--text-muted);
+        font-size: 16px;
+        line-height: 1;
+      }
+      .detail-close:hover {
+        background: #faf6ee;
+      }
       .preview-box {
         border-radius: 10px;
-        border: 1px dashed #deccba;
+        border: 1px dashed #c9a85c;
         padding: 8px 9px;
-        background: #fffaf1;
+        background: #faf6ee;
         font-size: 12px;
         color: var(--text-main);
         white-space: pre-line;
@@ -229,23 +392,43 @@
         gap: 4px;
         align-items: center;
         color: var(--text-main);
+        font-family: inherit;
       }
-
       .btn-ghost {
         background: transparent;
       }
 
-      .btn-primary {
-        background: linear-gradient(135deg, #c26b41, #a55232);
-        border-color: #a55232;
-        color: #fffaf3;
-      }
-
-      .actions-row {
+      /* Toast */
+      .toast-wrap {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 9999;
         display: flex;
-        justify-content: flex-end;
-        gap: 6px;
-        margin-top: 6px;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast {
+        background: #fff;
+        border: 1px solid var(--border-subtle);
+        border-left: 4px solid var(--accent);
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 12.5px;
+        color: var(--text-main);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        max-width: 320px;
+        animation: tIn 0.18s ease;
+      }
+      @keyframes tIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
       }
 
       @media (max-width: 960px) {
@@ -254,439 +437,925 @@
         }
       }
     </style>
-    <style id="uxTableOverflowFix">
-/* Table overflow handling: keep text intact, only enable horizontal scroll on narrow viewport */
-@media (max-width: 1199px) {
-  table {
-    display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-}
-</style>
-  <style id="uxResponsiveSplitFix">
-/* Force stack 1 column: list full-width on top, detail below */
-.layout {
-  grid-template-columns: minmax(0, 1fr) !important;
-}
-/* Compact tightening for very narrow viewports */
-@media (max-width: 900px) {
-  .page {
-    padding: 16px !important;
-  }
-}
-</style>
-  <style id="uxBaselinePolish">
-/* Baseline UI polish — applies only where file CSS doesn't override */
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-/* Pointer cursor on interactive */
-button, .btn, [role="button"], select,
-input[type="checkbox"], input[type="radio"], input[type="submit"],
-input[type="button"], a[href], label[for] {
-  cursor: pointer;
-}
-
-/* Disabled state */
-button:disabled, .btn:disabled, input:disabled, select:disabled, textarea:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/* Focus-visible outline (a11y) */
-button:focus-visible, .btn:focus-visible,
-a:focus-visible, [role="button"]:focus-visible,
-input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 2px solid #c4a25f;
-  outline-offset: 2px;
-}
-
-/* Inherit font family for form controls (fixes browser-default) */
-input, select, textarea, button {
-  font-family: inherit;
-}
-
-/* Responsive media */
-img, svg, video {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Subtle hover for buttons (only if no transition already set, gentle filter) */
-button:hover:not(:disabled), .btn:hover:not(:disabled) {
-  filter: brightness(0.96);
-  transition: filter 0.15s ease;
-}
-
-/* Smooth scrollbar on Webkit */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: #f5ece0;
-}
-::-webkit-scrollbar-thumb {
-  background: #d9c8b4;
-  border-radius: 6px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #c4a25f;
-}
-
-/* Selection highlight on-brand */
-::selection {
-  background: #c4a25f;
-  color: #fff;
-}
-
-/* HR baseline */
-hr {
-  border: none;
-  border-top: 1px solid #eadccd;
-  margin: 12px 0;
-}
-
-/* Anchor baseline color matches brand (no underline by default to match flat UI) */
-a {
-  color: #8a5a3b;
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
-</style>
-</head>
+  </head>
   <body>
-    <div>
-      <h1>Audit Logs</h1>
+    <h1>Audit Logs</h1>
+    <div class="retention">
+      🔒 Logs are retained for 5 years per platform policy.
     </div>
 
-    <div class="layout">
+    <div id="listView">
       <section class="card">
         <div class="card-header">
-          <div>
-            <div class="card-title">Audit log table</div>
+          <div class="title-wrap">
+            <span class="card-title">Audit log table</span>
           </div>
-          <div class="actions-row">
-            <button id="btnExportCsv" class="btn btn-ghost" type="button">
-              Export CSV
-            </button>
-          </div>
+          <button id="btnExportCsv" class="btn btn-ghost" type="button">
+            Export CSV
+          </button>
+        </div>
+
+        <div class="filter-head">
+          <span class="field-label">Filters</span>
+          <button id="btnReset" class="btn btn-ghost" type="button">
+            Reset filters
+          </button>
         </div>
 
         <div class="filters">
           <div class="field-group">
-            <label class="field-label" for="actorFilter">Actor</label>
-            <select id="actorFilter">
-              <option value="">All</option>
-              <option value="superadmin_01">superadmin_01</option>
-              <option value="ops_tanaka">ops_tanaka</option>
-              <option value="support_01">support_01</option>
+            <label class="field-label" for="presetFilter">Date preset</label>
+            <select id="presetFilter">
+              <option value="custom">Custom</option>
+              <option value="today">Today</option>
+              <option value="yesterday">Yesterday</option>
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
             </select>
+          </div>
+          <div class="field-group" style="min-width: 130px">
+            <label class="field-label" for="dateFrom">From</label>
+            <input id="dateFrom" type="date" />
+          </div>
+          <div class="field-group" style="min-width: 130px">
+            <label class="field-label" for="dateTo">To</label>
+            <input id="dateTo" type="date" />
           </div>
           <div class="field-group">
-            <label class="field-label" for="actionFilter">Action type</label>
-            <select id="actionFilter">
-              <option value="">All</option>
-              <option value="config_change">Config change</option>
-              <option value="security">Security</option>
-              <option value="billing">Billing</option>
-              <option value="integration">Integration</option>
-            </select>
+            <label class="field-label">Actor</label>
+            <div class="ms" id="msActor"></div>
           </div>
           <div class="field-group">
-            <label class="field-label" for="severityFilter">Severity</label>
-            <select id="severityFilter">
-              <option value="">All</option>
-              <option value="info">Info</option>
-              <option value="success">Success</option>
-              <option value="danger">Danger</option>
-            </select>
+            <label class="field-label">Severity</label>
+            <div class="ms" id="msSeverity"></div>
           </div>
-          <div class="field-group" style="flex: 1 1 220px">
+          <div class="field-group">
+            <label class="field-label">Action category</label>
+            <div class="ms" id="msCategory"></div>
+          </div>
+          <div class="field-group" style="flex: 1 1 200px">
             <label class="field-label" for="searchLog"
               >Search by resource</label
             >
             <input
               id="searchLog"
               type="text"
-              placeholder="e.g. security_policy, billing_contract..."
+              placeholder="e.g. USER-1042, security_policy..."
             />
           </div>
         </div>
 
-        <div style="overflow: auto; max-height: 280px">
+        <div class="result-count" id="resultCount">Showing 0 of 0 entries</div>
+
+        <div id="tableScroll" style="overflow: auto; max-height: 360px">
           <table>
             <thead>
               <tr>
-                <th>Time</th>
-                <th>Actor</th>
-                <th>Action</th>
-                <th>Resource</th>
-                <th>Severity</th>
+                <th data-sort="ts">Time <span class="sort-ind"></span></th>
+                <th data-sort="actor">Actor <span class="sort-ind"></span></th>
+                <th data-sort="action">
+                  Action <span class="sort-ind"></span>
+                </th>
+                <th data-sort="resource">
+                  Resource <span class="sort-ind"></span>
+                </th>
+                <th data-sort="severity">
+                  Severity <span class="sort-ind"></span>
+                </th>
               </tr>
             </thead>
             <tbody id="logTbody"></tbody>
           </table>
         </div>
+        <div class="pager" id="logPager"></div>
       </section>
 
+    </div>
+
+    <div id="detailView" style="display: none">
+      <div style="margin-bottom: 12px">
+        <button id="btnBack" class="btn btn-ghost" type="button">
+          ‹ Back to logs
+        </button>
+      </div>
       <section class="card">
-        <div id="logEmpty">
-          <div class="card-title">Log details</div>
+        <div class="card-header">
+          <span class="card-title">Log details</span>
         </div>
-        <div id="logDetail" style="display: none">
-          <div class="detail-section-title">General information</div>
-          <div class="detail-grid">
-            <div>
-              <div class="detail-label">Time</div>
-              <div class="detail-value" id="dTime"></div>
-            </div>
-            <div>
-              <div class="detail-label">Actor</div>
-              <div class="detail-value" id="dActor"></div>
-            </div>
-            <div>
-              <div class="detail-label">Action</div>
-              <div class="detail-value" id="dAction"></div>
-            </div>
-            <div>
-              <div class="detail-label">Resource</div>
-              <div class="detail-value" id="dResource"></div>
-            </div>
+        <div class="detail-section-title">General information</div>
+        <div class="detail-grid">
+          <div>
+            <div class="detail-label">Time</div>
+            <div class="detail-value" id="dTime"></div>
           </div>
-
-          <div class="detail-section-title">Context & result</div>
-          <div
-            class="detail-grid"
-            style="grid-template-columns: minmax(0, 1fr)"
-          >
-            <div>
-              <div class="detail-label">Severity</div>
-              <div class="detail-value" id="dSeverity"></div>
-            </div>
-            <div>
-              <div class="detail-label">Summary</div>
-              <div class="detail-value" id="dSummary"></div>
-            </div>
+          <div>
+            <div class="detail-label">Actor</div>
+            <div class="detail-value" id="dActor"></div>
           </div>
-
-          <div class="detail-section-title">Privacy explanation</div>
-          <div class="preview-box" id="privacyNote"></div>
+          <div>
+            <div class="detail-label">Action</div>
+            <div class="detail-value" id="dAction"></div>
+          </div>
+          <div>
+            <div class="detail-label">Resource</div>
+            <div class="detail-value" id="dResource"></div>
+          </div>
         </div>
+
+        <div class="detail-section-title">Context &amp; result</div>
+        <div class="detail-grid" style="grid-template-columns: minmax(0, 1fr)">
+          <div>
+            <div class="detail-label">Severity</div>
+            <div class="detail-value" id="dSeverity"></div>
+          </div>
+          <div>
+            <div class="detail-label">Summary</div>
+            <div class="detail-value" id="dSummary"></div>
+          </div>
+        </div>
+
+        <div class="detail-section-title">Privacy explanation</div>
+        <div class="preview-box" id="privacyNote"></div>
       </section>
     </div>
 
+    <div class="toast-wrap" id="toastWrap"></div>
+
     <script>
-      const logs = [
-        {
-          id: "L1",
-          time: "2026-04-10 09:15 JST",
-          actor: "superadmin_01",
-          action: "UPDATE_SECURITY_POLICY",
-          actionType: "security",
-          resource: "security_policy",
-          severity: "success",
-          summary:
-            "Updated password & 2FA policy for production admins, approved by two reviewers.",
-        },
-        {
-          id: "L2",
-          time: "2026-04-10 09:20 JST",
-          actor: "superadmin_01",
-          action: "UPDATE_INTEGRATION",
-          actionType: "integration",
-          resource: "INT-PAY-STRIPE-JP",
-          severity: "info",
-          summary:
-            "Changed metadata description for Stripe JP integration. Real secret rotated in a separate vault.",
-        },
-        {
-          id: "L3",
-          time: "2026-04-12 14:35 JST",
-          actor: "ops_tanaka",
-          action: "UPDATE_BILLING_CONTRACT",
-          actionType: "billing",
-          resource: "CONTRACT-AGENT-TOKYO-01",
-          severity: "success",
-          summary:
-            "Adjusted billing cycle from monthly to quarterly for an agent in Tokyo.",
-        },
-        {
-          id: "L4",
-          time: "2026-04-05 18:05 JST",
-          actor: "support_01",
-          action: "LOGIN_FAILED_LOCKOUT",
-          actionType: "security",
-          resource: "support_01",
-          severity: "danger",
-          summary:
-            "Account support_01 was locked due to exceeding allowed failed login attempts.",
-        },
+      /* ════════ Reference data ════════ */
+      // Admin accounts (Actor multi-select loads ALL of these).
+      const ADMINS = [
+        "superadmin_01",
+        "ops_tanaka",
+        "support_01",
+        "admin_yamada",
+        "admin_suzuki",
+        "ops_watanabe",
+        "sec_admin_01",
+        "billing_ito",
+        "content_sato",
+        "support_02",
+        "admin_kato",
+        "ops_mori",
       ];
 
-      let selectedId = null;
-
-      const els = {
-        actorFilter: document.getElementById("actorFilter"),
-        actionFilter: document.getElementById("actionFilter"),
-        severityFilter: document.getElementById("severityFilter"),
-        searchLog: document.getElementById("searchLog"),
-        logTbody: document.getElementById("logTbody"),
-        logEmpty: document.getElementById("logEmpty"),
-        logDetail: document.getElementById("logDetail"),
-        dTime: document.getElementById("dTime"),
-        dActor: document.getElementById("dActor"),
-        dAction: document.getElementById("dAction"),
-        dResource: document.getElementById("dResource"),
-        dSeverity: document.getElementById("dSeverity"),
-        dSummary: document.getElementById("dSummary"),
-        privacyNote: document.getElementById("privacyNote"),
-        btnExportCsv: document.getElementById("btnExportCsv"),
+      // Action code dictionary: code -> { desc, cats[], sev }
+      const CRITICAL = [
+        "RESET_PASSWORD",
+        "SUSPEND_ACCOUNT",
+        "DELETE_USER",
+        "FORCE_LOGOUT",
+        "GRANT_ADMIN_ROLE",
+        "REVOKE_ADMIN_ROLE",
+        "UPDATE_SECURITY_POLICY",
+        "EXPORT_AUDIT_LOGS",
+        "GRANT_BADGE",
+        "REMOVE_BADGE",
+      ];
+      const PDA = [
+        "VIEW_USER_CHAT_HISTORY",
+        "VIEW_PAYMENT_DETAILS",
+        "VIEW_KYC_DOCUMENTS",
+        "EXPORT_USER_DATA",
+      ];
+      const ACTIONS = {
+        RESET_PASSWORD: {
+          desc: "Reset a user's password",
+          cats: ["security"],
+          sev: "success",
+        },
+        SUSPEND_ACCOUNT: {
+          desc: "Suspended an account",
+          cats: ["security"],
+          sev: "danger",
+        },
+        DELETE_USER: {
+          desc: "Deleted a user account",
+          cats: ["security"],
+          sev: "danger",
+        },
+        FORCE_LOGOUT: {
+          desc: "Forced logout of an active session",
+          cats: ["security"],
+          sev: "info",
+        },
+        GRANT_ADMIN_ROLE: {
+          desc: "Granted an admin role",
+          cats: ["security"],
+          sev: "success",
+        },
+        REVOKE_ADMIN_ROLE: {
+          desc: "Revoked an admin role",
+          cats: ["security"],
+          sev: "info",
+        },
+        UPDATE_SECURITY_POLICY: {
+          desc: "Updated platform security policy",
+          cats: ["security", "config"],
+          sev: "success",
+        },
+        EXPORT_AUDIT_LOGS: {
+          desc: "Exported audit logs",
+          cats: ["security"],
+          sev: "info",
+        },
+        GRANT_BADGE: {
+          desc: "Granted an agent badge",
+          cats: ["config"],
+          sev: "success",
+        },
+        REMOVE_BADGE: {
+          desc: "Removed an agent badge",
+          cats: ["config"],
+          sev: "info",
+        },
+        VIEW_USER_CHAT_HISTORY: {
+          desc: "Viewed a user's chat history",
+          cats: [],
+          sev: "info",
+        },
+        VIEW_PAYMENT_DETAILS: {
+          desc: "Viewed payment details",
+          cats: ["billing"],
+          sev: "info",
+        },
+        VIEW_KYC_DOCUMENTS: {
+          desc: "Viewed KYC documents",
+          cats: [],
+          sev: "info",
+        },
+        EXPORT_USER_DATA: {
+          desc: "Exported user personal data",
+          cats: [],
+          sev: "info",
+        },
+        UPDATE_CONFIG: {
+          desc: "Updated platform configuration",
+          cats: ["config"],
+          sev: "success",
+        },
+        UPDATE_APPRAISAL_FORM: {
+          desc: "Updated appraisal form field configuration",
+          cats: ["config"],
+          sev: "success",
+        },
+        UPDATE_PLATFORM_INFO: {
+          desc: "Updated platform information",
+          cats: ["config"],
+          sev: "success",
+        },
+        LOGIN_FAILED_LOCKOUT: {
+          desc: "Account locked after failed login attempts",
+          cats: ["security"],
+          sev: "danger",
+        },
+        ENABLE_2FA: {
+          desc: "Enabled two-factor authentication",
+          cats: ["security"],
+          sev: "success",
+        },
+        UPDATE_BILLING_CONTRACT: {
+          desc: "Updated a billing contract",
+          cats: ["billing"],
+          sev: "success",
+        },
+        ISSUE_REFUND: {
+          desc: "Issued a refund",
+          cats: ["billing"],
+          sev: "success",
+        },
+        UPDATE_SUBSCRIPTION_PLAN: {
+          desc: "Updated a subscription plan",
+          cats: ["billing"],
+          sev: "info",
+        },
+        UPDATE_INTEGRATION: {
+          desc: "Updated an integration",
+          cats: ["integration"],
+          sev: "info",
+        },
+        ROTATE_API_KEY: {
+          desc: "Rotated an API key",
+          cats: ["integration", "security"],
+          sev: "success",
+        },
+        VIEW_AUDIT_LOGS: {
+          desc: "Viewed the audit logs",
+          cats: ["security"],
+          sev: "info",
+        },
       };
+      // Resolve all categories an action belongs to (incl. derived Critical/PDA).
+      function actionCats(code) {
+        const base = (ACTIONS[code] && ACTIONS[code].cats) || [];
+        const out = base.slice();
+        if (CRITICAL.includes(code)) out.push("critical");
+        if (PDA.includes(code)) out.push("pda");
+        return out;
+      }
+      const CATEGORY_OPTS = [
+        { value: "critical", label: "Critical Actions" },
+        { value: "pda", label: "Personal Data Access" },
+        { value: "config", label: "Config Change" },
+        { value: "security", label: "Security" },
+        { value: "billing", label: "Billing" },
+        { value: "integration", label: "Integration" },
+      ];
+      const SEVERITY_OPTS = [
+        { value: "success", label: "Success" },
+        { value: "danger", label: "Danger" },
+        { value: "info", label: "Info" },
+      ];
 
-      function severityBadge(sev) {
-        const span = document.createElement("span");
-        span.classList.add("badge");
-        if (sev === "success") {
-          span.classList.add("badge-success");
-          span.textContent = "Success";
-        } else if (sev === "danger") {
-          span.classList.add("badge-danger");
-          span.textContent = "Danger";
-        } else {
-          span.classList.add("badge-info");
-          span.textContent = "Info";
-        }
-        return span;
+      const RESOURCE_BY_ACTION = {
+        RESET_PASSWORD: () => userRes(),
+        SUSPEND_ACCOUNT: () => userRes(),
+        DELETE_USER: () => userRes(),
+        FORCE_LOGOUT: () => userRes(),
+        GRANT_ADMIN_ROLE: () => admRes(),
+        REVOKE_ADMIN_ROLE: () => admRes(),
+        UPDATE_SECURITY_POLICY: () => "security_policy",
+        EXPORT_AUDIT_LOGS: () => "audit_logs",
+        GRANT_BADGE: () => agentRes(),
+        REMOVE_BADGE: () => agentRes(),
+        VIEW_USER_CHAT_HISTORY: () => userRes(),
+        VIEW_PAYMENT_DETAILS: () => userRes(),
+        VIEW_KYC_DOCUMENTS: () => userRes(),
+        EXPORT_USER_DATA: () => userRes(),
+        UPDATE_CONFIG: () => "platform_config",
+        UPDATE_APPRAISAL_FORM: () => "appraisal_form",
+        UPDATE_PLATFORM_INFO: () => "platform_info",
+        LOGIN_FAILED_LOCKOUT: () => admRes(),
+        ENABLE_2FA: () => admRes(),
+        UPDATE_BILLING_CONTRACT: () => "CONTRACT-" + n4(),
+        ISSUE_REFUND: () => "REFUND-" + n4(),
+        UPDATE_SUBSCRIPTION_PLAN: () => "PLAN-" + n4(),
+        UPDATE_INTEGRATION: () => "INT-" + n4(),
+        ROTATE_API_KEY: () => "INT-" + n4(),
+        VIEW_AUDIT_LOGS: () => "audit_logs",
+      };
+      let _seq = 1000;
+      function n4() {
+        _seq += 7;
+        return String(1000 + (_seq % 9000));
+      }
+      function userRes() {
+        return "USER-" + n4();
+      }
+      function agentRes() {
+        return "AGENT-" + n4();
+      }
+      function admRes() {
+        return "ADM-" + String(1 + (_seq++ % 12)).padStart(3, "0");
       }
 
-      function applyFilters() {
-        const actor = els.actorFilter.value;
-        const actionType = els.actionFilter.value;
-        const severity = els.severityFilter.value;
-        const q = els.searchLog.value.trim().toLowerCase();
+      /* ════════ State ════════ */
+      const PAGE_SIZE = 50;
+      let page = 1;
+      let sort = { col: "ts", dir: "desc" }; // default: time descending
+      let selectedId = null;
+      let _id = 0;
+
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      function fmt(d) {
+        const p = (n) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())} JST`;
+      }
+
+      /* ════════ Seed (80+ entries across the last 90 days) ════════ */
+      const ACTION_CODES = Object.keys(ACTIONS).filter(
+        (c) => c !== "VIEW_AUDIT_LOGS",
+      );
+      const logs = [];
+      function makeEntry(code, actor, ts) {
+        const meta = ACTIONS[code] || { sev: "info" };
+        const resource = (RESOURCE_BY_ACTION[code] || (() => "resource"))();
+        return {
+          id: "L" + ++_id,
+          ts,
+          time: fmt(new Date(ts)),
+          actor,
+          action: code,
+          resource,
+          severity: meta.sev,
+          summary: `${meta.desc} — actor ${actor} on ${resource}.`,
+        };
+      }
+      (function seed() {
+        const base = Date.now();
+        const DAY = 86400000;
+        for (let i = 0; i < 84; i++) {
+          const code = ACTION_CODES[i % ACTION_CODES.length];
+          const actor = ADMINS[i % ADMINS.length];
+          const dayOffset = Math.floor((i * 90) / 84); // spread 0..~89 days
+          const ts =
+            base - dayOffset * DAY - (i % 12) * 3600000 - (i % 5) * 600000;
+          logs.push(makeEntry(code, actor, ts));
+        }
+        logs.sort((a, b) => b.ts - a.ts);
+      })();
+
+      /* ════════ Multi-select component ════════ */
+      function makeMultiSelect(
+        host,
+        opts,
+        { searchable, placeholder, onChange },
+      ) {
+        const selected = new Set();
+        host.innerHTML = `
+          <button type="button" class="ms-btn"></button>
+          <div class="ms-panel">
+            ${searchable ? '<input type="text" class="ms-search" placeholder="Search…" />' : ""}
+            <div class="ms-list"></div>
+          </div>`;
+        const btn = host.querySelector(".ms-btn");
+        const panel = host.querySelector(".ms-panel");
+        const list = host.querySelector(".ms-list");
+        const search = host.querySelector(".ms-search");
+
+        function label() {
+          btn.textContent =
+            selected.size === 0 ? placeholder : `${selected.size} selected`;
+        }
+        function renderList(filter) {
+          const f = (filter || "").toLowerCase();
+          const shown = opts.filter(
+            (o) => !f || o.label.toLowerCase().includes(f),
+          );
+          list.innerHTML = shown.length
+            ? shown
+                .map(
+                  (o) =>
+                    `<label class="ms-opt"><input type="checkbox" value="${esc(o.value)}" ${selected.has(o.value) ? "checked" : ""}>${esc(o.label)}</label>`,
+                )
+                .join("")
+            : '<div class="ms-empty">No matches</div>';
+        }
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          document.querySelectorAll(".ms-panel.open").forEach((p) => {
+            if (p !== panel) p.classList.remove("open");
+          });
+          panel.classList.toggle("open");
+          if (panel.classList.contains("open") && search) {
+            search.value = "";
+            renderList("");
+            setTimeout(() => search.focus(), 20);
+          }
+        });
+        list.addEventListener("change", (e) => {
+          const cb = e.target.closest("input[type=checkbox]");
+          if (!cb) return;
+          if (cb.checked) selected.add(cb.value);
+          else selected.delete(cb.value);
+          label();
+          onChange();
+        });
+        if (search)
+          search.addEventListener("input", () => renderList(search.value));
+        panel.addEventListener("click", (e) => e.stopPropagation());
+
+        renderList("");
+        label();
+        return {
+          values: () => [...selected],
+          clear: () => {
+            selected.clear();
+            label();
+            renderList(search ? search.value : "");
+          },
+        };
+      }
+
+      const onFilterChange = () => {
+        page = 1;
+        renderTable();
+      };
+      const msActor = makeMultiSelect(
+        $("msActor"),
+        ADMINS.map((a) => ({ value: a, label: a })),
+        {
+          searchable: true,
+          placeholder: "All actors",
+          onChange: onFilterChange,
+        },
+      );
+      const msSeverity = makeMultiSelect($("msSeverity"), SEVERITY_OPTS, {
+        searchable: false,
+        placeholder: "All severities",
+        onChange: onFilterChange,
+      });
+      const msCategory = makeMultiSelect($("msCategory"), CATEGORY_OPTS, {
+        searchable: false,
+        placeholder: "All categories",
+        onChange: onFilterChange,
+      });
+
+      document.addEventListener("click", () =>
+        document
+          .querySelectorAll(".ms-panel.open")
+          .forEach((p) => p.classList.remove("open")),
+      );
+
+      /* ════════ Filtering / sorting / pagination ════════ */
+      function getFiltered() {
+        const from = $("dateFrom").value
+          ? new Date($("dateFrom").value + "T00:00:00").getTime()
+          : null;
+        const to = $("dateTo").value
+          ? new Date($("dateTo").value + "T23:59:59").getTime()
+          : null;
+        const actors = msActor.values();
+        const sevs = msSeverity.values();
+        const cats = msCategory.values();
+        const q = $("searchLog").value.trim().toLowerCase();
         return logs.filter((l) => {
-          if (actor && l.actor !== actor) return false;
-          if (actionType && l.actionType !== actionType) return false;
-          if (severity && l.severity !== severity) return false;
-          if (!q) return true;
-          const text = (l.action + " " + l.resource).toLowerCase();
-          return text.includes(q);
+          if (from && l.ts < from) return false;
+          if (to && l.ts > to) return false;
+          if (actors.length && !actors.includes(l.actor)) return false;
+          if (sevs.length && !sevs.includes(l.severity)) return false;
+          if (cats.length) {
+            const ac = actionCats(l.action);
+            if (!cats.some((c) => ac.includes(c))) return false;
+          }
+          if (q) {
+            const t = (
+              l.action +
+              " " +
+              l.resource +
+              " " +
+              l.summary
+            ).toLowerCase();
+            if (!t.includes(q)) return false;
+          }
+          return true;
+        });
+      }
+      function getSorted(list) {
+        if (!sort.dir) return list;
+        const sign = sort.dir === "asc" ? 1 : -1;
+        return list.slice().sort((a, b) => {
+          let va, vb;
+          if (sort.col === "ts") {
+            va = a.ts;
+            vb = b.ts;
+          } else {
+            va = String(a[sort.col] || "").toLowerCase();
+            vb = String(b[sort.col] || "").toLowerCase();
+          }
+          if (va < vb) return -1 * sign;
+          if (va > vb) return 1 * sign;
+          return 0;
+        });
+      }
+      function pageWindow(cur, pages) {
+        const out = [];
+        if (pages <= 7) {
+          for (let i = 1; i <= pages; i++) out.push(i);
+          return out;
+        }
+        let s = Math.max(2, cur - 2),
+          e = Math.min(pages - 1, cur + 2);
+        if (cur <= 4) {
+          s = 2;
+          e = 5;
+        }
+        if (cur >= pages - 3) {
+          s = pages - 4;
+          e = pages - 1;
+        }
+        out.push(1);
+        if (s > 2) out.push("…");
+        for (let i = s; i <= e; i++) out.push(i);
+        if (e < pages - 1) out.push("…");
+        out.push(pages);
+        return out;
+      }
+      function renderPager(total) {
+        const pagerEl = $("logPager");
+        const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        if (total <= PAGE_SIZE) {
+          pagerEl.innerHTML = "";
+          pagerEl.style.display = "none";
+          return;
+        }
+        pagerEl.style.display = "flex";
+        let h = `<button type="button" class="pg-btn" ${page === 1 ? "disabled" : ""} onclick="gotoPage(${page - 1})">‹ Prev</button>`;
+        pageWindow(page, pages).forEach((p) => {
+          h +=
+            p === "…"
+              ? `<span class="pg-ellipsis">…</span>`
+              : `<button type="button" class="pg-btn ${p === page ? "active" : ""}" onclick="gotoPage(${p})">${p}</button>`;
+        });
+        h += `<button type="button" class="pg-btn" ${page === pages ? "disabled" : ""} onclick="gotoPage(${page + 1})">Next ›</button>`;
+        pagerEl.innerHTML = h;
+      }
+      function gotoPage(p) {
+        page = p;
+        renderTable();
+      }
+      window.gotoPage = gotoPage;
+
+      function severityBadgeHtml(sev) {
+        const cls =
+          sev === "success"
+            ? "badge-success"
+            : sev === "danger"
+              ? "badge-danger"
+              : "badge-info";
+        const label =
+          sev === "success" ? "Success" : sev === "danger" ? "Danger" : "Info";
+        return `<span class="badge ${cls}">${label}</span>`;
+      }
+      function resourceHtml(res) {
+        const m = String(res).match(/^(USER|AGENT|ADM)-/i);
+        if (!m) return esc(res);
+        const map = {
+          USER: "user-account-management.html",
+          AGENT: "agent-management.html",
+          ADM: "admin-management.html",
+        };
+        const url =
+          "../usermanagement/" +
+          map[m[1].toUpperCase()] +
+          "?ref=" +
+          encodeURIComponent(res);
+        return `<a class="link" href="${url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(res)}</a>`;
+      }
+      function actorHtml(actor) {
+        const url =
+          "../usermanagement/admin-management.html?actor=" +
+          encodeURIComponent(actor);
+        return `<a class="link" href="${url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(actor)}</a>`;
+      }
+      function actionHtml(code) {
+        const desc = (ACTIONS[code] && ACTIONS[code].desc) || code;
+        return `<span class="action-code" title="${esc(desc)}">${esc(code)}</span>`;
+      }
+
+      function renderSortIndicators() {
+        document.querySelectorAll("th[data-sort]").forEach((th) => {
+          const ind = th.querySelector(".sort-ind");
+          ind.textContent =
+            sort.dir && th.dataset.sort === sort.col
+              ? sort.dir === "asc"
+                ? "▲"
+                : "▼"
+              : "";
         });
       }
 
       function renderTable() {
-        const list = applyFilters();
-        els.logTbody.innerHTML = "";
-        list.forEach((l) => {
-          const tr = document.createElement("tr");
-          if (l.id === selectedId) tr.classList.add("selected-row");
+        const filtered = getFiltered();
+        const sorted = getSorted(filtered);
+        const total = sorted.length;
+        const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        if (page > pages) page = pages;
+        if (page < 1) page = 1;
+        const start = (page - 1) * PAGE_SIZE;
+        const rows = sorted.slice(start, start + PAGE_SIZE);
 
-          const tdTime = document.createElement("td");
-          tdTime.textContent = l.time;
-          const tdActor = document.createElement("td");
-          tdActor.textContent = l.actor;
-          const tdAction = document.createElement("td");
-          tdAction.textContent = l.action;
-          const tdResource = document.createElement("td");
-          tdResource.textContent = l.resource;
-          const tdSeverity = document.createElement("td");
-          tdSeverity.appendChild(severityBadge(l.severity));
+        $("resultCount").textContent =
+          total === 0
+            ? "Showing 0 of 0 entries"
+            : `Showing ${start + 1}–${start + rows.length} of ${total} entries`;
 
-          tr.appendChild(tdTime);
-          tr.appendChild(tdActor);
-          tr.appendChild(tdAction);
-          tr.appendChild(tdResource);
-          tr.appendChild(tdSeverity);
-
-          tr.addEventListener("click", () => selectLog(l.id));
-          els.logTbody.appendChild(tr);
-        });
+        const tb = $("logTbody");
+        if (!total) {
+          tb.innerHTML =
+            '<tr><td class="empty-cell" colspan="5">No log entries match the filters.</td></tr>';
+          renderSortIndicators();
+          renderPager(total);
+          return;
+        }
+        tb.innerHTML = rows
+          .map(
+            (l) =>
+              `<tr data-id="${l.id}" class="${l.id === selectedId ? "selected-row" : ""}">
+            <td>${esc(l.time)}</td>
+            <td>${actorHtml(l.actor)}</td>
+            <td>${actionHtml(l.action)}</td>
+            <td>${resourceHtml(l.resource)}</td>
+            <td>${severityBadgeHtml(l.severity)}</td>
+          </tr>`,
+          )
+          .join("");
+        tb.querySelectorAll("tr[data-id]").forEach((tr) =>
+          tr.addEventListener("click", () => selectLog(tr.dataset.id)),
+        );
+        renderSortIndicators();
+        renderPager(total);
       }
 
+      /* ════════ Detail panel ════════ */
       function selectLog(id) {
         const l = logs.find((x) => x.id === id);
         if (!l) return;
         selectedId = id;
-        els.logEmpty.style.display = "none";
-        els.logDetail.style.display = "";
-
-        els.dTime.textContent = l.time;
-        els.dActor.textContent = l.actor;
-        els.dAction.textContent = l.action;
-        els.dResource.textContent = l.resource;
-        els.dSeverity.textContent =
-          l.severity === "success"
-            ? "Success"
-            : l.severity === "danger"
-              ? "Danger"
-              : "Info";
-        els.dSummary.textContent = l.summary;
-
-        renderPrivacyNote(l);
+        $("dTime").textContent = l.time;
+        $("dActor").innerHTML = actorHtml(l.actor);
+        $("dAction").innerHTML =
+          actionHtml(l.action) +
+          (ACTIONS[l.action]
+            ? ` <span style="color:var(--text-muted)">— ${esc(ACTIONS[l.action].desc)}</span>`
+            : "");
+        $("dResource").innerHTML = resourceHtml(l.resource);
+        $("dSeverity").innerHTML = severityBadgeHtml(l.severity);
+        $("dSummary").textContent = l.summary;
+        $("privacyNote").textContent = [
+          `This log records action ${l.action} by ${l.actor} on resource ${l.resource} at ${l.time}.`,
+          "Only metadata is shown here (who, what action, on which resource, when, and outcome).",
+          "Detailed payloads (request body, personal data, message/call content…) are not visible in the admin view and are kept in a dedicated logging system with strict access control.",
+        ].join("\n");
+        renderTable();
+        showDetailView();
+      }
+      function showDetailView() {
+        $("listView").style.display = "none";
+        $("detailView").style.display = "";
+        window.scrollTo(0, 0);
+      }
+      function closeDetail() {
+        selectedId = null;
+        $("detailView").style.display = "none";
+        $("listView").style.display = "";
         renderTable();
       }
 
-      function renderPrivacyNote(l) {
-        const lines = [];
-        lines.push(
-          `This log records action ${l.action} by ${l.actor} on resource ${l.resource} at ${l.time}.`,
-        );
-        lines.push(
-          "Only metadata is shown here (who, what action, on which resource, when, and outcome).",
-        );
-        lines.push(
-          "Detailed payloads (request body, personal data, message/call content...) are not visible in the admin view and are kept in a dedicated logging system with strict access control.",
-        );
-        els.privacyNote.textContent = lines.join("\n");
+      /* ════════ Meta-audit ════════ */
+      function metaAudit(code) {
+        const entry = makeEntry(code, "superadmin_01", Date.now());
+        entry.resource = "audit_logs";
+        logs.unshift(entry);
       }
 
+      /* ════════ CSV export ════════ */
+      function csvCell(v) {
+        const s = String(v == null ? "" : v);
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      }
       function exportCsv() {
-        const list = applyFilters();
+        const list = getSorted(getFiltered());
+        if (!list.length) {
+          toast("No data to export.");
+          return;
+        }
         const header = [
           "time",
           "actor",
           "action",
-          "actionType",
+          "action_description",
           "resource",
           "severity",
+          "summary",
         ];
         const rows = list.map((l) => [
           l.time,
           l.actor,
           l.action,
-          l.actionType,
+          (ACTIONS[l.action] && ACTIONS[l.action].desc) || "",
           l.resource,
           l.severity,
+          l.summary,
         ]);
-        const csv = [header.join(","), ...rows.map((r) => r.join(","))].join(
-          "\n",
-        );
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const csv = [header, ...rows]
+          .map((r) => r.map(csvCell).join(","))
+          .join("\n");
+        const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "audit-logs.csv";
+        a.download =
+          "audit-logs-" + new Date().toISOString().slice(0, 10) + ".csv";
         a.click();
         URL.revokeObjectURL(url);
-      }
-
-      function init() {
-        els.actorFilter.addEventListener("change", renderTable);
-        els.actionFilter.addEventListener("change", renderTable);
-        els.severityFilter.addEventListener("change", renderTable);
-        els.searchLog.addEventListener("input", renderTable);
-        els.btnExportCsv.addEventListener("click", exportCsv);
+        metaAudit("EXPORT_AUDIT_LOGS");
+        toast(`Exported ${list.length} log entries to CSV.`);
         renderTable();
       }
 
-      init();
+      /* ════════ Toast ════════ */
+      function toast(msg) {
+        const el = document.createElement("div");
+        el.className = "toast";
+        el.textContent = msg;
+        $("toastWrap").appendChild(el);
+        setTimeout(() => {
+          el.style.opacity = "0";
+          el.style.transition = "opacity .25s";
+          setTimeout(() => el.remove(), 260);
+        }, 3000);
+      }
+
+      /* ════════ Auto-refresh (runs continuously, never pauses) ════════ */
+      function refreshTick() {
+        const n = 1 + (Date.now() % 3); // 1..3 new entries
+        for (let i = 0; i < n; i++) {
+          const code = ACTION_CODES[(Date.now() + i) % ACTION_CODES.length];
+          const actor = ADMINS[(Date.now() + i) % ADMINS.length];
+          logs.unshift(makeEntry(code, actor, Date.now()));
+        }
+        // Re-render while preserving the table scroll position and selected row.
+        const sc = $("tableScroll").scrollTop;
+        renderTable();
+        $("tableScroll").scrollTop = sc;
+        toast(`${n} new log entries loaded.`);
+      }
+
+      /* ════════ Date presets ════════ */
+      function ymd(d) {
+        const p = (n) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+      }
+      function applyPreset(v) {
+        const today = new Date();
+        const set = (from, to) => {
+          $("dateFrom").value = from ? ymd(from) : "";
+          $("dateTo").value = to ? ymd(to) : "";
+        };
+        if (v === "today") set(today, today);
+        else if (v === "yesterday") {
+          const y = new Date(today);
+          y.setDate(y.getDate() - 1);
+          set(y, y);
+        } else if (v === "7d") {
+          const f = new Date(today);
+          f.setDate(f.getDate() - 6);
+          set(f, today);
+        } else if (v === "30d") {
+          const f = new Date(today);
+          f.setDate(f.getDate() - 29);
+          set(f, today);
+        }
+        // "custom" leaves the date inputs as-is
+        page = 1;
+        renderTable();
+      }
+
+      /* ════════ Reset ════════ */
+      function resetFilters() {
+        $("presetFilter").value = "custom";
+        $("dateFrom").value = "";
+        $("dateTo").value = "";
+        msActor.clear();
+        msSeverity.clear();
+        msCategory.clear();
+        $("searchLog").value = "";
+        sort = { col: "ts", dir: "desc" };
+        page = 1;
+        renderTable();
+      }
+
+      /* ════════ Wiring ════════ */
+      $("presetFilter").addEventListener("change", (e) =>
+        applyPreset(e.target.value),
+      );
+      ["dateFrom", "dateTo"].forEach((id) =>
+        $(id).addEventListener("change", () => {
+          $("presetFilter").value = "custom";
+          page = 1;
+          renderTable();
+        }),
+      );
+      $("searchLog").addEventListener("input", () => {
+        page = 1;
+        renderTable();
+      });
+      $("btnReset").addEventListener("click", resetFilters);
+      $("btnExportCsv").addEventListener("click", exportCsv);
+      $("btnBack").addEventListener("click", closeDetail);
+
+      document.querySelectorAll("th[data-sort]").forEach((th) => {
+        th.addEventListener("click", () => {
+          const col = th.dataset.sort;
+          if (sort.col === col && sort.dir) {
+            sort.dir = sort.dir === "asc" ? "desc" : null;
+            if (!sort.dir) sort.col = null;
+          } else {
+            sort.col = col;
+            sort.dir = "asc";
+          }
+          page = 1;
+          renderTable();
+        });
+      });
+
+      // Meta-audit: viewing the audit logs logs an entry.
+      metaAudit("VIEW_AUDIT_LOGS");
+      renderTable();
+      setInterval(refreshTick, 30000);
     </script>
   </body>
 </html>

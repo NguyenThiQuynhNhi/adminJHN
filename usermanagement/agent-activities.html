@@ -3,545 +3,1929 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin - Agent Activities</title>
+    <title>Admin — Agency Activity Dashboard</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
     <style>
+      :root {
+        --bg-body: #f5f0e8;
+        --bg-card: #ffffff;
+        --bg-soft: #fffaf2;
+        --border-subtle: #eadccd;
+        --border-strong: #d9c8b4;
+        --accent: #c4714a;
+        --accent-dark: #a5572d;
+        --accent-deep: #8a4324;
+        --gold: #c4a25f;
+        --text-main: #2a1f18;
+        --text-muted: #7a6a5c;
+        --text-dim: #9b8568;
+        --badge-green: #2f855a;
+        --badge-red: #c53030;
+        --badge-gray: #4a5568;
+        --badge-amber: #b7791f;
+        --badge-blue: #2c5282;
+        --badge-purple: #6b46c1;
+        --plan-free: #4a5568;
+        --plan-bronze: #92400e;
+        --plan-silver: #4a5568;
+        --plan-gold: #92651b;
+      }
       * {
         box-sizing: border-box;
       }
-
+      html,
       body {
         margin: 0;
+        padding: 0;
+      }
+      body {
+        padding: clamp(14px, 2vw, 22px);
         font-family:
           system-ui,
           -apple-system,
           BlinkMacSystemFont,
           "Segoe UI",
           sans-serif;
-        background: #f5f3ef;
-        color: #2a2118;
+        background: var(--bg-body);
+        color: var(--text-main);
+        font-size: 13px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
       }
-
-      .page {
-        padding: 24px 32px 32px;
-      }
-
-      .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 18px;
-      }
-
-      .page-title {
+      h1 {
+        margin: 0 0 4px;
         font-size: 22px;
         font-weight: 700;
+        letter-spacing: 0.02em;
       }
-
-      .card {
-        background: #fffaf2;
-        border-radius: 10px;
-        border: 1px solid #eadccd;
-        padding: 14px 16px 16px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      .page-header {
+        margin-bottom: 14px;
       }
-
-      .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
+      .breadcrumb {
+        font-size: 11.5px;
+        color: var(--text-dim);
+        margin-bottom: 6px;
+        letter-spacing: 0.02em;
       }
-
-      .card-title {
-        font-size: 15px;
+      .breadcrumb i {
+        font-size: 9px;
+        margin: 0 6px;
+        opacity: 0.6;
+      }
+      .breadcrumb .active {
+        color: var(--accent);
         font-weight: 600;
       }
+      .page-subtitle {
+        margin: 0;
+        font-size: 12.5px;
+        color: var(--text-muted);
+        max-width: 760px;
+      }
 
-      .filters {
+      /* Filter bar */
+      .filter-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 14px 16px;
+        box-shadow: 0 6px 20px rgba(115, 72, 39, 0.05);
+        margin-bottom: 14px;
+      }
+      .filter-row {
         display: flex;
+        gap: 10px;
         flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 10px;
+        align-items: end;
       }
-
-      .filters input[type="text"],
-      .filters select {
-        border-radius: 999px;
-        border: 1px solid #ddcdb9;
-        padding: 6px 10px;
-        font-size: 12px;
-        background: #fdf8f0;
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
       }
-
-      .filters input[type="text"] {
+      .field-label {
+        font-size: 10.5px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      input,
+      select {
+        height: 36px;
+        padding: 6px 11px;
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+        background: #fffcf7;
+        font-size: 13px;
+        color: var(--text-main);
+        outline: none;
+        font-family: inherit;
+      }
+      select[multiple] {
+        height: auto;
+        padding: 4px;
+      }
+      input:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(196, 113, 74, 0.18);
+      }
+      .seg-toggle {
+        display: inline-flex;
+        background: #fff;
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+        padding: 3px;
+        gap: 2px;
+      }
+      .seg-toggle button {
+        background: transparent;
+        border: 0;
+        padding: 7px 14px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text-muted);
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .seg-toggle button:hover {
+        background: #f9f3e6;
+        color: var(--text-main);
+      }
+      .seg-toggle button.active {
+        background: var(--accent);
+        color: #fff;
+      }
+      .filter-row .grow {
         flex: 1;
-        min-width: 220px;
+        min-width: 40px;
+      }
+      .check-inline {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text-main);
+        cursor: pointer;
+        height: 36px;
+        padding: 0 4px;
+      }
+      .check-inline input {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--accent);
       }
 
-      .filters select {
-        min-width: 160px;
+      /* Buttons */
+      .btn {
+        border-radius: 8px;
+        border: 1px solid var(--border-subtle);
+        padding: 7px 14px;
+        font-size: 12.5px;
+        background: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-main);
+        font-family: inherit;
+        font-weight: 500;
+        min-height: 36px;
+        transition:
+          background 0.15s,
+          transform 0.1s;
+      }
+      .btn:hover {
+        background: #f9f3e6;
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn-primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: var(--accent-dark);
+        border-color: var(--accent-dark);
+      }
+      .btn-ghost {
+        background: transparent;
+        border-color: transparent;
+      }
+      .btn-ghost:hover {
+        background: #f3ece1;
+      }
+      .btn-sm {
+        padding: 4px 9px;
+        font-size: 11.5px;
+        min-height: 28px;
+      }
+      .btn-icon {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 6px;
+      }
+      .btn-icon i {
+        font-size: 12px;
       }
 
-      table {
+      /* Card */
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 6px 20px rgba(115, 72, 39, 0.05);
+        margin-bottom: 14px;
+      }
+      .card-title {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f5ece0;
+      }
+      .card-title i {
+        color: var(--accent);
+        font-size: 13px;
+        width: 18px;
+        text-align: center;
+      }
+      .card-title small {
+        margin-left: auto;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-dim);
+      }
+
+      /* Table */
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table.data-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 12px;
+        font-size: 12.5px;
       }
-
-      thead {
-        background: #f1e4d4;
+      .data-table thead {
+        background: #f7efe6;
       }
-
-      th,
-      td {
-        padding: 8px 6px;
+      .data-table th,
+      .data-table td {
+        padding: 10px 11px;
         text-align: left;
-        border-bottom: 1px solid #efe2d3;
+        border-bottom: 1px solid #efe0d4;
+        vertical-align: middle;
       }
-
-      th {
-        font-weight: 600;
-        font-size: 11px;
+      .data-table th {
+        font-weight: 700;
+        font-size: 10.5px;
+        color: var(--text-muted);
         text-transform: uppercase;
-        letter-spacing: 0.02em;
-        color: #7b623f;
-      }
-
-      tbody tr:hover td {
-        background: #f8efe3;
-      }
-
-      .btn {
-        border-radius: 999px;
-        border: none;
-        padding: 4px 10px;
-        font-size: 11px;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
         cursor: pointer;
+        user-select: none;
+      }
+      .data-table th.no-sort {
+        cursor: default;
+      }
+      .data-table th .sort-ico {
+        color: var(--text-dim);
+        font-size: 9px;
+        margin-left: 3px;
+      }
+      .data-table th.sort-asc .sort-ico::before {
+        content: "▲";
+        color: var(--accent);
+      }
+      .data-table th.sort-desc .sort-ico::before {
+        content: "▼";
+        color: var(--accent);
+      }
+      .data-table tbody tr {
+        cursor: pointer;
+        transition: background 0.1s;
+      }
+      .data-table tbody tr:hover {
+        background: #f8f1ea;
+      }
+      .data-table tbody tr.selected {
+        background: #fef1e6;
+      }
+      .data-table td.actions {
+        white-space: nowrap;
+      }
+      .num-cell {
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Agency name cell */
+      .agent-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 220px;
+      }
+      .agent-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 12px;
+        flex-shrink: 0;
+      }
+      .agent-name {
+        font-weight: 600;
+        color: var(--text-main);
+        display: block;
+      }
+      .agent-sub {
+        font-size: 10.5px;
+        color: var(--text-dim);
+        display: block;
+        margin-top: 1px;
+      }
+
+      /* Badges */
+      .badge {
         display: inline-flex;
         align-items: center;
         gap: 4px;
+        padding: 2px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+      .plan-Free {
+        background: #f3ece1;
+        color: var(--plan-free);
+        border-color: #d9c8b4;
+      }
+      .plan-Bronze {
+        background: #fdebd0;
+        color: var(--plan-bronze);
+        border-color: #f6c891;
+      }
+      .plan-Silver {
+        background: #e2e8f0;
+        color: var(--plan-silver);
+        border-color: #cbd5e0;
+      }
+      .plan-Gold {
+        background: #fef3c7;
+        color: var(--plan-gold);
+        border-color: #fcd34d;
       }
 
-      .btn-ghost {
-        background: #f7efe4;
-        color: #6a5641;
-        border: 1px solid #ddcdb9;
+      /* Metric with trend */
+      .metric-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        min-width: 60px;
+        font-variant-numeric: tabular-nums;
+      }
+      .metric-value {
+        font-weight: 600;
+      }
+      .metric-trend {
+        font-size: 10.5px;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+      }
+      .trend-up {
+        color: var(--badge-green);
+      }
+      .trend-down {
+        color: var(--badge-red);
+      }
+      .trend-flat {
+        color: var(--text-dim);
       }
 
-      .empty-state {
+      .resp-cell {
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        min-width: 50px;
+      }
+
+      .days-cell {
+        font-variant-numeric: tabular-nums;
+      }
+      .days-alert {
+        background: #fde8e8;
+        color: var(--badge-red);
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+      }
+
+      /* Pagination */
+      .pager {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+      .pager button {
+        min-width: 32px;
+        height: 32px;
+        border: 1px solid var(--border-subtle);
+        background: #fff;
+        border-radius: 7px;
+        font-size: 12.5px;
+        font-family: inherit;
+        color: var(--text-main);
+        cursor: pointer;
+        padding: 0 9px;
+      }
+      .pager button:hover:not(:disabled) {
+        background: #f9f3e6;
+      }
+      .pager button.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        font-weight: 700;
+      }
+      .pager button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .pg-ellipsis {
+        padding: 0 4px;
+        color: var(--text-muted);
+      }
+
+      /* Drill-down panel */
+      .drill-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(28, 18, 12, 0.4);
+        display: none;
+        z-index: 90;
+      }
+      .drill-backdrop.open {
+        display: block;
+        animation: fadeIn 0.15s ease;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .drill-panel {
+        position: fixed;
+        top: 0;
+        right: -540px;
+        bottom: 0;
+        width: 520px;
+        max-width: 95vw;
+        background: #fff;
+        box-shadow: -10px 0 40px rgba(0, 0, 0, 0.18);
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        transition: right 0.25s ease;
+      }
+      .drill-panel.open {
+        right: 0;
+      }
+      .drill-header {
+        padding: 18px 22px;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: linear-gradient(180deg, #fffaf2, #fef1e6);
+      }
+      .drill-header .avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+      .drill-header .info {
+        flex: 1;
+        min-width: 0;
+      }
+      .drill-header .info .name {
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .drill-header .info .meta {
         font-size: 12px;
-        color: #7c6a55;
-        text-align: center;
-        padding: 14px 0;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 4px;
+      }
+      .drill-close {
+        background: transparent;
+        border: 0;
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        font-size: 18px;
+        color: var(--text-muted);
+        cursor: pointer;
+      }
+      .drill-close:hover {
+        background: rgba(0, 0, 0, 0.05);
+        color: var(--text-main);
+      }
+      .drill-body {
+        padding: 18px 22px;
+        overflow: auto;
+        flex: 1;
+      }
+      .drill-body h4 {
+        margin: 18px 0 8px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+      }
+      .drill-body h4:first-child {
+        margin-top: 0;
       }
 
-      @media (max-width: 960px) {
-        .page {
-          padding: 16px;
+      .inactivity-banner {
+        background: #fde8e8;
+        border: 1px solid #fbcaca;
+        color: #962d24;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 12.5px;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin: 0 0 12px;
+      }
+      .inactivity-banner i {
+        color: var(--badge-red);
+        margin-top: 2px;
+      }
+
+      /* Performance Score block */
+      .perf-score {
+        text-align: center;
+        padding: 2px 0 14px;
+        border-bottom: 1px solid var(--border-subtle);
+        margin-bottom: 14px;
+      }
+      .perf-num {
+        font-size: 40px;
+        font-weight: 800;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+      }
+      .perf-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-top: 7px;
+      }
+      .perf-sub {
+        font-size: 12px;
+        color: var(--text-dim);
+        margin-top: 6px;
+      }
+
+      /* Period-over-period comparison table */
+      .cmp-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+      }
+      .cmp-table th,
+      .cmp-table td {
+        padding: 7px 8px;
+        border-bottom: 1px solid var(--border-subtle);
+        text-align: right;
+      }
+      .cmp-table th:first-child,
+      .cmp-table td:first-child {
+        text-align: left;
+      }
+      .cmp-table th {
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-muted);
+        font-weight: 700;
+      }
+      .cmp-table td {
+        font-variant-numeric: tabular-nums;
+      }
+      .cmp-table td:last-child {
+        font-weight: 700;
+      }
+
+      .listing-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .listing-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background: #fffcf7;
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+        font-size: 12.5px;
+      }
+      .listing-item .lname {
+        color: var(--text-main);
+        font-weight: 600;
+        min-width: 0;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding-right: 10px;
+      }
+      .listing-item .lcount {
+        font-weight: 600;
+        color: var(--text-muted);
+        background: #fff;
+        padding: 2px 10px;
+        border-radius: 999px;
+        font-size: 11.5px;
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+
+      .drill-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding-top: 14px;
+        margin-top: 14px;
+        border-top: 1px solid var(--border-subtle);
+      }
+
+      /* Assign-badge inline popover */
+      .badge-pop {
+        position: fixed;
+        z-index: 120;
+        width: 230px;
+        background: #fff;
+        border: 1px solid var(--border-strong);
+        border-radius: 10px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+        padding: 12px;
+        display: none;
+      }
+      .badge-pop.open {
+        display: block;
+      }
+      .badge-pop .bp-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+      }
+      .badge-pop select {
+        width: 100%;
+        margin-bottom: 10px;
+      }
+      .badge-pop .bp-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      /* Toast */
+      .toast-wrap {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast {
+        background: var(--text-main);
+        color: #fffaf3;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+        animation: toastIn 0.2s ease;
+        max-width: 360px;
+      }
+      .toast.success {
+        background: var(--badge-green);
+      }
+      .toast.error {
+        background: var(--badge-red);
+      }
+      @keyframes toastIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 720px) {
+        .filter-row {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .filter-row > * {
+          width: 100%;
+        }
+        .seg-toggle {
+          justify-content: stretch;
+        }
+        .seg-toggle button {
+          flex: 1;
+        }
+        .drill-panel {
+          width: 100%;
         }
       }
     </style>
-    <style id="uxTableOverflowFix">
-/* Table overflow handling: keep text intact, only enable horizontal scroll on narrow viewport */
-@media (max-width: 1199px) {
-  table {
-    display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-}
-</style>
-  <style id="uxBaselinePolish">
-/* Baseline UI polish — applies only where file CSS doesn't override */
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-/* Pointer cursor on interactive */
-button, .btn, [role="button"], select,
-input[type="checkbox"], input[type="radio"], input[type="submit"],
-input[type="button"], a[href], label[for] {
-  cursor: pointer;
-}
-
-/* Disabled state */
-button:disabled, .btn:disabled, input:disabled, select:disabled, textarea:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/* Focus-visible outline (a11y) */
-button:focus-visible, .btn:focus-visible,
-a:focus-visible, [role="button"]:focus-visible,
-input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 2px solid #c4a25f;
-  outline-offset: 2px;
-}
-
-/* Inherit font family for form controls (fixes browser-default) */
-input, select, textarea, button {
-  font-family: inherit;
-}
-
-/* Responsive media */
-img, svg, video {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Subtle hover for buttons (only if no transition already set, gentle filter) */
-button:hover:not(:disabled), .btn:hover:not(:disabled) {
-  filter: brightness(0.96);
-  transition: filter 0.15s ease;
-}
-
-/* Smooth scrollbar on Webkit */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: #f5ece0;
-}
-::-webkit-scrollbar-thumb {
-  background: #d9c8b4;
-  border-radius: 6px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #c4a25f;
-}
-
-/* Selection highlight on-brand */
-::selection {
-  background: #c4a25f;
-  color: #fff;
-}
-
-/* HR baseline */
-hr {
-  border: none;
-  border-top: 1px solid #eadccd;
-  margin: 12px 0;
-}
-
-/* Anchor baseline color matches brand (no underline by default to match flat UI) */
-a {
-  color: #8a5a3b;
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
-</style>
-</head>
+  </head>
   <body>
-    <div class="page">
-      <div class="page-header">
-        <div class="page-title">Agent Activities</div>
+    <div class="page-header">
+      <div class="breadcrumb">
+        Users Management <i class="fas fa-chevron-right"></i> Agency
+        <i class="fas fa-chevron-right"></i>
+        <span class="active">Activity</span>
       </div>
+      <h1>Agency Activity Dashboard</h1>
+    </div>
 
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">All agents</div>
-          <button type="button" class="btn btn-ghost" id="exportBtn">
-            Export CSV
-          </button>
+    <!-- ============ FILTER BAR ============ -->
+    <div class="filter-card">
+      <div class="filter-row">
+        <div class="field-group">
+          <label class="field-label">Period</label>
+          <div class="seg-toggle" id="periodSeg">
+            <button type="button" data-period="d7">Last 7 days</button>
+            <button type="button" data-period="d30" class="active">
+              Last 30 days
+            </button>
+            <button type="button" data-period="d90">Last 90 days</button>
+          </div>
         </div>
-
-        <div class="filters">
-          <input
-            type="text"
-            id="searchInput"
-            placeholder="Search agent name, ID, office"
-          />
-          <select id="officeFilter">
-            <option value="">All offices</option>
-            <option value="Tokyo">Tokyo</option>
-            <option value="Osaka">Osaka</option>
-            <option value="Nagoya">Nagoya</option>
-            <option value="Fukuoka">Fukuoka</option>
+        <div class="field-group">
+          <label class="field-label" for="statusFilter">Status</label>
+          <select id="statusFilter" multiple size="3">
+            <option value="Active">Active</option>
+            <option value="Suspended">Suspended</option>
+            <option value="Withdrawn">Withdrawn</option>
           </select>
-          <select id="periodFilter" title="Time period">
-            <option value="">All time</option>
-            <option value="today">Today</option>
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 90 days</option>
-          </select>
-          <select id="activityFilter" title="Activity level (by total)">
-            <option value="">All activity levels</option>
-            <option value="high">High (&gt; 100)</option>
-            <option value="medium">Medium (50–100)</option>
-            <option value="low">Low (&lt; 50)</option>
-          </select>
-          <select id="channelFilter" title="Primary channel">
-            <option value="">All channels</option>
-            <option value="calls">Calls-led</option>
-            <option value="emails">Emails-led</option>
-            <option value="sms">SMS-led</option>
-            <option value="viewings">Viewings-led</option>
-          </select>
-          <select id="sortBy" title="Sort by">
-            <option value="total-desc">Sort: Total ↓</option>
-            <option value="total-asc">Sort: Total ↑</option>
-            <option value="viewings-desc">Sort: Viewings ↓</option>
-            <option value="name-asc">Sort: Name A→Z</option>
-            <option value="office-asc">Sort: Office A→Z</option>
-          </select>
-          <button type="button" class="btn btn-ghost" id="resetFiltersBtn">
-            Reset
-          </button>
         </div>
-
-        <table>
-          <thead>
-            <tr>
-              <th>Agent</th>
-              <th>Office</th>
-              <th>Viewings</th>
-              <th>Tasks</th>
-              <th>Jobs</th>
-              <th>Calls</th>
-              <th>Emails</th>
-              <th>SMS</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody id="activityTableBody"></tbody>
-        </table>
-        <div class="empty-state" id="emptyState" style="display: none">
-          No agents match current filters.
+        <div class="field-group">
+          <label class="field-label" for="planFilter">Plan</label>
+          <select id="planFilter">
+            <option value="">All plans</option>
+            <option value="Free">Free</option>
+            <option value="Bronze">Bronze</option>
+            <option value="Silver">Silver</option>
+            <option value="Gold">Gold</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">&nbsp;</label>
+          <label class="check-inline">
+            <input type="checkbox" id="inactiveOnly" /> Inactive only (14+ days)
+          </label>
+        </div>
+        <div class="grow"></div>
+        <div class="field-group">
+          <label class="field-label">&nbsp;</label>
+          <button class="btn btn-primary" type="button" id="exportBtn">
+            <i class="fas fa-file-export"></i> Export CSV
+          </button>
         </div>
       </div>
     </div>
 
+    <!-- ============ MAIN TABLE ============ -->
+    <div class="card">
+      <div class="card-title">
+        <i class="fas fa-table"></i> Agency Performance
+        <small id="resultCount"></small>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="agentTable">
+          <thead>
+            <tr>
+              <th data-sort="name">Agency <span class="sort-ico"></span></th>
+              <th data-sort="viewings" class="num-cell">
+                Viewings <span class="sort-ico"></span>
+              </th>
+              <th data-sort="calls" class="num-cell">
+                Calls <span class="sort-ico"></span>
+              </th>
+              <th data-sort="emails" class="num-cell">
+                Emails <span class="sort-ico"></span>
+              </th>
+              <th data-sort="tasks" class="num-cell">
+                Tasks <span class="sort-ico"></span>
+              </th>
+              <th data-sort="jobs" class="num-cell">
+                Jobs Closed <span class="sort-ico"></span>
+              </th>
+              <th data-sort="resp" class="num-cell">
+                Resp Rate <span class="sort-ico"></span>
+              </th>
+              <th data-sort="lastActive" class="num-cell">
+                Last Active <span class="sort-ico"></span>
+              </th>
+              <th class="no-sort">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="agentBody"></tbody>
+        </table>
+      </div>
+      <div class="pager" id="pager"></div>
+    </div>
+
+    <!-- ============ DRILL-DOWN PANEL ============ -->
+    <div class="drill-backdrop" id="drillBackdrop"></div>
+    <aside class="drill-panel" id="drillPanel">
+      <div class="drill-header">
+        <div class="avatar" id="dpAvatar">—</div>
+        <div class="info">
+          <div class="name" id="dpName">—</div>
+          <div class="meta" id="dpMeta">—</div>
+        </div>
+        <button class="drill-close" type="button" onclick="closeDrill()">
+          &times;
+        </button>
+      </div>
+      <div class="drill-body" id="drillBody"></div>
+    </aside>
+
+    <!-- ============ ASSIGN-BADGE POPOVER ============ -->
+    <div class="badge-pop" id="badgePop">
+      <div class="bp-title">Assign badge</div>
+      <select id="bpSelect">
+        <option value="Top Agent">Top Agent</option>
+        <option value="Premium Agent">Premium Agent</option>
+      </select>
+      <div class="bp-actions">
+        <button class="btn btn-sm" type="button" onclick="cancelBadge()">
+          Cancel
+        </button>
+        <button
+          class="btn btn-primary btn-sm"
+          type="button"
+          onclick="confirmBadge()"
+        >
+          Assign
+        </button>
+      </div>
+    </div>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
     <script>
-      const agents = [
-        {
-          id: "AG-001",
-          name: "Shinjuku Realty Partners",
-          office: "Tokyo",
-          viewings: 32,
-          tasks: 18,
-          jobs: 9,
-          calls: 54,
-          emails: 76,
-          sms: 21,
-        },
-        {
-          id: "AG-002",
-          name: "Osaka Bay Estates",
-          office: "Osaka",
-          viewings: 24,
-          tasks: 12,
-          jobs: 5,
-          calls: 37,
-          emails: 42,
-          sms: 15,
-        },
-        {
-          id: "AG-003",
-          name: "Nagoya Central Housing",
-          office: "Nagoya",
-          viewings: 19,
-          tasks: 10,
-          jobs: 4,
-          calls: 26,
-          emails: 33,
-          sms: 11,
-        },
-        {
-          id: "AG-004",
-          name: "Fukuoka Urban Homes",
-          office: "Fukuoka",
-          viewings: 14,
-          tasks: 7,
-          jobs: 3,
-          calls: 18,
-          emails: 21,
-          sms: 9,
-        },
+      // ========================================================================
+      // MOCK DATA — agency-level activity (12 hand-authored + filler for paging)
+      // ========================================================================
+      const SERVICE_AREAS = [
+        "Tokyo",
+        "Kanagawa",
+        "Osaka",
+        "Saitama",
+        "Chiba",
+        "Kyoto",
+      ];
+      const LANGUAGES = [
+        "Japanese",
+        "English",
+        "Chinese (Simplified)",
+        "Chinese (Traditional)",
+        "Vietnamese",
+        "Korean",
+        "Other",
+      ];
+      const SPECIALTIES = [
+        "Real Estate Brokerage",
+        "Direct Property Acquisition",
+        "Rental Brokerage",
+        "Property Management",
+        "Short Sale",
+        "Inheritance Consultation",
       ];
 
-      let filters = {
-        search: "",
-        office: "",
-        period: "",
-        activity: "",
-        channel: "",
-        sortBy: "total-desc",
+      // Build a period bucket from a viewings figure (other metrics derived).
+      function bucket(v, resp) {
+        v = Math.max(0, v);
+        return {
+          viewings: v,
+          calls: Math.round(v * 0.5),
+          emails: Math.round(v * 0.62),
+          tasks: Math.round(v * 0.8),
+          jobs: Math.round(v * 0.18),
+          resp,
+        };
+      }
+      // Factory: compact params → full agency record with d7/d30/d90 (+ prev).
+      function mk(o) {
+        const base = o.base; // d30 viewings baseline
+        const g = o.growth; // current vs previous growth fraction
+        const d30v = base,
+          d7v = Math.round(base * 0.25),
+          d90v = Math.round(base * 3.1);
+        const prev = (v) => Math.round(v / (1 + g));
+        return {
+          id: o.id,
+          name: o.name,
+          plan: o.plan,
+          listings: o.listings,
+          status: o.status,
+          serviceAreas: o.areas,
+          languages: o.langs,
+          specialties: o.spec,
+          badges: (o.badges || []).slice(),
+          daysSinceActivity: o.days,
+          recent: o.recent || [], // newest listings: {title, posted (days ago)}
+          d7: bucket(d7v, o.resp),
+          d7P: bucket(prev(d7v), o.resp),
+          d30: bucket(d30v, o.resp),
+          d30P: bucket(prev(d30v), o.resp),
+          d90: bucket(d90v, o.resp),
+          d90P: bucket(prev(d90v), o.resp),
+        };
+      }
+
+      const AGENCIES = [
+        mk({
+          id: "AG-0001",
+          name: "Tokyo Realty Co.",
+          plan: "Gold",
+          listings: 28,
+          status: "Active",
+          areas: ["Tokyo"],
+          langs: ["Japanese", "English"],
+          spec: ["Real Estate Brokerage", "Property Management"],
+          badges: ["Top Agent"],
+          days: 1,
+          base: 28,
+          growth: 0.16,
+          resp: 92,
+          recent: [
+            { title: "Roppongi Hills 3LDK", posted: 1 },
+            { title: "Minami-Aoyama Penthouse", posted: 4 },
+            { title: "Shibuya Sky Apartment", posted: 9 },
+          ],
+        }),
+        mk({
+          id: "AG-0002",
+          name: "Osaka Property Group",
+          plan: "Silver",
+          listings: 18,
+          status: "Active",
+          areas: ["Osaka", "Kyoto"],
+          langs: ["Japanese"],
+          spec: ["Rental Brokerage", "Real Estate Brokerage"],
+          badges: [],
+          days: 2,
+          base: 18,
+          growth: -0.18,
+          resp: 78,
+          recent: [
+            { title: "Umeda Tower 2LDK", posted: 2 },
+            { title: "Osaka Bay View Condo", posted: 6 },
+            { title: "Namba Premium Studio", posted: 13 },
+          ],
+        }),
+        mk({
+          id: "AG-0003",
+          name: "Kyoto Homes",
+          plan: "Free",
+          listings: 6,
+          status: "Active",
+          areas: ["Kyoto"],
+          langs: ["Japanese", "Chinese (Simplified)"],
+          spec: ["Inheritance Consultation"],
+          badges: [],
+          days: 1,
+          base: 22,
+          growth: 0.37,
+          resp: 88,
+          recent: [
+            { title: "Gion Machiya Townhouse", posted: 0 },
+            { title: "Kyoto Imperial House", posted: 3 },
+            { title: "Arashiyama Riverside Villa", posted: 8 },
+          ],
+        }),
+        mk({
+          id: "AG-0004",
+          name: "Shibuya Real Estate",
+          plan: "Gold",
+          listings: 24,
+          status: "Active",
+          areas: ["Tokyo", "Kanagawa"],
+          langs: ["Japanese", "English", "Korean"],
+          spec: ["Real Estate Brokerage", "Direct Property Acquisition"],
+          badges: ["Top Agent", "Premium Agent"],
+          days: 0,
+          base: 30,
+          growth: 0.11,
+          resp: 95,
+          recent: [
+            { title: "Shibuya Crossing Loft", posted: 0 },
+            { title: "Daikanyama Designer Apt", posted: 2 },
+            { title: "Ebisu Garden Place 4LDK", posted: 5 },
+          ],
+        }),
+        mk({
+          id: "AG-0005",
+          name: "Minato Asset Management",
+          plan: "Bronze",
+          listings: 9,
+          status: "Active",
+          areas: ["Tokyo"],
+          langs: ["Japanese", "Vietnamese"],
+          spec: ["Property Management", "Short Sale"],
+          badges: [],
+          days: 4,
+          base: 14,
+          growth: 0.17,
+          resp: 52,
+          recent: [
+            { title: "Azabu-Juban Tower 2LDK", posted: 4 },
+            { title: "Akasaka Residential Suite", posted: 10 },
+            { title: "Mita Mansion 3LDK", posted: 19 },
+          ],
+        }),
+        mk({
+          id: "AG-0006",
+          name: "Shinjuku Properties",
+          plan: "Silver",
+          listings: 14,
+          status: "Suspended",
+          areas: ["Tokyo", "Saitama"],
+          langs: ["Japanese"],
+          spec: ["Rental Brokerage"],
+          badges: [],
+          days: 18,
+          base: 4,
+          growth: -0.7,
+          resp: 71,
+          recent: [
+            { title: "Shinjuku Studio Apartment", posted: 18 },
+            { title: "Nishi-Shinjuku 1LDK", posted: 26 },
+          ],
+        }),
+        mk({
+          id: "AG-0007",
+          name: "Yokohama Realtors",
+          plan: "Free",
+          listings: 4,
+          status: "Active",
+          areas: ["Kanagawa"],
+          langs: ["Japanese", "English"],
+          spec: ["Real Estate Brokerage"],
+          badges: [],
+          days: 16,
+          base: 8,
+          growth: -0.11,
+          resp: 64,
+          recent: [
+            { title: "Minato Mirai Bay Condo", posted: 16 },
+            { title: "Yamashita-cho Studio", posted: 24 },
+          ],
+        }),
+        mk({
+          id: "AG-0008",
+          name: "Nagoya Housing",
+          plan: "Bronze",
+          listings: 11,
+          status: "Active",
+          areas: ["Osaka", "Chiba"],
+          langs: ["Japanese"],
+          spec: ["Property Management"],
+          badges: [],
+          days: 3,
+          base: 16,
+          growth: 0.14,
+          resp: 84,
+          recent: [
+            { title: "Sakae 2LDK Residence", posted: 3 },
+            { title: "Nagoya Castle View Apt", posted: 7 },
+            { title: "Marunouchi Office Unit", posted: 15 },
+          ],
+        }),
+        mk({
+          id: "AG-0009",
+          name: "Saitama Estate Partners",
+          plan: "Gold",
+          listings: 21,
+          status: "Suspended",
+          areas: ["Saitama", "Tokyo"],
+          langs: ["Japanese", "Chinese (Traditional)"],
+          spec: ["Direct Property Acquisition", "Real Estate Brokerage"],
+          badges: ["Premium Agent"],
+          days: 6,
+          base: 20,
+          growth: 0.05,
+          resp: 80,
+          recent: [
+            { title: "Omiya Station 3LDK", posted: 6 },
+            { title: "Urawa Garden House", posted: 9 },
+            { title: "Kawagoe Heritage Home", posted: 17 },
+          ],
+        }),
+        mk({
+          id: "AG-0010",
+          name: "Chiba Coastal Realty",
+          plan: "Silver",
+          listings: 13,
+          status: "Withdrawn",
+          areas: ["Chiba"],
+          langs: ["Japanese", "English"],
+          spec: ["Rental Brokerage", "Short Sale"],
+          badges: [],
+          days: 22,
+          base: 6,
+          growth: -0.5,
+          resp: 60,
+          recent: [
+            { title: "Makuhari Bay Tower", posted: 22 },
+            { title: "Funabashi Family Home", posted: 31 },
+          ],
+        }),
+        mk({
+          id: "AG-0011",
+          name: "Kanagawa Prime Homes",
+          plan: "Free",
+          listings: 7,
+          status: "Active",
+          areas: ["Kanagawa", "Tokyo"],
+          langs: ["Japanese", "Korean"],
+          spec: ["Inheritance Consultation", "Property Management"],
+          badges: [],
+          days: 5,
+          base: 12,
+          growth: 0.2,
+          resp: 73,
+          recent: [
+            { title: "Kawasaki Riverside 2LDK", posted: 5 },
+            { title: "Yokosuka Hillside Villa", posted: 12 },
+          ],
+        }),
+        mk({
+          id: "AG-0012",
+          name: "Ginza Luxury Estates",
+          plan: "Gold",
+          listings: 19,
+          status: "Active",
+          areas: ["Tokyo"],
+          langs: ["Japanese", "English", "Chinese (Simplified)"],
+          spec: ["Real Estate Brokerage", "Direct Property Acquisition"],
+          badges: ["Top Agent"],
+          days: 2,
+          base: 26,
+          growth: 0.09,
+          resp: 90,
+          recent: [
+            { title: "Ginza Six Penthouse", posted: 1 },
+            { title: "Yurakucho Designer Flat", posted: 4 },
+            { title: "Marunouchi Sky Suite", posted: 6 },
+          ],
+        }),
+      ];
+
+      // Filler agencies to take the dataset above the 50-row paging threshold.
+      (function seedFiller() {
+        const suffix = ["Estates", "Realty", "Homes", "Partners", "Group"];
+        for (let i = 13; i <= 60; i++) {
+          const v = 6 + ((i * 7) % 26);
+          const status =
+            i % 17 === 0 ? "Withdrawn" : i % 11 === 0 ? "Suspended" : "Active";
+          const days = i % 9 === 0 ? 14 + (i % 7) : i % 13;
+          AGENCIES.push(
+            mk({
+              id: "AG-" + String(i).padStart(4, "0"),
+              name: "Agency " + i + " " + suffix[i % 5],
+              plan: ["Free", "Bronze", "Silver", "Gold"][i % 4],
+              listings: 3 + (i % 24),
+              status,
+              areas: [SERVICE_AREAS[i % 6], SERVICE_AREAS[(i + 2) % 6]],
+              langs: [LANGUAGES[i % 7]],
+              spec: [SPECIALTIES[i % 6]],
+              badges: i % 6 === 0 ? ["Premium Agent"] : [],
+              days,
+              base: v,
+              growth: ((i % 5) - 2) * 0.08,
+              resp: 55 + ((i * 3) % 44),
+              recent: [
+                { title: "Listing " + i + "A", posted: i % 10 },
+                { title: "Listing " + i + "B", posted: (i % 10) + 5 },
+              ],
+            }),
+          );
+        }
+      })();
+
+      const PAGE_SIZE = 50;
+
+      // ========================================================================
+      // STATE
+      // ========================================================================
+      let state = {
+        period: "d30", // 'd7' | 'd30' | 'd90'
+        statuses: [],
+        plan: "",
+        inactiveOnly: false,
+        sort: { col: "lastActive", dir: "asc" }, // default: most inactive on top
+        page: 1,
+        selectedId: null,
+      };
+      let badgePopId = null;
+
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      const getSel = (id) =>
+        Array.from($(id).selectedOptions).map((o) => o.value);
+
+      // ========================================================================
+      // HELPERS
+      // ========================================================================
+      const periodKey = () => state.period;
+      const prevKey = () => state.period + "P";
+      const metrics = (a) => a[periodKey()] || {};
+      const prevMetrics = (a) => a[prevKey()] || {};
+
+      const PERIOD_CUR = {
+        d7: "Last 7 days",
+        d30: "Last 30 days",
+        d90: "Last 90 days",
+      };
+      const PERIOD_PREV = {
+        d7: "Previous 7 days",
+        d30: "Previous 30 days",
+        d90: "Previous 90 days",
       };
 
-      function totalOf(a) {
-        return a.viewings + a.tasks + a.jobs + a.calls + a.emails + a.sms;
+      function trend(curr, prev) {
+        curr = curr || 0;
+        prev = prev || 0;
+        if (prev === 0 && curr === 0) return { pct: 0, dir: "flat" };
+        if (prev === 0) return { pct: 100, dir: "up" };
+        const pct = Math.round(((curr - prev) / prev) * 100);
+        if (pct > 0) return { pct, dir: "up" };
+        if (pct < 0) return { pct, dir: "down" };
+        return { pct: 0, dir: "flat" };
       }
-
-      function primaryChannel(a) {
-        const map = {
-          calls: a.calls,
-          emails: a.emails,
-          sms: a.sms,
-          viewings: a.viewings,
-        };
-        return Object.entries(map).sort((x, y) => y[1] - x[1])[0][0];
+      function metricCell(curr, prev) {
+        const t = trend(curr, prev);
+        const arrow = t.dir === "up" ? "↑" : t.dir === "down" ? "↓" : "→";
+        return `<div class="metric-cell">
+          <div class="metric-value">${curr || 0}</div>
+          <div class="metric-trend trend-${t.dir}">${arrow} ${t.dir === "flat" ? "—" : (t.pct > 0 ? "+" : "") + t.pct + "%"}</div>
+        </div>`;
       }
-
-      function applyFilters() {
-        const search = filters.search.toLowerCase();
-        let result = agents.filter((a) => {
-          if (
-            search &&
-            !(
-              a.id.toLowerCase().includes(search) ||
-              a.name.toLowerCase().includes(search) ||
-              a.office.toLowerCase().includes(search)
-            )
-          ) {
+      // Performance score for a period bucket:
+      // (Calls×1) + (Emails×1) + (Viewings×2) + (Tasks×2) + (Jobs Closed×5)
+      function perfScore(m) {
+        m = m || {};
+        return (
+          (m.calls || 0) * 1 +
+          (m.emails || 0) * 1 +
+          (m.viewings || 0) * 2 +
+          (m.tasks || 0) * 2 +
+          (m.jobs || 0) * 5
+        );
+      }
+      // Colour band by rank across ALL filtered agents for the selected period:
+      // top 25% → success(green), bottom 25% → danger(red), middle 50% → warning(amber).
+      function scoreBand(a) {
+        const myScore = perfScore(metrics(a));
+        const scores = getFiltered()
+          .map((x) => perfScore(metrics(x)))
+          .sort((p, q) => q - p);
+        const n = scores.length;
+        if (n <= 1) return { score: myScore, color: "var(--badge-green)" };
+        const idx = scores.indexOf(myScore); // ties take the best (highest) rank
+        let color;
+        if (idx >= 0 && idx < n * 0.25) color = "var(--badge-green)";
+        else if (idx >= n * 0.75) color = "var(--badge-red)";
+        else color = "var(--badge-amber)";
+        return { score: myScore, color };
+      }
+      function initials(name) {
+        return name
+          .split(/\s+/)
+          .slice(0, 2)
+          .map((w) => w[0])
+          .join("")
+          .toUpperCase();
+      }
+      function postedText(d) {
+        if (d <= 0) return "Posted today";
+        if (d === 1) return "Posted 1 day ago";
+        return `Posted ${d} days ago`;
+      }
+      function toast(msg, kind) {
+        const wrap = $("toastWrap");
+        const el = document.createElement("div");
+        el.className = "toast " + (kind || "success");
+        el.innerHTML = `<i class="fas fa-${kind === "error" ? "circle-exclamation" : "circle-check"}"></i> ${esc(msg)}`;
+        wrap.appendChild(el);
+        setTimeout(() => {
+          el.style.opacity = "0";
+          el.style.transform = "translateY(8px)";
+          el.style.transition = "all 0.2s";
+        }, 2400);
+        setTimeout(() => el.remove(), 2700);
+      }
+      // ========================================================================
+      // FILTER / SORT / PAGINATE
+      // ========================================================================
+      function getFiltered() {
+        return AGENCIES.filter((a) => {
+          if (state.statuses.length && !state.statuses.includes(a.status))
             return false;
-          }
-          if (filters.office && a.office !== filters.office) return false;
-          if (filters.activity) {
-            const t = totalOf(a);
-            if (filters.activity === "high" && t <= 100) return false;
-            if (filters.activity === "medium" && (t < 50 || t > 100))
-              return false;
-            if (filters.activity === "low" && t >= 50) return false;
-          }
-          if (filters.channel && primaryChannel(a) !== filters.channel)
-            return false;
-          // period filter — demo data is static; left as no-op (would scope by date range in real data)
+          if (state.plan && a.plan !== state.plan) return false;
+          if (state.inactiveOnly && a.daysSinceActivity < 14) return false;
           return true;
         });
-        // Sort
-        const sorters = {
-          "total-desc": (x, y) => totalOf(y) - totalOf(x),
-          "total-asc": (x, y) => totalOf(x) - totalOf(y),
-          "viewings-desc": (x, y) => y.viewings - x.viewings,
-          "name-asc": (x, y) => x.name.localeCompare(y.name),
-          "office-asc": (x, y) => x.office.localeCompare(y.office),
-        };
-        result = [...result].sort(
-          sorters[filters.sortBy] || sorters["total-desc"],
-        );
-        return result;
       }
-
-      function renderTable() {
-        const tbody = document.getElementById("activityTableBody");
-        const empty = document.getElementById("emptyState");
-        tbody.innerHTML = "";
-        const data = applyFilters();
-        if (!data.length) {
-          empty.style.display = "block";
-          return;
-        }
-        empty.style.display = "none";
-
-        data.forEach((a) => {
-          const total =
-            a.viewings + a.tasks + a.jobs + a.calls + a.emails + a.sms;
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${a.name} (${a.id})</td>
-            <td>${a.office}</td>
-            <td>${a.viewings.toLocaleString()}</td>
-            <td>${a.tasks.toLocaleString()}</td>
-            <td>${a.jobs.toLocaleString()}</td>
-            <td>${a.calls.toLocaleString()}</td>
-            <td>${a.emails.toLocaleString()}</td>
-            <td>${a.sms.toLocaleString()}</td>
-            <td>${total.toLocaleString()}</td>
-          `;
-          tbody.appendChild(tr);
+      function sortVal(a, col) {
+        if (col === "name") return a.name;
+        if (col === "resp") return metrics(a).resp || 0;
+        if (col === "lastActive") return -a.daysSinceActivity; // asc = most inactive first
+        return metrics(a)[col] || 0;
+      }
+      function getSorted(list) {
+        const { col, dir } = state.sort;
+        if (!dir) return list; // unsorted → natural data order
+        const sign = dir === "asc" ? 1 : -1;
+        return list.slice().sort((a, b) => {
+          const va = sortVal(a, col),
+            vb = sortVal(b, col);
+          if (typeof va === "number") return (va - vb) * sign;
+          return String(va).localeCompare(String(vb)) * sign;
         });
       }
-
-      function exportCsv() {
-        const rows = [
-          [
-            "Agent ID",
-            "Agent name",
-            "Office",
-            "Viewings",
-            "Tasks",
-            "Jobs",
-            "Calls",
-            "Emails",
-            "SMS",
-            "Total activities",
-          ],
-          ...applyFilters().map((a) => [
-            a.id,
-            a.name,
-            a.office,
-            String(a.viewings),
-            String(a.tasks),
-            String(a.jobs),
-            String(a.calls),
-            String(a.emails),
-            String(a.sms),
-            String(a.viewings + a.tasks + a.jobs + a.calls + a.emails + a.sms),
-          ]),
-        ];
-
-        const csv = rows
-          .map((r) =>
-            r.map((v) => `"${(v || "").replace(/"/g, '""')}"`).join(","),
-          )
-          .join("\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "agent_activities.csv";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+      function totalPages(total) {
+        return Math.max(1, Math.ceil(total / PAGE_SIZE));
       }
 
-      document.addEventListener("DOMContentLoaded", () => {
-        const bind = (id, prop, evt = "change") => {
-          const el = document.getElementById(id);
-          if (el)
-            el.addEventListener(evt, (e) => {
-              filters[prop] = e.target.value;
-              renderTable();
-            });
-        };
-        bind("searchInput", "search", "input");
-        bind("officeFilter", "office");
-        bind("periodFilter", "period");
-        bind("activityFilter", "activity");
-        bind("channelFilter", "channel");
-        bind("sortBy", "sortBy");
+      // ========================================================================
+      // RENDER — TABLE + PAGER
+      // ========================================================================
+      function renderTable() {
+        const sorted = getSorted(getFiltered());
+        const total = sorted.length;
+        const pages = totalPages(total);
+        if (state.page > pages) state.page = pages;
+        if (state.page < 1) state.page = 1;
+        const startIdx = (state.page - 1) * PAGE_SIZE;
+        const pageRows = sorted.slice(startIdx, startIdx + PAGE_SIZE);
 
-        document
-          .getElementById("resetFiltersBtn")
-          .addEventListener("click", () => {
-            filters = {
-              search: "",
-              office: "",
-              period: "",
-              activity: "",
-              channel: "",
-              sortBy: "total-desc",
-            };
-            document.getElementById("searchInput").value = "";
-            ["officeFilter", "periodFilter", "activityFilter", "channelFilter"].forEach(
-              (id) => (document.getElementById(id).value = ""),
+        // Result count line
+        if (total === 0) {
+          $("resultCount").textContent =
+            `Showing 0 of ${AGENCIES.length} agencies`;
+        } else {
+          const s = startIdx + 1;
+          const e = Math.min(total, startIdx + PAGE_SIZE);
+          $("resultCount").textContent =
+            `Showing ${s}–${e} of ${total} agencies`;
+        }
+
+        // Sort indicators
+        document.querySelectorAll("#agentTable th[data-sort]").forEach((th) => {
+          th.classList.remove("sort-asc", "sort-desc");
+          if (state.sort.dir && th.dataset.sort === state.sort.col)
+            th.classList.add(
+              state.sort.dir === "asc" ? "sort-asc" : "sort-desc",
             );
-            document.getElementById("sortBy").value = "total-desc";
-            renderTable();
-          });
+        });
 
-        document
-          .getElementById("exportBtn")
-          .addEventListener("click", exportCsv);
+        const body = $("agentBody");
+        if (!total) {
+          body.innerHTML =
+            '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">No agencies match the filters.</td></tr>';
+          renderPager(0, 1);
+          return;
+        }
+        body.innerHTML = pageRows
+          .map((a) => {
+            const m = metrics(a);
+            const p = prevMetrics(a);
+            const daysAlert = a.daysSinceActivity >= 14;
+            return `
+            <tr class="${a.id === state.selectedId ? "selected" : ""}" data-id="${a.id}">
+              <td>
+                <div class="agent-cell">
+                  <div class="agent-avatar">${initials(a.name)}</div>
+                  <div>
+                    <span class="agent-name">${esc(a.name)}</span>
+                    <span class="agent-sub"><span class="badge plan-${a.plan}">${a.plan}</span> · ${a.listings} listings · ${a.id}</span>
+                  </div>
+                </div>
+              </td>
+              <td class="num-cell">${metricCell(m.viewings, p.viewings)}</td>
+              <td class="num-cell">${metricCell(m.calls, p.calls)}</td>
+              <td class="num-cell">${metricCell(m.emails, p.emails)}</td>
+              <td class="num-cell">${metricCell(m.tasks, p.tasks)}</td>
+              <td class="num-cell">${metricCell(m.jobs, p.jobs)}</td>
+              <td class="num-cell"><span class="resp-cell">${m.resp}%</span></td>
+              <td>${
+                daysAlert
+                  ? `<span class="days-alert"><i class="fas fa-triangle-exclamation"></i> ${a.daysSinceActivity}d</span>`
+                  : `<span class="days-cell" style="color:var(--text-muted)">${a.daysSinceActivity === 0 ? "Today" : a.daysSinceActivity + "d ago"}</span>`
+              }</td>
+              <td class="actions" onclick="event.stopPropagation()">
+                <button class="btn btn-icon btn-sm" type="button" title="Send Message" onclick="actMessage('${a.id}')"><i class="fas fa-envelope"></i></button>
+                <button class="btn btn-icon btn-sm" type="button" title="Assign Badge" onclick="openBadgePop('${a.id}', event)"><i class="fas fa-award"></i></button>
+              </td>
+            </tr>`;
+          })
+          .join("");
+        body.querySelectorAll("tr[data-id]").forEach((tr) => {
+          tr.addEventListener("click", () => openDrill(tr.dataset.id));
+        });
+        renderPager(total, pages);
+      }
+
+      function pageWindow(cur, pages) {
+        const out = [];
+        if (pages <= 7) {
+          for (let i = 1; i <= pages; i++) out.push(i);
+          return out;
+        }
+        let s = Math.max(2, cur - 2),
+          e = Math.min(pages - 1, cur + 2);
+        if (cur <= 4) {
+          s = 2;
+          e = 5;
+        }
+        if (cur >= pages - 3) {
+          s = pages - 4;
+          e = pages - 1;
+        }
+        out.push(1);
+        if (s > 2) out.push("…");
+        for (let i = s; i <= e; i++) out.push(i);
+        if (e < pages - 1) out.push("…");
+        out.push(pages);
+        return out;
+      }
+
+      function renderPager(total, pages) {
+        const pager = $("pager");
+        if (total <= PAGE_SIZE) {
+          pager.innerHTML = "";
+          pager.style.display = "none";
+          return;
+        }
+        pager.style.display = "flex";
+        let html = `<button type="button" ${state.page === 1 ? "disabled" : ""} onclick="gotoPage(${state.page - 1})">‹ Prev</button>`;
+        pageWindow(state.page, pages).forEach((item) => {
+          if (item === "…") {
+            html += `<span class="pg-ellipsis">…</span>`;
+          } else {
+            html += `<button type="button" class="${item === state.page ? "active" : ""}" onclick="gotoPage(${item})">${item}</button>`;
+          }
+        });
+        html += `<button type="button" ${state.page === pages ? "disabled" : ""} onclick="gotoPage(${state.page + 1})">Next ›</button>`;
+        pager.innerHTML = html;
+      }
+      function gotoPage(p) {
+        state.page = p;
+        renderAll();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      window.gotoPage = gotoPage;
+
+      // ========================================================================
+      // DRILL-DOWN PANEL
+      // ========================================================================
+      function openDrill(id) {
+        const a = AGENCIES.find((x) => x.id === id);
+        if (!a) return;
+        state.selectedId = id;
         renderTable();
+
+        $("dpAvatar").textContent = initials(a.name);
+        $("dpName").textContent = a.name;
+        $("dpMeta").innerHTML = `
+          <span class="badge plan-${a.plan}">${a.plan}</span>
+          <span>${a.listings} listings · ${a.id}</span>
+        `;
+
+        const inactivityBanner =
+          a.daysSinceActivity >= 14
+            ? `
+          <div class="inactivity-banner">
+            <i class="fas fa-triangle-exclamation"></i>
+            <div><strong>No activity for ${a.daysSinceActivity} days.</strong></div>
+          </div>`
+            : "";
+
+        const newest = (a.recent || [])
+          .slice()
+          .sort((x, y) => x.posted - y.posted)
+          .slice(0, 3);
+        const listingsHtml = newest.length
+          ? newest
+              .map(
+                (l) => `
+          <li class="listing-item">
+            <span class="lname">${esc(l.title)}</span>
+            <span class="lcount">${postedText(l.posted)}</span>
+          </li>`,
+              )
+              .join("")
+          : '<li class="listing-item"><span class="lname" style="color:var(--text-dim);font-weight:500">No listings posted yet.</span></li>';
+
+        const band = scoreBand(a);
+        const cur = metrics(a);
+        const prv = prevMetrics(a);
+        const deals = cur.jobs || 0;
+        const lastActive =
+          a.daysSinceActivity <= 0 ? "today" : a.daysSinceActivity + "d ago";
+        const scoreBlock = `
+          <div class="perf-score">
+            <div class="perf-num" style="color:${band.color}">${band.score}</div>
+            <div class="perf-label">Performance Score</div>
+            <div class="perf-sub">Response rate ${cur.resp || 0}% · ${deals} deal${deals === 1 ? "" : "s"} closed · last active ${lastActive}</div>
+          </div>`;
+
+        const cmpRows = [
+          ["Viewings", "viewings"],
+          ["Calls", "calls"],
+          ["Emails", "emails"],
+          ["Tasks", "tasks"],
+          ["Jobs Closed", "jobs"],
+        ]
+          .map(([label, key]) => {
+            const c = cur[key] || 0;
+            const p = prv[key] || 0;
+            const t = trend(c, p);
+            const arrow = t.dir === "up" ? "▲" : t.dir === "down" ? "▼" : "—";
+            const change =
+              t.dir === "flat"
+                ? "—"
+                : `${t.pct > 0 ? "+" : ""}${t.pct}% ${arrow}`;
+            return `<tr><td>${label}</td><td>${p}</td><td>${c}</td><td class="trend-${t.dir}">${change}</td></tr>`;
+          })
+          .join("");
+        const cmpTable = `
+          <h4>Period-over-period comparison (${PERIOD_CUR[state.period]})</h4>
+          <table class="cmp-table">
+            <thead><tr><th>Metric</th><th>${PERIOD_PREV[state.period]}</th><th>${PERIOD_CUR[state.period]}</th><th>Change</th></tr></thead>
+            <tbody>${cmpRows}</tbody>
+          </table>`;
+
+        $("drillBody").innerHTML = `
+          ${scoreBlock}
+          ${inactivityBanner}
+          ${cmpTable}
+
+          <h4>Newest listings</h4>
+          <ul class="listing-list">${listingsHtml}</ul>
+
+          <div class="drill-actions">
+            <button class="btn btn-primary" type="button" onclick="actMessage('${a.id}')"><i class="fas fa-envelope"></i> Send Message</button>
+            <button class="btn" type="button" onclick="openBadgePop('${a.id}', event)"><i class="fas fa-award"></i> Assign Badge</button>
+            <button class="btn" type="button" onclick="exportAgency('${a.id}')"><i class="fas fa-file-export"></i> Export Agency Report</button>
+          </div>
+        `;
+
+        $("drillPanel").classList.add("open");
+        $("drillBackdrop").classList.add("open");
+      }
+      function closeDrill() {
+        $("drillPanel").classList.remove("open");
+        $("drillBackdrop").classList.remove("open");
+        state.selectedId = null;
+        renderTable();
+      }
+      window.closeDrill = closeDrill;
+
+      // ========================================================================
+      // ACTIONS
+      // ========================================================================
+      function actMessage(id) {
+        const a = AGENCIES.find((x) => x.id === id);
+        toast(
+          `Open chat with ${a.name} (${a.id}) — would navigate to Messages module.`,
+        );
+      }
+      window.actMessage = actMessage;
+
+      // Assign-badge inline popover
+      function openBadgePop(id, ev) {
+        if (ev) ev.stopPropagation();
+        badgePopId = id;
+        const pop = $("badgePop");
+        pop.classList.add("open");
+        const px = ev ? ev.clientX : window.innerWidth / 2;
+        const py = ev ? ev.clientY : window.innerHeight / 2;
+        const w = 230,
+          h = pop.offsetHeight || 130;
+        const left = Math.min(px, window.innerWidth - w - 12);
+        const top = Math.min(py + 8, window.innerHeight - h - 12);
+        pop.style.left = Math.max(12, left) + "px";
+        pop.style.top = Math.max(12, top) + "px";
+        $("bpSelect").value = "Top Agent";
+        setTimeout(() => $("bpSelect").focus(), 30);
+      }
+      function cancelBadge() {
+        badgePopId = null;
+        $("badgePop").classList.remove("open");
+      }
+      function confirmBadge() {
+        const a = AGENCIES.find((x) => x.id === badgePopId);
+        if (!a) {
+          cancelBadge();
+          return;
+        }
+        const badge = $("bpSelect").value;
+        if (a.badges.includes(badge)) {
+          toast(`${badge} already assigned to ${a.name}.`, "error");
+        } else {
+          a.badges.push(badge);
+          toast(`Badge assigned to ${a.name} successfully.`);
+        }
+        cancelBadge();
+      }
+      window.openBadgePop = openBadgePop;
+      window.cancelBadge = cancelBadge;
+      window.confirmBadge = confirmBadge;
+
+      // ========================================================================
+      // CSV EXPORT
+      // ========================================================================
+      function csvCell(v) {
+        const s = String(v == null ? "" : v);
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      }
+      function download(name, csv) {
+        const blob = new Blob(["﻿" + csv], {
+          type: "text/csv;charset=utf-8",
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+      function exportCsv() {
+        const list = getSorted(getFiltered());
+        if (!list.length) {
+          toast("No data to export.", "error");
+          return;
+        }
+        const headers = [
+          "Agency",
+          "Agency ID",
+          "Plan",
+          "Status",
+          "Listings",
+          "Service Areas",
+          "Languages",
+          "Specialties",
+          "Viewings",
+          "ViewingsPrev",
+          "Calls",
+          "CallsPrev",
+          "Emails",
+          "EmailsPrev",
+          "Tasks",
+          "TasksPrev",
+          "JobsClosed",
+          "JobsClosedPrev",
+          "RespRate",
+          "DaysSinceActivity",
+        ];
+        const rows = list.map((a) => {
+          const m = metrics(a),
+            p = prevMetrics(a);
+          return [
+            a.name,
+            a.id,
+            a.plan,
+            a.status,
+            a.listings,
+            a.serviceAreas.join(" / "),
+            a.languages.join(" / "),
+            a.specialties.join(" / "),
+            m.viewings,
+            p.viewings,
+            m.calls,
+            p.calls,
+            m.emails,
+            p.emails,
+            m.tasks,
+            p.tasks,
+            m.jobs,
+            p.jobs,
+            m.resp,
+            a.daysSinceActivity,
+          ];
+        });
+        const csv = [headers, ...rows]
+          .map((r) => r.map(csvCell).join(","))
+          .join("\n");
+        download(
+          `agency-activity-${state.period}-${new Date().toISOString().slice(0, 10)}.csv`,
+          csv,
+        );
+        toast(`Exported ${list.length} agencies to CSV.`);
+      }
+      function exportAgency(id) {
+        const a = AGENCIES.find((x) => x.id === id);
+        if (!a) return;
+        const m = metrics(a),
+          p = prevMetrics(a);
+        const newest = (a.recent || [])
+          .slice()
+          .sort((x, y) => x.posted - y.posted);
+        const rows = [
+          ["Field", "Value"],
+          ["Agency", a.name],
+          ["Agency ID", a.id],
+          ["Plan", a.plan],
+          ["Status", a.status],
+          ["Listings", a.listings],
+          ["Service Areas", a.serviceAreas.join(" / ")],
+          ["Languages", a.languages.join(" / ")],
+          ["Specialties", a.specialties.join(" / ")],
+          ["Response Rate (%)", m.resp],
+          ["Days Since Activity", a.daysSinceActivity],
+          [`Viewings (${PERIOD_CUR[state.period]})`, m.viewings],
+          [`Viewings (${PERIOD_PREV[state.period]})`, p.viewings],
+          [`Calls (${PERIOD_CUR[state.period]})`, m.calls],
+          [`Calls (${PERIOD_PREV[state.period]})`, p.calls],
+          [`Emails (${PERIOD_CUR[state.period]})`, m.emails],
+          [`Emails (${PERIOD_PREV[state.period]})`, p.emails],
+          [`Tasks (${PERIOD_CUR[state.period]})`, m.tasks],
+          [`Tasks (${PERIOD_PREV[state.period]})`, p.tasks],
+          [`Jobs Closed (${PERIOD_CUR[state.period]})`, m.jobs],
+          [`Jobs Closed (${PERIOD_PREV[state.period]})`, p.jobs],
+          ["", ""],
+          ["Newest Listing", "Posted (days ago)"],
+          ...newest.map((l) => [l.title, l.posted]),
+        ];
+        const csv = rows.map((r) => r.map(csvCell).join(",")).join("\n");
+        download(
+          `agency-${a.id}-${state.period}-${new Date().toISOString().slice(0, 10)}.csv`,
+          csv,
+        );
+        toast(`Exported ${a.name} report.`);
+      }
+      window.exportAgency = exportAgency;
+
+      // ========================================================================
+      // EVENT WIRING
+      // ========================================================================
+      document.querySelectorAll("#periodSeg button").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document
+            .querySelectorAll("#periodSeg button")
+            .forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          state.period = btn.dataset.period;
+          state.page = 1;
+          renderAll();
+        });
       });
+      function onFilterChange() {
+        state.statuses = getSel("statusFilter");
+        state.plan = $("planFilter").value;
+        state.inactiveOnly = $("inactiveOnly").checked;
+        state.page = 1; // changing/resetting filters returns to page 1
+        renderAll();
+      }
+      ["statusFilter", "planFilter"].forEach((id) =>
+        $(id).addEventListener("change", onFilterChange),
+      );
+      $("inactiveOnly").addEventListener("change", onFilterChange);
+      $("exportBtn").addEventListener("click", exportCsv);
+
+      // 3-state sort
+      document.querySelectorAll("#agentTable th[data-sort]").forEach((th) => {
+        th.addEventListener("click", () => {
+          const col = th.dataset.sort;
+          if (state.sort.col === col && state.sort.dir) {
+            if (state.sort.dir === "asc") state.sort.dir = "desc";
+            else {
+              state.sort.col = null;
+              state.sort.dir = null;
+            }
+          } else {
+            state.sort.col = col;
+            state.sort.dir = "asc";
+          }
+          state.page = 1;
+          renderAll();
+        });
+      });
+
+      // Drill / popover dismissal
+      $("drillBackdrop").addEventListener("click", closeDrill);
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          if ($("badgePop").classList.contains("open")) cancelBadge();
+          else if ($("drillPanel").classList.contains("open")) closeDrill();
+        }
+      });
+      document.addEventListener("click", (e) => {
+        const pop = $("badgePop");
+        if (
+          pop.classList.contains("open") &&
+          !pop.contains(e.target) &&
+          !e.target.closest('[onclick^="openBadgePop"]')
+        )
+          cancelBadge();
+      });
+
+      // ========================================================================
+      // INIT
+      // ========================================================================
+      function renderAll() {
+        renderTable();
+      }
+      renderAll();
     </script>
   </body>
 </html>

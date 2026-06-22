@@ -1,0 +1,976 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agent Dashboard — YUUSHI</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --bg-body: #f5f0e8;
+        --bg-card: #ffffff;
+        --bg-alt: #fdf9f3;
+        --border-subtle: #eadccd;
+        --border-strong: #d9c8b4;
+        --accent: #c4714a;
+        --accent-dark: #a55232;
+        --accent-soft: #fef1e6;
+        --gold: #c4a25f;
+        --text-main: #3b2f2a;
+        --text-muted: #7a6a5c;
+        --text-dim: #9b8568;
+        --badge-green: #2f855a;
+        --badge-red: #c53030;
+        --badge-amber: #b7791f;
+        --badge-blue: #2c5282;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background: var(--bg-body);
+        color: var(--text-main);
+        font-size: 13px;
+        line-height: 1.5;
+        padding: clamp(16px, 2.5vw, 24px);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ============ Greeting bar ============ */
+      .greeting-bar {
+        background: linear-gradient(
+          135deg,
+          #fffaf2 0%,
+          #fef5e8 60%,
+          #fdf1e3 100%
+        );
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        padding: 22px 26px;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        box-shadow: 0 8px 24px rgba(115, 72, 39, 0.05);
+      }
+      .greeting-text h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        color: var(--text-main);
+      }
+      .greeting-text h1 .wave {
+        display: inline-block;
+        animation: wave 2s ease-in-out infinite;
+        transform-origin: 70% 70%;
+      }
+      @keyframes wave {
+        0%,
+        60%,
+        100% {
+          transform: rotate(0);
+        }
+        10% {
+          transform: rotate(14deg);
+        }
+        20% {
+          transform: rotate(-8deg);
+        }
+        30% {
+          transform: rotate(14deg);
+        }
+        40% {
+          transform: rotate(-4deg);
+        }
+        50% {
+          transform: rotate(10deg);
+        }
+      }
+      .greeting-text p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+      .greeting-meta {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+      }
+      .greeting-stat {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12.5px;
+        color: var(--text-muted);
+      }
+      .greeting-stat i {
+        color: var(--accent);
+      }
+
+      /* ============ KPI Cards ============ */
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+        margin-bottom: 18px;
+      }
+      .kpi-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 18px 18px 16px;
+        box-shadow: 0 4px 12px rgba(115, 72, 39, 0.04);
+        position: relative;
+        overflow: hidden;
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s;
+      }
+      .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(115, 72, 39, 0.08);
+      }
+      .kpi-card .kpi-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        margin-bottom: 12px;
+      }
+      .kpi-card .kpi-label {
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 4px;
+      }
+      .kpi-card .kpi-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--text-main);
+        line-height: 1.1;
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .kpi-card .kpi-trend {
+        margin-top: 6px;
+        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 600;
+      }
+      .kpi-trend.up {
+        color: var(--badge-green);
+      }
+      .kpi-trend.down {
+        color: var(--badge-red);
+      }
+      .kpi-trend.neutral {
+        color: var(--text-dim);
+      }
+      .kpi-card .kpi-unread {
+        background: var(--badge-red);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 999px;
+        margin-left: 6px;
+      }
+
+      /* ============ Quick Actions ============ */
+      .quick-actions {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-bottom: 18px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        box-shadow: 0 4px 12px rgba(115, 72, 39, 0.04);
+      }
+      .quick-actions .qa-label {
+        font-size: 11.5px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-right: 8px;
+        align-self: center;
+      }
+      .qa-btn {
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: #fffaf3;
+        border: 1px solid var(--accent-dark);
+        padding: 9px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: inherit;
+        transition:
+          transform 0.1s,
+          box-shadow 0.15s;
+      }
+      .qa-btn:hover {
+        box-shadow: 0 6px 14px rgba(196, 113, 74, 0.25);
+        transform: translateY(-1px);
+      }
+      .qa-btn:active {
+        transform: translateY(0);
+      }
+      .qa-btn.ghost {
+        background: #fff;
+        color: var(--text-main);
+        border-color: var(--border-strong);
+      }
+      .qa-btn.ghost:hover {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+        color: var(--accent-dark);
+      }
+
+      /* ============ Two-column grid ============ */
+      .two-col {
+        display: grid;
+        grid-template-columns: 3fr 2fr;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+      @media (max-width: 980px) {
+        .two-col {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 18px;
+        box-shadow: 0 4px 12px rgba(115, 72, 39, 0.04);
+      }
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 14px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f5ece0;
+      }
+      .card-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .card-title i {
+        color: var(--accent);
+        font-size: 14px;
+      }
+      .card-link {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--accent);
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .card-link:hover {
+        text-decoration: underline;
+      }
+
+      /* ============ Activity feed ============ */
+      .activity-list {
+        display: flex;
+        flex-direction: column;
+      }
+      .activity-item {
+        display: flex;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 8px;
+        align-items: flex-start;
+        transition: background 0.1s;
+      }
+      .activity-item:nth-child(odd) {
+        background: var(--bg-alt);
+      }
+      .activity-item:hover {
+        background: var(--accent-soft);
+        cursor: pointer;
+      }
+      .activity-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        flex-shrink: 0;
+      }
+      .ai-inquiry {
+        background: #e6f6ef;
+        color: var(--badge-green);
+      }
+      .ai-viewing {
+        background: #e0f2fe;
+        color: var(--badge-blue);
+      }
+      .ai-milestone {
+        background: #fef3c7;
+        color: var(--badge-amber);
+      }
+      .ai-message {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .ai-listing {
+        background: #f3e8ff;
+        color: #6b46c1;
+      }
+      .activity-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .activity-text {
+        font-size: 13px;
+        color: var(--text-main);
+        line-height: 1.5;
+      }
+      .activity-text .target {
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .activity-text strong {
+        color: var(--text-main);
+        font-weight: 600;
+      }
+      .activity-time {
+        font-size: 11.5px;
+        color: var(--text-dim);
+        margin-top: 2px;
+      }
+
+      /* ============ Upcoming viewings ============ */
+      .viewings-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .viewing-item {
+        border: 1px solid var(--border-subtle);
+        border-radius: 10px;
+        padding: 12px 14px;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .viewing-item:hover {
+        border-color: var(--accent);
+        box-shadow: 0 4px 10px rgba(196, 113, 74, 0.1);
+        cursor: pointer;
+      }
+      .viewing-date {
+        background: var(--accent-soft);
+        color: var(--accent-dark);
+        border-radius: 8px;
+        padding: 6px 10px;
+        text-align: center;
+        font-size: 11px;
+        font-weight: 600;
+        min-width: 62px;
+        flex-shrink: 0;
+      }
+      .viewing-date .day {
+        display: block;
+        font-size: 17px;
+        font-weight: 800;
+        line-height: 1.1;
+        color: var(--accent-dark);
+      }
+      .viewing-date .time {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 2px;
+        display: block;
+      }
+      .viewing-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .viewing-prop {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .viewing-client {
+        font-size: 11.5px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .viewing-status {
+        font-size: 10.5px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-weight: 700;
+        border: 1px solid transparent;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .status-confirmed {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+      .status-pending {
+        background: #fff6e0;
+        color: var(--badge-amber);
+        border-color: #fbd38d;
+      }
+
+      /* ============ Performance table ============ */
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table.perf-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+      }
+      .perf-table thead {
+        background: var(--bg-alt);
+      }
+      .perf-table th,
+      .perf-table td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid #f5ece0;
+      }
+      .perf-table th {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      .perf-table tbody tr {
+        transition: background 0.1s;
+        cursor: pointer;
+      }
+      .perf-table tbody tr:hover {
+        background: var(--accent-soft);
+      }
+      .perf-prop {
+        font-weight: 600;
+        color: var(--text-main);
+      }
+      .perf-prop-sub {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 1px;
+      }
+      .num-cell {
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+      }
+      .status-badge {
+        font-size: 10.5px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-weight: 700;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+      .status-published {
+        background: #e6f6ef;
+        color: var(--badge-green);
+        border-color: #b7e4cc;
+      }
+      .status-draft {
+        background: #f7f7f8;
+        color: #4a5568;
+        border-color: #d2d6dc;
+      }
+      .rank-cell {
+        font-weight: 800;
+        color: var(--accent);
+        font-size: 14px;
+        width: 28px;
+      }
+
+      @media (max-width: 600px) {
+        .greeting-bar {
+          padding: 18px;
+        }
+        .greeting-text h1 {
+          font-size: 19px;
+        }
+        .kpi-card .kpi-value {
+          font-size: 24px;
+        }
+        .qa-btn {
+          padding: 8px 12px;
+          font-size: 12px;
+        }
+        .quick-actions {
+          padding: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Greeting bar -->
+    <section class="greeting-bar">
+      <div class="greeting-text">
+        <h1>
+          <span id="greetingPart">Good morning</span>, Tanaka Kenji
+          <span class="wave">👋</span>
+        </h1>
+        <p id="greetingMeta">
+          Tokyo Realty Co. · <span id="todayDate"></span>
+        </p>
+      </div>
+      <div class="greeting-meta">
+        <div class="greeting-stat">
+          <i class="fas fa-star"></i>
+          <span><strong>4.8</strong> agent rating</span>
+        </div>
+        <div class="greeting-stat">
+          <i class="fas fa-trophy"></i>
+          <span>Gold tier <strong>· 23 closings YTD</strong></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- KPI Cards -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon"><i class="fas fa-house-chimney"></i></div>
+        <div class="kpi-label">Active Listings</div>
+        <div class="kpi-value">18</div>
+        <div class="kpi-trend up">
+          <i class="fas fa-arrow-up"></i> +12% vs last month
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon"><i class="fas fa-envelope-open-text"></i></div>
+        <div class="kpi-label">New Inquiries This Week</div>
+        <div class="kpi-value">24<span class="kpi-unread">8 unread</span></div>
+        <div class="kpi-trend up">
+          <i class="fas fa-arrow-up"></i> +4 vs last week
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon"><i class="fas fa-calendar-check"></i></div>
+        <div class="kpi-label">Scheduled Viewings</div>
+        <div class="kpi-value">7</div>
+        <div class="kpi-trend neutral">
+          <i class="fas fa-clock"></i> next 7 days
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon"><i class="fas fa-eye"></i></div>
+        <div class="kpi-label">Profile Views This Month</div>
+        <div class="kpi-value">1,247</div>
+        <div class="kpi-trend up">
+          <i class="fas fa-arrow-up"></i> +34% vs last month
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Actions -->
+    <section class="quick-actions">
+      <span class="qa-label">Quick actions</span>
+      <button class="qa-btn" type="button" onclick="qaAction('add-property')">
+        <i class="fas fa-plus"></i> Add Property
+      </button>
+      <button
+        class="qa-btn ghost"
+        type="button"
+        onclick="qaAction('add-project')"
+      >
+        <i class="fas fa-plus"></i> Add Project
+      </button>
+      <button
+        class="qa-btn ghost"
+        type="button"
+        onclick="qaAction('view-inquiries')"
+      >
+        <i class="fas fa-inbox"></i> View Inquiries
+      </button>
+      <button
+        class="qa-btn ghost"
+        type="button"
+        onclick="qaAction('manage-ads')"
+      >
+        <i class="fas fa-rectangle-ad"></i> Manage Ads
+      </button>
+    </section>
+
+    <!-- Two-column: Activity + Viewings -->
+    <section class="two-col">
+      <!-- Recent activity -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fas fa-clock-rotate-left"></i> Recent Activity
+          </div>
+          <a class="card-link" onclick="qaAction('view-all-activity')"
+            >View all →</a
+          >
+        </div>
+        <div class="activity-list" id="activityList"></div>
+      </div>
+
+      <!-- Upcoming viewings -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fas fa-calendar-check"></i> Upcoming Viewings
+          </div>
+          <a class="card-link" onclick="qaAction('view-all-viewings')"
+            >View all →</a
+          >
+        </div>
+        <div class="viewings-list" id="viewingsList"></div>
+      </div>
+    </section>
+
+    <!-- Property Performance -->
+    <section class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fas fa-chart-line"></i> Property Performance — Top 5 This
+          Month
+        </div>
+        <a class="card-link" onclick="qaAction('view-all-properties')"
+          >See all properties →</a
+        >
+      </div>
+      <div class="table-wrap">
+        <table class="perf-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Property</th>
+              <th>Type</th>
+              <th>Views</th>
+              <th>Inquiries</th>
+              <th>Saved</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="perfBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <script>
+      // ============ Data ============
+      const ACTIVITY = [
+        {
+          icon: "fa-envelope-open-text",
+          kind: "inquiry",
+          text: 'New inquiry from <strong>Sato Hiroshi</strong> on <span class="target">Roppongi Hills 2LDK</span>',
+          time: "5 minutes ago",
+        },
+        {
+          icon: "fa-calendar-plus",
+          kind: "viewing",
+          text: 'Viewing scheduled for <strong>tomorrow 14:00</strong> — <span class="target">Shinjuku Studio</span>',
+          time: "1 hour ago",
+        },
+        {
+          icon: "fa-fire",
+          kind: "milestone",
+          text: '<span class="target">Roppongi Hills 2LDK</span> reached <strong>500 views</strong>',
+          time: "2 hours ago",
+        },
+        {
+          icon: "fa-comments",
+          kind: "message",
+          text: 'New message from admin: <strong>"Q2 commission summary available"</strong>',
+          time: "4 hours ago",
+        },
+        {
+          icon: "fa-envelope-open-text",
+          kind: "inquiry",
+          text: 'New inquiry from <strong>Yamada Yuki</strong> on <span class="target">Daikanyama 1LDK</span>',
+          time: "6 hours ago",
+        },
+        {
+          icon: "fa-check-circle",
+          kind: "listing",
+          text: 'Listing approved by admin: <span class="target">Azabu-Juban Tower 2LDK</span>',
+          time: "Yesterday",
+        },
+        {
+          icon: "fa-handshake",
+          kind: "viewing",
+          text: 'Viewing completed: <span class="target">Minato Mirai Bay Condo</span> with Tanaka Family',
+          time: "Yesterday",
+        },
+        {
+          icon: "fa-star",
+          kind: "milestone",
+          text: 'Property featured in <strong>homepage carousel</strong>: <span class="target">Minami-Aoyama Penthouse</span>',
+          time: "2 days ago",
+        },
+      ];
+
+      const VIEWINGS = [
+        {
+          day: "Today",
+          time: "16:00",
+          property: "Shinjuku Studio",
+          client: "Sato Hiroshi",
+          status: "confirmed",
+        },
+        {
+          day: "Tomorrow",
+          time: "10:00",
+          property: "Roppongi Hills 2LDK",
+          client: "Yamada Yuki",
+          status: "confirmed",
+        },
+        {
+          day: "Tomorrow",
+          time: "14:00",
+          property: "Daikanyama 1LDK",
+          client: "Lee Min-jun",
+          status: "pending",
+        },
+        {
+          day: "May 28",
+          time: "11:00",
+          property: "Minami-Aoyama Penthouse",
+          client: "Kim Soo-yeon",
+          status: "confirmed",
+        },
+        {
+          day: "May 29",
+          time: "15:00",
+          property: "Azabu-Juban Tower 2LDK",
+          client: "Ito Kenji",
+          status: "pending",
+        },
+      ];
+
+      const TOP_PROPERTIES = [
+        {
+          name: "Roppongi Hills 2LDK",
+          address: "Minato, Tokyo",
+          type: "Apartment",
+          views: 542,
+          inquiries: 18,
+          saved: 32,
+          status: "published",
+        },
+        {
+          name: "Minami-Aoyama Penthouse",
+          address: "Minato, Tokyo",
+          type: "Apartment",
+          views: 487,
+          inquiries: 14,
+          saved: 28,
+          status: "published",
+        },
+        {
+          name: "Shinjuku Studio",
+          address: "Shinjuku, Tokyo",
+          type: "Studio",
+          views: 423,
+          inquiries: 12,
+          saved: 19,
+          status: "published",
+        },
+        {
+          name: "Daikanyama 1LDK",
+          address: "Shibuya, Tokyo",
+          type: "Apartment",
+          views: 389,
+          inquiries: 9,
+          saved: 17,
+          status: "published",
+        },
+        {
+          name: "Azabu-Juban Tower 2LDK",
+          address: "Minato, Tokyo",
+          type: "Apartment",
+          views: 312,
+          inquiries: 7,
+          saved: 15,
+          status: "draft",
+        },
+      ];
+
+      // ============ Helpers ============
+      function esc(s) {
+        return String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      }
+
+      function setGreetingByHour() {
+        const h = new Date().getHours();
+        let g = "Good morning";
+        if (h >= 12 && h < 18) g = "Good afternoon";
+        else if (h >= 18 || h < 5) g = "Good evening";
+        document.getElementById("greetingPart").textContent = g;
+
+        const d = new Date();
+        document.getElementById("todayDate").textContent = d.toLocaleDateString(
+          "en-US",
+          {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          },
+        );
+      }
+
+      function renderActivity() {
+        const html = ACTIVITY.map(
+          (a) => `
+          <div class="activity-item">
+            <div class="activity-icon ai-${esc(a.kind)}">
+              <i class="fas ${esc(a.icon)}"></i>
+            </div>
+            <div class="activity-body">
+              <div class="activity-text">${a.text}</div>
+              <div class="activity-time"><i class="fas fa-clock" style="font-size:9px;margin-right:3px"></i>${esc(a.time)}</div>
+            </div>
+          </div>`,
+        ).join("");
+        document.getElementById("activityList").innerHTML = html;
+      }
+
+      function renderViewings() {
+        const html = VIEWINGS.map(
+          (v) => `
+          <div class="viewing-item">
+            <div class="viewing-date">
+              <span class="day">${esc(v.day)}</span>
+              <span class="time">${esc(v.time)}</span>
+            </div>
+            <div class="viewing-info">
+              <div class="viewing-prop">${esc(v.property)}</div>
+              <div class="viewing-client">
+                <i class="fas fa-user"></i> ${esc(v.client)}
+              </div>
+            </div>
+            <span class="viewing-status status-${esc(v.status)}">${esc(v.status)}</span>
+          </div>`,
+        ).join("");
+        document.getElementById("viewingsList").innerHTML = html;
+      }
+
+      function renderPerf() {
+        const html = TOP_PROPERTIES.map(
+          (p, i) => `
+          <tr>
+            <td class="rank-cell">${i + 1}</td>
+            <td>
+              <div class="perf-prop">${esc(p.name)}</div>
+              <div class="perf-prop-sub"><i class="fas fa-location-dot" style="font-size:9px;margin-right:3px"></i>${esc(p.address)}</div>
+            </td>
+            <td>${esc(p.type)}</td>
+            <td class="num-cell">${p.views.toLocaleString()}</td>
+            <td class="num-cell">${p.inquiries}</td>
+            <td class="num-cell">${p.saved}</td>
+            <td><span class="status-badge status-${esc(p.status)}">${esc(p.status)}</span></td>
+          </tr>`,
+        ).join("");
+        document.getElementById("perfBody").innerHTML = html;
+      }
+
+      function qaAction(key) {
+        const map = {
+          "add-property": "Add Property — module coming soon",
+          "add-project": "Add Project — module coming soon",
+          "view-inquiries": "View Inquiries — module coming soon",
+          "manage-ads": "Manage Ads — module coming soon",
+          "view-all-activity": "Full activity log — coming soon",
+          "view-all-viewings": "Full viewings calendar — coming soon",
+          "view-all-properties": "My Properties — coming soon",
+        };
+        alert(map[key] || "Coming soon");
+      }
+      window.qaAction = qaAction;
+
+      // ============ Init ============
+      setGreetingByHour();
+      renderActivity();
+      renderViewings();
+      renderPerf();
+    </script>
+  
+<style id="ystd-sb-css">
+.ystd-sb{position:fixed;top:0;left:0;width:200px;height:100vh;background:#fff;border-right:1px solid #e9e2d6;overflow-y:auto;z-index:40;font-family:Arial,Helvetica,sans-serif;}
+.ystd-sb .ystd-logo{padding:18px;display:flex;gap:9px;align-items:center;border-bottom:1px solid #f0ece4;}
+.ystd-sb .ystd-logo b{width:32px;height:32px;border-radius:7px;background:#c4714a;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;}
+.ystd-sb .ystd-logo span{font-size:16px;font-weight:800;color:#1a1a1a;}
+.ystd-sb a{display:flex;align-items:center;gap:10px;padding:9px 18px;color:#5b5249;font-size:13px;text-decoration:none;border-left:3px solid transparent;}
+.ystd-sb a:hover{background:#faf0e9;color:#a55232;}
+.ystd-sb a.on{background:#faf0e9;color:#a55232;font-weight:700;border-left-color:#c4714a;}
+.ystd-sb a i{width:16px;text-align:center;font-size:13px;}
+body{padding-left:216px !important;}
+@media(max-width:900px){body{padding-left:0 !important;}.ystd-sb{display:none;}}
+</style>
+<aside class="ystd-sb"><div class="ystd-logo"><b>Y</b><span>YUUSHI</span></div><nav><a class="on" href="dashboard.html"><i class="fas fa-gauge-high"></i> Dashboard</a><a class="" href="property-list-oversight.html"><i class="fas fa-house-chimney"></i> Properties</a><a class="" href="project-management.html"><i class="fas fa-building-circle-arrow-right"></i> Projects</a><a class="" href="lead-management.html"><i class="fas fa-users"></i> Leads</a><a class="" href="crm-activities.html#viewings"><i class="fas fa-calendar-check"></i> Viewings</a><a class="" href="crm-activities.html#tasks"><i class="fas fa-list-check"></i> Tasks</a><a class="" href="crm-activities.html#jobs"><i class="fas fa-briefcase"></i> Jobs</a><a class="" href="crm-activities.html#calls"><i class="fas fa-phone"></i> Calls</a><a class="" href="crm-activities.html#emails"><i class="fas fa-envelope"></i> Emails</a><a class="" href="crm-activities.html#sms"><i class="fas fa-comment-sms"></i> SMS</a><a class="" href="crm-activities.html#comments"><i class="fas fa-comment"></i> Comments</a><a class="" href="leads-inquiries.html"><i class="fas fa-comments"></i> Messages</a><a class="" href="ad-monetisation.html"><i class="fas fa-rectangle-ad"></i> Advertising</a><a class="" href="billing.html"><i class="fas fa-credit-card"></i> Subscription</a></nav></aside>
+</body>
+</html>

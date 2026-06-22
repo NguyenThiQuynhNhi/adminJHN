@@ -1,0 +1,1537 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin — Sell Guide Content Management</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        /* ===== Shared design tokens ===== */
+        --bg-page: #f5f5f5;
+        --bg-card: #ffffff;
+        --bg-card-warm: #fffaf2;
+        --bg-row-hover: #faf6ee;
+        --bg-header-soft: #faf6ee;
+        --text-primary: #1a1a1a;
+        --text-muted: #7a6a5c;
+        --text-label: #888;
+        --text-link: #8a5a3b;
+        --border-default: #e0e0e0;
+        --border-warm: #eadccd;
+        --border-soft: #f0f0f0;
+        --color-primary: #8b7340;
+        --color-primary-hover: #6d5a32;
+        --color-primary-light: #c9a85c;
+        --status-success-text: #2a7a2a;
+        --status-success-bg: #d4f0d4;
+        --status-warning-text: #c87a2a;
+        --status-warning-bg: #fff3d4;
+        --status-danger-text: #b23b3b;
+        --status-danger-bg: #fbe9e9;
+        --status-neutral-text: #666;
+        --status-neutral-bg: #e8e8e8;
+        --r-sm: 6px;
+        --r-md: 8px;
+        --r-lg: 12px;
+        --r-full: 999px;
+        --shadow-card: 0 10px 30px rgba(115, 72, 39, 0.05);
+        --shadow-toast: 0 8px 24px rgba(0, 0, 0, 0.3);
+        --shadow-modal: 0 18px 50px rgba(59, 47, 42, 0.28);
+        --font-stack:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+        /* ===== Repointed local theme vars (mapped to shared tokens) ===== */
+        --bg-body: var(--bg-page);
+        --border-subtle: var(--border-warm);
+        --border-strong: var(--color-primary-light);
+        --accent: var(--color-primary);
+        --accent-dark: var(--color-primary-hover);
+        --accent-deep: var(--color-primary-hover);
+        --gold-soft: var(--bg-card-warm);
+        --text-main: var(--text-primary);
+        --text-dim: var(--text-label);
+        --danger: var(--status-danger-text);
+        --success: var(--status-success-text);
+        --info: var(--status-warning-text);
+        --preview-bg: var(--bg-card);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        padding: clamp(16px, 2vw, 24px);
+        font-family: var(--font-stack);
+        background: var(--bg-body);
+        color: var(--text-main);
+        font-size: 13px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+      button {
+        font-family: inherit;
+        cursor: pointer;
+      }
+
+      /* Page header */
+      .page-header {
+        margin-bottom: 18px;
+      }
+      .page-title {
+        margin: 0 0 4px;
+        font-size: clamp(20px, 2vw, 24px);
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+      .page-subtitle {
+        margin: 0;
+        font-size: 12.5px;
+        color: var(--text-muted);
+        max-width: 720px;
+      }
+      .breadcrumb {
+        font-size: 11.5px;
+        color: var(--text-dim);
+        margin-bottom: 6px;
+        letter-spacing: 0.02em;
+      }
+      .breadcrumb i {
+        font-size: 9px;
+        margin: 0 6px;
+        opacity: 0.6;
+      }
+
+      /* Panel */
+      .panel {
+        background: var(--bg-card-warm);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--r-lg);
+        box-shadow: var(--shadow-card);
+        margin-bottom: 22px;
+        overflow: hidden;
+      }
+      .panel-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        background: var(--bg-header-soft);
+      }
+      .panel-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+      .panel-title i {
+        color: var(--accent);
+        font-size: 14px;
+      }
+      .panel-title .num {
+        background: var(--accent);
+        color: var(--bg-card);
+        font-size: 11px;
+        font-weight: 800;
+        padding: 3px 8px;
+        border-radius: var(--r-full);
+        letter-spacing: 0.04em;
+      }
+      .saved-meta {
+        font-size: 11px;
+        color: var(--text-dim);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .saved-meta .dot {
+        width: 6px;
+        height: 6px;
+        background: var(--status-neutral-text);
+        border-radius: 50%;
+      }
+      .saved-meta.unsaved .dot {
+        background: var(--info);
+      }
+      .saved-meta.unsaved {
+        color: var(--info);
+      }
+      .saved-meta.saved .dot {
+        background: var(--success);
+      }
+
+      .panel-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+        gap: 0;
+      }
+      .editor {
+        padding: 18px 20px;
+        border-right: 1px solid var(--border-subtle);
+        min-width: 0;
+      }
+      .preview {
+        background: var(--preview-bg);
+        padding: 18px 20px;
+        min-width: 0;
+        position: relative;
+      }
+      .preview-tag {
+        position: absolute;
+        top: 12px;
+        right: 14px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-dim);
+        background: rgba(245, 236, 212, 0.7);
+        padding: 4px 8px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .preview-tag i {
+        color: var(--accent);
+      }
+
+      @media (max-width: 1000px) {
+        .panel-body {
+          grid-template-columns: 1fr;
+        }
+        .editor {
+          border-right: 0;
+          border-bottom: 1px solid var(--border-subtle);
+        }
+      }
+
+      /* Form controls */
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin-bottom: 14px;
+        min-width: 0;
+      }
+      .field-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .field-label .req {
+        color: var(--danger);
+        font-weight: 700;
+        margin-left: -2px;
+        margin-right: auto;
+      }
+      .field-label .count {
+        font-weight: 500;
+        color: var(--text-dim);
+        text-transform: none;
+        letter-spacing: 0;
+      }
+      .upload-subtitle {
+        font-size: 11px;
+        color: var(--text-dim);
+        margin-top: 4px;
+      }
+      .field-label .count.over {
+        color: var(--danger);
+        font-weight: 700;
+      }
+      .input,
+      .textarea {
+        background: var(--bg-card-warm);
+        color: var(--text-main);
+        border: 1px solid var(--border-strong);
+        border-radius: var(--r-md);
+        padding: 9px 11px;
+        font-size: 13px;
+        font-family: inherit;
+        width: 100%;
+        outline: none;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .input:focus,
+      .textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--status-warning-bg);
+      }
+      .textarea {
+        resize: vertical;
+        min-height: 70px;
+        line-height: 1.5;
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 600px) {
+        .grid-2 {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .helper {
+        font-size: 11px;
+        color: var(--text-dim);
+        margin-top: 2px;
+      }
+
+      /* Buttons */
+      .btn {
+        border-radius: var(--r-md);
+        border: 1px solid var(--border-strong);
+        padding: 8px 14px;
+        font-size: 12.5px;
+        background: var(--bg-card);
+        cursor: pointer;
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-main);
+        font-weight: 500;
+        min-height: 34px;
+        transition:
+          background 0.15s,
+          border-color 0.15s,
+          transform 0.1s;
+      }
+      .btn:hover {
+        background: var(--bg-row-hover);
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        border-color: var(--accent-dark);
+        color: #fffaf3;
+        font-weight: 600;
+      }
+      .btn-primary:hover {
+        background: linear-gradient(
+          135deg,
+          var(--accent-dark),
+          var(--accent-deep)
+        );
+      }
+      .btn-ghost {
+        background: transparent;
+        border-color: transparent;
+        color: var(--text-muted);
+      }
+      .btn-ghost:hover {
+        background: var(--bg-row-hover);
+        color: var(--text-main);
+      }
+      .btn-danger {
+        color: var(--danger);
+        border-color: var(--status-danger-bg);
+        background: var(--bg-card);
+      }
+      .btn-danger:hover {
+        background: var(--status-danger-bg);
+      }
+      .btn-icon {
+        padding: 6px 8px;
+        min-width: 30px;
+        min-height: 30px;
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .panel-footer {
+        padding: 14px 20px;
+        border-top: 1px solid var(--border-subtle);
+        background: var(--bg-header-soft);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      /* Step cards (admin editor) */
+      .steps-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .step-card {
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--r-md);
+        background: var(--bg-card-warm);
+        padding: 12px;
+        position: relative;
+      }
+      .step-card-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .step-card-header .step-num {
+        width: 26px;
+        height: 26px;
+        background: var(--accent);
+        color: var(--bg-card);
+        font-weight: 700;
+        font-size: 12px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .step-card-header .step-title-mini {
+        flex: 1;
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+      .step-actions {
+        display: flex;
+        gap: 4px;
+      }
+
+      /* Step icon — image upload per step */
+      .step-icon-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+        padding: 10px 12px;
+        background: var(--bg-card);
+        border: 1.5px dashed var(--border-strong);
+        border-radius: var(--r-md);
+        transition:
+          border-color 0.15s,
+          background 0.15s;
+      }
+      .step-icon-row:hover {
+        border-color: var(--accent);
+        background: var(--bg-card-warm);
+      }
+      .step-icon-row.has-image {
+        border-style: solid;
+        border-color: var(--accent);
+        background: var(--gold-soft);
+      }
+      .step-icon-thumb {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: var(--bg-card);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+        overflow: hidden;
+        box-shadow: var(--shadow-card);
+      }
+      .step-icon-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .step-icon-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .step-icon-info .label {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text-main);
+      }
+      .step-icon-info .sub {
+        font-size: 11px;
+        color: var(--text-dim);
+        margin-top: 2px;
+      }
+      .step-icon-actions {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .step-icon-upload-btn {
+        cursor: pointer;
+        margin: 0;
+      }
+      .step-icon-upload-btn input[type="file"] {
+        display: none;
+      }
+
+      /* Position toggle */
+      .seg {
+        display: inline-flex;
+        background: var(--bg-card);
+        border: 1px solid var(--border-strong);
+        border-radius: var(--r-md);
+        padding: 3px;
+      }
+      .seg button {
+        background: transparent;
+        border: 0;
+        padding: 6px 14px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .seg button.active {
+        background: var(--accent);
+        color: #fffaf3;
+      }
+
+      /* Image upload */
+      .upload {
+        display: block;
+        background: #fffcf7;
+        border: 2px dashed var(--border-strong);
+        border-radius: 10px;
+        padding: 14px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .upload:hover {
+        border-color: var(--accent);
+        background: #fffaf2;
+      }
+      .upload input[type="file"] {
+        display: none;
+      }
+      .upload-preview {
+        width: 100%;
+        max-height: 220px;
+        object-fit: cover;
+        border-radius: 8px;
+        background: #f3ece1;
+        display: block;
+      }
+      .upload-empty {
+        padding: 24px 8px;
+        color: var(--text-muted);
+        font-size: 12.5px;
+      }
+      .upload-empty i {
+        font-size: 24px;
+        color: var(--accent);
+        display: block;
+        margin-bottom: 6px;
+      }
+      .upload-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: var(--text-dim);
+        margin-top: 6px;
+        padding: 0 2px;
+      }
+
+      /* ============== Preview styles ============== */
+      .pv-wrap {
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      .pv-section1 {
+        padding: 28px 18px 22px;
+        text-align: center;
+      }
+      .pv-title {
+        font-size: clamp(18px, 2.2vw, 22px);
+        font-weight: 700;
+        color: #2c1810;
+        margin: 0 0 4px;
+        line-height: 1.25;
+      }
+      .pv-subtitle {
+        font-size: clamp(12px, 1.3vw, 14px);
+        color: #6b5c4e;
+        margin: 0 0 22px;
+      }
+      .pv-step-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 22px;
+      }
+      .pv-step-card {
+        padding: 14px 8px;
+        text-align: center;
+      }
+      .pv-step-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: #fffaf3;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        margin: 0 auto 10px;
+        box-shadow: 0 6px 14px rgba(196, 162, 95, 0.25);
+        overflow: hidden;
+      }
+      .pv-step-header {
+        font-size: 13px;
+        font-weight: 700;
+        color: #2c1810;
+        margin: 0 0 4px;
+      }
+      .pv-step-body {
+        font-size: 11.5px;
+        color: #6b5c4e;
+        line-height: 1.5;
+        margin: 0;
+      }
+      .pv-cta {
+        display: inline-block;
+        padding: 11px 30px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: #fffaf3;
+        border-radius: 999px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 13px;
+        border: 0;
+        cursor: pointer;
+        box-shadow: 0 6px 16px rgba(196, 162, 95, 0.3);
+      }
+
+      .pv-section2 {
+        background: #faf6ee;
+        padding: 22px 18px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        align-items: center;
+      }
+      .pv-img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 12px;
+        background: #e5d9c0;
+        display: block;
+      }
+      .pv-heading {
+        font-size: clamp(17px, 2vw, 20px);
+        font-weight: 700;
+        color: #2c1810;
+        margin: 0 0 10px;
+        line-height: 1.25;
+      }
+      .pv-body {
+        font-size: 12.5px;
+        color: #6b5c4e;
+        line-height: 1.6;
+        margin: 0 0 16px;
+        white-space: pre-line;
+      }
+      @media (max-width: 1200px) {
+        .pv-section2 {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 480px) {
+        .pv-step-row {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Section divider in editor */
+      .sub-divider {
+        margin: 16px 0 12px;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .sub-divider i {
+        color: var(--accent);
+      }
+
+      /* Toast */
+      .toast-wrap {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast {
+        background: var(--text-main);
+        color: #fffaf3;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+        animation: toastIn 0.2s ease;
+        max-width: 360px;
+      }
+      .toast.success i {
+        color: #6ee7b7;
+      }
+      .toast.error {
+        background: var(--danger);
+      }
+      @keyframes toastIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Modal */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(44, 24, 16, 0.45);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 20px;
+      }
+      .modal-overlay.open {
+        display: flex;
+      }
+      .modal {
+        background: var(--bg-card);
+        border-radius: var(--r-lg);
+        box-shadow: var(--shadow-modal);
+        max-width: 380px;
+        width: 100%;
+        padding: 22px;
+        animation: toastIn 0.18s ease;
+      }
+      .modal-title {
+        margin: 0 0 8px;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+      .modal-title i {
+        color: var(--danger);
+      }
+      .modal-title .modal-close {
+        margin-left: auto;
+        color: var(--text-dim);
+      }
+      .modal-title .modal-close i {
+        color: inherit;
+      }
+      .modal-msg {
+        margin: 0 0 18px;
+        font-size: 13px;
+        color: var(--text-muted);
+        line-height: 1.55;
+      }
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      .btn-danger-solid {
+        background: var(--danger);
+        border-color: var(--danger);
+        color: #fffaf3;
+        font-weight: 600;
+      }
+      .btn-danger-solid:hover {
+        background: var(--status-danger-text);
+        filter: brightness(0.92);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-header">
+      <h1 class="page-title">Sell Guide Content Management</h1>
+    </div>
+
+    <!-- ================= PANEL 1: Step Cards Section ================= -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="num">01</span>
+          <i class="fas fa-list-ol"></i> Step Cards Section
+        </div>
+        <div class="saved-meta" id="p1Saved">
+          <span class="dot"></span><span id="p1SavedText">Not saved yet</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <!-- Editor -->
+        <div class="editor">
+          <div class="field">
+            <label class="field-label" for="p1Title">
+              Page Title <span class="req">*</span>
+              <span class="count" id="p1TitleCount">0 / 100</span>
+            </label>
+            <input class="input" id="p1Title" type="text" maxlength="100" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="p1Subtitle">
+              Page Subtitle <span class="req">*</span>
+              <span class="count" id="p1SubtitleCount">0 / 60</span>
+            </label>
+            <input class="input" id="p1Subtitle" type="text" maxlength="60" />
+          </div>
+
+          <div class="sub-divider">
+            <i class="fas fa-shoe-prints"></i> Steps
+          </div>
+          <div class="steps-list" id="stepsList"></div>
+          <button class="btn" id="btnAddStep" type="button" style="width: 100%">
+            <i class="fas fa-plus"></i> Add Step
+            <span
+              id="stepCount"
+              style="color: var(--text-dim); font-weight: 500"
+              >(0/6)</span
+            >
+          </button>
+        </div>
+
+        <!-- Preview -->
+        <div class="preview">
+          <div class="preview-tag"><i class="fas fa-eye"></i> Live Preview</div>
+          <div class="pv-wrap">
+            <div class="pv-section1">
+              <h2 class="pv-title" id="pvTitle">—</h2>
+              <p class="pv-subtitle" id="pvSubtitle">—</p>
+              <div class="pv-step-row" id="pvStepRow"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-footer">
+        <button class="btn btn-primary" type="button" onclick="savePanel(1)">
+          <i class="fas fa-floppy-disk"></i> Save Changes
+        </button>
+      </div>
+    </section>
+
+    <!-- ================= PANEL 2: Feature Highlight ================= -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="num">02</span>
+          <i class="fas fa-image"></i> Feature Highlight Section
+        </div>
+        <div class="saved-meta" id="p2Saved">
+          <span class="dot"></span><span id="p2SavedText">Not saved yet</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <!-- Editor -->
+        <div class="editor">
+          <div class="field">
+            <label class="field-label" for="p2Upload">
+              Section Image <span class="req">*</span>
+            </label>
+            <label class="upload" id="p2UploadLabel">
+              <input type="file" id="p2Upload" accept=".png,.jpg,.jpeg,.webp" />
+              <div id="p2UploadInner">
+                <div class="upload-empty">
+                  <i class="fas fa-cloud-arrow-up"></i>
+                  <div><strong>Click to upload</strong></div>
+                </div>
+              </div>
+            </label>
+            <div class="upload-meta">
+              <button
+                type="button"
+                class="btn btn-ghost btn-icon"
+                id="p2RemoveImg"
+                title="Remove image"
+                style="display: none"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="p2Heading">
+              Heading <span class="req">*</span>
+              <span class="count" id="p2HeadingCount">0 / 100</span>
+            </label>
+            <input class="input" id="p2Heading" type="text" maxlength="100" />
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="p2Body">
+              Body <span class="req">*</span>
+              <span class="count" id="p2BodyCount">0 / 500</span>
+            </label>
+            <textarea
+              class="textarea"
+              id="p2Body"
+              rows="5"
+              maxlength="500"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="preview">
+          <div class="preview-tag"><i class="fas fa-eye"></i> Live Preview</div>
+          <div class="pv-wrap">
+            <div class="pv-section2" id="pvSec2">
+              <div class="pv-img-wrap">
+                <img class="pv-img" id="pvImage" alt="Feature image" />
+              </div>
+              <div class="pv-txt-wrap">
+                <h2 class="pv-heading" id="pvHeading">—</h2>
+                <p class="pv-body" id="pvBody">—</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-footer">
+        <button class="btn btn-primary" type="button" onclick="savePanel(2)">
+          <i class="fas fa-floppy-disk"></i> Save Changes
+        </button>
+      </div>
+    </section>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <!-- Confirmation modal -->
+    <div class="modal-overlay" id="modalOverlay">
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modalTitle"
+      >
+        <h3 class="modal-title" id="modalTitle">
+          <i class="fas fa-triangle-exclamation"></i>
+          <span id="modalTitleText">Delete step?</span>
+          <button
+            class="btn btn-ghost btn-icon modal-close"
+            type="button"
+            id="modalClose"
+            aria-label="Close"
+            title="Close"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </h3>
+        <p class="modal-msg" id="modalMsg"></p>
+        <div class="modal-actions">
+          <button class="btn" type="button" id="modalCancel">Cancel</button>
+          <button class="btn btn-danger-solid" type="button" id="modalConfirm">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ============ Defaults ============
+      const DEFAULT_IMAGE =
+        "data:image/svg+xml;utf8," +
+        encodeURIComponent(
+          `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 420">
+            <defs>
+              <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#f3ece1"/>
+                <stop offset="1" stop-color="#e5d9c0"/>
+              </linearGradient>
+            </defs>
+            <rect width="600" height="420" fill="url(#bg)"/>
+            <rect x="60" y="280" width="480" height="14" fill="#c4a25f" opacity=".35" rx="3"/>
+            <rect x="60" y="300" width="480" height="80" fill="#8b6f47" opacity=".55" rx="6"/>
+            <circle cx="200" cy="220" r="44" fill="#fffaf2"/>
+            <circle cx="200" cy="210" r="20" fill="#c4a25f"/>
+            <path d="M170 252 q30 -32 60 0 v18 h-60 z" fill="#c4a25f"/>
+            <circle cx="400" cy="220" r="44" fill="#fffaf2"/>
+            <circle cx="400" cy="210" r="20" fill="#a55232"/>
+            <path d="M370 252 q30 -32 60 0 v18 h-60 z" fill="#a55232"/>
+            <rect x="230" y="160" width="140" height="80" fill="#fffaf2" stroke="#c4a25f" stroke-width="2" rx="4"/>
+            <line x1="245" y1="180" x2="355" y2="180" stroke="#c4a25f" stroke-width="2"/>
+            <line x1="245" y1="195" x2="345" y2="195" stroke="#c4a25f" stroke-width="2"/>
+            <line x1="245" y1="210" x2="335" y2="210" stroke="#c4a25f" stroke-width="2"/>
+            <line x1="245" y1="225" x2="350" y2="225" stroke="#c4a25f" stroke-width="2"/>
+            <text x="300" y="80" font-family="system-ui" font-size="22" fill="#7a6a5c" text-anchor="middle" font-weight="600">Two people reviewing documents</text>
+            <text x="300" y="108" font-family="system-ui" font-size="14" fill="#9b8568" text-anchor="middle">Placeholder · Replace via Section Image upload</text>
+          </svg>`,
+        );
+
+      const DEFAULTS = {
+        s1: {
+          title: "Explore your property accurate value",
+          subtitle: "with 3 easy steps",
+          steps: [
+            {
+              iconImage: "",
+              header: "Submit information",
+              body: "Tell us about your home",
+            },
+            {
+              iconImage: "",
+              header: "Receive valuation",
+              body: "Get match with the best experts for your home to advertise on our site get a desk appraisal for your property",
+            },
+            {
+              iconImage: "",
+              header: "Compare Assessment result",
+              body: "Compare not only the appraisal price, but also the basis of the price and the sales plan, and proceed with the selection of the company to which you want to sell",
+            },
+          ],
+        },
+        s2: {
+          image: "",
+          heading: "Why should you work with agent?",
+          body: "Enjoy the afternoon with relaxing and enjoying our variety of pastries and special tea from Zerra with afternoon tea, IDR 80K for 2 pax...",
+        },
+      };
+
+      const LS_KEY = "yuushi.sellGuide.v2";
+      const MAX_STEPS = 6;
+
+      // ============ State ============
+      let state = loadState();
+      const savedAt = { s1: null, s2: null };
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(LS_KEY);
+          if (!raw) return JSON.parse(JSON.stringify(DEFAULTS));
+          const parsed = JSON.parse(raw);
+          return {
+            s1: Object.assign({}, DEFAULTS.s1, parsed.s1 || {}, {
+              steps:
+                parsed.s1 && parsed.s1.steps && parsed.s1.steps.length
+                  ? parsed.s1.steps
+                  : DEFAULTS.s1.steps.map((s) => ({ ...s })),
+            }),
+            s2: Object.assign({}, DEFAULTS.s2, parsed.s2 || {}),
+          };
+        } catch (e) {
+          return JSON.parse(JSON.stringify(DEFAULTS));
+        }
+      }
+      function persist() {
+        localStorage.setItem(LS_KEY, JSON.stringify(state));
+      }
+
+      // ============ Utils ============
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      function setCount(elId, val, max) {
+        const el = $(elId);
+        if (!el) return;
+        const n = (val || "").length;
+        el.textContent = `${n} / ${max}`;
+        el.classList.toggle("over", n > max);
+      }
+      function markUnsaved(p) {
+        const el = $("p" + p + "Saved");
+        const txt = $("p" + p + "SavedText");
+        el.classList.add("unsaved");
+        el.classList.remove("saved");
+        txt.textContent = "Unsaved changes";
+      }
+      function markSaved(p) {
+        const now = new Date();
+        savedAt["s" + p] = now;
+        const el = $("p" + p + "Saved");
+        const txt = $("p" + p + "SavedText");
+        el.classList.remove("unsaved");
+        el.classList.add("saved");
+        txt.textContent = `Last saved: ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+      }
+
+      // ============ Render — Panel 1 editor ============
+      function renderSteps() {
+        const wrap = $("stepsList");
+        $("stepCount").textContent = `(${state.s1.steps.length}/${MAX_STEPS})`;
+        $("btnAddStep").disabled = state.s1.steps.length >= MAX_STEPS;
+        wrap.innerHTML = state.s1.steps
+          .map((s, i) => {
+            const hasImg = !!s.iconImage;
+            const thumb = hasImg
+              ? `<img src="${s.iconImage}" alt="Icon ${i + 1}">`
+              : `<i class="fas fa-image"></i>`;
+            return `
+          <div class="step-card" data-idx="${i}">
+            <div class="step-card-header">
+              <div class="step-num">${i + 1}</div>
+              <div class="step-title-mini">Step ${i + 1}</div>
+              <div class="step-actions">
+                <button class="btn btn-icon" type="button" title="Move up"   ${i === 0 ? "disabled" : ""} onclick="moveStep(${i}, -1)"><i class="fas fa-arrow-up"></i></button>
+                <button class="btn btn-icon" type="button" title="Move down" ${i === state.s1.steps.length - 1 ? "disabled" : ""} onclick="moveStep(${i}, 1)"><i class="fas fa-arrow-down"></i></button>
+                <button class="btn btn-icon btn-danger" type="button" title="Delete step" ${state.s1.steps.length <= 1 ? "disabled" : ""} onclick="deleteStep(${i})"><i class="fas fa-times"></i></button>
+              </div>
+            </div>
+
+            <div class="step-icon-row ${hasImg ? "has-image" : ""}">
+              <div class="step-icon-thumb">${thumb}</div>
+              <div class="step-icon-info">
+                <div class="label">Icon image <span class="req">*</span></div>
+                <div class="sub">${hasImg ? "Custom icon uploaded" : "PNG/JPG/JPEG/WEBP"}</div>
+              </div>
+              <div class="step-icon-actions">
+                <label class="btn btn-sm step-icon-upload-btn" style="padding:6px 10px;min-height:30px;font-size:11.5px">
+                  <i class="fas fa-${hasImg ? "rotate" : "cloud-arrow-up"}"></i>
+                  ${hasImg ? "Replace" : "Upload"}
+                  <input type="file" accept=".png,.jpg,.jpeg,.webp" onchange="onStepIconUpload(${i}, event)">
+                </label>
+                ${hasImg ? `<button class="btn btn-sm btn-danger" type="button" title="Remove icon" onclick="removeStepIcon(${i})" style="padding:6px 8px;min-height:30px"><i class="fas fa-trash"></i></button>` : ""}
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="stepHeader${i}">
+                Header <span class="req">*</span>
+                <span class="count" id="stepHeaderCount${i}">${(s.header || "").length} / 60</span>
+              </label>
+              <input class="input" id="stepHeader${i}" type="text" maxlength="60" value="${esc(s.header)}" oninput="onStepChange(${i}, 'header', this.value)">
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="stepBody${i}">
+                Body <span class="req">*</span>
+                <span class="count" id="stepBodyCount${i}">${(s.body || "").length} / 200</span>
+              </label>
+              <textarea class="textarea" id="stepBody${i}" maxlength="200" oninput="onStepChange(${i}, 'body', this.value)">${esc(s.body)}</textarea>
+            </div>
+          </div>`;
+          })
+          .join("");
+      }
+
+      // ============ Render — Panel 1 preview ============
+      function renderPreview1() {
+        $("pvTitle").textContent = state.s1.title || " ";
+        $("pvSubtitle").textContent = state.s1.subtitle || " ";
+        const row = $("pvStepRow");
+        row.style.gridTemplateColumns = `repeat(${Math.max(1, state.s1.steps.length)}, 1fr)`;
+        row.innerHTML = state.s1.steps
+          .map((s) => {
+            const iconHtml = s.iconImage
+              ? `<img src="${s.iconImage}" alt="" style="width:100%;height:100%;object-fit:cover">`
+              : `<i class="fas fa-image"></i>`;
+            return `
+            <div class="pv-step-card">
+              <div class="pv-step-icon">${iconHtml}</div>
+              <h3 class="pv-step-header">${esc(s.header || "—")}</h3>
+              <p class="pv-step-body">${esc(s.body || "")}</p>
+            </div>`;
+          })
+          .join("");
+      }
+
+      // ============ Render — Panel 2 ============
+      function renderPanel2Editor() {
+        $("p2Heading").value = state.s2.heading;
+        $("p2Body").value = state.s2.body;
+        setCount("p2HeadingCount", state.s2.heading, 100);
+        setCount("p2BodyCount", state.s2.body, 500);
+        renderUploadPreview();
+      }
+      function renderUploadPreview() {
+        const inner = $("p2UploadInner");
+        const nameEl = $("p2UploadName");
+        const removeBtn = $("p2RemoveImg");
+        if (!inner) return;
+        if (state.s2.image) {
+          inner.innerHTML = `<img class="upload-preview" src="${state.s2.image}" alt="Uploaded preview" />`;
+          if (nameEl) nameEl.textContent = "Custom image uploaded";
+          if (removeBtn) removeBtn.style.display = "inline-flex";
+        } else {
+          inner.innerHTML = `
+            <div class="upload-empty">
+              <i class="fas fa-cloud-arrow-up"></i>
+              <div><strong>Click to upload</strong></div>
+            </div>`;
+
+          if (removeBtn) removeBtn.style.display = "none";
+        }
+      }
+      function renderPreview2() {
+        $("pvImage").src = state.s2.image || DEFAULT_IMAGE;
+        $("pvHeading").textContent = state.s2.heading || " ";
+        $("pvBody").textContent = state.s2.body || " ";
+      }
+
+      // ============ Mutations ============
+      function onStepChange(idx, field, val) {
+        if (!state.s1.steps[idx]) return;
+        state.s1.steps[idx][field] = val;
+        const max = field === "header" ? 60 : 200;
+        setCount(
+          `step${field === "header" ? "Header" : "Body"}Count${idx}`,
+          val,
+          max,
+        );
+        renderPreview1();
+        markUnsaved(1);
+      }
+      function onStepIconUpload(idx, e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        processImageFile(file).then((dataUrl) => {
+          e.target.value = "";
+          if (!dataUrl) return;
+          if (!state.s1.steps[idx]) return;
+          state.s1.steps[idx].iconImage = dataUrl;
+          renderSteps();
+          renderPreview1();
+          markUnsaved(1);
+        });
+      }
+      function removeStepIcon(idx) {
+        state.s1.steps[idx].iconImage = "";
+        renderSteps();
+        renderPreview1();
+        markUnsaved(1);
+      }
+      function moveStep(idx, dir) {
+        const tgt = idx + dir;
+        if (tgt < 0 || tgt >= state.s1.steps.length) return;
+        const arr = state.s1.steps;
+        [arr[idx], arr[tgt]] = [arr[tgt], arr[idx]];
+        renderSteps();
+        renderPreview1();
+        markUnsaved(1);
+      }
+      function deleteStep(idx) {
+        if (state.s1.steps.length <= 1) return;
+        confirmModal({
+          title: "Delete step?",
+          message: `Delete Step ${idx + 1}? This cannot be undone.`,
+          confirmText: "Delete",
+          danger: true,
+        }).then((ok) => {
+          if (!ok) return;
+          if (state.s1.steps.length <= 1) return;
+          state.s1.steps.splice(idx, 1);
+          renderSteps();
+          renderPreview1();
+          markUnsaved(1);
+        });
+      }
+      function addStep() {
+        if (state.s1.steps.length >= MAX_STEPS) return;
+        state.s1.steps.push({
+          iconImage: "",
+          header: "New step",
+          body: "Describe what happens in this step.",
+        });
+        renderSteps();
+        renderPreview1();
+        markUnsaved(1);
+      }
+
+      // ============ Wire up Panel 1 inputs ============
+      function bindPanel1() {
+        $("p1Title").value = state.s1.title;
+        $("p1Subtitle").value = state.s1.subtitle;
+        setCount("p1TitleCount", state.s1.title, 100);
+        setCount("p1SubtitleCount", state.s1.subtitle, 60);
+
+        $("p1Title").addEventListener("input", (e) => {
+          state.s1.title = e.target.value;
+          setCount("p1TitleCount", e.target.value, 100);
+          renderPreview1();
+          markUnsaved(1);
+        });
+        $("p1Subtitle").addEventListener("input", (e) => {
+          state.s1.subtitle = e.target.value;
+          setCount("p1SubtitleCount", e.target.value, 60);
+          renderPreview1();
+          markUnsaved(1);
+        });
+        $("btnAddStep").addEventListener("click", addStep);
+      }
+
+      // ============ Wire up Panel 2 inputs ============
+      function bindPanel2() {
+        $("p2Heading").addEventListener("input", (e) => {
+          state.s2.heading = e.target.value;
+          setCount("p2HeadingCount", e.target.value, 100);
+          renderPreview2();
+          markUnsaved(2);
+        });
+        $("p2Body").addEventListener("input", (e) => {
+          state.s2.body = e.target.value;
+          setCount("p2BodyCount", e.target.value, 500);
+          renderPreview2();
+          markUnsaved(2);
+        });
+        // Image upload
+        $("p2Upload").addEventListener("change", (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          processImageFile(file).then((dataUrl) => {
+            e.target.value = "";
+            if (!dataUrl) return;
+            state.s2.image = dataUrl;
+            renderUploadPreview();
+            renderPreview2();
+            markUnsaved(2);
+          });
+        });
+        $("p2RemoveImg").addEventListener("click", (e) => {
+          e.preventDefault();
+          state.s2.image = "";
+          $("p2Upload").value = "";
+          renderUploadPreview();
+          renderPreview2();
+          markUnsaved(2);
+        });
+      }
+
+      // ============ Save / Reset ============
+      function savePanel(p) {
+        // Trim values
+        if (p === 1) {
+          state.s1.title = (state.s1.title || "").trim();
+          state.s1.subtitle = (state.s1.subtitle || "").trim();
+          state.s1.steps = state.s1.steps.map((s) => ({
+            iconImage: s.iconImage || "",
+            header: (s.header || "").trim(),
+            body: (s.body || "").trim(),
+          }));
+          if (!state.s1.title)
+            return toast("Page title cannot be empty.", "error");
+          if (!state.s1.subtitle)
+            return toast("Page subtitle cannot be empty.", "error");
+          if (!state.s1.steps.length)
+            return toast("Add at least 1 step.", "error");
+          if (state.s1.steps.some((s) => !s.iconImage))
+            return toast("Every step needs an icon image.", "error");
+          if (state.s1.steps.some((s) => !s.header.trim()))
+            return toast("Every step needs a header.", "error");
+          if (state.s1.steps.some((s) => !s.body.trim()))
+            return toast("Every step needs body text.", "error");
+        } else if (p === 2) {
+          state.s2.heading = (state.s2.heading || "").trim();
+          state.s2.body = (state.s2.body || "").trim();
+          if (!state.s2.image)
+            return toast("Section image is required.", "error");
+          if (!state.s2.heading)
+            return toast("Heading cannot be empty.", "error");
+          if (!state.s2.body) return toast("Body cannot be empty.", "error");
+        }
+        persist();
+        markSaved(p);
+        toast(
+          p === 1
+            ? "Step Cards section saved successfully."
+            : "Feature Highlight section saved successfully.",
+          "success",
+        );
+      }
+      function resetPanel(p) {
+        const which =
+          p === 1 ? "Step Cards section" : "Feature Highlight section";
+        confirmModal({
+          title: "Reset to defaults?",
+          message: `Reset ${which} to defaults? Unsaved changes will be lost.`,
+          confirmText: "Reset",
+          danger: true,
+        }).then((ok) => {
+          if (!ok) return;
+          if (p === 1) {
+            state.s1 = JSON.parse(JSON.stringify(DEFAULTS.s1));
+            bindPanel1();
+            renderSteps();
+            renderPreview1();
+          } else {
+            state.s2 = JSON.parse(JSON.stringify(DEFAULTS.s2));
+            renderPanel2Editor();
+            renderPreview2();
+          }
+          markUnsaved(p);
+          toast("Reverted to defaults. Click Save to persist.", "success");
+        });
+      }
+
+      // ============ Toast ============
+      function toast(msg, kind) {
+        const wrap = $("toastWrap");
+        const el = document.createElement("div");
+        el.className = "toast " + (kind || "success");
+        el.innerHTML = `<i class="fas fa-${kind === "error" ? "circle-exclamation" : "circle-check"}"></i> ${esc(msg)}`;
+        wrap.appendChild(el);
+        setTimeout(() => {
+          el.style.opacity = "0";
+          el.style.transform = "translateY(8px)";
+          el.style.transition = "all 0.2s";
+        }, 2400);
+        setTimeout(() => el.remove(), 2700);
+      }
+
+      // ============ Confirmation modal ============
+      let _modalResolve = null;
+      function confirmModal({ title, message, confirmText, danger }) {
+        const overlay = $("modalOverlay");
+        $("modalTitleText").textContent = title || "Are you sure?";
+        $("modalMsg").textContent = message || "";
+        const confirmBtn = $("modalConfirm");
+        confirmBtn.textContent = confirmText || "Confirm";
+        confirmBtn.className =
+          "btn " + (danger ? "btn-danger-solid" : "btn-primary");
+        overlay.classList.add("open");
+        return new Promise((resolve) => {
+          _modalResolve = resolve;
+        });
+      }
+      function closeModal(result) {
+        $("modalOverlay").classList.remove("open");
+        if (_modalResolve) {
+          _modalResolve(result);
+          _modalResolve = null;
+        }
+      }
+      $("modalCancel").addEventListener("click", () => closeModal(false));
+      $("modalClose").addEventListener("click", () => closeModal(false));
+      $("modalConfirm").addEventListener("click", () => closeModal(true));
+      $("modalOverlay").addEventListener("click", (e) => {
+        if (e.target === $("modalOverlay")) closeModal(false);
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && $("modalOverlay").classList.contains("open"))
+          closeModal(false);
+      });
+
+      // ============ Image helpers ============
+      const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+      const COMPRESS_OVER_BYTES = 1 * 1024 * 1024;
+      const MAX_EDGE = 1920;
+      const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+      const ALLOWED_EXTS = ["png", "jpg", "jpeg", "webp"];
+
+      // Validate + (optionally) compress an image file to a data URL.
+      // Resolves with a data URL string, or null if validation failed
+      // (an error toast is shown in that case).
+      function processImageFile(file) {
+        return new Promise((resolve) => {
+          if (!file) return resolve(null);
+          const ext = (file.name.split(".").pop() || "").toLowerCase();
+          const typeOk = !file.type || ALLOWED_TYPES.includes(file.type);
+          if (!ALLOWED_EXTS.includes(ext) || !typeOk) {
+            toast("Invalid file type. PNG/JPG/JPEG/WEBP only.", "error");
+            return resolve(null);
+          }
+          if (file.size > MAX_IMAGE_BYTES) {
+            toast("Image must not exceed 5MB.", "error");
+            return resolve(null);
+          }
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const dataUrl = ev.target.result;
+            const img = new Image();
+            img.onload = () => {
+              const tooLarge =
+                file.size > COMPRESS_OVER_BYTES ||
+                img.width > MAX_EDGE ||
+                img.height > MAX_EDGE;
+              if (!tooLarge) return resolve(dataUrl);
+              const scale = Math.min(
+                1,
+                MAX_EDGE / Math.max(img.width, img.height),
+              );
+              const w = Math.round(img.width * scale);
+              const h = Math.round(img.height * scale);
+              const canvas = document.createElement("canvas");
+              canvas.width = w;
+              canvas.height = h;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, w, h);
+              try {
+                resolve(canvas.toDataURL("image/jpeg", 0.85));
+              } catch (err) {
+                resolve(dataUrl);
+              }
+            };
+            img.onerror = () => resolve(dataUrl);
+            img.src = dataUrl;
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      // ============ Init ============
+      bindPanel1();
+      renderSteps();
+      renderPreview1();
+      renderPanel2Editor();
+      bindPanel2();
+      renderPreview2();
+    </script>
+  </body>
+</html>

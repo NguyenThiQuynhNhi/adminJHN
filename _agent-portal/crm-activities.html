@@ -1,0 +1,1121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CRM Activities — YUUSHI Agent</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --nav-bg: #1a2744; --nav-bg-hover: #243454;
+        --nav-text: #c8d1e0; --nav-text-muted: #7b8aa3;
+        --accent: #1a6bd4; --accent-dark: #1456ae; --accent-soft: #e8f1fc;
+        --terracotta: #c4714a;
+        --bg-body: #f5f7fa; --bg-card: #ffffff; --bg-alt: #f9fafc;
+        --border-subtle: #e5e9f0; --border-strong: #d4dae5;
+        --text-main: #1f2937; --text-muted: #64748b; --text-dim: #94a3b8;
+        --green: #16a34a; --green-soft: #dcfce7;
+        --cyan: #0891b2; --cyan-soft: #cffafe;
+        --amber: #d97706; --amber-soft: #fef3c7;
+        --red: #dc2626; --red-soft: #fee2e2;
+        --dark-green: #15803d; --dark-green-soft: #bbf7d0;
+        --blue: #2563eb; --blue-soft: #dbeafe;
+        --grey: #6b7280; --grey-soft: #f3f4f6;
+        --navy: #1e3a8a;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+        background: var(--bg-body); color: var(--text-main);
+        font-size: 13px; line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        display: flex;
+      }
+      a { color: inherit; text-decoration: none; }
+      .sidebar {
+        width: 200px; min-width: 200px; height: 100vh;
+        background: var(--nav-bg); color: var(--nav-text);
+        overflow-y: auto; flex-shrink: 0;
+      }
+      .sb-logo {
+        padding: 18px 20px; border-bottom: 1px solid rgba(255,255,255,0.08);
+        display: flex; align-items: center; gap: 10px;
+      }
+      .sb-logo-icon {
+        width: 34px; height: 34px; border-radius: 8px; background: var(--accent);
+        color: #fff; display: inline-flex; align-items: center; justify-content: center;
+        font-weight: 800; font-size: 16px;
+      }
+      .sb-logo-text { font-size: 17px; font-weight: 700; color: #fff; }
+      .sb-section { padding: 10px 0; }
+      .sb-item {
+        display: flex; align-items: center; gap: 11px;
+        padding: 10px 20px; color: var(--nav-text);
+        font-size: 13.5px; cursor: pointer;
+        border-left: 3px solid transparent; transition: all 0.15s;
+      }
+      .sb-item:hover { background: var(--nav-bg-hover); color: #fff; }
+      .sb-item.active {
+        background: var(--nav-bg-hover); color: #fff; font-weight: 600;
+        border-left-color: var(--accent);
+      }
+      .sb-item i { width: 18px; text-align: center; font-size: 14px; }
+      .sb-item.active i { color: var(--accent); }
+
+      .main {
+        flex: 1; display: flex; flex-direction: column;
+        height: 100vh; overflow: hidden;
+      }
+      .topbar {
+        height: 56px; flex-shrink: 0; background: #fff;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex; align-items: center; padding: 0 22px; gap: 14px;
+      }
+      .topbar h1 { font-size: 17px; font-weight: 700; flex: 1; }
+      .topbar-right { display: flex; align-items: center; gap: 14px; }
+      .icon-btn {
+        position: relative; width: 36px; height: 36px;
+        border-radius: 50%; border: 1px solid var(--border-subtle);
+        background: #fff; cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        color: var(--text-muted);
+      }
+      .icon-btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+      .bell-dot {
+        position: absolute; top: 6px; right: 8px;
+        width: 8px; height: 8px; border-radius: 50%;
+        background: var(--red); border: 2px solid #fff;
+      }
+      .avatar {
+        width: 34px; height: 34px; border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: #fff; display: inline-flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 12px;
+      }
+      .content { flex: 1; overflow-y: auto; padding: 22px 26px; }
+
+      h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+      h3 { font-size: 15px; font-weight: 700; }
+      .sub { font-size: 12.5px; color: var(--text-muted); }
+
+      .btn {
+        border-radius: 6px; border: 1px solid var(--border-strong);
+        padding: 8px 14px; font-size: 13px; background: #fff;
+        cursor: pointer; display: inline-flex; gap: 6px;
+        align-items: center; justify-content: center;
+        color: var(--text-main); font-family: inherit; font-weight: 500;
+        min-height: 36px; transition: all 0.15s;
+      }
+      .btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+      .btn-primary {
+        background: var(--accent); border-color: var(--accent); color: #fff;
+      }
+      .btn-primary:hover { background: var(--accent-dark); color: #fff; }
+      .btn-danger { color: var(--red); border-color: #fbcaca; }
+      .btn-danger:hover { background: #fee2e2; color: var(--red); border-color: var(--red); }
+      .btn-sm { padding: 5px 9px; font-size: 11.5px; min-height: 28px; }
+      .btn-link {
+        background: 0; border: 0; color: var(--accent);
+        cursor: pointer; font-family: inherit; font-size: 12.5px;
+        text-decoration: underline; padding: 2px 4px;
+      }
+
+      input, select, textarea {
+        border-radius: 6px; border: 1px solid var(--border-subtle);
+        padding: 8px 11px; font-size: 13px; background: #fff;
+        color: var(--text-main); outline: none; font-family: inherit;
+        width: 100%; min-height: 36px;
+      }
+      input:focus, select:focus, textarea:focus {
+        border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      textarea { resize: vertical; min-height: 80px; }
+
+      .page-header {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 14px; flex-wrap: wrap; gap: 10px;
+      }
+
+      .filter-bar {
+        background: var(--bg-card); border: 1px solid var(--border-subtle);
+        border-radius: 8px; padding: 12px;
+        display: grid; gap: 10px; margin-bottom: 14px;
+      }
+      .fb-5 { grid-template-columns: 2fr 1fr 1fr 1fr 1fr; }
+      .fb-4 { grid-template-columns: 2fr 1fr 1fr 1fr; }
+      .fb-3 { grid-template-columns: 2fr 1fr 1fr; }
+      @media (max-width: 1100px) {
+        .fb-5, .fb-4 { grid-template-columns: 1fr 1fr; }
+        .fb-3 { grid-template-columns: 1fr 1fr; }
+      }
+
+      .card {
+        background: var(--bg-card); border: 1px solid var(--border-subtle);
+        border-radius: 8px; overflow: hidden;
+      }
+      table.data { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+      .data thead { background: var(--bg-alt); }
+      .data th, .data td {
+        padding: 10px 12px; text-align: left;
+        border-bottom: 1px solid var(--border-subtle);
+        vertical-align: middle;
+      }
+      .data th {
+        font-size: 11px; font-weight: 700; color: var(--text-muted);
+        text-transform: uppercase; letter-spacing: 0.04em;
+        white-space: nowrap; cursor: pointer; user-select: none;
+      }
+      .data th .sort { opacity: 0.4; margin-left: 4px; font-size: 9px; }
+      .data th.sort-asc .sort, .data th.sort-desc .sort { opacity: 1; color: var(--accent); }
+      .data tbody tr:hover { background: var(--bg-alt); }
+      .data td a { color: var(--accent); font-weight: 600; cursor: pointer; }
+      .data td a:hover { text-decoration: underline; }
+      .ellipsis { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+      .badge {
+        font-size: 10.5px; padding: 3px 8px; border-radius: 999px;
+        font-weight: 700; border: 1px solid transparent; white-space: nowrap;
+        display: inline-flex; align-items: center; gap: 4px;
+        text-transform: uppercase; letter-spacing: 0.04em;
+      }
+      .b-blue, .b-scheduled, .b-callback, .b-low, .b-inprogress, .b-sent-call { background: var(--blue-soft); color: var(--blue); border-color: #bfdbfe; }
+      .b-green, .b-completed, .b-answered, .b-received, .b-won { background: var(--green-soft); color: var(--green); border-color: #bbf7d0; }
+      .b-grey, .b-cancelled, .b-noanswer, .b-open { background: var(--grey-soft); color: var(--grey); border-color: #e5e7eb; }
+      .b-red, .b-noshow, .b-high, .b-overdue, .b-lost { background: var(--red-soft); color: var(--red); border-color: #fecaca; }
+      .b-amber, .b-pending, .b-voicemail, .b-onhold, .b-med { background: var(--amber-soft); color: var(--amber); border-color: #fde68a; }
+      .b-cyan, .b-sent { background: var(--cyan-soft); color: var(--cyan); border-color: #a5f3fc; }
+      .b-dark-grey { background: #e5e7eb; color: #374151; border-color: #d1d5db; }
+      .b-navy { background: #dbeafe; color: var(--navy); border-color: #bfdbfe; }
+
+      .pagination {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 12px 16px; border-top: 1px solid var(--border-subtle);
+        font-size: 12.5px; color: var(--text-muted);
+      }
+      .pg-nav { display: flex; gap: 4px; }
+      .pg-btn {
+        min-width: 30px; height: 30px; border-radius: 5px;
+        border: 1px solid var(--border-subtle); background: #fff;
+        cursor: pointer; padding: 0 8px; font-size: 12px;
+        color: var(--text-main); font-family: inherit;
+      }
+      .pg-btn:hover:not(:disabled) { background: var(--accent-soft); }
+      .pg-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+      .pg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+      .modal-backdrop {
+        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
+        z-index: 200; display: none;
+        align-items: center; justify-content: center; padding: 16px;
+      }
+      .modal-backdrop.open { display: flex; }
+      .modal-box {
+        background: #fff; border-radius: 10px;
+        width: 500px; max-width: 100%; max-height: 92vh;
+        display: flex; flex-direction: column;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      }
+      .modal-header {
+        padding: 14px 18px; border-bottom: 1px solid var(--border-subtle);
+        display: flex; justify-content: space-between; align-items: center;
+      }
+      .modal-header h3 { margin: 0; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+      .modal-body { padding: 18px; overflow: auto; }
+      .modal-footer {
+        padding: 12px 18px; border-top: 1px solid var(--border-subtle);
+        display: flex; justify-content: flex-end; gap: 8px;
+      }
+      .form-label {
+        display: block; font-size: 11px; font-weight: 700;
+        color: var(--text-muted); text-transform: uppercase;
+        letter-spacing: 0.04em; margin-bottom: 4px; margin-top: 12px;
+      }
+      .form-label:first-child { margin-top: 0; }
+      .req { color: var(--red); }
+      .form-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      }
+      .radio-row { display: flex; gap: 14px; padding-top: 4px; }
+      .radio-row label {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 13px; cursor: pointer; font-weight: 500;
+      }
+      .char-counter { text-align: right; font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+      .toast-wrap {
+        position: fixed; bottom: 20px; right: 20px;
+        z-index: 999; display: flex; flex-direction: column; gap: 8px;
+      }
+      .toast {
+        background: var(--text-main); color: #fff;
+        padding: 10px 14px; border-radius: 6px; font-size: 13px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      }
+      .toast.success { background: var(--green); }
+      .toast.error { background: var(--red); }
+
+      .hidden { display: none !important; }
+
+      @media (max-width: 768px) {
+        .sidebar { width: 60px; min-width: 60px; }
+        .sb-logo-text, .sb-item span { display: none; }
+        .sb-item { justify-content: center; padding: 12px 0; }
+      }
+          /* ===== Admin warm palette (sync) ===== */
+      :root {
+        --accent: #c4714a; --accent-dark: #a55232; --accent-soft: #fef1e6;
+        --bg-body: #f5f0e8; --bg-alt: #faf6f0;
+        --border-subtle: #eadccd; --border-strong: #d9c8b4;
+        --text-main: #3b2f2a; --text-muted: #7a6a5c; --text-dim: #9b8568;
+      }
+      /* ===== Admin-style beige sidebar (sync) ===== */
+      .sidebar { background: #f8f4ed !important; color: #4a3f35 !important; border-right: 1px solid #e5d9c0; }
+      .sb-logo { border-bottom: 1px solid #e5d9c0 !important; }
+      .sb-logo-icon { background: #1a1a1a !important; color: #fff !important; }
+      .sb-logo-text, .sb-logo-text .t1 { color: #1a1a1a !important; }
+      .sb-logo-text .t2 { color: #8b6f47 !important; }
+      .sb-item { color: #4a3f35 !important; }
+      .sb-item:hover { background: #f0e6d2 !important; color: #1a1a1a !important; }
+      .sb-item.active { background: #ede4d0 !important; color: #1a1a1a !important; border-left-color: #c4a25f !important; }
+      .sb-item.active i { color: #c26b41 !important; }
+      .sb-subnav { background: #efe6d4 !important; }
+      .sb-sub { color: #6b5a48 !important; }
+      .sb-sub:hover { background: #f0e6d2 !important; color: #1a1a1a !important; }
+      .sb-sub.active { color: #c26b41 !important; }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="sb-logo">
+        <div class="sb-logo-icon">Y</div>
+        <div class="sb-logo-text">YUUSHI</div>
+      </div>
+      <nav class="sb-section">
+        <a class="sb-item" href="dashboard.html"><i class="fas fa-gauge-high"></i> <span>Dashboard</span></a>
+        <a class="sb-item" href="property-list-oversight.html"><i class="fas fa-house-chimney"></i> <span>Properties</span></a>
+        <a class="sb-item" href="project-management.html"><i class="fas fa-building-circle-arrow-right"></i> <span>Projects</span></a>
+        <a class="sb-item" href="lead-management.html"><i class="fas fa-users"></i> <span>Leads</span></a>
+        <a class="sb-item" data-mod="viewings" onclick="switchMod('viewings')"><i class="fas fa-calendar-check"></i> <span>Viewings</span></a>
+        <a class="sb-item" data-mod="tasks" onclick="switchMod('tasks')"><i class="fas fa-list-check"></i> <span>Tasks</span></a>
+        <a class="sb-item" data-mod="jobs" onclick="switchMod('jobs')"><i class="fas fa-briefcase"></i> <span>Jobs</span></a>
+        <a class="sb-item" data-mod="calls" onclick="switchMod('calls')"><i class="fas fa-phone"></i> <span>Calls</span></a>
+        <a class="sb-item" data-mod="emails" onclick="switchMod('emails')"><i class="fas fa-envelope"></i> <span>Emails</span></a>
+        <a class="sb-item" data-mod="sms" onclick="switchMod('sms')"><i class="fas fa-comment-sms"></i> <span>SMS</span></a>
+        <a class="sb-item" data-mod="comments" onclick="switchMod('comments')"><i class="fas fa-comment"></i> <span>Comments</span></a>
+        <a class="sb-item" href="leads-inquiries.html"><i class="fas fa-comments"></i> <span>Messages</span></a>
+        <a class="sb-item" href="ad-monetisation.html"><i class="fas fa-rectangle-ad"></i> <span>Advertising</span></a>
+        <a class="sb-item" href="billing.html"><i class="fas fa-credit-card"></i> <span>Subscription</span></a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <h1 id="pageTitle">Viewings</h1>
+        <div class="topbar-right">
+          <button class="icon-btn"><i class="fas fa-bell"></i><span class="bell-dot"></span></button>
+          <button class="icon-btn"><i class="fas fa-gear"></i></button>
+          <span class="avatar">TK</span>
+        </div>
+      </header>
+      <div class="content" id="content"></div>
+    </main>
+
+    <!-- Add/Edit modal -->
+    <div class="modal-backdrop" id="formModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="formTitle">Form</h3>
+          <button class="btn btn-sm" onclick="closeModal('formModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body" id="formBody"></div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal('formModal')">Cancel</button>
+          <button class="btn btn-primary" onclick="saveForm()"><i class="fas fa-check"></i> Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- View modal (read-only) -->
+    <div class="modal-backdrop" id="viewModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="viewTitle">View</h3>
+          <button class="btn btn-sm" onclick="closeModal('viewModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body" id="viewBody"></div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal('viewModal')">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm delete modal -->
+    <div class="modal-backdrop" id="confirmModal">
+      <div class="modal-box" style="width:380px">
+        <div class="modal-header">
+          <h3><i class="fas fa-triangle-exclamation" style="color:var(--red)"></i> Confirm Delete</h3>
+        </div>
+        <div class="modal-body" style="font-size:13.5px" id="confirmMsg">Delete this record? This cannot be undone.</div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal('confirmModal')">Cancel</button>
+          <button class="btn btn-danger" onclick="doDelete()"><i class="fas fa-trash"></i> Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mark Complete (viewings) modal -->
+    <div class="modal-backdrop" id="completeModal">
+      <div class="modal-box" style="width:420px">
+        <div class="modal-header">
+          <h3><i class="fas fa-check-circle" style="color:var(--green)"></i> Mark Viewing Complete</h3>
+          <button class="btn btn-sm" onclick="closeModal('completeModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label">Outcome</label>
+          <select id="cOutcome">
+            <option>Client interested</option>
+            <option>Not interested</option>
+            <option>Follow-up needed</option>
+            <option>Made offer</option>
+          </select>
+          <label class="form-label">Notes</label>
+          <textarea id="cNotes" placeholder="Outcome notes…"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal('completeModal')">Cancel</button>
+          <button class="btn btn-primary" onclick="saveComplete()"><i class="fas fa-check"></i> Save Outcome</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+      // ============ Common helpers ============
+      function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]); }
+      function yen(n) { return n ? "¥" + Number(n).toLocaleString() : "—"; }
+      function toast(msg, kind) {
+        const el = document.createElement("div");
+        el.className = "toast " + (kind || "success");
+        el.textContent = msg;
+        document.getElementById("toastWrap").appendChild(el);
+        setTimeout(() => el.remove(), 3000);
+      }
+      function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+      window.closeModal = closeModal;
+      document.querySelectorAll(".modal-backdrop").forEach(b => b.addEventListener("click", e => { if (e.target === b) b.classList.remove("open"); }));
+
+      const LEADS = [
+        { id: "LD-20260001", name: "Tanaka Yuki" },
+        { id: "LD-20260002", name: "Sato Hiromi" },
+        { id: "LD-20260003", name: "Yamamoto Kenta" },
+        { id: "LD-20260004", name: "Suzuki Aoi" },
+        { id: "LD-20260005", name: "Lee Min-jun" },
+        { id: "LD-20260006", name: "Watanabe Hiroshi" },
+        { id: "LD-20260007", name: "Kim Soo-yeon" },
+      ];
+      const PROPS = ["Roppongi Hills 2LDK", "Shinjuku Studio", "Minami-Aoyama Penthouse", "Daikanyama 1LDK", "Azabu-Juban Tower 2LDK", "Shibuya Land Plot 240㎡"];
+
+      // ============ Data per module ============
+      const VIEWINGS = [
+        { id: "VW-2026001", client: "Tanaka Yuki", phone: "+81-90-1111-2222", prop: "Roppongi Hills 2LDK", date: "2026-06-02", time: "14:00", duration: 60, status: "scheduled", notes: "Bring floor plan, client prefers high floor." },
+        { id: "VW-2026002", client: "Sato Hiromi", phone: "+81-90-2222-3333", prop: "Shinjuku Studio", date: "2026-05-30", time: "10:30", duration: 30, status: "scheduled", notes: "First-time buyer, allow extra time." },
+        { id: "VW-2026003", client: "Yamamoto Kenta", phone: "+81-80-3333-4444", prop: "Minami-Aoyama Penthouse", date: "2026-06-05", time: "11:00", duration: 90, status: "scheduled", notes: "Bring penthouse view brochure." },
+        { id: "VW-2026004", client: "Suzuki Aoi", phone: "+81-70-4444-5555", prop: "Daikanyama 1LDK", date: "2026-05-28", time: "15:00", duration: 60, status: "scheduled", notes: "Will confirm 1 day prior via LINE." },
+        { id: "VW-2026005", client: "Watanabe Hiroshi", phone: "+81-90-6666-7777", prop: "Roppongi Hills 2LDK", date: "2026-05-24", time: "11:00", duration: 60, status: "completed", notes: "Made offer ¥185M. Deal closed." },
+        { id: "VW-2026006", client: "Kim Soo-yeon", phone: "+82-10-7777-8888", prop: "Minami-Aoyama Penthouse", date: "2026-05-20", time: "16:00", duration: 60, status: "completed", notes: "Interested, awaiting financing." },
+        { id: "VW-2026007", client: "Mei Kobayashi", phone: "+81-90-9999-0000", prop: "Shinjuku Studio", date: "2026-05-18", time: "13:00", duration: 30, status: "cancelled", notes: "Client rescheduled." },
+        { id: "VW-2026008", client: "Walk-in guest", phone: "—", prop: "Daikanyama 1LDK", date: "2026-05-15", time: "14:00", duration: 60, status: "noshow", notes: "Client did not show up. No call." },
+      ];
+      const TASKS = [
+        { id: "TK-2026001", title: "Follow up with Tanaka Yuki", pri: "high", status: "pending", related: "Tanaka Yuki", relatedKind: "lead", due: "2026-05-30", created: "2026-05-27", notes: "Call after 5pm" },
+        { id: "TK-2026002", title: "Send revised contract", pri: "high", status: "inprogress", related: "Sato Hiromi", relatedKind: "lead", due: "2026-05-26", created: "2026-05-24", notes: "Adjust price clause" },
+        { id: "TK-2026003", title: "Photo retake at Shinjuku Studio", pri: "med", status: "pending", related: "Shinjuku Studio", relatedKind: "property", due: "2026-06-02", created: "2026-05-25", notes: "Booked photographer" },
+        { id: "TK-2026004", title: "Prepare floor plan PDF", pri: "med", status: "pending", related: "Minami-Aoyama Penthouse", relatedKind: "property", due: "2026-05-29", created: "2026-05-26", notes: "" },
+        { id: "TK-2026005", title: "Update CRM with viewing notes", pri: "low", status: "completed", related: "—", relatedKind: "general", due: "2026-05-25", created: "2026-05-25", notes: "Done" },
+        { id: "TK-2026006", title: "Send happy-1st-month gift to Watanabe", pri: "low", status: "pending", related: "Watanabe Hiroshi", relatedKind: "lead", due: "2026-06-15", created: "2026-05-20", notes: "Buyer closed deal in May" },
+        { id: "TK-2026007", title: "Renew listing photos — Daikanyama 1LDK", pri: "med", status: "completed", related: "Daikanyama 1LDK", relatedKind: "property", due: "2026-05-22", created: "2026-05-15", notes: "" },
+        { id: "TK-2026008", title: "Call back Yamada (overdue)", pri: "high", status: "pending", related: "Yamada Yuki", relatedKind: "lead", due: "2026-05-22", created: "2026-05-20", notes: "Was supposed to call yesterday" },
+        { id: "TK-2026009", title: "Submit ad creative — Sponsored Search", pri: "med", status: "inprogress", related: "—", relatedKind: "general", due: "2026-06-01", created: "2026-05-27", notes: "" },
+        { id: "TK-2026010", title: "Review YUUSHI Q2 commission report", pri: "low", status: "pending", related: "—", relatedKind: "general", due: "2026-05-24", created: "2026-05-20", notes: "Quarterly review" },
+      ];
+      const JOBS = [
+        { id: "JB-2026001", title: "Roppongi Hills Purchase — Watanabe", client: "Watanabe Hiroshi", prop: "Roppongi Hills 2LDK", value: 185000000, stage: "won", closeDate: "2026-05-24", created: "2026-04-28", notes: "Closed deal." },
+        { id: "JB-2026002", title: "Minami-Aoyama Penthouse — Yamamoto", client: "Yamamoto Kenta", prop: "Minami-Aoyama Penthouse", value: 385000000, stage: "inprogress", closeDate: "2026-07-15", created: "2026-05-10", notes: "Awaiting financing approval." },
+        { id: "JB-2026003", title: "Shinjuku Studio — Sato", client: "Sato Hiromi", prop: "Shinjuku Studio", value: 95000000, stage: "open", closeDate: "2026-06-30", created: "2026-05-20", notes: "Early discussion stage." },
+        { id: "JB-2026004", title: "Daikanyama Negotiation — Suzuki", client: "Suzuki Aoi", prop: "Daikanyama 1LDK", value: 95000000, stage: "inprogress", closeDate: "2026-06-15", created: "2026-05-15", notes: "Counter-offer pending from seller." },
+        { id: "JB-2026005", title: "Azabu-Juban — Lee", client: "Lee Min-jun", prop: "Azabu-Juban Tower 2LDK", value: 225000000, stage: "onhold", closeDate: "2026-07-01", created: "2026-05-14", notes: "Client visiting late June." },
+        { id: "JB-2026006", title: "Shibuya Land — Ito (lost)", client: "Ito Kenji", prop: "Shibuya Land Plot 240㎡", value: 0, stage: "lost", closeDate: "2026-05-10", created: "2026-04-15", notes: "Client decided to wait." },
+      ];
+      const CALLS = [
+        { id: "CL-2026001", client: "Tanaka Yuki", phone: "+81-90-1111-2222", direction: "Outbound", dt: "2026-05-27 14:30", duration: 8, durationDisp: "8 min 0 sec", outcome: "answered", prop: "Roppongi Hills 2LDK", notes: "Interested, will confirm viewing" },
+        { id: "CL-2026002", client: "Sato Hiromi", phone: "+81-90-2222-3333", direction: "Outbound", dt: "2026-05-27 11:15", duration: 0, durationDisp: "—", outcome: "noanswer", prop: "Shinjuku Studio", notes: "No answer, will retry" },
+        { id: "CL-2026003", client: "Yamamoto Kenta", phone: "+81-80-3333-4444", direction: "Inbound", dt: "2026-05-26 16:00", duration: 12, durationDisp: "12 min 20 sec", outcome: "answered", prop: "Minami-Aoyama Penthouse", notes: "Discussed floor plans" },
+        { id: "CL-2026004", client: "Walk-in (unknown)", phone: "+81-90-5050-6060", direction: "Inbound", dt: "2026-05-26 10:45", duration: 5, durationDisp: "5 min 0 sec", outcome: "answered", prop: "", notes: "General inquiry about Tokyo Realty Co." },
+        { id: "CL-2026005", client: "Suzuki Aoi", phone: "+81-70-4444-5555", direction: "Outbound", dt: "2026-05-25 18:30", duration: 0, durationDisp: "—", outcome: "voicemail", prop: "Daikanyama 1LDK", notes: "Left voicemail re: offer status" },
+        { id: "CL-2026006", client: "Kim Soo-yeon", phone: "+82-10-7777-8888", direction: "Outbound", dt: "2026-05-25 09:00", duration: 15, durationDisp: "15 min 5 sec", outcome: "answered", prop: "Minami-Aoyama Penthouse", notes: "Long discussion about financing" },
+        { id: "CL-2026007", client: "Watanabe Hiroshi", phone: "+81-90-6666-7777", direction: "Inbound", dt: "2026-05-24 13:00", duration: 3, durationDisp: "3 min 10 sec", outcome: "answered", prop: "Roppongi Hills 2LDK", notes: "Closing logistics" },
+        { id: "CL-2026008", client: "Mei Kobayashi", phone: "+81-90-9999-0000", direction: "Outbound", dt: "2026-05-23 17:45", duration: 0, durationDisp: "—", outcome: "callback", prop: "Shinjuku Studio", notes: "Requested callback tomorrow morning" },
+      ];
+      const EMAILS = [
+        { id: "EM-2026001", direction: "Sent", client: "Tanaka Yuki", email: "yuki.tanaka@example.com", subject: "Roppongi Hills 2LDK — Property details and floor plan", dt: "2026-05-27 09:15", prop: "Roppongi Hills 2LDK", body: "Dear Tanaka-san,\n\nThank you for your interest in Roppongi Hills 2LDK. Attached please find the detailed floor plan and pricing information.\n\nThe property features:\n- 2 bedrooms + LDK\n- 78㎡ usable area\n- 12th floor with east-facing balcony\n- Recently renovated\n\nPlease let me know if you'd like to schedule a viewing.\n\nBest regards,\nTanaka Kenji\nTokyo Realty Co." },
+        { id: "EM-2026002", direction: "Received", client: "Sato Hiromi", email: "hiromi.sato@example.com", subject: "Re: Shinjuku Studio — Confirmed pre-approval", dt: "2026-05-26 14:30", prop: "Shinjuku Studio", body: "Hi Tanaka-san,\n\nI received my mortgage pre-approval letter from MUFG Bank yesterday. Budget confirmed at ¥120M as we discussed.\n\nCan we schedule the viewing for this weekend?\n\nThanks,\nHiromi" },
+        { id: "EM-2026003", direction: "Sent", client: "Yamamoto Kenta", email: "kenta.y@example.com", subject: "Minami-Aoyama Penthouse — Photos and virtual tour", dt: "2026-05-25 11:00", prop: "Minami-Aoyama Penthouse", body: "Yamamoto-san,\n\nAttached are the high-resolution photos and a link to the 360° virtual tour of the Minami-Aoyama Penthouse.\n\nVirtual tour: [link]\n\nBest,\nKenji" },
+        { id: "EM-2026004", direction: "Sent", client: "Lee Min-jun", email: "minjun.lee@example.com", subject: "Azabu-Juban Tower — Brochure for your review", dt: "2026-05-23 16:45", prop: "Azabu-Juban Tower 2LDK", body: "Dear Lee-san,\n\nPlease find attached the full brochure for the Azabu-Juban Tower 2LDK unit. Highlights include city views, 24/7 concierge, and direct subway access.\n\nLooking forward to your visit in June.\n\nKenji Tanaka" },
+        { id: "EM-2026005", direction: "Received", client: "Kim Soo-yeon", email: "sooyeon.kim@example.com", subject: "Question about HOA fees", dt: "2026-05-22 10:00", prop: "Minami-Aoyama Penthouse", body: "Hi Kenji,\n\nWhat are the monthly management fees and reserve fund contributions for the Minami-Aoyama Penthouse? Are special assessments expected in the next 5 years?\n\nThanks,\nSoo-yeon" },
+        { id: "EM-2026006", direction: "Sent", client: "Watanabe Hiroshi", email: "h.watanabe@example.com", subject: "Welcome to your new home!", dt: "2026-05-24 17:00", prop: "Roppongi Hills 2LDK", body: "Watanabe-san,\n\nCongratulations on closing the deal on your new home! It was a pleasure working with you.\n\nMove-in is scheduled for June 15. The building manager will contact you the week prior with keys handover details.\n\nWelcome to Roppongi Hills!\n\nKenji" },
+      ];
+      const SMS = [
+        { id: "SM-2026001", direction: "Sent", client: "Tanaka Yuki", phone: "+81-90-1111-2222", dt: "2026-05-27 09:00", prop: "Roppongi Hills 2LDK", message: "Hi Tanaka-san, just sent you details for Roppongi Hills 2LDK. Please check your email. — Kenji, Tokyo Realty" },
+        { id: "SM-2026002", direction: "Received", client: "Sato Hiromi", phone: "+81-90-2222-3333", dt: "2026-05-26 15:00", prop: "Shinjuku Studio", message: "Sat 11am works for the viewing. I'll bring my husband." },
+        { id: "SM-2026003", direction: "Sent", client: "Suzuki Aoi", phone: "+81-70-4444-5555", dt: "2026-05-25 12:30", prop: "Daikanyama 1LDK", message: "Aoi-san, seller has responded to your ¥95M offer. Will call you in 1 hour to discuss." },
+        { id: "SM-2026004", direction: "Sent", client: "Yamamoto Kenta", phone: "+81-80-3333-4444", dt: "2026-05-25 09:30", prop: "Minami-Aoyama Penthouse", message: "Viewing confirmed Jun 5 at 11:00. Address sent to your email." },
+        { id: "SM-2026005", direction: "Received", client: "Walk-in inquiry", phone: "+81-90-5050-6060", dt: "2026-05-24 14:00", prop: "", message: "Hi, I saw your office on the way to lunch. Do you have any 1LDK rentals available in Shibuya under ¥150k?" },
+      ];
+      const COMMENTS = [
+        { id: "CM-2026001", text: "Watanabe Hiroshi deal closed at ¥185M — full asking price. Seller (Mr. Suzuki) was happy with the quick close. Add him to referral source list for Q3.", related: "Watanabe Hiroshi", relatedKind: "lead", created: "2026-05-24 17:30", updated: "2026-05-24 17:30" },
+        { id: "CM-2026002", text: "Minami-Aoyama Penthouse — got 3 strong leads this week. Consider raising the listing price by ¥10M after Yamamoto's offer comes in.", related: "Minami-Aoyama Penthouse", relatedKind: "property", created: "2026-05-26 09:00", updated: "2026-05-27 10:15" },
+        { id: "CM-2026003", text: "Daikanyama 1LDK negotiation getting tight. Suzuki at ¥95M, seller wants ¥99M. Both sides need to compromise — propose ¥97M to both?", related: "Daikanyama Negotiation — Suzuki", relatedKind: "job", created: "2026-05-25 14:00", updated: "2026-05-25 14:00" },
+        { id: "CM-2026004", text: "Lee Min-jun is a high-quality international lead. Make sure to send Korean-language docs and arrange airport pickup for late June visit.", related: "Lee Min-jun", relatedKind: "lead", created: "2026-05-23 11:20", updated: "2026-05-26 16:00" },
+        { id: "CM-2026005", text: "Q2 strategy note: focus marketing budget on Minato-ku and Shibuya. Both wards showing strongest agent ROI based on YUUSHI analytics dashboard.", related: "—", relatedKind: "general", created: "2026-05-22 08:00", updated: "2026-05-22 08:00" },
+      ];
+
+      // ============ Module config ============
+      // Each module: title, addBtn, data, columns, sortable fields, render row, form fields, form save, default sort
+      const MODS = {
+        viewings: { name: "Viewings", icon: "fa-calendar-check", addText: "+ Schedule Viewing", data: VIEWINGS, defaultSort: { key: "date", dir: "asc" }, filters: ["search", "vstatus", "dateFrom", "dateTo", "property"], searchFn: r => r.client + " " + r.prop },
+        tasks:    { name: "Tasks", icon: "fa-list-check", addText: "+ Add Task", data: TASKS, defaultSort: { key: "due", dir: "asc" }, filters: ["search", "priority", "tstatus", "relatedKind", "dateFrom", "dateTo"], searchFn: r => r.title },
+        jobs:     { name: "Jobs", icon: "fa-briefcase", addText: "+ Add Job", data: JOBS, defaultSort: { key: "created", dir: "desc" }, filters: ["search", "jstatus", "property", "dateFrom", "dateTo"], searchFn: r => r.title + " " + r.client },
+        calls:    { name: "Calls", icon: "fa-phone", addText: "+ Log Call", data: CALLS, defaultSort: { key: "dt", dir: "desc" }, filters: ["search", "direction", "outcome", "dateFrom", "dateTo"], searchFn: r => r.client + " " + r.phone },
+        emails:   { name: "Emails", icon: "fa-envelope", addText: "+ Log Email", data: EMAILS, defaultSort: { key: "dt", dir: "desc" }, filters: ["search", "direction", "dateFrom", "dateTo"], searchFn: r => r.subject + " " + r.client },
+        sms:      { name: "SMS", icon: "fa-comment-sms", addText: "+ Log SMS", data: SMS, defaultSort: { key: "dt", dir: "desc" }, filters: ["search", "direction", "dateFrom", "dateTo"], searchFn: r => r.client + " " + r.message },
+        comments: { name: "Comments", icon: "fa-comment", addText: "+ Add Comment", data: COMMENTS, defaultSort: { key: "created", dir: "desc" }, filters: ["search", "relatedKind", "dateFrom", "dateTo"], searchFn: r => r.text },
+      };
+
+      // ============ State ============
+      let currentMod = "viewings";
+      let sortKey = "date", sortDir = "asc";
+      let page = 1;
+      const PAGE_SIZE = 10;
+      let pendingDelete = null;
+      let pendingComplete = null;
+      let editingId = null;
+      let editingKind = null; // "add" or "edit"
+      const FILT = {};
+
+      function isToday(d) {
+        const t = new Date(); const day = t.toISOString().slice(0, 10);
+        return d < day;
+      }
+      function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+      // ============ Render ============
+      function switchMod(name) {
+        currentMod = name;
+        const cfg = MODS[name];
+        document.querySelectorAll(".sb-item").forEach(s => s.classList.remove("active"));
+        document.querySelector(`.sb-item[data-mod="${name}"]`)?.classList.add("active");
+        document.getElementById("pageTitle").textContent = cfg.name;
+        sortKey = cfg.defaultSort.key;
+        sortDir = cfg.defaultSort.dir;
+        page = 1;
+        Object.keys(FILT).forEach(k => delete FILT[k]);
+        renderMod();
+      }
+      window.switchMod = switchMod;
+
+      function renderMod() {
+        const cfg = MODS[currentMod];
+        const c = document.getElementById("content");
+        c.innerHTML = `
+          <div class="page-header">
+            <div>
+              <h2><i class="fas ${cfg.icon}" style="color:var(--accent);margin-right:6px"></i>${cfg.name}</h2>
+              <div class="sub">Manage your ${cfg.name.toLowerCase()}</div>
+            </div>
+            <button class="btn btn-primary" onclick="openForm('add')">${cfg.addText}</button>
+          </div>
+          <div id="filterArea"></div>
+          <div class="card">
+            <div style="overflow-x:auto"><table class="data" id="dataTable"></table></div>
+            <div class="pagination" id="pagBar"></div>
+          </div>
+        `;
+        renderFilters();
+        renderTable();
+      }
+
+      function renderFilters() {
+        const m = currentMod;
+        let html = '';
+        const cls = currentMod === "calls" ? "fb-5" : currentMod === "tasks" || currentMod === "viewings" ? "fb-5" : currentMod === "emails" || currentMod === "sms" ? "fb-4" : "fb-4";
+        html += `<div class="filter-bar ${cls}">`;
+        html += `<input type="text" placeholder="🔍 Search..." value="${esc(FILT.search || '')}" oninput="onFilt('search',this.value)" />`;
+        if (m === "viewings") {
+          html += `<select onchange="onFilt('vstatus',this.value)"><option value="">All Status</option><option value="scheduled">Scheduled</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="noshow">No-show</option></select>`;
+          html += `<input type="date" onchange="onFilt('dateFrom',this.value)" title="From date" />`;
+          html += `<input type="date" onchange="onFilt('dateTo',this.value)" title="To date" />`;
+          html += `<select onchange="onFilt('property',this.value)"><option value="">All Properties</option>${PROPS.map(p => `<option>${esc(p)}</option>`).join("")}</select>`;
+        } else if (m === "tasks") {
+          html += `<select onchange="onFilt('priority',this.value)"><option value="">All Priorities</option><option value="high">High</option><option value="med">Medium</option><option value="low">Low</option></select>`;
+          html += `<select onchange="onFilt('tstatus',this.value)"><option value="">All Status</option><option value="pending">Pending</option><option value="inprogress">In Progress</option><option value="completed">Completed</option><option value="overdue">Overdue</option></select>`;
+          html += `<select onchange="onFilt('relatedKind',this.value)"><option value="">All Relations</option><option value="lead">Lead</option><option value="property">Property</option><option value="general">General</option></select>`;
+          html += `<input type="date" onchange="onFilt('dateFrom',this.value)" title="Due from" />`;
+        } else if (m === "jobs") {
+          html += `<select onchange="onFilt('jstatus',this.value)"><option value="">All Stages</option><option value="open">Open</option><option value="inprogress">In Progress</option><option value="won">Won</option><option value="lost">Lost</option><option value="onhold">On Hold</option></select>`;
+          html += `<select onchange="onFilt('property',this.value)"><option value="">All Properties</option>${PROPS.map(p => `<option>${esc(p)}</option>`).join("")}</select>`;
+          html += `<input type="date" onchange="onFilt('dateFrom',this.value)" title="From date" />`;
+        } else if (m === "calls") {
+          html += `<select onchange="onFilt('direction',this.value)"><option value="">All Directions</option><option value="Outbound">Outbound</option><option value="Inbound">Inbound</option></select>`;
+          html += `<select onchange="onFilt('outcome',this.value)"><option value="">All Outcomes</option><option value="answered">Answered</option><option value="noanswer">No answer</option><option value="voicemail">Voicemail</option><option value="callback">Callback requested</option></select>`;
+          html += `<input type="date" onchange="onFilt('dateFrom',this.value)" />`;
+          html += `<input type="date" onchange="onFilt('dateTo',this.value)" />`;
+        } else if (m === "emails" || m === "sms") {
+          html += `<select onchange="onFilt('direction',this.value)"><option value="">All Directions</option><option value="Sent">Sent</option><option value="Received">Received</option></select>`;
+          html += `<input type="date" onchange="onFilt('dateFrom',this.value)" />`;
+          html += `<input type="date" onchange="onFilt('dateTo',this.value)" />`;
+        } else if (m === "comments") {
+          html += `<select onchange="onFilt('relatedKind',this.value)"><option value="">All Relations</option><option value="lead">Lead</option><option value="property">Property</option><option value="job">Job</option><option value="general">General</option></select>`;
+          html += `<input type="date" onchange="onFilt('dateFrom',this.value)" />`;
+          html += `<input type="date" onchange="onFilt('dateTo',this.value)" />`;
+        }
+        html += `</div>`;
+        document.getElementById("filterArea").innerHTML = html;
+      }
+
+      function onFilt(k, v) { FILT[k] = v; page = 1; renderTable(); }
+      window.onFilt = onFilt;
+
+      function getFiltered() {
+        const cfg = MODS[currentMod];
+        const q = (FILT.search || "").toLowerCase();
+        return cfg.data.filter(r => {
+          if (q && !(cfg.searchFn(r) || "").toLowerCase().includes(q)) return false;
+          if (FILT.vstatus && r.status !== FILT.vstatus) return false;
+          if (FILT.tstatus) {
+            if (FILT.tstatus === "overdue") {
+              if (!(isToday(r.due) && r.status !== "completed")) return false;
+            } else if (r.status !== FILT.tstatus) return false;
+          }
+          if (FILT.priority && r.pri !== FILT.priority) return false;
+          if (FILT.relatedKind && r.relatedKind !== FILT.relatedKind) return false;
+          if (FILT.jstatus && r.stage !== FILT.jstatus) return false;
+          if (FILT.direction && r.direction !== FILT.direction) return false;
+          if (FILT.outcome && r.outcome !== FILT.outcome) return false;
+          if (FILT.property && r.prop !== FILT.property) return false;
+          if (FILT.dateFrom) {
+            const d = r.date || (r.dt && r.dt.split(" ")[0]) || r.due || r.created;
+            if (d < FILT.dateFrom) return false;
+          }
+          if (FILT.dateTo) {
+            const d = r.date || (r.dt && r.dt.split(" ")[0]) || r.due || r.created;
+            if (d > FILT.dateTo) return false;
+          }
+          return true;
+        });
+      }
+
+      function renderTable() {
+        const m = currentMod;
+        let rows = getFiltered();
+        rows.sort((a, b) => {
+          const va = a[sortKey] ?? "", vb = b[sortKey] ?? "";
+          return (va < vb ? -1 : va > vb ? 1 : 0) * (sortDir === "asc" ? 1 : -1);
+        });
+        const total = rows.length;
+        const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        if (page > pages) page = pages;
+        const slice = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+        let head = "", body = "";
+
+        if (m === "viewings") {
+          head = `<tr>
+            ${sortableTH("id", "ID")}${sortableTH("client", "Client")}${th("Phone")}${sortableTH("prop", "Property")}
+            ${sortableTH("date", "Date")}${sortableTH("time", "Time")}${th("Duration")}${sortableTH("status", "Status")}${th("Notes")}${th("Actions", "right")}
+          </tr>`;
+          body = slice.map(r => `<tr>
+            <td><strong>${esc(r.id)}</strong></td>
+            <td><a>${esc(r.client)}</a></td><td>${esc(r.phone)}</td>
+            <td><a>${esc(r.prop)}</a></td>
+            <td>${esc(r.date)}</td><td>${esc(r.time)}</td>
+            <td>${r.duration} min</td>
+            <td><span class="badge b-${r.status}">${esc(r.status)}</span></td>
+            <td class="ellipsis" title="${esc(r.notes)}">${esc(r.notes)}</td>
+            <td style="text-align:right;white-space:nowrap">
+              <button class="btn btn-sm" onclick="openForm('edit','${r.id}')" title="Edit"><i class="fas fa-pen"></i></button>
+              ${r.status === "scheduled" ? `<button class="btn btn-sm" onclick="openComplete('${r.id}')" title="Mark Complete"><i class="fas fa-check"></i></button>` : ""}
+              ${r.status === "scheduled" ? `<button class="btn btn-sm" onclick="cancelRow('${r.id}')" title="Cancel"><i class="fas fa-ban"></i></button>` : ""}
+              <button class="btn btn-sm btn-danger" onclick="askDelete('${r.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>`).join("");
+        }
+        else if (m === "tasks") {
+          head = `<tr>
+            ${sortableTH("id", "ID")}${sortableTH("title", "Title")}${th("Priority")}${th("Related To")}
+            ${sortableTH("due", "Due Date")}${sortableTH("status", "Status")}${sortableTH("created", "Created")}${th("Actions", "right")}
+          </tr>`;
+          body = slice.map(r => {
+            const overdue = isToday(r.due) && r.status !== "completed";
+            return `<tr>
+              <td><strong>${esc(r.id)}</strong></td>
+              <td>${esc(r.title)}</td>
+              <td><span class="badge b-${r.pri}">${r.pri === "med" ? "Medium" : r.pri === "low" ? "Low" : "High"}</span></td>
+              <td>${r.relatedKind === "general" ? '<span style="color:var(--text-muted)">General</span>' : `<a>${esc(r.related)}</a>`}</td>
+              <td style="${overdue ? "color:var(--red);font-weight:700" : ""}">${esc(r.due)}${overdue ? ' <span class="badge b-overdue">Overdue</span>' : ""}</td>
+              <td><span class="badge b-${r.status}">${r.status === "inprogress" ? "In Progress" : r.status.charAt(0).toUpperCase() + r.status.slice(1)}</span></td>
+              <td>${esc(r.created)}</td>
+              <td style="text-align:right;white-space:nowrap">
+                <button class="btn btn-sm" onclick="openForm('edit','${r.id}')"><i class="fas fa-pen"></i></button>
+                ${r.status !== "completed" ? `<button class="btn btn-sm" onclick="markDone('${r.id}')"><i class="fas fa-check"></i></button>` : ""}
+                <button class="btn btn-sm btn-danger" onclick="askDelete('${r.id}')"><i class="fas fa-trash"></i></button>
+              </td>
+            </tr>`;
+          }).join("");
+        }
+        else if (m === "jobs") {
+          head = `<tr>
+            ${sortableTH("id", "ID")}${sortableTH("title", "Title")}${sortableTH("client", "Client")}${sortableTH("prop", "Property")}
+            ${sortableTH("value", "Value")}${sortableTH("stage", "Stage")}${sortableTH("closeDate", "Close Date")}${sortableTH("created", "Created")}${th("Actions", "right")}
+          </tr>`;
+          body = slice.map(r => `<tr>
+            <td><strong>${esc(r.id)}</strong></td>
+            <td>${esc(r.title)}</td><td><a>${esc(r.client)}</a></td><td><a>${esc(r.prop)}</a></td>
+            <td><strong>${yen(r.value)}</strong></td>
+            <td><span class="badge b-${r.stage}">${r.stage === "inprogress" ? "In Progress" : r.stage === "onhold" ? "On Hold" : r.stage.charAt(0).toUpperCase() + r.stage.slice(1)}</span></td>
+            <td>${esc(r.closeDate)}</td><td>${esc(r.created)}</td>
+            <td style="text-align:right;white-space:nowrap">
+              <button class="btn btn-sm" onclick="openForm('edit','${r.id}')"><i class="fas fa-pen"></i></button>
+              <button class="btn btn-sm" onclick="openView('${r.id}')"><i class="fas fa-eye"></i></button>
+              <button class="btn btn-sm btn-danger" onclick="askDelete('${r.id}')"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>`).join("");
+        }
+        else if (m === "calls") {
+          head = `<tr>
+            ${sortableTH("id", "ID")}${sortableTH("client", "Client")}${th("Phone")}${th("Direction")}
+            ${sortableTH("dt", "Date & Time")}${th("Duration")}${th("Outcome")}${th("Property")}${th("Notes")}${th("Actions", "right")}
+          </tr>`;
+          body = slice.map(r => `<tr>
+            <td><strong>${esc(r.id)}</strong></td>
+            <td><a>${esc(r.client)}</a></td><td>${esc(r.phone)}</td>
+            <td><span class="badge b-${r.direction === "Outbound" ? "blue" : "green"}">${esc(r.direction)}</span></td>
+            <td>${esc(r.dt)}</td><td>${esc(r.durationDisp)}</td>
+            <td><span class="badge b-${r.outcome}">${r.outcome === "noanswer" ? "No answer" : r.outcome.charAt(0).toUpperCase() + r.outcome.slice(1)}</span></td>
+            <td>${r.prop ? `<a>${esc(r.prop)}</a>` : "—"}</td>
+            <td class="ellipsis" title="${esc(r.notes)}">${esc(r.notes)}</td>
+            <td style="text-align:right;white-space:nowrap">
+              <button class="btn btn-sm" onclick="openForm('edit','${r.id}')"><i class="fas fa-pen"></i></button>
+              <button class="btn btn-sm btn-danger" onclick="askDelete('${r.id}')"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>`).join("");
+        }
+        else if (m === "emails") {
+          head = `<tr>
+            ${sortableTH("id", "ID")}${th("Direction")}${sortableTH("client", "Client")}${th("Email")}
+            ${sortableTH("subject", "Subject")}${sortableTH("dt", "Date & Time")}${th("Property")}${th("Preview")}${th("Actions", "right")}
+          </tr>`;
+          body = slice.map(r => `<tr>
+            <td><strong>${esc(r.id)}</strong></td>
+            <td><span class="badge b-${r.direction === "Sent" ? "blue" : "green"}">${esc(r.direction)}</span></td>
+            <td><a>${esc(r.client)}</a></td><td style="color:var(--text-muted)">${esc(r.email)}</td>
+            <td>${esc(r.subject)}</td><td>${esc(r.dt)}</td>
+            <td>${r.prop ? `<a>${esc(r.prop)}</a>` : "—"}</td>
+            <td class="ellipsis" style="color:var(--text-muted)">${esc(r.body.slice(0, 60))}…</td>
+            <td style="text-align:right;white-space:nowrap">
+              <button class="btn btn-sm" onclick="openView('${r.id}')"><i class="fas fa-eye"></i></button>
+              <button class="btn btn-sm" onclick="openForm('edit','${r.id}')"><i class="fas fa-pen"></i></button>
+              <button class="btn btn-sm btn-danger" onclick="askDelete('${r.id}')"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>`).join("");
+        }
+        else if (m === "sms") {
+          head = `<tr>
+            ${sortableTH("id", "ID")}${th("Direction")}${sortableTH("client", "Client")}${th("Phone")}
+            ${sortableTH("dt", "Date & Time")}${th("Preview")}${th("Property")}${th("Actions", "right")}
+          </tr>`;
+          body = slice.map(r => `<tr>
+            <td><strong>${esc(r.id)}</strong></td>
+            <td><span class="badge b-${r.direction === "Sent" ? "blue" : "green"}">${esc(r.direction)}</span></td>
+            <td><a>${esc(r.client)}</a></td><td>${esc(r.phone)}</td>
+            <td>${esc(r.dt)}</td>
+            <td class="ellipsis">${esc(r.message.slice(0, 60))}…</td>
+            <td>${r.prop ? `<a>${esc(r.prop)}</a>` : "—"}</td>
+            <td style="text-align:right;white-space:nowrap">
+              <button class="btn btn-sm" onclick="openView('${r.id}')"><i class="fas fa-eye"></i></button>
+              <button class="btn btn-sm" onclick="openForm('edit','${r.id}')"><i class="fas fa-pen"></i></button>
+              <button class="btn btn-sm btn-danger" onclick="askDelete('${r.id}')"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>`).join("");
+        }
+        else if (m === "comments") {
+          head = `<tr>
+            ${sortableTH("id", "ID")}${th("Preview")}${th("Related To")}${sortableTH("created", "Created")}${sortableTH("updated", "Last Updated")}${th("Actions", "right")}
+          </tr>`;
+          body = slice.map(r => `<tr>
+            <td><strong>${esc(r.id)}</strong></td>
+            <td>${esc(r.text.slice(0, 80))}${r.text.length > 80 ? "…" : ""}</td>
+            <td>${r.relatedKind === "general" ? '<span style="color:var(--text-muted)">General</span>' : `<a>${esc(r.related)}</a> <span style="font-size:10px;color:var(--text-muted)">(${esc(r.relatedKind)})</span>`}</td>
+            <td>${esc(r.created)}</td><td>${esc(r.updated)}</td>
+            <td style="text-align:right;white-space:nowrap">
+              <button class="btn btn-sm" onclick="openView('${r.id}')"><i class="fas fa-eye"></i></button>
+              <button class="btn btn-sm" onclick="openForm('edit','${r.id}')"><i class="fas fa-pen"></i></button>
+              <button class="btn btn-sm btn-danger" onclick="askDelete('${r.id}')"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>`).join("");
+        }
+
+        document.getElementById("dataTable").innerHTML = `<thead>${head}</thead><tbody>${body || `<tr><td colspan="20" style="text-align:center;padding:32px;color:var(--text-muted)">No records.</td></tr>`}</tbody>`;
+        document.getElementById("pagBar").innerHTML = `
+          <span>Showing <strong>${total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)}</strong> of ${total} ${currentMod}</span>
+          <div class="pg-nav">
+            <button class="pg-btn" ${page <= 1 ? "disabled" : ""} onclick="goPage(${page - 1})">‹ Prev</button>
+            ${Array.from({length: pages}, (_, i) => `<button class="pg-btn ${i + 1 === page ? "active" : ""}" onclick="goPage(${i + 1})">${i + 1}</button>`).join("")}
+            <button class="pg-btn" ${page >= pages ? "disabled" : ""} onclick="goPage(${page + 1})">Next ›</button>
+          </div>
+        `;
+      }
+      window.goPage = (p) => { page = p; renderTable(); };
+
+      function th(label, align) { return `<th${align === "right" ? ' style="text-align:right"' : ""}>${esc(label)}</th>`; }
+      function sortableTH(key, label) {
+        const cls = sortKey === key ? "sort-" + sortDir : "";
+        return `<th class="${cls}" onclick="doSort('${key}')">${esc(label)} <span class="sort">▲▼</span></th>`;
+      }
+      function doSort(k) {
+        if (sortKey === k) sortDir = sortDir === "asc" ? "desc" : "asc";
+        else { sortKey = k; sortDir = "asc"; }
+        renderTable();
+      }
+      window.doSort = doSort;
+
+      // ============ Delete ============
+      function askDelete(id) {
+        pendingDelete = id;
+        document.getElementById("confirmMsg").textContent = `Delete ${id}? This action cannot be undone.`;
+        document.getElementById("confirmModal").classList.add("open");
+      }
+      window.askDelete = askDelete;
+      function doDelete() {
+        if (!pendingDelete) return;
+        const arr = MODS[currentMod].data;
+        const i = arr.findIndex(r => r.id === pendingDelete);
+        if (i >= 0) arr.splice(i, 1);
+        closeModal("confirmModal");
+        toast(`${pendingDelete} deleted`);
+        pendingDelete = null;
+        renderTable();
+      }
+      window.doDelete = doDelete;
+
+      // ============ Mark Complete (viewings) ============
+      function openComplete(id) {
+        pendingComplete = id;
+        document.getElementById("cOutcome").value = "Client interested";
+        document.getElementById("cNotes").value = "";
+        document.getElementById("completeModal").classList.add("open");
+      }
+      window.openComplete = openComplete;
+      function saveComplete() {
+        const v = VIEWINGS.find(r => r.id === pendingComplete);
+        if (v) {
+          v.status = "completed";
+          v.notes = (v.notes ? v.notes + " · " : "") + document.getElementById("cOutcome").value + ": " + document.getElementById("cNotes").value;
+        }
+        closeModal("completeModal");
+        toast("Viewing marked complete");
+        pendingComplete = null;
+        renderTable();
+      }
+      window.saveComplete = saveComplete;
+
+      function markDone(id) {
+        const r = TASKS.find(x => x.id === id);
+        if (r) r.status = "completed";
+        toast("Task marked complete");
+        renderTable();
+      }
+      window.markDone = markDone;
+
+      function cancelRow(id) {
+        if (!confirm("Cancel this viewing?")) return;
+        const v = VIEWINGS.find(r => r.id === id);
+        if (v) v.status = "cancelled";
+        toast("Viewing cancelled");
+        renderTable();
+      }
+      window.cancelRow = cancelRow;
+
+      // ============ Form open/save ============
+      function openForm(kind, id) {
+        editingKind = kind;
+        editingId = id;
+        const cfg = MODS[currentMod];
+        const rec = id ? cfg.data.find(r => r.id === id) : null;
+        const titleAction = kind === "edit" ? "Edit" : "Add";
+        document.getElementById("formTitle").innerHTML = `<i class="fas ${cfg.icon}" style="color:var(--accent)"></i> ${titleAction} ${cfg.name.replace(/s$/, "")}`;
+        document.getElementById("formBody").innerHTML = buildForm(rec);
+        document.getElementById("formModal").classList.add("open");
+      }
+      window.openForm = openForm;
+
+      function buildForm(rec) {
+        const m = currentMod;
+        const v = (k) => esc(rec?.[k] || "");
+        const leadOpts = `<option value="">— None —</option>${LEADS.map(l => `<option value="${esc(l.name)}">${esc(l.name)}</option>`).join("")}`;
+        const propOpts = `<option value="">— None —</option>${PROPS.map(p => `<option>${esc(p)}</option>`).join("")}`;
+        if (m === "viewings") return `
+          <label class="form-label">Client Name <span class="req">*</span></label>
+          <input id="fClient" list="leadsList" value="${v("client")}" placeholder="Type name or select from leads" />
+          <datalist id="leadsList">${LEADS.map(l => `<option value="${esc(l.name)}">`).join("")}</datalist>
+          <label class="form-label">Client Phone</label>
+          <input id="fPhone" value="${v("phone")}" placeholder="+81-90-…" />
+          <label class="form-label">Property <span class="req">*</span></label>
+          <select id="fProp">${PROPS.map(p => `<option ${p === rec?.prop ? "selected" : ""}>${esc(p)}</option>`).join("")}</select>
+          <div class="form-grid">
+            <div><label class="form-label">Date <span class="req">*</span></label><input type="date" id="fDate" value="${v("date")}" /></div>
+            <div><label class="form-label">Time <span class="req">*</span></label><input type="time" id="fTime" step="1800" value="${v("time")}" /></div>
+          </div>
+          <div class="form-grid">
+            <div><label class="form-label">Duration</label><select id="fDur"><option value="30" ${rec?.duration === 30 ? "selected" : ""}>30 min</option><option value="60" ${rec?.duration === 60 || !rec ? "selected" : ""}>60 min</option><option value="90" ${rec?.duration === 90 ? "selected" : ""}>90 min</option></select></div>
+            <div><label class="form-label">Status</label><select id="fStatus"><option value="scheduled">Scheduled</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="noshow">No-show</option></select></div>
+          </div>
+          <label class="form-label">Notes</label>
+          <textarea id="fNotes">${v("notes")}</textarea>`;
+        if (m === "tasks") return `
+          <label class="form-label">Task Title <span class="req">*</span></label>
+          <input id="fTitle" maxlength="200" value="${v("title")}" />
+          <label class="form-label">Priority <span class="req">*</span></label>
+          <div class="radio-row">
+            <label><input type="radio" name="fPri" value="high" ${rec?.pri === "high" ? "checked" : ""} /> High</label>
+            <label><input type="radio" name="fPri" value="med" ${(rec?.pri === "med" || !rec) ? "checked" : ""} /> Medium</label>
+            <label><input type="radio" name="fPri" value="low" ${rec?.pri === "low" ? "checked" : ""} /> Low</label>
+          </div>
+          <label class="form-label">Status</label>
+          <select id="fStatus"><option value="pending" ${rec?.status === "pending" || !rec ? "selected" : ""}>Pending</option><option value="inprogress" ${rec?.status === "inprogress" ? "selected" : ""}>In Progress</option><option value="completed" ${rec?.status === "completed" ? "selected" : ""}>Completed</option></select>
+          <div class="form-grid">
+            <div><label class="form-label">Due Date <span class="req">*</span></label><input type="date" id="fDue" value="${v("due")}" /></div>
+            <div><label class="form-label">Due Time</label><input type="time" id="fTime" /></div>
+          </div>
+          <label class="form-label">Related Lead</label>
+          <select id="fLead">${leadOpts.replace(rec?.relatedKind === "lead" ? `value="${esc(rec.related)}"` : "_x_", rec?.relatedKind === "lead" ? `value="${esc(rec.related)}" selected` : "_x_")}</select>
+          <label class="form-label">Related Property</label>
+          <select id="fProp">${propOpts}</select>
+          <label class="form-label">Description</label>
+          <textarea id="fNotes" maxlength="500">${v("notes")}</textarea>`;
+        if (m === "jobs") return `
+          <label class="form-label">Job Title <span class="req">*</span></label>
+          <input id="fTitle" maxlength="200" value="${v("title")}" />
+          <label class="form-label">Related Lead <span class="req">*</span></label>
+          <select id="fLead">${LEADS.map(l => `<option ${l.name === rec?.client ? "selected" : ""}>${esc(l.name)}</option>`).join("")}</select>
+          <label class="form-label">Property <span class="req">*</span></label>
+          <select id="fProp">${PROPS.map(p => `<option ${p === rec?.prop ? "selected" : ""}>${esc(p)}</option>`).join("")}</select>
+          <label class="form-label">Deal Value (¥)</label>
+          <input type="number" id="fValue" step="100000" value="${rec?.value || ''}" />
+          <label class="form-label">Stage <span class="req">*</span></label>
+          <select id="fStage">
+            <option value="open" ${rec?.stage === "open" ? "selected" : ""}>Open</option>
+            <option value="inprogress" ${rec?.stage === "inprogress" ? "selected" : ""}>In Progress</option>
+            <option value="won" ${rec?.stage === "won" ? "selected" : ""}>Won</option>
+            <option value="lost" ${rec?.stage === "lost" ? "selected" : ""}>Lost</option>
+            <option value="onhold" ${rec?.stage === "onhold" ? "selected" : ""}>On Hold</option>
+          </select>
+          <label class="form-label">Expected Close Date</label>
+          <input type="date" id="fClose" value="${v("closeDate")}" />
+          <label class="form-label">Notes</label>
+          <textarea id="fNotes">${v("notes")}</textarea>`;
+        if (m === "calls") return `
+          <label class="form-label">Client Name</label>
+          <input id="fClient" list="leadsList" value="${v("client")}" placeholder="Type name or select from leads" />
+          <datalist id="leadsList">${LEADS.map(l => `<option value="${esc(l.name)}">`).join("")}</datalist>
+          <label class="form-label">Phone Number <span class="req">*</span></label>
+          <input id="fPhone" value="${v("phone")}" placeholder="+81-90-…" />
+          <label class="form-label">Direction <span class="req">*</span></label>
+          <div class="radio-row">
+            <label><input type="radio" name="fDir" value="Outbound" ${(rec?.direction === "Outbound" || !rec) ? "checked" : ""} /> Outbound</label>
+            <label><input type="radio" name="fDir" value="Inbound" ${rec?.direction === "Inbound" ? "checked" : ""} /> Inbound</label>
+          </div>
+          <div class="form-grid">
+            <div><label class="form-label">Date <span class="req">*</span></label><input type="date" id="fDate" value="${rec?.dt ? rec.dt.split(" ")[0] : todayStr()}" /></div>
+            <div><label class="form-label">Time <span class="req">*</span></label><input type="time" id="fTime" value="${rec?.dt ? rec.dt.split(" ")[1] : ""}" /></div>
+          </div>
+          <label class="form-label">Duration (minutes)</label>
+          <input type="number" id="fDur" value="${rec?.duration || ''}" />
+          <label class="form-label">Outcome <span class="req">*</span></label>
+          <select id="fOutcome">
+            <option value="answered" ${rec?.outcome === "answered" ? "selected" : ""}>Answered</option>
+            <option value="noanswer" ${rec?.outcome === "noanswer" ? "selected" : ""}>No answer</option>
+            <option value="voicemail" ${rec?.outcome === "voicemail" ? "selected" : ""}>Voicemail</option>
+            <option value="callback" ${rec?.outcome === "callback" ? "selected" : ""}>Callback requested</option>
+          </select>
+          <label class="form-label">Related Lead</label>
+          <select id="fLead">${leadOpts}</select>
+          <label class="form-label">Related Property</label>
+          <select id="fProp">${propOpts}</select>
+          <label class="form-label">Notes</label>
+          <textarea id="fNotes" maxlength="1000">${v("notes")}</textarea>`;
+        if (m === "emails") return `
+          <label class="form-label">Client Name</label>
+          <input id="fClient" value="${v("client")}" />
+          <label class="form-label">Email Address <span class="req">*</span></label>
+          <input id="fEmail" type="email" value="${v("email")}" />
+          <label class="form-label">Direction <span class="req">*</span></label>
+          <div class="radio-row">
+            <label><input type="radio" name="fDir" value="Sent" ${rec?.direction === "Sent" || !rec ? "checked" : ""} /> Sent</label>
+            <label><input type="radio" name="fDir" value="Received" ${rec?.direction === "Received" ? "checked" : ""} /> Received</label>
+          </div>
+          <div class="form-grid">
+            <div><label class="form-label">Date <span class="req">*</span></label><input type="date" id="fDate" value="${rec?.dt ? rec.dt.split(" ")[0] : todayStr()}" /></div>
+            <div><label class="form-label">Time <span class="req">*</span></label><input type="time" id="fTime" value="${rec?.dt ? rec.dt.split(" ")[1] : ""}" /></div>
+          </div>
+          <label class="form-label">Subject <span class="req">*</span></label>
+          <input id="fSubject" maxlength="200" value="${v("subject")}" />
+          <label class="form-label">Body <span class="req">*</span></label>
+          <textarea id="fBody" maxlength="5000" rows="6">${v("body")}</textarea>
+          <label class="form-label">Related Property</label>
+          <select id="fProp">${propOpts}</select>`;
+        if (m === "sms") return `
+          <label class="form-label">Client Name</label>
+          <input id="fClient" value="${v("client")}" />
+          <label class="form-label">Phone Number <span class="req">*</span></label>
+          <input id="fPhone" value="${v("phone")}" placeholder="+81-90-…" />
+          <label class="form-label">Direction <span class="req">*</span></label>
+          <div class="radio-row">
+            <label><input type="radio" name="fDir" value="Sent" ${rec?.direction === "Sent" || !rec ? "checked" : ""} /> Sent</label>
+            <label><input type="radio" name="fDir" value="Received" ${rec?.direction === "Received" ? "checked" : ""} /> Received</label>
+          </div>
+          <div class="form-grid">
+            <div><label class="form-label">Date <span class="req">*</span></label><input type="date" id="fDate" value="${rec?.dt ? rec.dt.split(" ")[0] : todayStr()}" /></div>
+            <div><label class="form-label">Time <span class="req">*</span></label><input type="time" id="fTime" value="${rec?.dt ? rec.dt.split(" ")[1] : ""}" /></div>
+          </div>
+          <label class="form-label">Message <span class="req">*</span></label>
+          <textarea id="fMessage" maxlength="1000" oninput="document.getElementById('smsCount').textContent=this.value.length">${v("message")}</textarea>
+          <div class="char-counter"><span id="smsCount">${(rec?.message || "").length}</span> / 1000</div>
+          <label class="form-label">Related Property</label>
+          <select id="fProp">${propOpts}</select>`;
+        if (m === "comments") return `
+          <label class="form-label">Comment <span class="req">*</span></label>
+          <textarea id="fText" maxlength="3000" rows="6" oninput="document.getElementById('cmtCount').textContent=this.value.length">${v("text")}</textarea>
+          <div class="char-counter"><span id="cmtCount">${(rec?.text || "").length}</span> / 3000</div>
+          <label class="form-label">Related Lead</label>
+          <select id="fLead">${leadOpts}</select>
+          <label class="form-label">Related Property</label>
+          <select id="fProp">${propOpts}</select>
+          <label class="form-label">Related Job</label>
+          <select id="fJob"><option value="">— None —</option>${JOBS.map(j => `<option ${rec?.related === j.title ? "selected" : ""}>${esc(j.title)}</option>`).join("")}</select>`;
+        return "";
+      }
+
+      function nextId(prefix) {
+        const arr = MODS[currentMod].data;
+        return prefix + "-2026" + String(arr.length + 1).padStart(3, "0");
+      }
+
+      function saveForm() {
+        const m = currentMod;
+        const arr = MODS[m].data;
+        const isEdit = editingKind === "edit";
+        const rec = isEdit ? arr.find(r => r.id === editingId) : null;
+        const $ = id => document.getElementById(id)?.value;
+        const $r = name => document.querySelector(`input[name="${name}"]:checked`)?.value;
+        let data = {};
+        try {
+          if (m === "viewings") {
+            data = { client: $("fClient"), phone: $("fPhone"), prop: $("fProp"), date: $("fDate"), time: $("fTime"), duration: parseInt($("fDur")) || 60, status: $("fStatus"), notes: $("fNotes") || "" };
+            if (!data.client || !data.prop || !data.date || !data.time) throw new Error("Required fields missing");
+          } else if (m === "tasks") {
+            data = { title: $("fTitle"), pri: $r("fPri"), status: $("fStatus"), due: $("fDue"), related: $("fLead") || $("fProp") || "—", relatedKind: $("fLead") ? "lead" : ($("fProp") ? "property" : "general"), created: rec?.created || todayStr(), notes: $("fNotes") || "" };
+            if (!data.title || !data.due) throw new Error("Title and due date required");
+          } else if (m === "jobs") {
+            data = { title: $("fTitle"), client: $("fLead"), prop: $("fProp"), value: parseInt($("fValue")) || 0, stage: $("fStage"), closeDate: $("fClose"), created: rec?.created || todayStr(), notes: $("fNotes") || "" };
+            if (!data.title || !data.client || !data.prop) throw new Error("Required fields missing");
+          } else if (m === "calls") {
+            data = { client: $("fClient"), phone: $("fPhone"), direction: $r("fDir"), dt: $("fDate") + " " + $("fTime"), duration: parseInt($("fDur")) || 0, durationDisp: $("fDur") ? $("fDur") + " min" : "—", outcome: $("fOutcome"), prop: $("fProp") || "", notes: $("fNotes") || "" };
+            if (!data.phone) throw new Error("Phone required");
+          } else if (m === "emails") {
+            data = { direction: $r("fDir"), client: $("fClient"), email: $("fEmail"), subject: $("fSubject"), dt: $("fDate") + " " + $("fTime"), prop: $("fProp") || "", body: $("fBody") };
+            if (!data.email || !data.subject || !data.body) throw new Error("Email, subject, body required");
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new Error("Invalid email format");
+          } else if (m === "sms") {
+            data = { direction: $r("fDir"), client: $("fClient"), phone: $("fPhone"), dt: $("fDate") + " " + $("fTime"), prop: $("fProp") || "", message: $("fMessage") };
+            if (!data.phone || !data.message) throw new Error("Phone and message required");
+          } else if (m === "comments") {
+            const lead = $("fLead"), prop = $("fProp"), job = $("fJob");
+            data = { text: $("fText"), related: lead || prop || job || "—", relatedKind: lead ? "lead" : (prop ? "property" : (job ? "job" : "general")), created: rec?.created || (todayStr() + " 12:00"), updated: todayStr() + " 12:00" };
+            if (!data.text) throw new Error("Comment required");
+          }
+        } catch (e) {
+          toast(e.message, "error");
+          return;
+        }
+        if (isEdit) {
+          Object.assign(rec, data);
+          toast(`${editingId} updated`);
+        } else {
+          const prefix = { viewings: "VW", tasks: "TK", jobs: "JB", calls: "CL", emails: "EM", sms: "SM", comments: "CM" }[m];
+          arr.unshift({ id: nextId(prefix), ...data });
+          toast(`${MODS[m].name.replace(/s$/, "")} added`);
+        }
+        closeModal("formModal");
+        renderTable();
+      }
+      window.saveForm = saveForm;
+
+      // ============ View modal ============
+      function openView(id) {
+        const m = currentMod;
+        const r = MODS[m].data.find(x => x.id === id);
+        if (!r) return;
+        const t = MODS[m].name.replace(/s$/, "");
+        document.getElementById("viewTitle").innerHTML = `<i class="fas ${MODS[m].icon}" style="color:var(--accent)"></i> ${t} · ${esc(r.id)}`;
+        let body = "";
+        if (m === "emails") {
+          body = `
+            <div style="background:var(--bg-alt);padding:12px;border-radius:6px;margin-bottom:14px;font-size:12.5px">
+              <strong>${esc(r.direction)}</strong> · ${esc(r.dt)}<br>
+              ${r.direction === "Sent" ? "To" : "From"}: <strong>${esc(r.client)}</strong> &lt;${esc(r.email)}&gt;
+              ${r.prop ? `<br>Property: <a>${esc(r.prop)}</a>` : ""}
+            </div>
+            <div style="font-size:14px;font-weight:700;margin-bottom:8px">Subject: ${esc(r.subject)}</div>
+            <div style="white-space:pre-wrap;font-size:13px;line-height:1.6;background:#fff;border:1px solid var(--border-subtle);border-radius:6px;padding:14px">${esc(r.body)}</div>`;
+        } else if (m === "sms") {
+          body = `
+            <div style="background:var(--bg-alt);padding:12px;border-radius:6px;margin-bottom:14px;font-size:12.5px">
+              <strong>${esc(r.direction)}</strong> · ${esc(r.dt)}<br>
+              ${r.direction === "Sent" ? "To" : "From"}: <strong>${esc(r.client)}</strong> · ${esc(r.phone)}
+              ${r.prop ? `<br>Property: <a>${esc(r.prop)}</a>` : ""}
+            </div>
+            <div style="background:${r.direction === "Sent" ? "var(--accent)" : "var(--bg-alt)"};color:${r.direction === "Sent" ? "#fff" : "var(--text-main)"};padding:14px;border-radius:14px;font-size:13.5px;line-height:1.5">${esc(r.message)}</div>`;
+        } else if (m === "comments") {
+          body = `
+            <div style="background:var(--bg-alt);padding:12px;border-radius:6px;margin-bottom:14px;font-size:12.5px">
+              Created: <strong>${esc(r.created)}</strong> · Last updated: ${esc(r.updated)}<br>
+              Related to: <strong>${esc(r.related)}</strong> <span style="color:var(--text-muted)">(${esc(r.relatedKind)})</span>
+            </div>
+            <div style="white-space:pre-wrap;font-size:13.5px;line-height:1.6;background:#fff;border:1px solid var(--border-subtle);border-radius:6px;padding:14px">${esc(r.text)}</div>`;
+        } else if (m === "jobs") {
+          body = `
+            <div style="background:var(--bg-alt);padding:12px;border-radius:6px;margin-bottom:14px;font-size:13px">
+              <div style="font-size:15px;font-weight:700;margin-bottom:8px">${esc(r.title)}</div>
+              <div>Client: <strong>${esc(r.client)}</strong></div>
+              <div>Property: <strong>${esc(r.prop)}</strong></div>
+              <div>Deal Value: <strong>${yen(r.value)}</strong></div>
+              <div>Stage: <span class="badge b-${r.stage}">${r.stage}</span></div>
+              <div>Close Date: ${esc(r.closeDate)} · Created: ${esc(r.created)}</div>
+            </div>
+            <div style="white-space:pre-wrap;font-size:13px;line-height:1.6">${esc(r.notes)}</div>`;
+        }
+        document.getElementById("viewBody").innerHTML = body;
+        document.getElementById("viewModal").classList.add("open");
+      }
+      window.openView = openView;
+
+      // ============ Init ============
+      const hash = window.location.hash.replace("#", "");
+      switchMod(MODS[hash] ? hash : "viewings");
+    </script>
+  </body>
+</html>

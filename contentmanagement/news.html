@@ -101,6 +101,47 @@ a:hover {
 </head>
   <body>
     <style>
+      /* Scoped comfortable spacing for the News pane (won't override parent layout) */
+      .news-pane .category-manager,
+      .news-pane .cms-filter-bar,
+      .news-pane .table-wrap,
+      .news-pane .cms-inline-actions {
+        margin-bottom: 16px;
+      }
+      .news-pane .cms-inline-actions {
+        margin-bottom: 0;
+      }
+      .news-pane .table-wrap table td,
+      .news-pane .table-wrap table th {
+        padding: 12px 14px;
+      }
+      .news-pane td.news-row-actions {
+        text-align: right;
+        white-space: nowrap;
+      }
+      .news-pane .news-row-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        align-items: center;
+      }
+      .news-pane .news-row-actions .btn {
+        height: 30px;
+        min-width: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 8px;
+        border: 1px solid #e0e0e0;
+        line-height: 1;
+      }
+      .news-pane .news-row-actions .btn:hover {
+        border-color: #eadccd;
+      }
+      .news-pane .news-row-actions .btn:not(.btn-danger) {
+        color: #8b7340;
+      }
+
       .category-manager {
         margin-bottom: 12px;
         padding: 12px;
@@ -163,6 +204,7 @@ a:hover {
       }
     </style>
 
+    <div class="news-pane">
     <div class="category-manager">
       <div class="category-manager-head">
         <div>
@@ -177,6 +219,7 @@ a:hover {
     </div>
 
     <div class="cms-filter-bar">
+      <button class="btn btn-primary" type="button" onclick="openBlogEditor('news')">New news</button>
       <input
         id="newsSearchInput"
         type="text"
@@ -195,6 +238,8 @@ a:hover {
       </select>
     </div>
 
+    <div id="newsResultCount" class="list-result-count"></div>
+
     <div class="table-wrap">
       <table>
         <thead>
@@ -211,44 +256,77 @@ a:hover {
       </table>
     </div>
 
-    <div style="margin-top: 10px" class="cms-inline-actions">
-      <button
-        class="btn btn-primary"
-        type="button"
-        onclick="openBlogEditor('news')"
-      >
-        New news
-      </button>
+    <div id="newsPagination" class="pagination"></div>
+
     </div>
 
     <script>
       (function () {
         const NEWS_CATEGORY_STORAGE_KEY = "cmsNewsCategories";
         const DEFAULT_NEWS_CATEGORIES = ["Japan", "Real estate", "Investment"];
-        let editingNewsCategoryName = null;
-        const newsRows = [
-          {
-            title: "Platform maintenance announcement",
-            categoryTag: "Japan",
-            transactionType: "None",
-            status: "Published",
-            author: "Anna",
-          },
-          {
-            title: "New lending rules impact investment",
-            categoryTag: "Real estate",
-            transactionType: "SellerGuide",
-            status: "Published",
-            author: "Emily",
-          },
-          {
-            title: "Tax basics for investors",
-            categoryTag: "Investment",
-            transactionType: "None",
-            status: "Published",
-            author: "Jason",
-          },
-        ];
+        const NEWS_PAGE_SIZE = 50;
+        let newsPage = 1;
+        let lastFilteredNewsRows = [];
+
+        // Seed ≥60 news rows to demonstrate pagination.
+        const newsRows = (function buildNewsSeed() {
+          const base = [
+            {
+              title: "Platform maintenance announcement",
+              categoryTag: "Japan",
+              transactionType: "None",
+              status: "Published",
+              author: "Anna",
+            },
+            {
+              title: "New lending rules impact investment",
+              categoryTag: "Real estate",
+              transactionType: "SellerGuide",
+              status: "Published",
+              author: "Emily",
+            },
+            {
+              title: "Tax basics for investors",
+              categoryTag: "Investment",
+              transactionType: "None",
+              status: "Published",
+              author: "Jason",
+            },
+          ];
+          const cats = ["Japan", "Real estate", "Investment"];
+          const txns = ["None", "SellerGuide", "BuyerGuide", "Renter Guide"];
+          const authors = ["Anna", "Emily", "Jason", "Hana", "Yuki", "Michael"];
+          const topics = [
+            "Interest rate update",
+            "New district development plan",
+            "Quarterly market report",
+            "Foreign investment trends",
+            "Stamp duty changes",
+            "Rental demand surge",
+            "Construction cost outlook",
+            "Urban rezoning approved",
+            "Transport line extension",
+            "Property tax reform",
+            "Vacancy rate report",
+            "Green building incentives",
+            "Tourism impact on rentals",
+            "Mortgage approval data",
+            "Regional price movements",
+          ];
+          const rows = base.slice();
+          let n = 0;
+          while (rows.length < 64) {
+            n += 1;
+            rows.push({
+              title: topics[n % topics.length] + " #" + n,
+              categoryTag: cats[n % cats.length],
+              transactionType: txns[n % txns.length],
+              status: n % 4 === 0 ? "Draft" : "Published",
+              author: authors[n % authors.length],
+            });
+          }
+          return rows;
+        })();
 
         function normalizeCategoryName(name) {
           return String(name || "")
@@ -353,129 +431,205 @@ a:hover {
             return haystack.includes(search);
           });
 
-          tbody.innerHTML = filtered
+          const total = filtered.length;
+          const pages = Math.max(1, Math.ceil(total / NEWS_PAGE_SIZE));
+          if (newsPage > pages) newsPage = pages;
+          const startIdx = (newsPage - 1) * NEWS_PAGE_SIZE;
+          const pageRows = filtered.slice(startIdx, startIdx + NEWS_PAGE_SIZE);
+          lastFilteredNewsRows = pageRows;
+
+          const countEl = document.getElementById("newsResultCount");
+          if (countEl) {
+            if (total === 0) {
+              countEl.textContent = "Showing 0 news";
+            } else {
+              countEl.textContent =
+                "Showing " +
+                (startIdx + 1) +
+                "–" +
+                (startIdx + pageRows.length) +
+                " of " +
+                total +
+                " news";
+            }
+          }
+
+          tbody.innerHTML = pageRows
             .map(
-              (row) => `
+              (row, index) => `
                 <tr>
                   <td>${row.title}</td>
                   <td><span class="tag-chip" style="margin-right:0">${row.categoryTag}</span></td>
                   <td>${row.transactionType}</td>
-                  <td><span class="badge badge-success">${row.status}</span></td>
-                  <td>${row.author}</td>
-                  <td style="text-align:right; display:flex; gap:6px; justify-content:flex-end">
-                    <button class="btn btn-ghost" type="button" title="Edit news">✎</button>
-                    <button class="btn btn-ghost btn-danger" type="button" title="Delete news" onclick="if (confirm('Delete this news item?')) alert('Deleted');">🗑</button>
+                  <td><span class="badge ${row.status === "Published" ? "badge-success" : "badge-warning"}">${row.status}</span></td>
+                  <td>${row.author || "—"}</td>
+                  <td class="news-row-actions">
+                    <button class="btn btn-ghost" type="button" title="Edit news" onclick="editNewsRow(${index})">✎</button>
+                    <button class="btn btn-ghost btn-danger" type="button" title="Delete news" data-del-index="${index}">🗑</button>
                   </td>
                 </tr>
               `,
             )
             .join("");
+
+          tbody.querySelectorAll("[data-del-index]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const row = pageRows[Number(btn.getAttribute("data-del-index"))];
+              if (!row) return;
+              const doDelete = () => {
+                const idx = newsRows.indexOf(row);
+                if (idx > -1) newsRows.splice(idx, 1);
+                renderNewsTable();
+                if (typeof window.showToast === "function")
+                  window.showToast("News deleted.", "success");
+              };
+              if (typeof window.showConfirm === "function") {
+                window
+                  .showConfirm({
+                    title: "Delete news",
+                    message: `Delete "${row.title}"?`,
+                    confirmLabel: "Delete",
+                  })
+                  .then((ok) => {
+                    if (ok) doDelete();
+                  });
+              } else {
+                doDelete();
+              }
+            });
+          });
+
+          if (typeof window.renderPagination === "function") {
+            window.renderPagination(
+              document.getElementById("newsPagination"),
+              total,
+              newsPage,
+              NEWS_PAGE_SIZE,
+              (go) => {
+                newsPage = go;
+                renderNewsTable();
+              },
+            );
+          }
         }
 
-        function addNewsCategory() {
-          const inputEl = document.getElementById("newsCategoryInput");
-          const addBtn = document.getElementById("btnAddNewsCategory");
-          const cancelBtn = document.getElementById(
-            "btnCancelNewsCategoryEdit",
-          );
-          if (!inputEl) return;
-          const value = normalizeCategoryName(inputEl.value);
+        function editNewsRow(index) {
+          const row = lastFilteredNewsRows[index];
+          if (!row) return;
+          if (typeof window.openBlogEditor === "function") {
+            window.openBlogEditor("news", {
+              title: row.title,
+              category: row.categoryTag,
+              transactionType: row.transactionType,
+              status: String(row.status).toLowerCase(),
+              author: row.author,
+              contentBody: "",
+            });
+          } else if (typeof window.showToast === "function") {
+            window.showToast(
+              "The news editor is only available inside Insight Management.",
+              "info",
+            );
+          }
+        }
+
+        function commitNewsCategory(rawValue, oldName) {
+          const value = normalizeCategoryName(rawValue);
           if (!value) {
-            alert("Please enter a category name.");
+            if (typeof window.showToast === "function")
+              window.showToast("Please enter a category name.", "error");
             return;
           }
           const categories = getNewsCategories();
-
-          if (editingNewsCategoryName) {
+          if (oldName) {
             const exists = categories.some(
               (item) =>
                 item.toLowerCase() === value.toLowerCase() &&
-                item.toLowerCase() !== editingNewsCategoryName.toLowerCase(),
+                item.toLowerCase() !== oldName.toLowerCase(),
             );
             if (exists) {
-              alert("This category already exists.");
+              if (typeof window.showToast === "function")
+                window.showToast("This category already exists.", "error");
               return;
             }
-
             const updated = categories.map((item) =>
-              item.toLowerCase() === editingNewsCategoryName.toLowerCase()
-                ? value
-                : item,
+              item.toLowerCase() === oldName.toLowerCase() ? value : item,
             );
             saveNewsCategories(updated);
-            editingNewsCategoryName = null;
-            if (addBtn) addBtn.textContent = "Add";
-            if (cancelBtn) cancelBtn.style.display = "none";
-            inputEl.value = "";
             renderNewsCategoryList();
+            if (typeof window.showToast === "function")
+              window.showToast("Category tag renamed.", "success");
             return;
           }
-
           const exists = categories.some(
             (item) => item.toLowerCase() === value.toLowerCase(),
           );
           if (exists) {
-            alert("This category already exists.");
+            if (typeof window.showToast === "function")
+              window.showToast("This category already exists.", "error");
             return;
           }
           categories.push(value);
           saveNewsCategories(categories);
-          inputEl.value = "";
           renderNewsCategoryList();
+          if (typeof window.showToast === "function")
+            window.showToast("Category tag added.", "success");
+        }
+
+        function addNewsCategory() {
+          if (typeof window.showTagInput === "function") {
+            window
+              .showTagInput({ title: "Add category tag", value: "" })
+              .then((val) => {
+                if (val == null) return;
+                commitNewsCategory(val, null);
+              });
+          }
         }
 
         function beginRenameNewsCategory(oldName) {
-          const inputEl = document.getElementById("newsCategoryInput");
-          const addBtn = document.getElementById("btnAddNewsCategory");
-          const cancelBtn = document.getElementById(
-            "btnCancelNewsCategoryEdit",
-          );
-          if (!inputEl) return;
-          editingNewsCategoryName = oldName;
-          inputEl.value = oldName;
-          inputEl.focus();
-          inputEl.select();
-          if (addBtn) addBtn.textContent = "Save";
-          if (cancelBtn) cancelBtn.style.display = "inline-flex";
-        }
-
-        function cancelNewsCategoryEdit() {
-          const inputEl = document.getElementById("newsCategoryInput");
-          const addBtn = document.getElementById("btnAddNewsCategory");
-          const cancelBtn = document.getElementById(
-            "btnCancelNewsCategoryEdit",
-          );
-          editingNewsCategoryName = null;
-          if (inputEl) inputEl.value = "";
-          if (addBtn) addBtn.textContent = "Add";
-          if (cancelBtn) cancelBtn.style.display = "none";
+          if (typeof window.showTagInput === "function") {
+            window
+              .showTagInput({ title: "Rename category tag", value: oldName })
+              .then((val) => {
+                if (val == null) return;
+                commitNewsCategory(val, oldName);
+              });
+          }
         }
 
         function deleteNewsCategory(name) {
-          if (!confirm(`Delete category "${name}"?`)) return;
-          const updated = getNewsCategories().filter(
-            (item) => item.toLowerCase() !== name.toLowerCase(),
-          );
-          if (!updated.length) {
-            alert("At least one category is required.");
-            return;
+          const doDelete = () => {
+            const updated = getNewsCategories().filter(
+              (item) => item.toLowerCase() !== name.toLowerCase(),
+            );
+            if (!updated.length) {
+              if (typeof window.showToast === "function")
+                window.showToast("At least one category is required.", "error");
+              return;
+            }
+            saveNewsCategories(updated);
+            renderNewsCategoryList();
+            if (typeof window.showToast === "function")
+              window.showToast("Category tag deleted.", "success");
+          };
+          if (typeof window.showConfirm === "function") {
+            window
+              .showConfirm({
+                title: "Delete category tag",
+                message: `Delete category "${name}"?`,
+                confirmLabel: "Delete",
+              })
+              .then((ok) => {
+                if (ok) doDelete();
+              });
+          } else {
+            doDelete();
           }
-          saveNewsCategories(updated);
-          renderNewsCategoryList();
         }
 
         const addBtn = document.getElementById("btnAddNewsCategory");
-        const cancelBtn = document.getElementById("btnCancelNewsCategoryEdit");
-        const inputEl = document.getElementById("newsCategoryInput");
         if (addBtn) addBtn.addEventListener("click", addNewsCategory);
-        if (cancelBtn)
-          cancelBtn.addEventListener("click", cancelNewsCategoryEdit);
-        if (inputEl) {
-          inputEl.addEventListener("keydown", (event) => {
-            if (event.key === "Enter") addNewsCategory();
-            if (event.key === "Escape") cancelNewsCategoryEdit();
-          });
-        }
 
         [
           "newsSearchInput",
@@ -484,8 +638,12 @@ a:hover {
         ].forEach((id) => {
           const el = document.getElementById(id);
           if (el) {
-            el.addEventListener("input", renderNewsTable);
-            el.addEventListener("change", renderNewsTable);
+            const reset = () => {
+              newsPage = 1;
+              renderNewsTable();
+            };
+            el.addEventListener("input", reset);
+            el.addEventListener("change", reset);
           }
         });
 
@@ -495,6 +653,7 @@ a:hover {
         window.getNewsCategoryTags = getNewsCategories;
         window.beginRenameNewsCategory = beginRenameNewsCategory;
         window.deleteNewsCategory = deleteNewsCategory;
+        window.editNewsRow = editNewsRow;
       })();
     </script>
   </body>

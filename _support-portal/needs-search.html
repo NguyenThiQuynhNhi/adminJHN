@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Needs Search — YUUSHI Support Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+      :root {
+        --nav-bg: #1a2744; --nav-bg-hover: #243454; --nav-text: #c8d1e0; --nav-text-muted: #7b8aa3;
+        --accent: #c4714a; --accent-dark: #a55232; --accent-soft: #fef1e6;
+        --bg-body: #f5f0e8; --bg-card: #fff; --bg-alt: #faf6f0;
+        --border-subtle: #eadccd; --border-strong: #d9c8b4;
+        --text-main: #3b2f2a; --text-muted: #7a6a5c; --text-dim: #9b8568;
+        --green: #2f855a; --green-soft: #e6f6ef; --amber: #b7791f; --amber-soft: #fff6e0;
+        --red: #c53030; --red-soft: #fde8e8; --blue: #2c5282; --blue-soft: #e0f2fe; --grey: #6b7280;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; }
+      body { font-family: Arial, "Segoe UI", system-ui, sans-serif; background: var(--bg-body); color: var(--text-main); font-size: 13px; line-height: 1.5; display: flex; }
+      a { color: inherit; text-decoration: none; }
+      .sidebar { width: 248px; min-width: 248px; height: 100vh; background: var(--nav-bg); color: var(--nav-text); overflow-y: auto; flex-shrink: 0; }
+      .sb-logo { padding: 18px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 11px; }
+      .sb-logo-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--accent); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 17px; }
+      .sb-logo-text .t1 { font-size: 16px; font-weight: 700; color: #fff; display: block; }
+      .sb-logo-text .t2 { font-size: 10.5px; color: var(--nav-text-muted); }
+      .sb-item { display: flex; align-items: center; gap: 11px; padding: 11px 20px; color: var(--nav-text); font-size: 13.5px; cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; }
+      .sb-item:hover { background: var(--nav-bg-hover); color: #fff; }
+      .sb-item.active { background: var(--nav-bg-hover); color: #fff; font-weight: 600; border-left-color: var(--accent); }
+      .sb-item i { width: 18px; text-align: center; font-size: 14px; }
+      .sb-item.active i { color: var(--accent); }
+      .main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+      .topbar { height: 58px; flex-shrink: 0; background: #fff; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; padding: 0 24px; }
+      .breadcrumb { font-size: 15px; font-weight: 700; flex: 1; }
+      .acct-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; }
+      .content { flex: 1; overflow-y: auto; padding: 22px 26px; }
+      h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+      .sub { font-size: 13px; color: var(--text-muted); }
+      .btn { border-radius: 7px; border: 1px solid var(--border-strong); padding: 8px 14px; font-size: 13px; background: #fff; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; justify-content: center; color: var(--text-main); font-family: inherit; font-weight: 600; min-height: 36px; }
+      .btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-dark); }
+      .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); border-color: var(--accent-dark); color: #fff; }
+      .btn-primary:hover { color: #fff; }
+      .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+      .btn-sm { padding: 5px 9px; min-height: 28px; font-size: 11.5px; }
+      input, select, textarea { border-radius: 7px; border: 1px solid var(--border-subtle); padding: 8px 11px; font-size: 13px; background: #fff; color: var(--text-main); outline: none; font-family: inherit; width: 100%; min-height: 36px; }
+      input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+      textarea { resize: vertical; min-height: 80px; }
+      .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border-subtle); margin: 16px 0 18px; }
+      .tab { background: 0; border: 0; padding: 10px 18px; font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+      .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+      .filter-bar { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 12px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+      @media (max-width: 1100px) { .filter-bar { grid-template-columns: 1fr 1fr; } }
+      .sort-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+      .needs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+      @media (max-width: 820px) { .needs-grid { grid-template-columns: 1fr; } }
+      .need-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 16px; box-shadow: 0 4px 12px rgba(115,72,39,0.04); display: flex; flex-direction: column; gap: 8px; }
+      .need-top { display: flex; justify-content: space-between; align-items: center; }
+      .cat-badge { font-size: 10.5px; padding: 3px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-dark); border: 1px solid #fcd9bf; font-weight: 700; }
+      .posted { font-size: 11px; color: var(--text-dim); }
+      .client-row { display: flex; align-items: center; gap: 9px; }
+      .client-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--blue); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+      .client-id { font-size: 12px; font-weight: 700; }
+      .need-title { font-size: 15px; font-weight: 700; }
+      .need-desc { font-size: 12.5px; color: var(--text-muted); }
+      .read-more { color: var(--accent); cursor: pointer; font-weight: 600; }
+      .need-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--text-muted); }
+      .need-meta i { color: var(--accent); margin-right: 3px; }
+      .tags { display: flex; flex-wrap: wrap; gap: 5px; }
+      .tag { font-size: 10.5px; padding: 2px 8px; border-radius: 4px; background: var(--bg-alt); color: var(--text-muted); border: 1px solid var(--border-subtle); }
+      .tl-badge { font-size: 10px; padding: 2px 7px; border-radius: 999px; background: var(--blue-soft); color: var(--blue); border: 1px solid #bee3f8; font-weight: 700; }
+      .need-actions { display: flex; gap: 6px; padding-top: 8px; border-top: 1px solid #f5ece0; }
+      .bookmark.saved { color: var(--accent); }
+      .locked { position: relative; }
+      .empty { text-align: center; padding: 50px 16px; color: var(--text-muted); }
+      .empty i { font-size: 40px; color: var(--text-dim); display: block; margin-bottom: 10px; }
+
+      /* Detail */
+      .detail-layout { display: grid; grid-template-columns: 65% 1fr; gap: 16px; }
+      @media (max-width: 880px) { .detail-layout { grid-template-columns: 1fr; } }
+      .panel { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 18px; }
+      .panel + .panel { margin-top: 14px; }
+      .req-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f5ece0; font-size: 13px; }
+      .req-row .k { color: var(--text-muted); }
+      .match-bar { height: 8px; background: var(--bg-alt); border-radius: 999px; overflow: hidden; margin: 8px 0; }
+      .match-bar > div { height: 100%; background: linear-gradient(90deg, var(--green), #4ade80); border-radius: 999px; }
+      .match-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; padding: 4px 0; }
+      .match-item i { color: var(--green); }
+
+      /* Modal */
+      .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 200; display: none; align-items: center; justify-content: center; padding: 16px; }
+      .modal-backdrop.open { display: flex; }
+      .modal-box { background: #fff; border-radius: 12px; width: 560px; max-width: 100%; max-height: 92vh; display: flex; flex-direction: column; position: relative; }
+      .modal-header { padding: 16px 18px; border-bottom: 1px solid var(--border-subtle); }
+      .modal-header h3 { font-size: 16px; font-weight: 700; }
+      .modal-header .ms { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+      .modal-body { padding: 18px; overflow: auto; }
+      .modal-footer { padding: 12px 18px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 8px; align-items: center; }
+      .fl { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin: 12px 0 5px; }
+      .fl:first-child { margin-top: 0; }
+      .req { color: var(--red); }
+      .char-counter { text-align: right; font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+      .tmpl-panel { position: absolute; top: 0; right: 0; width: 260px; height: 100%; background: var(--bg-alt); border-left: 1px solid var(--border-subtle); border-radius: 0 12px 12px 0; padding: 16px; overflow-y: auto; transform: translateX(100%); transition: transform 0.2s; }
+      .tmpl-panel.open { transform: translateX(0); }
+      .tmpl-item { background: #fff; border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px; margin-bottom: 8px; cursor: pointer; font-size: 12.5px; }
+      .tmpl-item:hover { border-color: var(--accent); background: var(--accent-soft); }
+      .upgrade-box { text-align: center; padding: 20px; }
+      .upgrade-box i { font-size: 44px; color: var(--accent); margin-bottom: 12px; }
+
+      table.data { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+      .data thead { background: var(--bg-alt); }
+      .data th, .data td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #f5ece0; }
+      .data th { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+      .b-sent { background: var(--blue-soft); color: var(--blue); border:1px solid #bee3f8; }
+      .b-viewed { background: var(--amber-soft); color: var(--amber); border:1px solid #fbd38d; }
+      .b-accepted { background: var(--green-soft); color: var(--green); border:1px solid #b7e4cc; }
+      .b-declined { background: var(--red-soft); color: var(--red); border:1px solid #fbcaca; }
+      .b-noresp { background: #f3f4f6; color: var(--grey); border:1px solid #d1d5db; }
+      .badge { font-size: 10px; padding: 3px 8px; border-radius: 999px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+      .toast-wrap { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+      .toast { background: var(--green); color: #fff; padding: 10px 14px; border-radius: 7px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+      .toast.info { background: var(--blue); }
+      .hidden { display: none !important; }
+          /* ===== Admin-style beige sidebar (sync) ===== */
+      .sidebar { background: #f8f4ed !important; color: #4a3f35 !important; border-right: 1px solid #e5d9c0; }
+      .sb-logo { border-bottom: 1px solid #e5d9c0 !important; }
+      .sb-logo-icon { background: #1a1a1a !important; color: #fff !important; }
+      .sb-logo-text, .sb-logo-text .t1 { color: #1a1a1a !important; }
+      .sb-logo-text .t2 { color: #8b6f47 !important; }
+      .sb-item { color: #4a3f35 !important; }
+      .sb-item:hover { background: #f0e6d2 !important; color: #1a1a1a !important; }
+      .sb-item.active { background: #ede4d0 !important; color: #1a1a1a !important; border-left-color: #c4a25f !important; }
+      .sb-item.active i { color: #c26b41 !important; }
+      .sb-subnav { background: #efe6d4 !important; }
+      .sb-sub { color: #6b5a48 !important; }
+      .sb-sub:hover { background: #f0e6d2 !important; color: #1a1a1a !important; }
+      .sb-sub.active { color: #c26b41 !important; }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main">
+      <header class="topbar"><div class="breadcrumb" id="bc">Needs Search</div><span class="acct-avatar">YT</span></header>
+      <div class="content">
+        <div class="tabs">
+          <button class="tab active" id="tBrowse" onclick="switchTop('browse')">Browse Needs</button>
+          <button class="tab" id="tSaved" onclick="switchTop('saved')">Saved Needs</button>
+          <button class="tab" id="tSent" onclick="switchTop('sent')">Sent Proposals</button>
+        </div>
+
+        <!-- BROWSE -->
+        <div id="browseView">
+          <div style="margin-bottom:12px"><h2>Client Service Needs</h2><div class="sub">Browse clients looking for support services in your category</div></div>
+          <div class="filter-bar">
+            <input type="text" id="fSearch" placeholder="🔍 Keywords in need description" oninput="renderNeeds()" />
+            <select id="fCat" onchange="renderNeeds()"><option value="">My Categories</option><option>Tax Advice</option><option>Legal</option><option>Mortgage</option><option>Insurance</option><option>Property Management</option></select>
+            <select id="fLoc" onchange="renderNeeds()"><option value="">All Locations</option><option>Tokyo</option><option>Osaka</option><option>Kyoto</option></select>
+            <select id="fTimeline" onchange="renderNeeds()"><option value="">Any Timeline</option><option>ASAP</option><option>Within 1 month</option><option>Within 3 months</option></select>
+            <select id="fPosted" onchange="renderNeeds()"><option value="">Any date</option><option>Last 7 days</option><option>Last 30 days</option></select>
+          </div>
+          <div class="sort-row">
+            <span class="sub" id="resultCount"></span>
+            <select id="sortBy" style="max-width:200px" onchange="renderNeeds()"><option>Most Recent</option><option>Budget High–Low</option><option>Closest Match</option></select>
+          </div>
+          <div class="needs-grid" id="needsGrid"></div>
+          <div style="text-align:center;margin-top:18px" id="loadMore"></div>
+        </div>
+
+        <!-- DETAIL -->
+        <div id="detailView" class="hidden">
+          <button class="btn" onclick="switchTop('browse')" style="margin-bottom:14px"><i class="fas fa-arrow-left"></i> Back to list</button>
+          <div class="detail-layout">
+            <div id="detailLeft"></div>
+            <div id="detailRight"></div>
+          </div>
+        </div>
+
+        <!-- SAVED -->
+        <div id="savedView" class="hidden">
+          <div style="margin-bottom:12px"><h2>Saved Needs</h2><div class="sub">Needs you've bookmarked for later</div></div>
+          <div class="needs-grid" id="savedGrid"></div>
+        </div>
+
+        <!-- SENT -->
+        <div id="sentView" class="hidden">
+          <div style="margin-bottom:12px"><h2>Sent Proposals</h2><div class="sub">Track the proposals you've sent to clients</div></div>
+          <div class="panel">
+            <table class="data"><thead><tr><th>Need Title</th><th>Client</th><th>Sent Date</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead><tbody id="sentBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Proposal modal -->
+    <div class="modal-backdrop" id="propModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="propTitle">Send Proposal</h3>
+          <div class="ms">Note: Client contact details will only be shared after they accept your proposal.</div>
+        </div>
+        <div class="modal-body">
+          <label class="fl">Subject <span class="req">*</span></label>
+          <input id="pSubject" maxlength="100" />
+          <label class="fl">Proposed Service</label>
+          <select id="pService"><option>Property Tax Consultation</option><option>Estate Planning Advisory</option><option>Inheritance Tax Advisory</option><option>Custom</option></select>
+          <label class="fl">Proposal Message <span class="req">*</span> <button class="btn btn-sm" style="float:right;margin-top:-4px" onclick="toggleTmpl()"><i class="fas fa-file-lines"></i> Use template</button></label>
+          <textarea id="pMessage" maxlength="2000" placeholder="Introduce your service, explain why you're a good fit, outline your approach…" oninput="document.getElementById('pCount').textContent=this.value.length"></textarea>
+          <div class="char-counter"><span id="pCount">0</span> / 2000</div>
+          <label class="fl">Proposed Fee (¥)</label>
+          <input type="number" id="pFee" placeholder="Leave blank if you prefer to discuss" />
+          <label class="fl">Response Deadline</label>
+          <input type="date" id="pDeadline" />
+        </div>
+        <div class="modal-footer">
+          <a style="margin-right:auto;color:var(--accent);cursor:pointer;font-size:12.5px" onclick="toast('Saved as draft','info')">Save as Draft</a>
+          <button class="btn" onclick="closeM('propModal')">Cancel</button>
+          <button class="btn btn-primary" id="pSend" onclick="sendProposal()" disabled><i class="fas fa-paper-plane"></i> Send Proposal</button>
+        </div>
+        <div class="tmpl-panel" id="tmplPanel">
+          <div style="font-weight:700;margin-bottom:10px">Template Library</div>
+          <div class="tmpl-item" onclick="useTmpl('Thank you for posting your need. As a licensed tax accountant with 15+ years of experience, I would be glad to assist with your inheritance tax matters. I offer a free initial consultation to understand your situation.')"><strong>Initial consultation</strong><div style="color:var(--text-muted);margin-top:3px">Free first session intro</div></div>
+          <div class="tmpl-item" onclick="useTmpl('Based on your requirements, I propose a comprehensive tax advisory service covering inheritance assessment, filing, and optimisation. My fee structure is transparent and tailored to your case.')"><strong>Service proposal</strong><div style="color:var(--text-muted);margin-top:3px">Detailed service offer</div></div>
+          <div class="tmpl-item" onclick="useTmpl('Following up on your service need — I wanted to check if you are still looking for assistance. I have availability this week and would welcome the chance to discuss.')"><strong>Follow-up</strong><div style="color:var(--text-muted);margin-top:3px">Gentle reminder</div></div>
+          <div class="tmpl-item" onclick="useTmpl('Season greetings! As the year-end tax season approaches, now is an excellent time to review your property tax position. I would be happy to offer my services.')"><strong>Seasonal greeting</strong><div style="color:var(--text-muted);margin-top:3px">Holiday / season touch</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upgrade modal -->
+    <div class="modal-backdrop" id="upgradeModal">
+      <div class="modal-box" style="width:420px">
+        <div class="modal-body">
+          <div class="upgrade-box">
+            <i class="fas fa-lock"></i>
+            <h3 style="font-size:17px;margin-bottom:8px">Send Proposal is a paid feature</h3>
+            <p style="color:var(--text-muted);font-size:13px">Upgrade your plan or purchase this feature to unlock the ability to send proposals to clients.</p>
+          </div>
+        </div>
+        <div class="modal-footer"><button class="btn" onclick="closeM('upgradeModal')">Not now</button><button class="btn btn-primary" onclick="location.href='billing.html'"><i class="fas fa-arrow-up"></i> View Plans</button></div>
+      </div>
+    </div>
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+      const SB_ITEMS = [
+        { id: "dashboard", label: "Dashboard", icon: "fa-gauge-high", href: "index.html" },
+        { id: "profile", label: "My Profile &amp; Services", icon: "fa-id-card-clip", href: "profile.html" },
+        { id: "customers", label: "Leads &amp; Customers", icon: "fa-users", href: "customers.html" },
+        { id: "needs", label: "Needs Search", icon: "fa-magnifying-glass", href: "needs-search.html" },
+        { id: "messages", label: "Messages", icon: "fa-comments", href: "messages.html" },
+        { id: "advertising", label: "Advertising", icon: "fa-rectangle-ad", href: "billing.html#ads" },
+        { id: "articles", label: "Content &amp; Articles", icon: "fa-newspaper", href: "articles.html" },
+        { id: "billing", label: "Subscription &amp; Billing", icon: "fa-credit-card", href: "billing.html" },
+        { id: "settings", label: "Settings", icon: "fa-gear", href: "profile.html#settings" },
+      ];
+      document.getElementById("sidebar").innerHTML = `<div class="sb-logo"><div class="sb-logo-icon">Y</div><div class="sb-logo-text"><span class="t1">YUUSHI</span><span class="t2">Support Portal</span></div></div><nav>${SB_ITEMS.map(i => `<a class="sb-item ${i.id === "needs" ? "active" : ""}" href="${i.href}"><i class="fas ${i.icon}"></i> ${i.label}</a>`).join("")}</nav>`;
+
+      // PAID FEATURE GATE — toggle to true to simulate unlocked
+      const HAS_PROPOSAL_FEATURE = false;
+
+      const NEEDS = [
+        { id: "ND-001", cat: "Tax Advice", posted: "3 days ago", initials: "T.K.", uid: "2841", title: "Need tax advice for property inheritance in Tokyo", desc: "I recently inherited a condominium from my late father in Minato-ku and need professional guidance on inheritance tax obligations, valuation, and filing deadlines. The property is worth approximately ¥80M and I'm unsure about exemptions and how to minimise the tax burden legally.", loc: "Tokyo", budget: "¥100,000~¥300,000", timeline: "Within 1 month", tags: ["Inheritance", "Estate Planning", "Tokyo"], saved: false, members: 47, match: 87, since: "Mar 2024" },
+        { id: "ND-002", cat: "Legal", posted: "1 day ago", initials: "S.M.", uid: "3120", title: "Contract review for second-hand apartment purchase", desc: "Purchasing a resale apartment in Shibuya and want a lawyer to review the sales contract and important matters explanation document before signing.", loc: "Tokyo", budget: "¥50,000~¥150,000", timeline: "ASAP", tags: ["Contract", "Purchase", "Shibuya"], saved: true, members: 23, match: 72, since: "Jan 2025" },
+        { id: "ND-003", cat: "Mortgage", posted: "5 days ago", initials: "Y.N.", uid: "2955", title: "Mortgage refinancing comparison for Osaka property", desc: "Looking to refinance my home loan to a lower rate. Currently at 1.2% variable, want to compare fixed-rate options across multiple banks.", loc: "Osaka", budget: "Not specified", timeline: "Within 3 months", tags: ["Refinancing", "Osaka"], saved: false, members: 31, match: 64, since: "Nov 2023" },
+        { id: "ND-004", cat: "Tax Advice", posted: "2 days ago", initials: "L.M.", uid: "3044", title: "International buyer needs property tax guidance", desc: "Korean national purchasing investment property in Tokyo. Need help understanding non-resident tax obligations and annual reporting.", loc: "Tokyo", budget: "¥150,000~¥400,000", timeline: "Within 3 months", tags: ["International", "Investment", "Tokyo"], saved: false, members: 18, match: 81, since: "Feb 2026" },
+        { id: "ND-005", cat: "Insurance", posted: "6 days ago", initials: "A.S.", uid: "2780", title: "Property insurance for new apartment in Yokohama", desc: "Need fire and earthquake insurance for a newly purchased apartment. Want to compare coverage options.", loc: "Kanagawa", budget: "¥50,000~¥100,000", timeline: "Within 1 month", tags: ["Fire", "Earthquake", "Yokohama"], saved: false, members: 12, match: 55, since: "Apr 2025" },
+        { id: "ND-006", cat: "Tax Advice", posted: "8 days ago", initials: "H.W.", uid: "2611", title: "Capital gains tax on sold property in Kyoto", desc: "Sold a machiya townhouse in Gion and need to calculate and file capital gains tax. Held the property for 12 years.", loc: "Kyoto", budget: "¥80,000~¥200,000", timeline: "ASAP", tags: ["Capital Gains", "Kyoto"], saved: true, members: 9, match: 78, since: "Sep 2024" },
+        { id: "ND-007", cat: "Property Management", posted: "4 days ago", initials: "K.I.", uid: "3201", title: "Management for 6-unit rental building", desc: "Owner of a small apartment building seeking full property management — tenant screening, rent collection, maintenance coordination.", loc: "Osaka", budget: "Not specified", timeline: "Within 1 month", tags: ["Rental", "Management", "Osaka"], saved: false, members: 15, match: 40, since: "Dec 2023" },
+        { id: "ND-008", cat: "Legal", posted: "10 days ago", initials: "M.K.", uid: "2999", title: "Boundary dispute with neighbouring property", desc: "Need legal assistance regarding a land boundary disagreement with my neighbour in Setagaya.", loc: "Tokyo", budget: "¥200,000~¥500,000", timeline: "Within 3 months", tags: ["Dispute", "Boundary", "Tokyo"], saved: false, members: 6, match: 60, since: "Jul 2025" },
+      ];
+      let currentNeed = null, expanded = {}, visibleCount = 6;
+      const SENT = [
+        { needId: "ND-001", title: "Need tax advice for property inheritance in Tokyo", initials: "T.K.", uid: "2841", date: "2026-05-25", status: "accepted" },
+        { needId: "ND-004", title: "International buyer needs property tax guidance", initials: "L.M.", uid: "3044", date: "2026-05-26", status: "sent" },
+      ];
+      const SENT_IDS = SENT.map(s => s.needId);
+
+      function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);}
+
+      function needCard(n, ctx) {
+        const showFull = expanded[n.id];
+        const desc = showFull ? n.desc : n.desc.slice(0, 150) + (n.desc.length > 150 ? "…" : "");
+        const lockIcon = HAS_PROPOSAL_FEATURE ? "" : '<i class="fas fa-lock" style="margin-right:4px"></i>';
+        return `<div class="need-card">
+          <div class="need-top"><span class="cat-badge">${esc(n.cat)}</span><span class="posted">${esc(n.posted)}</span></div>
+          <div class="client-row"><div class="client-avatar">${esc(n.initials)}</div><div><div class="client-id">${esc(n.initials)}</div><div style="font-size:11px;color:var(--text-muted)">User #${esc(n.uid)}</div></div></div>
+          <div class="need-title">${esc(n.title)}</div>
+          <div class="need-desc">${esc(desc)} ${n.desc.length > 150 ? `<span class="read-more" onclick="toggleExpand('${n.id}','${ctx}')">${showFull ? "Show less" : "Read more"}</span>` : ""}</div>
+          <div class="need-meta"><span><i class="fas fa-location-dot"></i>${esc(n.loc)}</span><span><i class="fas fa-yen-sign"></i>${esc(n.budget)}</span><span class="tl-badge">${esc(n.timeline)}</span></div>
+          <div class="tags">${n.tags.map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div>
+          <div class="need-actions">
+            <button class="btn btn-sm" onclick="toggleSave('${n.id}','${ctx}')"><i class="fas fa-bookmark bookmark ${n.saved ? "saved" : ""}"></i> ${n.saved ? "Saved" : "Save"}</button>
+            <button class="btn btn-sm btn-primary" onclick="tryProposal('${n.id}')">${lockIcon}<i class="fas fa-paper-plane"></i> Send Proposal</button>
+            <button class="btn btn-sm" onclick="viewNeed('${n.id}')"><i class="fas fa-eye"></i> View Details</button>
+          </div>
+        </div>`;
+      }
+
+      function renderNeeds() {
+        const q = (document.getElementById("fSearch").value||"").toLowerCase();
+        const cat = document.getElementById("fCat").value, loc = document.getElementById("fLoc").value, tl = document.getElementById("fTimeline").value;
+        let list = NEEDS.filter(n => {
+          if (q && !(n.title + " " + n.desc).toLowerCase().includes(q)) return false;
+          if (cat && n.cat !== cat) return false;
+          if (loc && n.loc !== loc) return false;
+          if (tl && n.timeline !== tl) return false;
+          return true;
+        });
+        const sb = document.getElementById("sortBy").value;
+        if (sb === "Closest Match") list.sort((a,b)=>b.match-a.match);
+        const shown = list.slice(0, visibleCount);
+        document.getElementById("resultCount").textContent = `Showing ${shown.length} of ${list.length} results`;
+        document.getElementById("needsGrid").innerHTML = shown.map(n => needCard(n, "browse")).join("") || `<div class="empty" style="grid-column:1/-1"><i class="fas fa-magnifying-glass"></i>No needs found matching your filters. Try adjusting your search.</div>`;
+        document.getElementById("loadMore").innerHTML = list.length > visibleCount ? `<button class="btn" onclick="visibleCount+=6;renderNeeds()">Load more (${list.length - visibleCount} remaining)</button>` : "";
+      }
+      window.renderNeeds = renderNeeds;
+      function toggleExpand(id,ctx){expanded[id]=!expanded[id];ctx==="saved"?renderSaved():renderNeeds();}
+      window.toggleExpand=toggleExpand;
+      function toggleSave(id,ctx){const n=NEEDS.find(x=>x.id===id);n.saved=!n.saved;toast(n.saved?"Saved to your list":"Removed from saved");ctx==="saved"?renderSaved():renderNeeds();}
+      window.toggleSave=toggleSave;
+
+      function renderSaved() {
+        const list = NEEDS.filter(n => n.saved);
+        document.getElementById("savedGrid").innerHTML = list.length ? list.map(n => needCard(n, "saved")).join("") : `<div class="empty" style="grid-column:1/-1"><i class="fas fa-bookmark"></i>You haven't saved any needs yet. Browse client needs to find matches.</div>`;
+      }
+      function renderSent() {
+        const SL = { sent: "Sent", viewed: "Viewed", accepted: "Accepted", declined: "Declined", noresp: "No response" };
+        const CL = { sent: "b-sent", viewed: "b-viewed", accepted: "b-accepted", declined: "b-declined", noresp: "b-noresp" };
+        document.getElementById("sentBody").innerHTML = SENT.map(s => `<tr>
+          <td>${esc(s.title)}</td>
+          <td><span style="display:inline-flex;align-items:center;gap:6px"><span class="client-avatar" style="width:24px;height:24px;font-size:10px">${esc(s.initials)}</span> User #${esc(s.uid)}</span></td>
+          <td>${s.date}</td>
+          <td><span class="badge ${CL[s.status]}">${SL[s.status]}</span></td>
+          <td style="text-align:right"><button class="btn btn-sm" onclick="toast('View proposal (demo)','info')">View</button> ${s.status === "accepted" ? `<button class="btn btn-sm btn-primary" onclick="location.href='messages.html'">Message Client</button>` : ""}</td>
+        </tr>`).join("");
+      }
+
+      function viewNeed(id) {
+        currentNeed = NEEDS.find(n => n.id === id);
+        document.getElementById("browseView").classList.add("hidden");
+        document.getElementById("savedView").classList.add("hidden");
+        document.getElementById("sentView").classList.add("hidden");
+        document.getElementById("detailView").classList.remove("hidden");
+        document.getElementById("bc").textContent = "Need Detail";
+        const n = currentNeed;
+        const lockIcon = HAS_PROPOSAL_FEATURE ? "" : '<i class="fas fa-lock"></i> ';
+        document.getElementById("detailLeft").innerHTML = `
+          <div class="panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span class="cat-badge">${esc(n.cat)}</span><span class="posted">${esc(n.posted)}</span></div>
+            <h2 style="font-size:19px">${esc(n.title)}</h2>
+            <p style="font-size:13px;color:var(--text-main);margin-top:8px;line-height:1.6">${esc(n.desc)}</p>
+          </div>
+          <div class="panel">
+            <div style="font-weight:700;margin-bottom:12px;font-size:13px"><i class="fas fa-user-shield" style="color:var(--accent)"></i> Client Profile (privacy-protected)</div>
+            <div class="client-row" style="margin-bottom:12px"><div class="client-avatar" style="width:44px;height:44px;font-size:15px">${esc(n.initials)}</div><div><div style="font-size:14px;font-weight:700">User #${esc(n.uid)}</div><div style="font-size:11.5px;color:var(--text-muted)">Member since ${esc(n.since)}</div></div></div>
+            <div class="req-row"><span class="k">Location</span><span>${esc(n.loc)} <span style="font-size:10px;color:var(--text-dim)">(prefecture only)</span></span></div>
+          </div>
+          <div class="panel">
+            <div style="font-weight:700;margin-bottom:8px;font-size:13px">Requirements</div>
+            <div class="req-row"><span class="k">Service needed</span><span>${esc(n.cat)}</span></div>
+            <div class="req-row"><span class="k">Coverage area</span><span><span class="tag">${esc(n.loc)}</span></span></div>
+            <div class="req-row"><span class="k">Budget</span><span>${esc(n.budget)}</span></div>
+            <div class="req-row"><span class="k">Timeline</span><span><span class="tl-badge">${esc(n.timeline)}</span></span></div>
+            <div class="req-row"><span class="k">Preferred contact</span><span>Chat / Email</span></div>
+            <div class="req-row"><span class="k">Languages</span><span>Japanese / English</span></div>
+          </div>`;
+        document.getElementById("detailRight").innerHTML = `
+          <div class="panel">
+            <div style="font-weight:700;font-size:13px;margin-bottom:8px">Save this need</div>
+            <button class="btn" style="width:100%" onclick="toggleSave('${n.id}','detail');viewNeed('${n.id}')"><i class="fas fa-bookmark bookmark ${n.saved ? "saved" : ""}"></i> ${n.saved ? "Saved" : "Save this need"}</button>
+            <div style="font-size:11.5px;color:var(--text-muted);margin-top:8px;text-align:center">${n.members} professionals saved this</div>
+          </div>
+          <div class="panel">
+            <div style="font-weight:700;font-size:13px;margin-bottom:8px">Send a proposal</div>
+            <button class="btn btn-primary" style="width:100%" onclick="tryProposal('${n.id}')">${lockIcon}<i class="fas fa-paper-plane"></i> Send Proposal</button>
+            ${HAS_PROPOSAL_FEATURE ? "" : '<div style="font-size:11px;color:var(--text-dim);margin-top:6px;text-align:center">🔒 Paid feature</div>'}
+          </div>
+          <div class="panel">
+            <div style="font-weight:700;font-size:13px;margin-bottom:6px">Match Score: ${n.match}%</div>
+            <div class="match-bar"><div style="width:${n.match}%"></div></div>
+            <div class="match-item"><i class="fas fa-check"></i> Category match</div>
+            <div class="match-item"><i class="fas fa-check"></i> Location match</div>
+            <div class="match-item"><i class="fas fa-check"></i> Budget range</div>
+            <div class="match-item"><i class="fas fa-check"></i> Language match</div>
+          </div>`;
+        window.scrollTo(0, 0);
+      }
+      window.viewNeed = viewNeed;
+
+      function tryProposal(id) {
+        currentNeed = NEEDS.find(n => n.id === id);
+        if (!HAS_PROPOSAL_FEATURE) { document.getElementById("upgradeModal").classList.add("open"); return; }
+        document.getElementById("propTitle").textContent = "Send Proposal to User #" + currentNeed.uid;
+        document.getElementById("pSubject").value = "Proposal: Property Tax Consultation from Yamamoto Tax Advisory Co.";
+        document.getElementById("pMessage").value = "";
+        document.getElementById("pCount").textContent = "0";
+        checkSend();
+        document.getElementById("propModal").classList.add("open");
+      }
+      window.tryProposal = tryProposal;
+      function checkSend() {
+        const ok = document.getElementById("pSubject").value.trim() && document.getElementById("pMessage").value.trim();
+        document.getElementById("pSend").disabled = !ok;
+      }
+      document.addEventListener("input", e => { if (e.target.id === "pSubject" || e.target.id === "pMessage") checkSend(); });
+      function toggleTmpl(){document.getElementById("tmplPanel").classList.toggle("open");}
+      window.toggleTmpl=toggleTmpl;
+      function useTmpl(t){document.getElementById("pMessage").value=t;document.getElementById("pCount").textContent=t.length;document.getElementById("tmplPanel").classList.remove("open");checkSend();}
+      window.useTmpl=useTmpl;
+      function sendProposal(){
+        if (!SENT_IDS.includes(currentNeed.id)) { SENT.unshift({ needId: currentNeed.id, title: currentNeed.title, initials: currentNeed.initials, uid: currentNeed.uid, date: new Date().toISOString().slice(0,10), status: "sent" }); SENT_IDS.push(currentNeed.id); }
+        closeM("propModal");
+        toast("Proposal sent. You'll be notified when the client responds.");
+        renderSent();
+      }
+      window.sendProposal = sendProposal;
+
+      function switchTop(t) {
+        document.getElementById("tBrowse").classList.toggle("active", t === "browse");
+        document.getElementById("tSaved").classList.toggle("active", t === "saved");
+        document.getElementById("tSent").classList.toggle("active", t === "sent");
+        document.getElementById("browseView").classList.toggle("hidden", t !== "browse");
+        document.getElementById("detailView").classList.add("hidden");
+        document.getElementById("savedView").classList.toggle("hidden", t !== "saved");
+        document.getElementById("sentView").classList.toggle("hidden", t !== "sent");
+        document.getElementById("bc").textContent = "Needs Search";
+        if (t === "saved") renderSaved();
+        if (t === "sent") renderSent();
+      }
+      window.switchTop = switchTop;
+
+      function closeM(id){document.getElementById(id).classList.remove("open");}
+      window.closeM=closeM;
+      function toast(msg,kind){const el=document.createElement("div");el.className="toast "+(kind||"");el.textContent=msg;document.getElementById("toastWrap").appendChild(el);setTimeout(()=>el.remove(),3000);}
+      window.toast=toast;
+      document.querySelectorAll(".modal-backdrop").forEach(b=>b.addEventListener("click",e=>{if(e.target===b)b.classList.remove("open");}));
+      renderNeeds();
+    </script>
+  </body>
+</html>

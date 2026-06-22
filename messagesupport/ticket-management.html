@@ -1,0 +1,1457 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ticket Management</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --bg: #f5f0e8;
+        --card: #fffaf2;
+        --card-plain: #ffffff;
+        --border: #eadccd;
+        --gold: #c4a25f;
+        --gold-dark: #b08d4a;
+        --text: #3b2f2a;
+        --muted: #7a6a5c;
+        --link: #8a5a3b;
+        --pink: #e7a6b4;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 22px 26px 40px;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      a {
+        color: var(--link);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .hidden {
+        display: none !important;
+      }
+
+      .page-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+      }
+      .page-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .page-sub {
+        font-size: 13px;
+        color: var(--muted);
+        margin: 3px 0 0;
+      }
+
+      /* ---------- card ---------- */
+      .card {
+        background: var(--card-plain);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.05);
+      }
+
+      /* ---------- filter bar ---------- */
+      .filter-bar {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--border);
+      }
+      .fb-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .fb-label {
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+      .fb-field input,
+      .fb-field select {
+        height: 36px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0 10px;
+        font-size: 13px;
+        font-family: inherit;
+        background: #fbf7f0;
+        color: var(--text);
+        outline: none;
+      }
+      .fb-field input:focus,
+      .fb-field select:focus {
+        border-color: var(--gold);
+        box-shadow: 0 0 0 3px rgba(196, 162, 95, 0.16);
+      }
+      .fb-search {
+        position: relative;
+      }
+      .fb-search i {
+        position: absolute;
+        left: 11px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .fb-search input {
+        padding-left: 32px;
+        min-width: 240px;
+      }
+      .fb-daterange {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .fb-daterange span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      /* ---------- table ---------- */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      thead th {
+        text-align: left;
+        padding: 11px 16px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        background: #faf6ee;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+        cursor: pointer;
+        user-select: none;
+      }
+      thead th .si {
+        margin-left: 5px;
+        opacity: 0.4;
+        font-size: 10px;
+      }
+      thead th.sorted .si {
+        opacity: 1;
+        color: var(--gold-dark);
+      }
+      tbody td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f3eee4;
+        vertical-align: middle;
+      }
+      tbody tr {
+        cursor: pointer;
+        transition: background 0.12s;
+      }
+      tbody tr:hover {
+        background: #faf6ee;
+      }
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+      .tk-id {
+        font-weight: 700;
+        color: var(--gold-dark);
+      }
+      .tk-empty {
+        text-align: center;
+        color: var(--muted);
+        padding: 28px;
+      }
+
+      /* ---------- result count ---------- */
+      .result-count {
+        padding: 12px 18px 0;
+        font-size: 12.5px;
+        color: var(--muted);
+      }
+
+      /* ---------- pagination ---------- */
+      .pager {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 12px;
+        padding: 13px 18px;
+        flex-wrap: wrap;
+      }
+      .pager-pages {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+      }
+      .pg-ellipsis {
+        min-width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12.5px;
+        color: var(--muted);
+      }
+      .pg-btn {
+        min-width: 30px;
+        height: 30px;
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 7px;
+        font-size: 12.5px;
+        cursor: pointer;
+        font-family: inherit;
+        color: var(--text);
+      }
+      .pg-btn:hover:not(:disabled) {
+        background: #f5efe4;
+        border-color: var(--gold);
+      }
+      .pg-btn.active {
+        background: var(--gold);
+        border-color: var(--gold);
+        color: #fff;
+        font-weight: 700;
+      }
+      .pg-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      /* ---------- detail ---------- */
+      .detail-head {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+      .back-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--text);
+        cursor: pointer;
+        font-size: 15px;
+      }
+      .back-btn:hover {
+        background: #f5efe4;
+      }
+      .detail-head-id {
+        font-size: 22px;
+        font-weight: 800;
+      }
+      .detail-head-created {
+        font-size: 12.5px;
+        color: var(--gold-dark);
+        font-weight: 600;
+        margin-top: 2px;
+      }
+      .detail-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(240px, 1fr);
+        gap: 16px;
+        align-items: start;
+      }
+      @media (max-width: 880px) {
+        .detail-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .convo-card {
+        padding: 18px 20px;
+      }
+      .convo-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0 0 14px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+      }
+      .thread {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        max-height: 460px;
+        overflow: auto;
+        padding-right: 4px;
+      }
+      .msg {
+        display: flex;
+        gap: 12px;
+      }
+      .avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+        color: #fff;
+      }
+      .avatar.cust {
+        background: var(--pink);
+      }
+      .avatar.yuushi {
+        background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+      }
+      .msg-main {
+        flex: 1;
+        min-width: 0;
+      }
+      .msg-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 3px;
+      }
+      .msg-name {
+        font-weight: 700;
+        font-size: 13.5px;
+      }
+      .msg-time {
+        font-size: 11.5px;
+        color: var(--muted);
+        margin-left: auto;
+        white-space: nowrap;
+      }
+      .msg-text {
+        font-size: 13.5px;
+        line-height: 1.55;
+        color: #4a3c33;
+      }
+      .msg.yuushi .msg-text {
+        color: var(--gold-dark);
+      }
+      .msg-reply-ic {
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 12.5px;
+        margin-top: 4px;
+        padding: 0;
+      }
+      .msg-reply-ic:hover {
+        color: var(--gold-dark);
+      }
+
+      /* reply editor */
+      .reply-editor {
+        margin-top: 18px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .re-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+        align-items: center;
+        padding: 7px 8px;
+        background: #faf6ee;
+        border-bottom: 1px solid var(--border);
+      }
+      .re-tb {
+        min-width: 30px;
+        height: 30px;
+        border: 1px solid transparent;
+        background: transparent;
+        border-radius: 7px;
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--text);
+        font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 7px;
+      }
+      .re-tb:hover {
+        background: #ece2d2;
+      }
+      .re-sep {
+        width: 1px;
+        height: 20px;
+        background: var(--border);
+        margin: 0 4px;
+      }
+      .re-toolbar select {
+        height: 28px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 12px;
+        background: #fff;
+        padding: 0 4px;
+      }
+      .re-body {
+        min-height: 110px;
+        max-height: 220px;
+        overflow: auto;
+        padding: 12px 14px;
+        font-size: 13.5px;
+        line-height: 1.6;
+        outline: none;
+        background: #fff;
+        color: var(--text);
+      }
+      .re-body:empty:before {
+        content: attr(data-ph);
+        color: #b7afa2;
+      }
+      .re-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        background: #faf6ee;
+        border-top: 1px solid var(--border);
+      }
+      .re-trash {
+        width: 34px;
+        height: 34px;
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 8px;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .re-trash:hover {
+        background: #fbe9e9;
+        color: #b23b3b;
+        border-color: #e6b9b9;
+      }
+      .btn-send {
+        border: none;
+        background: var(--gold);
+        color: #fff;
+        font-weight: 700;
+        font-size: 13px;
+        padding: 9px 18px;
+        border-radius: 9px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .btn-send:hover {
+        background: var(--gold-dark);
+      }
+
+      /* sidebar */
+      .side-card {
+        padding: 16px 18px;
+      }
+      .side-title {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        margin: 0 0 12px;
+      }
+      .side-row {
+        padding: 9px 0;
+        border-bottom: 1px dashed #efe6d8;
+      }
+      .side-row:last-child {
+        border-bottom: none;
+      }
+      .side-k {
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        margin-bottom: 3px;
+      }
+      .side-v {
+        font-size: 13.5px;
+        color: var(--text);
+      }
+      .side-v a {
+        color: var(--gold-dark);
+        font-weight: 600;
+      }
+      .side-status select {
+        width: 100%;
+        height: 38px;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        padding: 0 10px;
+        font-family: inherit;
+        font-size: 13.5px;
+        background: #fff;
+        color: var(--text);
+        outline: none;
+        cursor: pointer;
+      }
+      .side-status select:focus {
+        border-color: var(--gold);
+        box-shadow: 0 0 0 3px rgba(196, 162, 95, 0.16);
+      }
+
+      /* modal */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(59, 47, 42, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1100;
+        padding: 20px;
+      }
+      .modal-box {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 18px 50px rgba(59, 47, 42, 0.28);
+        max-width: 420px;
+        width: 100%;
+        padding: 22px 24px;
+      }
+      .modal-title {
+        margin: 0 0 8px;
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .modal-msg {
+        margin: 0 0 20px;
+        font-size: 13.5px;
+        line-height: 1.55;
+        color: var(--muted);
+      }
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+      .btn-cancel {
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--text);
+        font-weight: 600;
+        font-size: 13px;
+        padding: 9px 18px;
+        border-radius: 9px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .btn-cancel:hover {
+        background: #f5efe4;
+      }
+      .btn-discard {
+        border: 1px solid #e6b9b9;
+        background: #b23b3b;
+        color: #fff;
+        font-weight: 700;
+        font-size: 13px;
+        padding: 9px 18px;
+        border-radius: 9px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .btn-discard:hover {
+        opacity: 0.9;
+      }
+
+      /* toast */
+      .toast-wrap {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast {
+        background: #2f2a24;
+        color: #fff;
+        border-left: 4px solid var(--gold);
+        padding: 11px 16px;
+        border-radius: 9px;
+        font-size: 13px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        display: flex;
+        gap: 9px;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ================= LIST VIEW ================= -->
+    <section id="listView">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Ticket Management</h1>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="filter-bar">
+          <div class="fb-field fb-search">
+            <span class="fb-label">Search</span>
+            <i class="fas fa-magnifying-glass"></i>
+            <input
+              id="fSearch"
+              type="text"
+              placeholder="Search ticket ID, name, email"
+              oninput="onFilter()"
+            />
+          </div>
+          <div class="fb-field">
+            <span class="fb-label">Category</span>
+            <select id="fCategory" onchange="onFilter()">
+              <option value="">All Categories</option>
+              <option>Property Inquiry</option>
+              <option>Booking Issue</option>
+              <option>Payment Issue</option>
+              <option>Technical Issue</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="fb-field">
+            <span class="fb-label">Status</span>
+            <select id="fStatus" onchange="onFilter()">
+              <option value="">All Status</option>
+              <option>Open</option>
+              <option>In Progress</option>
+              <option>Resolved</option>
+              <option>Closed</option>
+            </select>
+          </div>
+          <div class="fb-field">
+            <span class="fb-label">Created date range</span>
+            <div class="fb-daterange">
+              <input
+                id="fFrom"
+                type="date"
+                onchange="onFilter()"
+                title="From (dd/mm/yyyy)"
+              />
+              <span>–</span>
+              <input
+                id="fTo"
+                type="date"
+                onchange="onFilter()"
+                title="To (dd/mm/yyyy)"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="result-count" id="resultCount">Showing 0–0 of 0 tickets</div>
+
+        <table>
+          <thead>
+            <tr>
+              <th data-key="id" onclick="toggleSort('id')">
+                Ticket ID <span class="si"></span>
+              </th>
+              <th data-key="name" onclick="toggleSort('name')">
+                Customer Name <span class="si"></span>
+              </th>
+              <th data-key="email" onclick="toggleSort('email')">
+                Email <span class="si"></span>
+              </th>
+              <th data-key="category" onclick="toggleSort('category')">
+                Category <span class="si"></span>
+              </th>
+              <th data-key="status" onclick="toggleSort('status')">
+                Status <span class="si"></span>
+              </th>
+              <th data-key="created" onclick="toggleSort('created')">
+                Created Date <span class="si"></span>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="tkBody"></tbody>
+        </table>
+
+        <div class="pager" id="pager">
+          <div class="pager-pages" id="pagerPages"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= DETAIL VIEW ================= -->
+    <section id="detailView" class="hidden">
+      <div class="detail-head">
+        <button class="back-btn" onclick="backToList()" title="Back to list">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <div>
+          <div class="detail-head-id" id="dHeadId">TK000</div>
+          <div class="detail-head-created" id="dHeadCreated">Created: —</div>
+        </div>
+      </div>
+
+      <div class="detail-grid">
+        <!-- conversation -->
+        <div class="card convo-card">
+          <h2 class="convo-title" id="dTitle">—</h2>
+          <div class="thread" id="dThread"></div>
+
+          <div class="reply-editor">
+            <div class="re-toolbar">
+              <button
+                type="button"
+                class="re-tb"
+                title="Bold"
+                onmousedown="event.preventDefault()"
+                onclick="reExec('bold')"
+              >
+                <b>B</b>
+              </button>
+              <button
+                type="button"
+                class="re-tb"
+                title="Italic"
+                onmousedown="event.preventDefault()"
+                onclick="reExec('italic')"
+              >
+                <i>I</i>
+              </button>
+              <button
+                type="button"
+                class="re-tb"
+                title="Underline"
+                onmousedown="event.preventDefault()"
+                onclick="reExec('underline')"
+              >
+                <u>U</u>
+              </button>
+              <span class="re-sep"></span>
+              <button
+                type="button"
+                class="re-tb"
+                title="Align left"
+                onmousedown="event.preventDefault()"
+                onclick="reExec('justifyLeft')"
+              >
+                <i class="fas fa-align-left"></i>
+              </button>
+              <button
+                type="button"
+                class="re-tb"
+                title="Align center"
+                onmousedown="event.preventDefault()"
+                onclick="reExec('justifyCenter')"
+              >
+                <i class="fas fa-align-center"></i>
+              </button>
+              <button
+                type="button"
+                class="re-tb"
+                title="Align right"
+                onmousedown="event.preventDefault()"
+                onclick="reExec('justifyRight')"
+              >
+                <i class="fas fa-align-right"></i>
+              </button>
+              <span class="re-sep"></span>
+              <button
+                type="button"
+                class="re-tb"
+                title="Bullet list"
+                onmousedown="event.preventDefault()"
+                onclick="reExec('insertUnorderedList')"
+              >
+                <i class="fas fa-list-ul"></i>
+              </button>
+              <button
+                type="button"
+                class="re-tb"
+                title="Numbered list"
+                onmousedown="event.preventDefault()"
+                onclick="reExec('insertOrderedList')"
+              >
+                <i class="fas fa-list-ol"></i>
+              </button>
+              <button
+                type="button"
+                class="re-tb"
+                title="Highlight"
+                onmousedown="event.preventDefault()"
+                onclick="reExec('hiliteColor', '#fff3b0')"
+              >
+                <i class="fas fa-highlighter"></i>
+              </button>
+              <span class="re-sep"></span>
+              <select
+                title="Font size"
+                onmousedown="event.stopPropagation()"
+                onchange="reExec('fontSize', this.value)"
+              >
+                <option value="">Font size</option>
+                <option value="2">Small</option>
+                <option value="3" selected>Normal</option>
+                <option value="5">Large</option>
+                <option value="6">Huge</option>
+              </select>
+            </div>
+            <div
+              id="reBody"
+              class="re-body"
+              contenteditable="true"
+              data-ph="I am your rich text editor."
+            ></div>
+            <div class="re-foot">
+              <button
+                class="re-trash"
+                type="button"
+                title="Discard"
+                onclick="discardReply()"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
+              <button class="btn-send" type="button" onclick="sendReply()">
+                <i class="fas fa-paper-plane"></i> Send reply
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- sidebar -->
+        <div class="card side-card">
+          <h3 class="side-title">Customer information</h3>
+          <div class="side-row">
+            <div class="side-k">Name</div>
+            <div class="side-v" id="dCustName">—</div>
+          </div>
+          <div class="side-row">
+            <div class="side-k">Email</div>
+            <div class="side-v" id="dCustEmail">—</div>
+          </div>
+          <div class="side-row">
+            <div class="side-k">Phone</div>
+            <div class="side-v" id="dCustPhone">—</div>
+          </div>
+          <div class="side-row">
+            <div class="side-k">Category</div>
+            <div class="side-v" id="dCustCategory">—</div>
+          </div>
+          <div class="side-row">
+            <div class="side-k">Created Date</div>
+            <div class="side-v" id="dCustCreated">—</div>
+          </div>
+          <div class="side-row side-status">
+            <div class="side-k">Status</div>
+            <select id="dStatus" onchange="changeStatus(this.value)">
+              <option>Open</option>
+              <option>In Progress</option>
+              <option>Resolved</option>
+              <option>Closed</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= DISCARD MODAL ================= -->
+    <div class="modal-overlay hidden" id="discardModal">
+      <div class="modal-box" role="dialog" aria-modal="true">
+        <h3 class="modal-title">Discard reply?</h3>
+        <p class="modal-msg">
+          You have unsent text. Are you sure you want to discard?
+        </p>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="closeDiscardModal()">
+            Cancel
+          </button>
+          <button type="button" class="btn-discard" onclick="confirmDiscard()">
+            Discard
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      const LS_KEY = "yuushi.tickets";
+      const LS = {
+        get(k, d) {
+          try {
+            const v = localStorage.getItem(k);
+            return v ? JSON.parse(v) : d;
+          } catch (e) {
+            return d;
+          }
+        },
+        set(k, v) {
+          try {
+            localStorage.setItem(k, JSON.stringify(v));
+          } catch (e) {}
+        },
+      };
+      function toast(msg) {
+        const el = document.createElement("div");
+        el.className = "toast";
+        el.innerHTML = '<i class="fas fa-circle-check"></i> ' + esc(msg);
+        $("toastWrap").appendChild(el);
+        setTimeout(() => {
+          el.style.opacity = "0";
+          setTimeout(() => el.remove(), 200);
+        }, 2400);
+      }
+      const MONTHS = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
+      function fmtLong(ymd) {
+        if (!ymd) return "—";
+        const p = ymd.split("-");
+        if (p.length !== 3) return ymd;
+        return (
+          parseInt(p[2], 10) +
+          " " +
+          (MONTHS[parseInt(p[1], 10) - 1] || "") +
+          ", " +
+          p[0]
+        );
+      }
+
+      // ---------- seed ----------
+      const opener = (name, cat) => {
+        if (cat === "Booking Issue")
+          return "Hello, I'm having trouble with my booking. The confirmation hasn't come through and I'd like to check the status.";
+        if (cat === "Payment Issue")
+          return "Hi, my payment doesn't seem to have gone through correctly. Could you please look into this for me?";
+        if (cat === "Technical Issue")
+          return "Hello, I'm running into a technical problem on the website and can't complete what I need to do.";
+        return "Hello, I have a general question and would appreciate your help.";
+      };
+      const titleByCat = {
+        "Property Inquiry": "Inquiry about Shibuya apartment listing",
+        "Booking Issue": "Issue with my booking confirmation",
+        "Payment Issue": "Payment not going through",
+        "Technical Issue": "Technical problem on the website",
+        Other: "General question",
+      };
+      function buildSeed() {
+        // Deterministic generator (no Math.random) — produces 80 tickets.
+        const firstNames = [
+          "Neil", "Colin", "Dee", "Art", "Audi", "Mark", "Andreas",
+          "Margarett", "Oscar", "Stan", "Hana", "Kenji", "Yuki", "Sora",
+          "Mei", "Riku", "Aiko", "Daichi", "Emi", "Haru",
+        ];
+        const lastNames = [
+          "Down", "Sik", "End", "Decco", "Yose", "Ateer", "Papandreas",
+          "Romanovich", "Nommanee", "Dupp", "Tanaka", "Sato", "Suzuki",
+          "Takahashi", "Watanabe", "Ito", "Yamamoto", "Nakamura", "Kobayashi",
+          "Kato",
+        ];
+        const categories = [
+          "Property Inquiry", "Booking Issue", "Payment Issue",
+          "Technical Issue", "Other",
+        ];
+        const statuses = ["Open", "In Progress", "Resolved", "Closed"];
+        // "Today" anchor for spreading created dates across the last 90 days.
+        const anchor = new Date(2026, 5, 21); // 2026-06-21
+        const ymd = (d) =>
+          d.getFullYear() +
+          "-" +
+          String(d.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(d.getDate()).padStart(2, "0");
+
+        const out = [];
+        const COUNT = 80;
+        for (let i = 0; i < COUNT; i++) {
+          const id = "TK" + String(i + 1).padStart(3, "0");
+          const first = firstNames[i % firstNames.length];
+          const last = lastNames[(i * 7 + 3) % lastNames.length];
+          const name = first + " " + last;
+          const email =
+            (first + last).toLowerCase().replace(/[^a-z0-9]/g, "") +
+            "@gmail.com";
+          const category = categories[(i * 3 + 1) % categories.length];
+          const status = statuses[(i * 5 + 2) % statuses.length];
+          // Spread created dates: 0..89 days ago, deterministic.
+          const daysAgo = (i * 7 + 11) % 90;
+          const d = new Date(anchor);
+          d.setDate(d.getDate() - daysAgo);
+          const created = ymd(d);
+          const phone =
+            "+81 90-" +
+            (1000 + ((i * 137) % 9000)).toString().padStart(4, "0") +
+            "-" +
+            (2000 + ((i * 311) % 8000)).toString().padStart(4, "0");
+
+          let messages, title;
+          if (i === 0) {
+            title = "Inquiry about Shibuya apartment listing";
+            messages = [
+              {
+                from: "customer",
+                name,
+                time: fmtLong(created) + ", 10:15",
+                text: "Hello, I'm interested in the apartment listing located in Shibuya that was recently posted. Could you tell me whether it is still available and arrange a viewing?",
+              },
+              {
+                from: "yuushi",
+                name: "YUUSHI",
+                time: fmtLong(created) + ", 10:31",
+                text: "Hello Mr. " + name + ", Thank you for contacting us regarding the Shibuya apartment listing. The unit is still available and we would be happy to arrange a viewing for you.",
+              },
+              {
+                from: "customer",
+                name,
+                time: fmtLong(created) + ", 12:37",
+                text: "Thank you for your reply. We currently have viewing slots available at 2:00 PM — would that time work on your side?",
+              },
+            ];
+          } else {
+            title = titleByCat[category] || "Support request";
+            messages = [
+              {
+                from: "customer",
+                name,
+                time: fmtLong(created) + ", 09:00",
+                text: opener(name, category),
+              },
+            ];
+            if (status === "Resolved" || status === "Closed") {
+              messages.push({
+                from: "yuushi",
+                name: "YUUSHI",
+                time: fmtLong(created) + ", 11:20",
+                text:
+                  "Hello " +
+                  name +
+                  ", thank you for reaching out. We've looked into this and the matter has now been handled. Please let us know if there's anything else we can help with.",
+              });
+            }
+          }
+          out.push({
+            id,
+            name,
+            email,
+            phone,
+            category,
+            status,
+            created,
+            title,
+            messages,
+          });
+        }
+        return out;
+      }
+
+      let tickets = LS.get(LS_KEY, null);
+      if (!Array.isArray(tickets) || !tickets.length) {
+        tickets = buildSeed();
+        LS.set(LS_KEY, tickets);
+      }
+      function persist() {
+        LS.set(LS_KEY, tickets);
+      }
+
+      // ---------- nav badge (open count) in parent shell ----------
+      function openCount() {
+        return tickets.filter((t) => t.status === "Open").length;
+      }
+      function updateNavBadge() {
+        try {
+          const doc =
+            window.parent && window.parent !== window
+              ? window.parent.document
+              : null;
+          if (!doc) return;
+          const badge = doc.getElementById("ticketOpenBadge");
+          if (!badge) return;
+          const n = openCount();
+          badge.textContent = n;
+          badge.style.display = n > 0 ? "" : "none";
+        } catch (e) {}
+      }
+
+      // ---------- list state ----------
+      // dir: "asc" | "desc" | null (unsorted). Default: Created Date descending.
+      let sortState = { key: "created", dir: "desc" };
+      let page = 1;
+      const PAGE_SIZE = 50;
+
+      function getFiltered() {
+        const q = $("fSearch").value.trim().toLowerCase();
+        const cat = $("fCategory").value;
+        const st = $("fStatus").value;
+        const from = $("fFrom").value;
+        const to = $("fTo").value;
+        let rows = tickets.filter((t) => {
+          if (cat && t.category !== cat) return false;
+          if (st && t.status !== st) return false;
+          if (from && t.created < from) return false;
+          if (to && t.created > to) return false;
+          if (
+            q &&
+            !(
+              t.id.toLowerCase().includes(q) ||
+              t.name.toLowerCase().includes(q) ||
+              t.email.toLowerCase().includes(q)
+            )
+          )
+            return false;
+          return true;
+        });
+        if (sortState.key && sortState.dir) {
+          const dir = sortState.dir === "asc" ? 1 : -1;
+          rows.sort((a, b) => {
+            const av = String(a[sortState.key]).toLowerCase();
+            const bv = String(b[sortState.key]).toLowerCase();
+            if (av < bv) return -1 * dir;
+            if (av > bv) return 1 * dir;
+            return 0;
+          });
+        }
+        return rows;
+      }
+
+      // Build page-number list with ellipsis, showing up to ~7 numbers.
+      function pageNumbers(current, max) {
+        if (max <= 7) {
+          const a = [];
+          for (let i = 1; i <= max; i++) a.push(i);
+          return a;
+        }
+        const set = new Set([1, max, current]);
+        for (let d = 1; d <= 1; d++) {
+          if (current - d > 1) set.add(current - d);
+          if (current + d < max) set.add(current + d);
+        }
+        // Pad toward edges so we reliably show ~7 numbers.
+        if (current <= 3) {
+          set.add(2);
+          set.add(3);
+          set.add(4);
+          set.add(5);
+        }
+        if (current >= max - 2) {
+          set.add(max - 1);
+          set.add(max - 2);
+          set.add(max - 3);
+          set.add(max - 4);
+        }
+        const nums = [...set].filter((n) => n >= 1 && n <= max).sort((a, b) => a - b);
+        const out = [];
+        let prev = 0;
+        nums.forEach((n) => {
+          if (n - prev > 1) out.push("…");
+          out.push(n);
+          prev = n;
+        });
+        return out;
+      }
+
+      function renderTable() {
+        const rows = getFiltered();
+        const total = rows.length;
+        const maxPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        if (page > maxPage) page = maxPage;
+        if (page < 1) page = 1;
+        const start = total === 0 ? 0 : (page - 1) * PAGE_SIZE;
+        const pageRows = rows.slice(start, start + PAGE_SIZE);
+
+        const tb = $("tkBody");
+        if (!pageRows.length) {
+          tb.innerHTML =
+            '<tr><td colspan="6" class="tk-empty">No tickets match your filters.</td></tr>';
+        } else {
+          tb.innerHTML = pageRows
+            .map(
+              (t) => `
+            <tr onclick="openDetail('${esc(t.id)}')">
+              <td><span class="tk-id">${esc(t.id)}</span></td>
+              <td>${esc(t.name)}</td>
+              <td>${esc(t.email)}</td>
+              <td>${esc(t.category)}</td>
+              <td>${esc(t.status)}</td>
+              <td>${esc(t.created)}</td>
+            </tr>`,
+            )
+            .join("");
+        }
+
+        const from = total === 0 ? 0 : start + 1;
+        const to = Math.min(start + PAGE_SIZE, total);
+        $("resultCount").textContent = `Showing ${from}–${to} of ${total} tickets`;
+
+        // pager — hidden entirely when 50 or fewer rows match
+        const pager = $("pager");
+        if (total <= PAGE_SIZE) {
+          pager.classList.add("hidden");
+          $("pagerPages").innerHTML = "";
+        } else {
+          pager.classList.remove("hidden");
+          let pg =
+            '<button class="pg-btn" onclick="changePage(' +
+            (page - 1) +
+            ')" ' +
+            (page <= 1 ? "disabled" : "") +
+            ">Previous</button>";
+          pageNumbers(page, maxPage).forEach((n) => {
+            if (n === "…") {
+              pg += '<span class="pg-ellipsis">…</span>';
+            } else {
+              pg +=
+                '<button class="pg-btn ' +
+                (n === page ? "active" : "") +
+                '" onclick="changePage(' +
+                n +
+                ')">' +
+                n +
+                "</button>";
+            }
+          });
+          pg +=
+            '<button class="pg-btn" onclick="changePage(' +
+            (page + 1) +
+            ')" ' +
+            (page >= maxPage ? "disabled" : "") +
+            ">Next</button>";
+          $("pagerPages").innerHTML = pg;
+        }
+
+        document.querySelectorAll("thead th[data-key]").forEach((th) => {
+          const k = th.dataset.key;
+          const active = k === sortState.key && !!sortState.dir;
+          th.classList.toggle("sorted", active);
+          th.querySelector(".si").textContent = active
+            ? sortState.dir === "asc"
+              ? "▲"
+              : "▼"
+            : "";
+        });
+      }
+
+      function onFilter() {
+        page = 1;
+        renderTable();
+      }
+      function toggleSort(key) {
+        // 3-state cycle: asc → desc → unsorted. Only one column at a time.
+        if (sortState.key === key) {
+          if (sortState.dir === "asc") sortState.dir = "desc";
+          else if (sortState.dir === "desc") {
+            sortState.dir = null;
+            sortState.key = null;
+          } else sortState.dir = "asc";
+        } else {
+          sortState.key = key;
+          sortState.dir = "asc";
+        }
+        page = 1;
+        renderTable();
+      }
+      function changePage(p) {
+        page = p;
+        renderTable();
+      }
+
+      // ---------- detail ----------
+      let currentId = null;
+      function openDetail(id) {
+        const t = tickets.find((x) => x.id === id);
+        if (!t) return;
+        currentId = id;
+        $("dHeadId").textContent = t.id;
+        $("dHeadCreated").textContent = "Created: " + fmtLong(t.created);
+        $("dTitle").textContent = t.title || "Support request";
+        $("dCustName").innerHTML =
+          '<a href="../usermanagement/user-account-management.html?ref=' +
+          encodeURIComponent(t.name) +
+          '" target="_blank" rel="noopener">' +
+          esc(t.name) +
+          "</a>";
+        $("dCustEmail").innerHTML =
+          '<a href="mailto:' + esc(t.email) + '">' + esc(t.email) + "</a>";
+        $("dCustPhone").innerHTML =
+          '<a href="tel:' + esc(t.phone) + '">' + esc(t.phone) + "</a>";
+        $("dCustCategory").textContent = t.category;
+        $("dCustCreated").textContent = t.created;
+        $("dStatus").value = t.status;
+        $("reBody").innerHTML = "";
+        renderThread(t);
+        $("listView").classList.add("hidden");
+        $("detailView").classList.remove("hidden");
+        window.scrollTo(0, 0);
+      }
+      function renderThread(t) {
+        const thread = $("dThread");
+        const lastCustIdx = (() => {
+          let idx = -1;
+          t.messages.forEach((m, i) => {
+            if (m.from === "customer") idx = i;
+          });
+          return idx;
+        })();
+        thread.innerHTML = t.messages
+          .map((m, i) => {
+            const isY = m.from === "yuushi";
+            const initials = isY
+              ? "Y"
+              : m.name
+                  .split(" ")
+                  .map((w) => w[0])
+                  .slice(0, 2)
+                  .join("")
+                  .toUpperCase();
+            const replyIc =
+              !isY && i === lastCustIdx
+                ? '<button class="msg-reply-ic" onclick="focusReply()"><i class="fas fa-reply"></i> Reply</button>'
+                : "";
+            return `
+            <div class="msg ${isY ? "yuushi" : "cust"}">
+              <div class="avatar ${isY ? "yuushi" : "cust"}">${esc(initials)}</div>
+              <div class="msg-main">
+                <div class="msg-top">
+                  <span class="msg-name">${esc(m.name)}</span>
+                  <span class="msg-time">${esc(m.time)}</span>
+                </div>
+                <div class="msg-text">${esc(m.text)}</div>
+                ${replyIc}
+              </div>
+            </div>`;
+          })
+          .join("");
+        thread.scrollTop = thread.scrollHeight;
+      }
+      function backToList() {
+        currentId = null;
+        $("detailView").classList.add("hidden");
+        $("listView").classList.remove("hidden");
+        renderTable();
+      }
+      function focusReply() {
+        $("reBody").focus();
+        $("reBody").scrollIntoView({ block: "center" });
+      }
+      function reExec(cmd, val) {
+        $("reBody").focus();
+        document.execCommand(cmd, false, val || null);
+      }
+
+      function nowStamp() {
+        const d = new Date();
+        const p = (n) => String(n).padStart(2, "0");
+        return (
+          d.getDate() +
+          " " +
+          (MONTHS[d.getMonth()] || "") +
+          ", " +
+          d.getFullYear() +
+          ", " +
+          p(d.getHours()) +
+          ":" +
+          p(d.getMinutes())
+        );
+      }
+      function sendReply() {
+        const t = tickets.find((x) => x.id === currentId);
+        if (!t) return;
+        const body = $("reBody");
+        const text = (body.innerText || "").trim();
+        if (!text) {
+          toast("Please write a reply first.");
+          return;
+        }
+        t.messages.push({
+          from: "yuushi",
+          name: "YUUSHI",
+          time: nowStamp(),
+          text,
+        });
+        persist();
+        renderThread(t);
+        body.innerHTML = "";
+        toast("Reply sent successfully.");
+      }
+      function discardReply() {
+        const body = $("reBody");
+        if (!(body.innerText || "").trim()) {
+          body.innerHTML = "";
+          return;
+        }
+        $("discardModal").classList.remove("hidden");
+      }
+      function closeDiscardModal() {
+        $("discardModal").classList.add("hidden");
+      }
+      function confirmDiscard() {
+        $("reBody").innerHTML = "";
+        closeDiscardModal();
+      }
+      function changeStatus(val) {
+        const t = tickets.find((x) => x.id === currentId);
+        if (!t) return;
+        t.status = val;
+        persist();
+        updateNavBadge();
+        toast("Status updated to " + val + ".");
+      }
+
+      // ---------- init ----------
+      renderTable();
+      updateNavBadge();
+    </script>
+  </body>
+</html>

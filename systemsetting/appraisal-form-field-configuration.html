@@ -1,1068 +1,666 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin - Appraisal Form Field Configuration</title>
-    <style>
-      :root {
-        --bg-body: #f5f3ef;
-        --bg-card: #fffaf2;
-        --border-subtle: #eadccd;
-        --accent: #c26b41;
-        --accent-soft: #f3e0d3;
-        --text-main: #3b2f2a;
-        --text-muted: #7a6a5c;
-        --badge-green: #2f855a;
-        --badge-amber: #975a16;
-        --badge-gray: #4a5568;
-      }
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Property Information Form</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-      * {
-        box-sizing: border-box;
-      }
+  :root {
+    --gold: #8B7340;
+    --border: #e0e0e0;
+    --text: #1a1a1a;
+    --gray: #888;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+  }
 
-      body {
-        margin: 0;
-        padding: 20px 24px 32px;
-        font-family:
-          system-ui,
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
-          sans-serif;
-        background-color: var(--bg-body);
-        color: var(--text-main);
-      }
+  body {
+    font-family: var(--font);
+    font-size: 12px;
+    background: #f5f5f5;
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
-      h1 {
-        margin: 0 0 4px;
-        font-size: 22px;
-        letter-spacing: 0.02em;
-      }
+  /* ── Page Header ── */
+  .pg-header {
+    background: #fff;
+    border-bottom: 2px solid var(--gold);
+    padding: 14px 24px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .pg-header h1 { font-size: 16px; font-weight: 700; color: var(--text); }
+  .pg-header p  { font-size: 11px; color: var(--gray); margin-top: 2px; }
 
-      .page-subtitle {
-        margin: 0 0 16px;
-        font-size: 13px;
-        color: var(--text-muted);
-        max-width: 780px;
-      }
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #555;
+    background: #f8f8f8;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 4px 10px;
+  }
+  .legend-item .dot { width: 10px; height: 10px; border-radius: 2px; }
+  .dot-req { background: #F59E0B; }
+  .dot-opt { background: #10B981; }
+  .dot-circle { background: #16a34a; border-radius: 50%; }
+  .dot-dash   { background: #c8c8c8; }
 
-      .pill {
-        display: inline-flex;
-        align-items: center;
-        padding: 3px 10px;
-        border-radius: 999px;
-        background: #efe3cf;
-        color: #7b623f;
-        font-size: 11px;
-        font-weight: 600;
-        margin-bottom: 14px;
-      }
+  /* ── Table Wrapper ── */
+  .tbl-outer {
+    flex: 1;
+    overflow: auto;
+    background: #f5f5f5;
+    padding: 16px;
+  }
 
-      .layout {
-        display: grid;
-        grid-template-columns: 1.9fr 1.5fr;
-        gap: 16px;
-        align-items: flex-start;
-      }
+  /* ── Table ── */
+  .tbl-wrap {
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 6px rgba(0,0,0,.08);
+    width: max-content;
+    min-width: 100%;
+  }
 
-      .card {
-        background-color: var(--bg-card);
-        border-radius: 14px;
-        border: 1px solid var(--border-subtle);
-        padding: 14px 16px 16px;
-        box-shadow: 0 10px 30px rgba(115, 72, 39, 0.04);
-      }
+  /* ── STEP title bar ── */
+  .step-bar {
+    background: var(--gold);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 18px;
+    letter-spacing: .3px;
+  }
+  .step-bar span { font-weight: 400; font-size: 11px; opacity: .85; margin-left: 10px; }
 
-      .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        margin-bottom: 10px;
-      }
-
-      .card-title {
-        font-size: 15px;
-        font-weight: 600;
-      }
-
-      .card-subtitle {
-        font-size: 12px;
-        color: var(--text-muted);
-      }
-
-      .filters {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 10px;
-      }
-
-      .field-group {
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
-        min-width: 150px;
-      }
-
-      .field-label {
-        font-size: 11px;
-        font-weight: 500;
-        color: var(--text-muted);
-      }
-
-      select,
-      input[type="text"] {
-        border-radius: 999px;
-        border: 1px solid var(--border-subtle);
-        padding: 6px 10px;
-        font-size: 12px;
-        background-color: #fffcf7;
-        color: var(--text-main);
-        outline: none;
-      }
-
-      select:focus,
-      input[type="text"]:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 1px rgba(194, 107, 65, 0.2);
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-      }
-
-      thead {
-        background: #f7efe6;
-      }
-
-      th,
-      td {
-        padding: 6px 7px;
-        text-align: left;
-        border-bottom: 1px solid #efe0d4;
-        vertical-align: top;
-      }
-
-      th {
-        font-weight: 500;
-        font-size: 11px;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-      }
-
-      tbody tr {
-        cursor: pointer;
-        transition: background 0.12s ease;
-      }
-
-      tbody tr:hover {
-        background-color: #f8f1ea;
-      }
-
-      tbody tr.selected-row {
-        background-color: #f1e3d5;
-      }
-
-      .field-name {
-        font-weight: 500;
-      }
-
-      .field-name-sub {
-        font-size: 11px;
-        color: var(--text-muted);
-      }
-
-      .badge-status {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 7px;
-        border-radius: 999px;
-        font-size: 10px;
-        font-weight: 500;
-        border: 1px solid transparent;
-        white-space: nowrap;
-      }
-
-      .badge-required {
-        background: #e6f6ef;
-        color: var(--badge-green);
-        border-color: #b7e4cc;
-      }
-
-      .badge-optional {
-        background: #fffaf0;
-        color: var(--badge-amber);
-        border-color: #f6ad55;
-      }
-
-      .badge-hidden {
-        background: #edf2f7;
-        color: var(--badge-gray);
-        border-color: #cbd5e0;
-      }
-
-      .chip-row {
-        display: inline-flex;
-        flex-wrap: wrap;
-        gap: 4px;
-        font-size: 11px;
-        color: var(--text-muted);
-      }
-
-      .chip {
-        border-radius: 999px;
-        padding: 2px 8px;
-        background: #f7efe4;
-        border: 1px solid #ddcdb9;
-        font-size: 10px;
-      }
-
-      .detail-section-title {
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--text-muted);
-        margin-bottom: 6px;
-      }
-
-      .detail-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        gap: 8px;
-        margin-bottom: 8px;
-      }
-
-      .detail-label {
-        font-size: 11px;
-        color: var(--text-muted);
-        margin-bottom: 2px;
-      }
-
-      .detail-value {
-        font-size: 12px;
-      }
-
-      .preview-box {
-        border-radius: 10px;
-        border: 1px dashed #deccba;
-        padding: 8px 9px;
-        background: #fffaf1;
-        font-size: 12px;
-        color: var(--text-main);
-        white-space: pre-line;
-      }
-
-      .type-tabs {
-        display: inline-flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-bottom: 8px;
-      }
-
-      .type-tab {
-        border-radius: 999px;
-        border: 1px solid var(--border-subtle);
-        padding: 4px 9px;
-        font-size: 11px;
-        background: #fffaf5;
-        color: var(--text-muted);
-        cursor: pointer;
-      }
-
-      .type-tab.active {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: #fffaf3;
-      }
-
-      .status-toggle {
-        display: inline-flex;
-        border-radius: 999px;
-        border: 1px solid var(--border-subtle);
-        overflow: hidden;
-        background: #fffaf5;
-      }
-
-      .status-toggle button {
-        border: none;
-        background: transparent;
-        padding: 5px 12px;
-        font-size: 11px;
-        cursor: pointer;
-        color: var(--text-muted);
-      }
-
-      .status-toggle button.active {
-        background: var(--accent);
-        color: #fffaf3;
-      }
-
-      .status-toggle button + button {
-        border-left: 1px solid var(--border-subtle);
-      }
-
-      .actions-row {
-        display: flex;
-        justify-content: flex-end;
-        gap: 6px;
-        margin-top: 8px;
-      }
-
-      .btn {
-        border-radius: 999px;
-        border: 1px solid var(--border-subtle);
-        padding: 6px 11px;
-        font-size: 11px;
-        background-color: #fff;
-        cursor: pointer;
-        display: inline-flex;
-        gap: 4px;
-        align-items: center;
-        color: var(--text-main);
-      }
-
-      .btn-ghost {
-        background: transparent;
-      }
-
-      .btn-primary {
-        background: linear-gradient(135deg, #c26b41, #a55232);
-        border-color: #a55232;
-        color: #fffaf3;
-      }
-
-      .empty-state {
-        font-size: 12px;
-        color: var(--text-muted);
-        padding: 10px 2px;
-      }
-
-      @media (max-width: 960px) {
-        .layout {
-          grid-template-columns: minmax(0, 1fr);
-        }
-      }
-    </style>
-    <style id="uxTableOverflowFix">
-/* Table overflow handling: keep text intact, only enable horizontal scroll on narrow viewport */
-@media (max-width: 1199px) {
+  /* ── Table element ── */
   table {
+    border-collapse: collapse;
+    width: max-content;
+    min-width: 100%;
+  }
+
+  /* ── Sticky Column Headers ── */
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #2c2416;
+    color: #fff;
+    font-weight: 600;
+    font-size: 11px;
+    padding: 9px 10px;
+    border: 1px solid #1a1208;
+    text-align: left;
+    vertical-align: bottom;
+    white-space: normal;
+    line-height: 1.3;
+  }
+  thead th.center { text-align: center; }
+
+  /* column widths */
+  .cw-no   { width: 52px;  min-width: 52px; }
+  .cw-en   { width: 204px; min-width: 204px; }
+  .cw-jp   { width: 188px; min-width: 188px; }
+  .cw-attr { width: 90px;  min-width: 90px; }
+  .cw-fmt  { width: 132px; min-width: 132px; }
+  .cw-oen  { width: 264px; min-width: 264px; }
+  .cw-ojp  { width: 264px; min-width: 264px; }
+  .cw-p    { width: 76px;  min-width: 76px; }
+
+  /* ── Section rows ── */
+  tr.sec td {
+    background: #FEF3E2;
+    color: #78370A;
+    font-weight: 700;
+    font-size: 11.5px;
+    padding: 7px 12px 7px 15px;
+    border-top: 2px solid #E9C87A;
+    border-bottom: 1px solid #F2D89A;
+    border-left: 4px solid var(--gold);
+  }
+
+  /* ── Step 2 title inside tbody ── */
+  tr.step2-row td {
+    background: var(--gold);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 18px;
+    border-top: 16px solid #f5f5f5; /* visual gap */
+  }
+
+  /* ── Data rows ── */
+  tr.dr td {
+    padding: 5px 10px;
+    border: 1px solid #ebebeb;
+    vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 0;
+  }
+  tr.dr:nth-child(even) td { background: #FAFAF8; }
+  tr.dr:hover td { background: #FFF8ED !important; }
+
+  td.td-no {
+    text-align: center;
+    color: #666;
+    font-size: 11px;
+    white-space: normal;
+  }
+  td.td-en, td.td-jp  { font-size: 12px; }
+  td.td-fmt, td.td-oen, td.td-ojp { font-size: 11.5px; color: #444; }
+
+  /* 編集不可 badge */
+  .no-edit {
     display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    background: #FFDDD6;
+    color: #8B1500;
+    font-size: 8.5px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 3px;
+    margin-bottom: 2px;
+    line-height: 1.4;
+    white-space: nowrap;
   }
-}
-</style>
-  <style id="uxResponsiveSplitFix">
-/* Force stack 1 column: list full-width on top, detail below */
-.layout {
-  grid-template-columns: minmax(0, 1fr) !important;
-}
-/* Compact tightening for very narrow viewports */
-@media (max-width: 900px) {
-  .page {
-    padding: 16px !important;
+
+  /* ── Attribute cell ── */
+  td.td-attr {
+    text-align: center;
+    cursor: pointer;
+    white-space: nowrap;
   }
-}
-</style>
-  <style id="uxBaselinePolish">
-/* Baseline UI polish — applies only where file CSS doesn't override */
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
+  td.td-attr:hover { background: #fffbf0 !important; }
 
-/* Pointer cursor on interactive */
-button, .btn, [role="button"], select,
-input[type="checkbox"], input[type="radio"], input[type="submit"],
-input[type="button"], a[href], label[for] {
-  cursor: pointer;
-}
+  .badge {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    pointer-events: none;
+    user-select: none;
+    letter-spacing: .1px;
+  }
+  .badge-R { background: #FEF3C7; color: #92400E; }
+  .badge-O { background: #D1FAE5; color: #065F46; }
 
-/* Disabled state */
-button:disabled, .btn:disabled, input:disabled, select:disabled, textarea:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
+  /* ── Property type cells ── */
+  td.td-p {
+    text-align: center;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 700;
+    user-select: none;
+    transition: background .1s;
+    white-space: nowrap;
+  }
+  td.td-p:hover    { background: #f0ede6 !important; }
+  td.td-p:active   { transform: scale(.88); }
 
-/* Focus-visible outline (a11y) */
-button:focus-visible, .btn:focus-visible,
-a:focus-visible, [role="button"]:focus-visible,
-input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 2px solid #c4a25f;
-  outline-offset: 2px;
-}
+  td.td-p.is-c { color: #16a34a; }
+  td.td-p.is-d { color: #cecece; font-weight: 400; font-size: 14px; }
 
-/* Inherit font family for form controls (fixes browser-default) */
-input, select, textarea, button {
-  font-family: inherit;
-}
+  /* tooltip hint via title — browsers handle natively */
 
-/* Responsive media */
-img, svg, video {
-  max-width: 100%;
-  height: auto;
-}
+  /* ── Header actions / Edit mode ── */
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .cfg-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .btn {
+    border: none; border-radius: 8px; padding: 8px 18px;
+    font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--font);
+    transition: filter .15s;
+  }
+  .btn:hover { filter: brightness(.93); }
+  .btn-gold  { background: var(--gold); color: #fff; }
+  .btn-gray  { background: #5c5c5c; color: #fff; }
+  .btn-ghost { background: #fff; color: var(--text); border: 1px solid var(--border); }
+  .edit-pill {
+    font-size: 11px; font-weight: 700; color: var(--gold);
+    background: #f6efe0; border: 1px solid #e5d6b4;
+    padding: 4px 10px; border-radius: 20px;
+  }
+  .hidden { display: none !important; }
 
-/* Subtle hover for buttons (only if no transition already set, gentle filter) */
-button:hover:not(:disabled), .btn:hover:not(:disabled) {
-  filter: brightness(0.96);
-  transition: filter 0.15s ease;
-}
+  /* Cells are only interactive while editing */
+  body:not(.editing) td.td-attr,
+  body:not(.editing) td.td-p { cursor: default; }
+  body:not(.editing) td.td-attr:hover,
+  body:not(.editing) td.td-p:hover { background: inherit !important; }
+  body.editing td.td-attr,
+  body.editing td.td-p { cursor: pointer; }
+  body.editing .tbl-wrap { box-shadow: 0 0 0 2px rgba(139,115,64,.35), 0 1px 6px rgba(0,0,0,.08); }
 
-/* Smooth scrollbar on Webkit */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: #f5ece0;
-}
-::-webkit-scrollbar-thumb {
-  background: #d9c8b4;
-  border-radius: 6px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #c4a25f;
-}
-
-/* Selection highlight on-brand */
-::selection {
-  background: #c4a25f;
-  color: #fff;
-}
-
-/* HR baseline */
-hr {
-  border: none;
-  border-top: 1px solid #eadccd;
-  margin: 12px 0;
-}
-
-/* Anchor baseline color matches brand (no underline by default to match flat UI) */
-a {
-  color: #8a5a3b;
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
+  /* Toast */
+  #cfgToast {
+    position: fixed; right: 18px; bottom: 18px; z-index: 9999;
+    background: #fff; border: 1px solid #e0e0e0; border-left: 4px solid var(--gold);
+    border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--text);
+    box-shadow: 0 4px 16px rgba(0,0,0,.14);
+  }
 </style>
 </head>
-  <body>
-    <div>
-      <h1>Appraisal Form Field Configuration</h1>
+<body>
+
+<!-- ── Page Header ── -->
+<div class="pg-header">
+  <div>
+    <h1>Property Information Form</h1>
+    <p>YUUSHI — Field Configuration Sheet</p>
+  </div>
+  <div class="header-right">
+    <div class="legend">
+      <div class="legend-item">
+        <span class="dot dot-req"></span>Required &nbsp;↔&nbsp; <span class="dot dot-opt"></span>Optional
+        <span style="color:#aaa;font-size:10px">(click Attribute cell)</span>
+      </div>
+      <div class="legend-item">
+        <span class="dot dot-circle"></span>○ &nbsp;↔&nbsp; <span class="dot dot-dash"></span>—
+        <span style="color:#aaa;font-size:10px">(click ○ / — cell)</span>
+      </div>
     </div>
-
-    <div class="layout">
-      <section class="card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">Field catalogue</div>
-          </div>
-        </div>
-        <div class="filters">
-          <div class="field-group">
-            <label class="field-label" for="stepFilter">Step</label>
-            <select id="stepFilter">
-              <option value="">All steps</option>
-              <option value="property">Step 1 · Property Information</option>
-              <option value="personal">Step 2 · Personal Information</option>
-            </select>
-          </div>
-          <div class="field-group">
-            <label class="field-label" for="typeFilter">Property type</label>
-            <select id="typeFilter">
-              <option value="apartment">Apartment</option>
-              <option value="house">House</option>
-              <option value="land">Land</option>
-              <option value="other_unit">Other Unit</option>
-              <option value="whole_bldg">Whole Bldg</option>
-            </select>
-          </div>
-          <div class="field-group" style="flex: 1 1 220px">
-            <label class="field-label" for="searchField">Search field</label>
-            <input
-              id="searchField"
-              type="text"
-              placeholder="Search by English/Japanese name or group"
-            />
-          </div>
-        </div>
-        <div style="overflow: auto; max-height: 320px">
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 36%">Field name</th>
-                <th style="width: 20%">Step & group</th>
-                <th style="width: 20%">Applies to</th>
-                <th style="width: 24%">Status (current type)</th>
-              </tr>
-            </thead>
-            <tbody id="fieldTbody"></tbody>
-          </table>
-          <div id="fieldEmpty" class="empty-state" style="display: none">
-            No fields match current filters.
-          </div>
-        </div>
-      </section>
-
-      <section class="card">
-        <div id="detailEmpty">
-          <div class="card-title">Field configuration</div>
-        </div>
-        <div id="detailPanel" style="display: none">
-          <div class="detail-section-title">Selected field</div>
-          <div class="detail-grid">
-            <div>
-              <div class="detail-label">Field name (EN / JP)</div>
-              <div class="detail-value" id="dName"></div>
-            </div>
-            <div>
-              <div class="detail-label">Step & group</div>
-              <div class="detail-value" id="dStepGroup"></div>
-            </div>
-            <div>
-              <div class="detail-label">Input format</div>
-              <div class="detail-value" id="dFormat"></div>
-            </div>
-            <div>
-              <div class="detail-label">Remarks</div>
-              <div class="detail-value" id="dRemarks"></div>
-            </div>
-            <div>
-              <div class="detail-label">Applies to property types</div>
-              <div class="detail-value" id="dApplies"></div>
-            </div>
-          </div>
-
-          <div class="detail-section-title">Configure by property type</div>
-          <div class="type-tabs" id="typeTabs"></div>
-
-          <div style="margin-bottom: 6px">
-            <div class="detail-label">Status for selected property type</div>
-            <div class="status-toggle" id="statusToggle">
-              <button type="button" data-status="hidden">Hidden</button>
-              <button type="button" data-status="optional">Optional</button>
-              <button type="button" data-status="required">Required</button>
-            </div>
-          </div>
-
-          <div class="preview-box" id="previewText"></div>
-
-          <div class="actions-row">
-            <button class="btn btn-ghost" id="btnResetField" type="button">
-              Reset to recommended
-            </button>
-            <button class="btn btn-primary" id="btnSave" type="button">
-              Save configuration
-            </button>
-          </div>
-        </div>
-      </section>
+    <div class="cfg-actions">
+      <span class="edit-pill hidden" id="editPill">Editing…</span>
+      <button class="btn btn-gold" id="btnEdit" type="button">Edit</button>
+      <button class="btn btn-ghost hidden" id="btnCancel" type="button">Cancel</button>
+      <button class="btn btn-gold hidden" id="btnSave" type="button">Save</button>
     </div>
+  </div>
+</div>
 
-    <script>
-      const propertyTypes = [
-        { id: "apartment", label: "Apartment" },
-        { id: "house", label: "House" },
-        { id: "land", label: "Land" },
-        { id: "other_unit", label: "Other Unit" },
-        { id: "whole_bldg", label: "Whole Bldg" },
-      ];
+<!-- ── Table ── -->
+<div class="tbl-outer">
+<div class="tbl-wrap">
 
-      // Subset of the long specification for demo configuration
-      const fields = [
-        {
-          id: "postal_code",
-          step: "property",
-          group: "Common fields",
-          en: "Postal Code",
-          jp: "郵便番号",
-          inputFormat: "Address Input (API)",
-          remarks:
-            "Postal code entry → API auto-populates address (common across all property types).",
-          appliesTo: propertyTypes.map((t) => t.id),
-          baseDefault: "required",
-        },
-        {
-          id: "location_manual",
-          step: "property",
-          group: "Common fields",
-          en: "Location (Manual)",
-          jp: "所在地（手動入力）",
-          inputFormat: "Address Input",
-          remarks:
-            "Manual address input when postal code is unknown or outside coverage.",
-          appliesTo: propertyTypes.map((t) => t.id),
-          baseDefault: "optional",
-        },
-        {
-          id: "property_type",
-          step: "property",
-          group: "Common fields",
-          en: "Property Type",
-          jp: "物件タイプ",
-          inputFormat: "Single Choice",
-          remarks:
-            "Apartment / House / Land / Other Unit / Whole Bldg. Drives conditional sub-fields.",
-          appliesTo: propertyTypes.map((t) => t.id),
-          baseDefault: "required",
-        },
-        {
-          id: "exclusive_area",
-          step: "property",
-          group: "Building / Unit info",
-          en: "Exclusive Area",
-          jp: "専有面積",
-          inputFormat: "Numeric (m²)",
-          remarks: "Room size in square metres.",
-          appliesTo: ["apartment", "other_unit", "whole_bldg"],
-          baseDefault: "required",
-        },
-        {
-          id: "land_area",
-          step: "property",
-          group: "Land info",
-          en: "Land Area",
-          jp: "土地面積",
-          inputFormat: "Numeric (m²)",
-          remarks: "Land area in square metres.",
-          appliesTo: ["house", "land", "whole_bldg"],
-          baseDefault: "required",
-        },
-        {
-          id: "building_area",
-          step: "property",
-          group: "Building / Unit info",
-          en: "Building Area",
-          jp: "建物面積",
-          inputFormat: "Numeric (m²)",
-          remarks: "Gross floor area for house or whole building.",
-          appliesTo: ["house", "whole_bldg"],
-          baseDefault: "required",
-        },
-        {
-          id: "bedrooms",
-          step: "property",
-          group: "Building / Unit info",
-          en: "Bedrooms",
-          jp: "間取り（部屋数）",
-          inputFormat: "Single Choice",
-          remarks: "1 / 2 / 3 / 4+ rooms.",
-          appliesTo: ["apartment", "house", "whole_bldg"],
-          baseDefault: "required",
-        },
-        {
-          id: "built_date",
-          step: "property",
-          group: "Building / Unit info",
-          en: "Built Date",
-          jp: "築年月",
-          inputFormat: "Year/Month",
-          remarks: 'Select "Approximate" if unknown.',
-          appliesTo: propertyTypes.map((t) => t.id),
-          baseDefault: "required",
-        },
-        {
-          id: "occupancy_status",
-          step: "property",
-          group: "Occupancy & revenue",
-          en: "Occupancy Status",
-          jp: "入居状況",
-          inputFormat: "Single Choice",
-          remarks:
-            "Tenanted / Vacant / Owner Occupied / Holiday Rental / Operating Hotel.",
-          appliesTo: propertyTypes.map((t) => t.id),
-          baseDefault: "required",
-        },
-        {
-          id: "gross_return",
-          step: "property",
-          group: "Occupancy & revenue",
-          en: "Gross Return",
-          jp: "表面利回り",
-          inputFormat: "Numeric (%)",
-          remarks:
-            "Only relevant when tenanted or for full-occupancy projections.",
-          appliesTo: propertyTypes.map((t) => t.id),
-          baseDefault: "optional",
-        },
-        {
-          id: "renovation_history",
-          step: "property",
-          group: "Competitor-sourced fields",
-          en: "Renovation History",
-          jp: "リフォーム履歴",
-          inputFormat: "Free Text",
-          remarks:
-            "Whether renovation performed, timing and key details (no personal data).",
-          appliesTo: propertyTypes.map((t) => t.id),
-          baseDefault: "optional",
-        },
-        {
-          id: "parking",
-          step: "property",
-          group: "Competitor-sourced fields",
-          en: "Parking",
-          jp: "駐車場",
-          inputFormat: "Single Choice",
-          remarks: "Available / None / Nearby paid parking.",
-          appliesTo: propertyTypes.map((t) => t.id),
-          baseDefault: "optional",
-        },
-        {
-          id: "name",
-          step: "personal",
-          group: "Personal info",
-          en: "Name",
-          jp: "氏名",
-          inputFormat: "Text",
-          remarks: "Last name / First name.",
-          appliesTo: propertyTypes.map((t) => t.id),
-          baseDefault: "required",
-        },
-        {
-          id: "email",
-          step: "personal",
-          group: "Personal info",
-          en: "Email Address",
-          jp: "メールアドレス",
-          inputFormat: "Alphanumeric",
-          remarks: "Used for delivering valuation results.",
-          appliesTo: propertyTypes.map((t) => t.id),
-          baseDefault: "required",
-        },
-        {
-          id: "phone",
-          step: "personal",
-          group: "Personal info",
-          en: "Phone Number",
-          jp: "電話番号",
-          inputFormat: "Numeric",
-          remarks: "Used for identity verification / interview scheduling.",
-          appliesTo: propertyTypes.map((t) => t.id),
-          baseDefault: "required",
-        },
-        {
-          id: "relationship_to_property",
-          step: "personal",
-          group: "Personal info",
-          en: "Relationship to Property",
-          jp: "物件との関係",
-          inputFormat: "Single Choice",
-          remarks:
-            "Owner / Family / Co-owner / Heir / Corporate / Agent (helps compliance).",
-          appliesTo: propertyTypes.map((t) => t.id),
-          baseDefault: "required",
-        },
-        {
-          id: "preferred_language",
-          step: "personal",
-          group: "Personal info",
-          en: "Preferred Language",
-          jp: "希望言語",
-          inputFormat: "Multi Select",
-          remarks:
-            "EN / CN / ES / AR / PT / FR / KO / JA / RU. Drives communication language only.",
-          appliesTo: propertyTypes.map((t) => t.id),
-          baseDefault: "required",
-        },
-        {
-          id: "special_requests",
-          step: "personal",
-          group: "Personal info",
-          en: "Special Requests",
-          jp: "特記事項",
-          inputFormat: "Free Text",
-          remarks:
-            "Time zone, contact window, email preference etc. No sensitive free text is shown to admins here.",
-          appliesTo: propertyTypes.map((t) => t.id),
-          baseDefault: "optional",
-        },
-      ];
+  <div class="step-bar">STEP 1. Property Information <span>Seller Considerations and Requests</span></div>
 
-      // config[propertyType][fieldId] = "hidden" | "optional" | "required"
-      const config = {};
+  <table>
+    <colgroup>
+      <col class="cw-no">
+      <col class="cw-en">
+      <col class="cw-jp">
+      <col class="cw-attr">
+      <col class="cw-fmt">
+      <col class="cw-oen">
+      <col class="cw-ojp">
+      <col class="cw-p"><col class="cw-p"><col class="cw-p"><col class="cw-p"><col class="cw-p">
+    </colgroup>
+    <thead>
+      <tr>
+        <th class="center cw-no">No.</th>
+        <th class="cw-en">Field Name (EN)</th>
+        <th class="cw-jp">項目名 (JP)</th>
+        <th class="center cw-attr">Attribute<br>属性</th>
+        <th class="cw-fmt">Input Format<br>入力形式</th>
+        <th class="cw-oen">Options / Remarks (EN)</th>
+        <th class="cw-ojp">選択肢・備考 (JP)</th>
+        <th class="center cw-p">1. Apt<br>アパート<br>マンション</th>
+        <th class="center cw-p">2. House<br>一戸建て</th>
+        <th class="center cw-p">3. Land<br>土地</th>
+        <th class="center cw-p">4. Other<br>Unit<br>収益区分</th>
+        <th class="center cw-p">5. Whole<br>Bldg<br>収益一棟</th>
+      </tr>
+    </thead>
+    <tbody id="body1"></tbody>
+  </table>
 
-      let currentType = "apartment";
-      let selectedFieldId = null;
+</div><!-- /.tbl-wrap -->
+</div><!-- /.tbl-outer -->
 
-      function statusFor(fieldId, typeId) {
-        const field = fields.find((f) => f.id === fieldId);
-        if (!field) return "hidden";
-        const perType = config[typeId] && config[typeId][fieldId];
-        if (perType) return perType;
-        if (field.appliesTo.includes(typeId)) return field.baseDefault;
-        return "hidden";
-      }
+<script>
+/* ═══════════════════════════════════════
+   DATA
+   Format per row: [note, no, en, jp, attr, fmt, optEN, optJP, apt, house, land, unit, bldg]
+   attr: 'R'=Required 'O'=Optional
+   prop: '○' or '—'
+═══════════════════════════════════════ */
+const R = (note,no,en,jp,attr,fmt,oen,ojp,a,h,l,u,b)=>
+  [note,no,en,jp,attr,fmt,oen,ojp,a,h,l,u,b];
 
-      function statusLabelClass(status) {
-        if (status === "required") return "badge-status badge-required";
-        if (status === "optional") return "badge-status badge-optional";
-        return "badge-status badge-hidden";
-      }
+const DATA = [
+  // ── COMMON FIELDS ──────────────────────────────────────────
+  {sec:'COMMON FIELDS （共通項目）'},
+  R('','1','Postal Code','郵便番号','R','Address Input (API)',
+    'Postal code entry → API auto-populates address','郵便番号→API連動で住所自動表示','○','○','○','○','○'),
+  R('','2','Location (Manual)','所在地（手動入力）','O','Address Input',
+    'Manual address input when postal code is unknown','郵便番号不明時の手動入力','○','○','○','○','○'),
+  R('編集不可','3','Property Type','物件タイプ','R','Single Choice',
+    'Apartment / House / Land / Other Unit / Whole Bldg','Apartment / House / Land / Other Unit / Whole Bldg','○','○','○','○','○'),
+  R('','4-1','Sub-Type: Apartment','サブタイプ：アパート','R','Single Choice',
+    'Apartment / Tower Mansion / Resort Apartment・Condo Hotel Unit','Apartment / Tower Mansion / Resort Apartment・Condo Hotel Unit','○','—','—','—','—'),
+  R('','4-2','Sub-Type: House','サブタイプ：ハウス','R','Single Choice',
+    'House / Resort House・Villa・Ski Chalet','House / Resort House・Villa・Ski Chalet','—','○','—','—','—'),
+  R('','4-3','Sub-Type: Other Unit','サブタイプ：アザーユニット','R','Single Choice',
+    'Retail Unit / Office Unit / Factory・Warehouse Unit','Retail Unit / Office Unit / Factory・Warehouse Unit','—','—','—','○','—'),
+  R('','4-4','Sub-Type: Whole Building','サブタイプ：一棟収益物件','R','Single Choice',
+    'Residential Multi-Family / Retail Bldg / Office Bldg / Factory・Warehouse Bldg / Mixed-Use Bldg / Hotel・Ryokan',
+    'Residential Multi-Family / Retail Bldg / Office Bldg / Factory・Warehouse Bldg / Mixed-Use Bldg / Hotel・Ryokan','—','—','—','—','○'),
+  R('','5','Remaining Loan Balance','残ローン','O','Free Text','','','○','○','○','○','○'),
+  R('','6','Desired Selling Price','希望売却価格','O','Numeric','','','○','○','○','○','○'),
+  R('','7','Selling Timeline','売却希望時期','O','Single Choice',
+    'Within 3 months / Within 6 months / Within 1 year / Undecided','3ヶ月以内 / 6ヶ月以内 / 1年以内 / 未定','○','○','○','○','○'),
+  R('','8','Reason for Valuation','査定理由','O','Single Choice',
+    'Relocation / Inheritance / Asset Liquidation / Family Changes / Job Transfer / Other',
+    '住替え / 相続 / 資産整理 / 家族構成の変化 / 転勤 / その他','○','○','○','○','○'),
 
-      function statusLabelText(status) {
-        if (status === "required") return "Required";
-        if (status === "optional") return "Optional";
-        return "Hidden";
-      }
+  // ── BUILDING / UNIT INFO ───────────────────────────────────
+  {sec:'BUILDING / UNIT INFO （建物・部屋情報）'},
+  R('','9','Building/Apartment Name','建物名・マンション名','R','Free Text','','','○','—','—','○','○'),
+  R('','10','Exclusive Area','専有面積','R','Numeric (m²)','Room size','部屋の広さ','○','—','—','○','—'),
+  R('','11','Land Area','土地面積','R','Numeric (m²)','','','—','○','○','—','○'),
+  R('','12','Building Area','建物面積','R','Numeric (m²)','Gross floor area','延床面積','—','○','—','○','○'),
+  R('','13','Balcony Area','バルコニー面積','O','Numeric (m²)','','','○','—','—','—','—'),
+  R('','14','Other Outdoor Space','その他屋外スペース','O','Tick Box',
+    'Terrace / Roof Terrace / Private Garden','テラス / ルーフテラス / 専用庭','○','○','—','—','—'),
+  R('','15','Outdoor Space Area','屋外スペース面積','O','Numeric (m²)',
+    'Displayed when above is checked','上記チェック時に表示','○','○','—','—','—'),
+  R('','16','Construction Type','構造','R','Single Choice',
+    'Wooden / Steel / RC / SRC','木造 / 鉄骨 / RC / SRC','○','○','—','○','○'),
+  R('','17','Bedrooms','間取り（部屋数）','R','Single Choice',
+    '1 / 2 / 3 / 4 or more','1 / 2 / 3 / 4部屋以上','○','○','—','—','—'),
+  R('','18','Layout','間取りタイプ','R','Single Choice',
+    '1K / 1LDK / 2LDK / 3LDK / 4LDK or more','1K / 1LDK / 2LDK / 3LDK / 4LDK以上','○','○','—','—','—'),
+  R('','19','Built Date','築年月','R','Year/Month',
+    'Select "Approximate" if unknown','不明の場合「概算」を選択','○','○','—','○','○'),
+  R('','20','Floor / Total Floors','階数/総階数','R','Numeric',
+    'e.g., 5th Floor / 12 Floors total','例：5階/12階建て','○','—','—','○','—'),
+  R('','21','Total Floors','総階数','R','Numeric',
+    'For Whole Building properties and House','一棟物件用','—','—','—','—','○'),
+  R('','22','Total Units','総戸数','R','Numeric',
+    'For Whole Building properties','一棟物件用','—','—','—','—','○'),
+  R('','23','Ceiling Height / Entrance','天井高/間口','O','Free Text',
+    'For Warehouse / Factory use','倉庫・工場用','—','—','—','○','—'),
 
-      function appliesToText(field) {
-        if (field.appliesTo.length === propertyTypes.length) return "All";
-        const labels = propertyTypes
-          .filter((t) => field.appliesTo.includes(t.id))
-          .map((t) => t.label);
-        return labels.join(", ");
-      }
+  // ── LAND INFO ─────────────────────────────────────────────
+  {sec:'LAND INFO （土地情報）'},
+  R('','24','Land Address (Banchi/Chiban)','地番','R','Text',
+    'Banchi / Chiban','番地/地番','—','—','○','—','—'),
+  R('','25','Land Use / Category','地目','R','Tick Box',
+    'Residential / Commercial / Field / Agricultural / Forest / Misc. Land / Other',
+    '宅地 / 商業地 / 田 / 畑 / 山林 / 雑種地 / その他','—','—','○','—','—'),
+  R('','26','Land Right','土地権利','R','Single Choice',
+    'Freehold / Leasehold','所有権 / 借地権','—','—','○','○','—'),
+  R('','27','Current Situation','現況','R','Single Choice',
+    'Vacant land / With Old Building / Car Park / Farmland / Forest / Mountain / Wilderness / Hybrid Land',
+    '更地 / 古家付き / 駐車場 / 農地 / 山林 / 原野 / 複合','—','—','○','○','—'),
+  R('','28','Zoning','用途地域','O','Tick Box',
+    '14 zoning categories (1st Class Low-Rise Residential through Exclusive Industrial)',
+    '第一種低層住居専用〜工業専用地域（14区分）','—','—','○','○','—'),
+  R('','29','City Planning','都市計画','R','Tick Box',
+    'Urbanization Zone / Control Zone / Non-delineated Area / Outside City Planning Area / Quasi-Urban Planning Area',
+    '市街化区域 / 市街化調整区域 / 非線引き / 都市計画区域外 / 準都市計画区域','—','—','○','○','—'),
+  R('','30','Floor Area Ratio','容積率','R','Numeric (%)','','','—','—','○','○','—'),
+  R('','31','Building Coverage Ratio','建ぺい率','R','Numeric (%)','','','—','—','○','○','—'),
 
-      const els = {
-        stepFilter: document.getElementById("stepFilter"),
-        typeFilter: document.getElementById("typeFilter"),
-        searchField: document.getElementById("searchField"),
-        fieldTbody: document.getElementById("fieldTbody"),
-        fieldEmpty: document.getElementById("fieldEmpty"),
-        detailEmpty: document.getElementById("detailEmpty"),
-        detailPanel: document.getElementById("detailPanel"),
-        dName: document.getElementById("dName"),
-        dStepGroup: document.getElementById("dStepGroup"),
-        dFormat: document.getElementById("dFormat"),
-        dRemarks: document.getElementById("dRemarks"),
-        dApplies: document.getElementById("dApplies"),
-        typeTabs: document.getElementById("typeTabs"),
-        statusToggle: document.getElementById("statusToggle"),
-        previewText: document.getElementById("previewText"),
-        btnResetField: document.getElementById("btnResetField"),
-        btnSave: document.getElementById("btnSave"),
-      };
+  // ── OCCUPANCY & REVENUE ───────────────────────────────────
+  {sec:'OCCUPANCY & REVENUE （入居・収益情報）'},
+  R('','32','Occupancy Status','入居状況','R','Single Choice',
+    'Tenanted / Vacant / Owner Occupied / Holiday Rental / Operating Hotel',
+    '賃貸中 / 空室 / 自己使用 / ホリデーレンタル / ホテル運営中','○','○','○','—','○'),
+  R('','33','Type of Lease','賃貸借契約の種類','R','Single Choice',
+    'Fixed Lease / Standard Japanese Lease — if tenanted','定期借家 / 普通借家 ※賃貸中の場合','○','○','—','—','—'),
+  R('','34','Monthly Rental Revenue','月額賃料収入','R','Numeric (JPY)',
+    'If Apartment / House and tenanted','賃貸中の場合','○','○','—','—','—'),
+  R('','35','Gross Return','表面利回り','O','Numeric (%)',
+    'If Apartment / House and tenanted','賃貸中の場合','○','○','—','—','—'),
+  R('','36','Estimated Annual Revenue','想定年間収入（満室時）','R','Numeric',
+    'For holiday rental / whole building','ホリデーレンタル / 一棟','○','○','—','—','○'),
+  R('','37','Estimated Gross Return','想定利回り（満室時）','O','Numeric (%)',
+    'For holiday rental / whole building','ホリデーレンタル / 一棟','○','○','—','—','○'),
+  R('','38','Current Annual Income','現在の年間収入','R','Numeric (10k JPY)',
+    'For whole building investment','一棟投資用','—','—','—','—','○'),
+  R('','39','Current Gross Return','現在の表面利回り','O','Numeric (%)',
+    'For whole building investment','一棟投資用','—','—','—','—','○'),
+  R('','40','Est. Annual Income (Full Occupancy)','年間想定収入（満室時）','R','Numeric (10k JPY)',
+    'For whole building investment','一棟投資用','—','—','—','—','○'),
+  R('','41','Estimated Gross Return (Full Occupancy)','想定表面利回り（満室時）','O','Numeric (%)',
+    'For whole building investment','一棟投資用','—','—','—','—','○'),
 
-      function applyFieldFilters() {
-        const stepVal = els.stepFilter.value;
-        const q = els.searchField.value.trim().toLowerCase();
-        return fields.filter((f) => {
-          if (stepVal && f.step !== stepVal) return false;
-          if (!q) return true;
-          const text = (
-            f.en +
-            " " +
-            f.jp +
-            " " +
-            f.group +
-            " " +
-            f.step
-          ).toLowerCase();
-          return text.includes(q);
-        });
-      }
+  // ── COMPETITOR-SOURCED FIELDS ─────────────────────────────
+  {sec:'COMPETITOR-SOURCED FIELDS （他社参考項目）'},
+  R('','42','Current Living Status','現在の居住状況','O','Single Choice',
+    'Owner Occupied / Tenanted / Vacant','居住中 / 賃貸中 / 空き','○','○','○','○','○'),
+  R('','43','Relationship to Property','物件との関係','O','Single Choice',
+    'Owner / Family / Co-owner / Heir / Corporate / Agent','所有者 / 家族 / 共有者 / 相続人 / 法人 / 代理人','○','○','○','○','○'),
+  R('','44','Renovation History','リフォーム履歴','O','Free Text',
+    'Renovation history: whether performed, timing, and details','リフォーム実施有無・時期・内容','○','○','—','○','○'),
+  R('','45','Parking','駐車場','O','Single Choice',
+    'Available / None / Nearby paid parking','あり / なし / 近隣有料','○','○','○','—','○'),
+  R('','46','Direction/Facing','向き','O','Single Choice',
+    'South / East / West / North / SE / SW / NE / NW','南 / 東 / 西 / 北 / 南東 / 南西 / 北東 / 北西','○','—','—','—','—'),
+  R('','47','Pet Policy','ペット可否','O','Single Choice',
+    'Allowed / Not allowed / Conditional','可 / 不可 / 条件付き','○','—','—','—','—'),
+  R('','48','Property Condition','物件の状態','O','Single Choice',
+    'Good / Needs repair / Needs major renovation','良好 / 要修繕 / 要大規模修繕','○','○','—','○','○'),
+  R('','49','HOA/Management Fee','管理費・修繕積立金','O','Numeric (JPY)',
+    'Monthly amount','月額','○','—','—','—','—'),
+  R('','50','Lot Shape','土地形状','O','Single Choice',
+    'Regular / Irregular / Flag lot / Trapezoid','整形地 / 不整形地 / 旗竿地 / 台形','—','○','○','—','—'),
+  R('','51','Road Frontage','接道状況','O','Free Text',
+    'Front road width and direction','前面道路の幅員・方角','—','○','○','—','—'),
+  R('','52','Topography','地勢','O','Single Choice',
+    'Flat / Slope / Elevated / Low-lying','平坦 / 傾斜 / 高台 / 低地','—','—','○','—','—'),
+  R('','53','Earthquake Resistance','耐震基準','O','Single Choice',
+    'New seismic standard / Old seismic standard / Unknown','新耐震 / 旧耐震 / 不明','○','○','—','○','○'),
+  R('','54','Energy Efficiency','省エネ性能','O','Single Choice',
+    'ZEH / Energy efficiency grade / Unknown','ZEH / 省エネ等級 / 不明','○','○','—','—','—'),
+  R('','55','Amenities/Features','設備・特徴','O','Tick Box',
+    'Auto-lock / Delivery box / Floor heating / Reheating bath / Dishwasher, etc.',
+    'オートロック / 宅配BOX / 床暖房 / 追焚 / 食洗機 等','○','○','—','—','—'),
 
-      function renderTable() {
-        currentType = els.typeFilter.value || currentType;
-        const list = applyFieldFilters();
-        els.fieldTbody.innerHTML = "";
-        if (!list.length) {
-          els.fieldEmpty.style.display = "block";
-          return;
-        }
-        els.fieldEmpty.style.display = "none";
+  // ── STEP 2 separator ──────────────────────────────────────
+  {step2: true},
 
-        list.forEach((f) => {
-          const tr = document.createElement("tr");
-          if (f.id === selectedFieldId) tr.classList.add("selected-row");
+  // ── STEP 2: PERSONAL INFORMATION ─────────────────────────
+  R('','1','Name','氏名','R','Text','Last Name / First Name','姓 / 名','○','○','○','○','○'),
+  R('','2','Email Address','メールアドレス','R','Alphanumeric',
+    'For receiving valuation results','査定結果の受信用','○','○','○','○','○'),
+  R('','3','Phone Number','電話番号','R','Numeric',
+    'For identity verification / interview','本人確認/面談用','○','○','○','○','○'),
+  R('','4','Relationship to Property','物件との関係','R','Single Choice',
+    'Owner / Family-Relative / Co-owner / Inheritance / Corporate / Agent',
+    '所有者 / 家族・親族 / 共有者 / 相続 / 法人 / 代理人','—','—','—','—','—'),
+  R('','5','Country/Region of Residence','居住国・地域','O','Single Choice',
+    'Select country/region','国/地域を選択','○','○','○','○','○'),
+  R('','6','Current Address','現住所','R','Free Text',
+    'May be removed if site messaging only','※サイト内メッセージのみの場合は削除検討','○','○','○','○','○'),
+  R('','7','Contact Method','連絡方法','R','Multi Select',
+    'Telephone / Message','電話 / メッセージ','—','—','—','—','—'),
+  R('','8','Preferred Contact Time','連絡希望時間帯','O','Multi Select',
+    'Morning (9-12) / Afternoon (12-16) / Evening (16-19) / Night (19-21)',
+    '午前(9-12) / 午後(12-16) / 夕方(16-19) / 夜間(19-21)','—','—','—','—','—'),
+  R('','9','Preferred Language','希望言語','R','Multi Select',
+    'EN / CN / ES / AR / PT / FR / KO / JA / RU','EN / CN / ES / AR / PT / FR / KO / JA / RU','—','—','—','—','—'),
+  R('','10','Special Requests','特記事項','O','Free Text',
+    'Time zone, email preference, etc.','タイムゾーン、メール希望等','○','○','○','○','○'),
+  R('','11','Reason for Selling','売却理由','R','Multi Select',
+    'Relocation / Inheritance / Asset Liquidation / Family Changes / Job Transfer / Other',
+    '転居 / 相続 / 資産整理 / 家庭事情 / 転勤 / その他','—','—','—','—','—'),
+  R('','12','Age','年齢','O','Numeric','','','—','—','—','—','—'),
+  R('','13','Preferred Valuation Method','希望査定方法','O','Single Choice',
+    'Desk appraisal / On-site appraisal','簡易査定（机上）/ 訪問査定','—','—','—','—','—'),
+];
 
-          const tdName = document.createElement("td");
-          const nameMain = document.createElement("div");
-          nameMain.className = "field-name";
-          nameMain.textContent = f.en;
-          const nameSub = document.createElement("div");
-          nameSub.className = "field-name-sub";
-          nameSub.textContent = f.jp;
-          tdName.appendChild(nameMain);
-          tdName.appendChild(nameSub);
+/* ═══════════════════════════════════════
+   RENDER
+═══════════════════════════════════════ */
+function pc(val, col) {
+  const isC = val === '○';
+  return `<td class="td-p ${isC?'is-c':'is-d'}" data-col="${col}" title="Click to toggle">${isC?'○':'—'}</td>`;
+}
 
-          const tdStep = document.createElement("td");
-          const stepText =
-            (f.step === "property"
-              ? "Step 1 · Property info"
-              : "Step 2 · Personal info") + ` · ${f.group}`;
-          tdStep.textContent = stepText;
+function attrBadge(a) {
+  return `<span class="badge badge-${a}">${a==='R'?'Required':'Optional'}</span>`;
+}
 
-          const tdApplies = document.createElement("td");
-          const chipRow = document.createElement("div");
-          chipRow.className = "chip-row";
-          const chip = document.createElement("span");
-          chip.className = "chip";
-          chip.textContent = appliesToText(f);
-          chipRow.appendChild(chip);
-          tdApplies.appendChild(chipRow);
+function renderRows(data) {
+  let html = '';
+  data.forEach((item, ri) => {
+    if (item.sec !== undefined) {
+      html += `<tr class="sec"><td colspan="12">${item.sec}</td></tr>`;
+    } else if (item.step2 !== undefined) {
+      html += `<tr class="step2-row">
+        <td colspan="12">STEP 2. Personal Information &nbsp;<span style="font-weight:400;font-size:11px;opacity:.85">Seller Considerations and Requests</span></td>
+      </tr>`;
+    } else {
+      const [note, no, en, jp, attr, fmt, oen, ojp, a, h, l, u, b] = item;
+      html += `<tr class="dr" data-ri="${ri}">
+        <td class="td-no">
+          ${note ? `<span class="no-edit">${note}</span>` : ''}${no}
+        </td>
+        <td class="td-en cw-en" title="${en}">${en}</td>
+        <td class="td-jp cw-jp" title="${jp}">${jp}</td>
+        <td class="td-attr cw-attr">${attrBadge(attr)}</td>
+        <td class="td-fmt cw-fmt" title="${fmt}">${fmt}</td>
+        <td class="td-oen cw-oen" title="${oen}">${oen}</td>
+        <td class="td-ojp cw-ojp" title="${ojp}">${ojp}</td>
+        ${pc(a,8)}${pc(h,9)}${pc(l,10)}${pc(u,11)}${pc(b,12)}
+      </tr>`;
+    }
+  });
+  return html;
+}
 
-          const tdStatus = document.createElement("td");
-          const status = statusFor(f.id, currentType);
-          const badge = document.createElement("span");
-          badge.className = statusLabelClass(status);
-          badge.textContent = statusLabelText(status);
-          tdStatus.appendChild(badge);
+function render() {
+  document.getElementById('body1').innerHTML = renderRows(DATA);
+}
 
-          tr.appendChild(tdName);
-          tr.appendChild(tdStep);
-          tr.appendChild(tdApplies);
-          tr.appendChild(tdStatus);
+/* ═══════════════════════════════════════
+   PERSISTENCE (localStorage)
+═══════════════════════════════════════ */
+const STORE_KEY = 'yuushi.appraisalFieldConfig';
 
-          tr.addEventListener("click", () => selectField(f.id));
-          els.fieldTbody.appendChild(tr);
-        });
-      }
+function applySaved() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) { saved = null; }
+  if (!saved) return;
+  Object.keys(saved).forEach(ri => {
+    const row = DATA[ri];
+    if (!Array.isArray(row)) return;
+    const s = saved[ri];
+    if (s.attr) row[4] = s.attr;
+    if (Array.isArray(s.p)) {
+      row[8] = s.p[0]; row[9] = s.p[1]; row[10] = s.p[2]; row[11] = s.p[3]; row[12] = s.p[4];
+    }
+  });
+}
 
-      function selectField(fieldId) {
-        selectedFieldId = fieldId;
-        const field = fields.find((f) => f.id === fieldId);
-        if (!field) return;
+function persist() {
+  const out = {};
+  DATA.forEach((row, ri) => {
+    if (!Array.isArray(row)) return;
+    out[ri] = { attr: row[4], p: [row[8], row[9], row[10], row[11], row[12]] };
+  });
+  localStorage.setItem(STORE_KEY, JSON.stringify(out));
+}
 
-        els.detailEmpty.style.display = "none";
-        els.detailPanel.style.display = "";
+applySaved();
+render();
 
-        els.dName.textContent = `${field.en} / ${field.jp}`;
-        els.dStepGroup.textContent =
-          (field.step === "property"
-            ? "Step 1 · Property information"
-            : "Step 2 · Personal information") + ` · ${field.group}`;
-        els.dFormat.textContent = field.inputFormat;
-        els.dRemarks.textContent = field.remarks;
+/* ═══════════════════════════════════════
+   EDIT / SAVE / CANCEL
+═══════════════════════════════════════ */
+let editMode = false;
+let snapshot = null;
+const btnEdit = document.getElementById('btnEdit');
+const btnSave = document.getElementById('btnSave');
+const btnCancel = document.getElementById('btnCancel');
+const editPill = document.getElementById('editPill');
 
-        // Applies-to chips
-        els.dApplies.innerHTML = "";
-        const row = document.createElement("div");
-        row.className = "chip-row";
-        propertyTypes.forEach((t) => {
-          if (!field.appliesTo.includes(t.id)) return;
-          const c = document.createElement("span");
-          c.className = "chip";
-          c.textContent = t.label;
-          row.appendChild(c);
-        });
-        els.dApplies.appendChild(row);
+function setEdit(on) {
+  editMode = on;
+  document.body.classList.toggle('editing', on);
+  btnEdit.classList.toggle('hidden', on);
+  btnSave.classList.toggle('hidden', !on);
+  btnCancel.classList.toggle('hidden', !on);
+  editPill.classList.toggle('hidden', !on);
+}
+function snapDATA() {
+  return JSON.stringify(DATA.map(r => (Array.isArray(r) ? r.slice() : r)));
+}
 
-        renderTypeTabs();
-        updateStatusToggle();
-        updatePreview();
-        renderTable();
-      }
+btnEdit.addEventListener('click', () => {
+  snapshot = snapDATA();
+  setEdit(true);
+});
+btnCancel.addEventListener('click', () => {
+  if (snapshot) {
+    const arr = JSON.parse(snapshot);
+    arr.forEach((r, i) => { if (Array.isArray(r)) DATA[i] = r; });
+    render();
+  }
+  setEdit(false);
+  toast('Changes discarded.');
+});
+btnSave.addEventListener('click', () => {
+  persist();
+  setEdit(false);
+  toast('Configuration saved successfully.');
+});
 
-      function renderTypeTabs() {
-        els.typeTabs.innerHTML = "";
-        propertyTypes.forEach((t) => {
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "type-tab" + (t.id === currentType ? " active" : "");
-          btn.textContent = t.label;
-          btn.addEventListener("click", () => {
-            currentType = t.id;
-            els.typeFilter.value = t.id;
-            updateStatusToggle();
-            updatePreview();
-            renderTypeTabs();
-            renderTable();
-          });
-          els.typeTabs.appendChild(btn);
-        });
-      }
+/* ═══════════════════════════════════════
+   INTERACTIONS (only while editing)
+═══════════════════════════════════════ */
 
-      function updateStatusToggle() {
-        const field = fields.find((f) => f.id === selectedFieldId);
-        if (!field) return;
-        const current = statusFor(field.id, currentType);
-        els.statusToggle.querySelectorAll("button").forEach((btn) => {
-          const val = btn.getAttribute("data-status");
-          if (val === current) btn.classList.add("active");
-          else btn.classList.remove("active");
-        });
-      }
+// Toggle ○ ↔ —
+document.addEventListener('click', e => {
+  if (!editMode) return;
+  const td = e.target.closest('.td-p');
+  if (!td) return;
+  const tr = td.closest('tr.dr'); if (!tr) return;
+  const ri = +tr.dataset.ri, col = +td.dataset.col;
+  if (td.classList.contains('is-c')) {
+    td.classList.replace('is-c', 'is-d'); td.textContent = '—'; DATA[ri][col] = '—';
+  } else {
+    td.classList.replace('is-d', 'is-c'); td.textContent = '○'; DATA[ri][col] = '○';
+  }
+});
 
-      function updatePreview() {
-        const field = fields.find((f) => f.id === selectedFieldId);
-        const type = propertyTypes.find((t) => t.id === currentType);
-        if (!field || !type) {
-          els.previewText.textContent = "";
-          return;
-        }
-        const status = statusFor(field.id, currentType);
-        const lines = [];
-        lines.push(
-          `${field.en} / ${field.jp} on ${type.label} appraisal form is currently: ${statusLabelText(status)}.`,
-        );
-        if (!field.appliesTo.includes(currentType)) {
-          lines.push(
-            "This field does not normally apply to this property type. Keeping it hidden is recommended.",
-          );
-        }
-        lines.push(
-          "\nThis configuration only controls form behaviour (show/hide and required flag). It does not expose any end-user response content to admins.",
-        );
-        els.previewText.textContent = lines.join("\n");
-      }
+// Toggle Required ↔ Optional
+document.addEventListener('click', e => {
+  if (!editMode) return;
+  const td = e.target.closest('.td-attr');
+  if (!td) return;
+  const tr = td.closest('tr.dr'); if (!tr) return;
+  const ri = +tr.dataset.ri;
+  const badge = td.querySelector('.badge');
+  if (!badge) return;
+  if (badge.classList.contains('badge-R')) {
+    badge.classList.replace('badge-R', 'badge-O'); badge.textContent = 'Optional'; DATA[ri][4] = 'O';
+  } else {
+    badge.classList.replace('badge-O', 'badge-R'); badge.textContent = 'Required'; DATA[ri][4] = 'R';
+  }
+});
 
-      function setStatusForSelected(status) {
-        const field = fields.find((f) => f.id === selectedFieldId);
-        if (!field) return;
-        if (!config[currentType]) config[currentType] = {};
-        config[currentType][field.id] = status;
-        updateStatusToggle();
-        updatePreview();
-        renderTable();
-      }
-
-      function resetField() {
-        const field = fields.find((f) => f.id === selectedFieldId);
-        if (!field) return;
-        if (config[currentType]) delete config[currentType][field.id];
-        updateStatusToggle();
-        updatePreview();
-        renderTable();
-        alert(
-          "Reverted this field to recommended default for the selected property type.",
-        );
-      }
-
-      function saveConfig() {
-        if (!selectedFieldId) return;
-        alert(
-          "Saved appraisal form field configuration in memory. In production this would update backend form templates and be written to Audit Logs.",
-        );
-      }
-
-      function init() {
-        els.typeFilter.value = currentType;
-        els.stepFilter.addEventListener("change", renderTable);
-        els.typeFilter.addEventListener("change", () => {
-          currentType = els.typeFilter.value || currentType;
-          renderTypeTabs();
-          updateStatusToggle();
-          updatePreview();
-          renderTable();
-        });
-        els.searchField.addEventListener("input", renderTable);
-
-        els.statusToggle.querySelectorAll("button").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const val = btn.getAttribute("data-status");
-            setStatusForSelected(val);
-          });
-        });
-
-        els.btnResetField.addEventListener("click", resetField);
-        els.btnSave.addEventListener("click", saveConfig);
-
-        renderTable();
-      }
-
-      document.addEventListener("DOMContentLoaded", init);
-    </script>
-  </body>
+/* ── Toast ── */
+function toast(msg) {
+  let t = document.getElementById('cfgToast');
+  if (!t) { t = document.createElement('div'); t.id = 'cfgToast'; document.body.appendChild(t); }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._h);
+  t._h = setTimeout(() => { t.style.transition = 'opacity .25s'; t.style.opacity = '0'; }, 2400);
+}
+</script>
+</body>
 </html>

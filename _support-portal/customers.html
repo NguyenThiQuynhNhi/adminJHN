@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leads & Customers — YUUSHI Support Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+      :root {
+        --nav-bg: #1a2744; --nav-bg-hover: #243454; --nav-text: #c8d1e0; --nav-text-muted: #7b8aa3;
+        --accent: #c4714a; --accent-dark: #a55232; --accent-soft: #fef1e6;
+        --bg-body: #f5f0e8; --bg-card: #fff; --bg-alt: #faf6f0;
+        --border-subtle: #eadccd; --border-strong: #d9c8b4;
+        --text-main: #3b2f2a; --text-muted: #7a6a5c; --text-dim: #9b8568;
+        --green: #2f855a; --green-soft: #e6f6ef; --cyan: #0891b2; --cyan-soft: #cffafe;
+        --amber: #b7791f; --amber-soft: #fff6e0; --red: #c53030; --red-soft: #fde8e8;
+        --blue: #2c5282; --blue-soft: #e0f2fe; --purple: #6b46c1; --purple-soft: #f3e8ff;
+        --orange: #c05621; --orange-soft: #feebc8; --dgreen: #15803d; --dgreen-soft: #bbf7d0;
+        --grey: #6b7280; --grey-soft: #f3f4f6;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; }
+      body { font-family: Arial, "Segoe UI", system-ui, sans-serif; background: var(--bg-body); color: var(--text-main); font-size: 13px; line-height: 1.5; display: flex; }
+      a { color: inherit; text-decoration: none; }
+      .sidebar { width: 248px; min-width: 248px; height: 100vh; background: var(--nav-bg); color: var(--nav-text); overflow-y: auto; flex-shrink: 0; }
+      .sb-logo { padding: 18px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 11px; }
+      .sb-logo-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--accent); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 17px; }
+      .sb-logo-text .t1 { font-size: 16px; font-weight: 700; color: #fff; display: block; }
+      .sb-logo-text .t2 { font-size: 10.5px; color: var(--nav-text-muted); }
+      .sb-item { display: flex; align-items: center; gap: 11px; padding: 11px 20px; color: var(--nav-text); font-size: 13.5px; cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; }
+      .sb-item:hover { background: var(--nav-bg-hover); color: #fff; }
+      .sb-item.active { background: var(--nav-bg-hover); color: #fff; font-weight: 600; border-left-color: var(--accent); }
+      .sb-item i { width: 18px; text-align: center; font-size: 14px; }
+      .sb-item.active i { color: var(--accent); }
+      .main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+      .topbar { height: 58px; flex-shrink: 0; background: #fff; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; padding: 0 24px; gap: 14px; }
+      .breadcrumb { font-size: 15px; font-weight: 700; flex: 1; }
+      .acct-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; }
+      .content { flex: 1; overflow-y: auto; padding: 22px 26px; }
+      h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+      .sub { font-size: 13px; color: var(--text-muted); }
+      .btn { border-radius: 7px; border: 1px solid var(--border-strong); padding: 8px 14px; font-size: 13px; background: #fff; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; justify-content: center; color: var(--text-main); font-family: inherit; font-weight: 600; min-height: 36px; }
+      .btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-dark); }
+      .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); border-color: var(--accent-dark); color: #fff; }
+      .btn-primary:hover { color: #fff; }
+      .btn-sm { padding: 5px 9px; min-height: 28px; font-size: 11.5px; }
+      .btn-danger { color: var(--red); border-color: #fbcaca; }
+      .btn-danger:hover { background: var(--red-soft); }
+      input, select, textarea { border-radius: 7px; border: 1px solid var(--border-subtle); padding: 8px 11px; font-size: 13px; background: #fff; color: var(--text-main); outline: none; font-family: inherit; width: 100%; min-height: 36px; }
+      input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+      textarea { resize: vertical; min-height: 70px; }
+      .filter-bar { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 12px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 10px; margin: 14px 0; }
+      @media (max-width: 1100px) { .filter-bar { grid-template-columns: 1fr 1fr; } }
+      .card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(115,72,39,0.04); }
+      table.data { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+      .data thead { background: var(--bg-alt); }
+      .data th, .data td { padding: 10px 11px; text-align: left; border-bottom: 1px solid #f5ece0; }
+      .data th { font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; cursor: pointer; }
+      .data tbody tr:hover { background: var(--bg-alt); }
+      .data td a { color: var(--accent); font-weight: 600; cursor: pointer; }
+      .check { width: 15px; height: 15px; accent-color: var(--accent); min-height: 0; cursor: pointer; }
+      .badge { font-size: 10px; padding: 3px 8px; border-radius: 999px; font-weight: 700; border: 1px solid transparent; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.03em; }
+      .b-new { background: var(--blue-soft); color: var(--blue); border-color: #bee3f8; }
+      .b-assigned { background: var(--cyan-soft); color: var(--cyan); border-color: #a5f3fc; }
+      .b-viewing { background: var(--purple-soft); color: var(--purple); border-color: #ddd6fe; }
+      .b-offer { background: var(--amber-soft); color: var(--amber); border-color: #fbd38d; }
+      .b-negotiation { background: var(--orange-soft); color: var(--orange); border-color: #fbd38d; }
+      .b-contracted { background: var(--green-soft); color: var(--green); border-color: #b7e4cc; }
+      .b-closed { background: var(--dgreen-soft); color: var(--dgreen); border-color: #86efac; }
+      .b-lost { background: var(--red-soft); color: var(--red); border-color: #fbcaca; }
+      .inq-badge { font-size: 10px; padding: 2px 7px; border-radius: 4px; background: var(--accent-soft); color: var(--accent-dark); font-weight: 600; }
+      .overdue { color: var(--red); font-weight: 700; }
+      .pagination { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border-subtle); font-size: 12.5px; color: var(--text-muted); }
+      .pg-btn { min-width: 30px; height: 30px; border-radius: 5px; border: 1px solid var(--border-subtle); background: #fff; cursor: pointer; font-size: 12px; }
+      .pg-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+      .bulk-bar { background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 8px; padding: 10px 14px; display: none; align-items: center; gap: 10px; margin: 14px 0; flex-wrap: wrap; }
+      .bulk-bar.show { display: flex; }
+      .bulk-bar select { max-width: 180px; min-height: 32px; }
+
+      /* Detail */
+      .detail-layout { display: grid; grid-template-columns: 35% 1fr; gap: 16px; }
+      @media (max-width: 980px) { .detail-layout { grid-template-columns: 1fr; } }
+      .panel { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 18px; }
+      .d-sect { margin-top: 16px; padding-top: 14px; border-top: 1px solid #f5ece0; }
+      .d-sect:first-of-type { margin-top: 0; padding-top: 0; border-top: 0; }
+      .d-sect-t { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+      .prof-hero { text-align: center; padding-bottom: 14px; border-bottom: 1px solid #f5ece0; }
+      .prof-avatar { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+      .prof-name { font-size: 17px; font-weight: 700; }
+      .prof-ref { font-size: 11.5px; color: var(--text-dim); }
+      .kv { margin-bottom: 8px; }
+      .kv-l { font-size: 10.5px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+      .kv-v { font-size: 13px; display: flex; align-items: center; gap: 6px; }
+      .kv-v .copy { background: 0; border: 0; color: var(--accent); cursor: pointer; font-size: 11px; }
+      .chip { background: var(--accent-soft); color: var(--accent-dark); border: 1px solid #fcd9bf; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+      .tab-bar { display: flex; gap: 2px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 14px; }
+      .tab { background: 0; border: 0; padding: 9px 16px; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+      .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+      .timeline { border-left: 2px solid var(--border-strong); margin-left: 6px; padding-left: 14px; }
+      .tl-entry { position: relative; padding: 9px 0; }
+      .tl-entry::before { content: ""; position: absolute; left: -22px; top: 12px; width: 11px; height: 11px; border-radius: 50%; background: var(--accent); border: 2px solid #fff; }
+      .tl-when { font-size: 11px; color: var(--text-dim); }
+      .tl-what { font-size: 13px; }
+      .status-dd { font-size: 11px; padding: 3px 8px; border-radius: 999px; cursor: pointer; font-weight: 700; min-height: 0; border: 1px solid transparent; }
+
+      .form-section { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 20px; margin-bottom: 14px; }
+      .fs-title { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; padding-bottom: 10px; border-bottom: 1px solid #f5ece0; margin-bottom: 14px; }
+      .fl { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin: 12px 0 5px; }
+      .fl:first-child { margin-top: 0; }
+      .req { color: var(--red); }
+      .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+      .radio-group { display: flex; gap: 14px; flex-wrap: wrap; padding-top: 4px; }
+      .radio-group label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+      .err { font-size: 11px; color: var(--red); margin-top: 3px; display: none; }
+      .invalid input, .invalid select, .invalid textarea { border-color: var(--red); }
+      .invalid .err { display: block; }
+      .form-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 16px 20px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; }
+
+      .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 200; display: none; align-items: center; justify-content: center; padding: 16px; }
+      .modal-backdrop.open { display: flex; }
+      .modal-box { background: #fff; border-radius: 12px; width: 480px; max-width: 100%; max-height: 92vh; display: flex; flex-direction: column; }
+      .modal-header { padding: 14px 18px; border-bottom: 1px solid var(--border-subtle); font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+      .modal-body { padding: 18px; overflow: auto; }
+      .modal-footer { padding: 12px 18px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 8px; }
+      .mtab-bar { display: flex; gap: 2px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 14px; }
+      .mtab { background: 0; border: 0; padding: 8px 12px; font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+      .mtab.active { color: var(--accent); border-bottom-color: var(--accent); }
+      .toast-wrap { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+      .toast { background: var(--green); color: #fff; padding: 10px 14px; border-radius: 7px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+      .toast.info { background: var(--blue); }
+      .hidden { display: none !important; }
+          /* ===== Admin-style beige sidebar (sync) ===== */
+      .sidebar { background: #f8f4ed !important; color: #4a3f35 !important; border-right: 1px solid #e5d9c0; }
+      .sb-logo { border-bottom: 1px solid #e5d9c0 !important; }
+      .sb-logo-icon { background: #1a1a1a !important; color: #fff !important; }
+      .sb-logo-text, .sb-logo-text .t1 { color: #1a1a1a !important; }
+      .sb-logo-text .t2 { color: #8b6f47 !important; }
+      .sb-item { color: #4a3f35 !important; }
+      .sb-item:hover { background: #f0e6d2 !important; color: #1a1a1a !important; }
+      .sb-item.active { background: #ede4d0 !important; color: #1a1a1a !important; border-left-color: #c4a25f !important; }
+      .sb-item.active i { color: #c26b41 !important; }
+      .sb-subnav { background: #efe6d4 !important; }
+      .sb-sub { color: #6b5a48 !important; }
+      .sb-sub:hover { background: #f0e6d2 !important; color: #1a1a1a !important; }
+      .sb-sub.active { color: #c26b41 !important; }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main">
+      <header class="topbar"><div class="breadcrumb" id="bc">Customers</div><div style="margin-left:auto"><span class="acct-avatar">YT</span></div></header>
+      <div class="content">
+        <!-- LIST -->
+        <div id="listView">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+            <div><h2>Customers</h2><div class="sub">Manage inquiries from property buyers and sellers needing your services</div></div>
+            <button class="btn btn-primary" onclick="openEdit(null)"><i class="fas fa-plus"></i> Add Customer</button>
+          </div>
+          <div class="filter-bar">
+            <input type="text" id="fSearch" placeholder="🔍 Search name, type, ref#" oninput="renderList()" />
+            <select id="fStatus" onchange="renderList()"><option value="">All Status</option><option value="new">New</option><option value="assigned">Assigned</option><option value="viewing">Viewing</option><option value="offer">Offer</option><option value="negotiation">Negotiation</option><option value="contracted">Contracted</option><option value="closed">Closed</option><option value="lost">Closed Lost</option></select>
+            <select id="fType" onchange="renderList()"><option value="">All Inquiry Types</option><option>Tax advice</option><option>Legal</option><option>Mortgage</option><option>Insurance</option><option>Property Management</option><option>Repair</option><option>Other</option></select>
+            <select id="fFollow" onchange="renderList()"><option value="">Any follow-up</option><option value="today">Due today</option><option value="week">Due this week</option><option value="overdue">Overdue</option></select>
+            <input type="date" id="fDate" onchange="renderList()" />
+          </div>
+          <div class="bulk-bar" id="bulkBar">
+            <span style="font-weight:700;color:var(--accent-dark)"><span id="bulkN">0</span> selected</span>
+            <select id="bulkStatus"><option value="">Change status…</option><option value="assigned">Assigned</option><option value="contracted">Contracted</option><option value="closed">Closed</option></select>
+            <button class="btn btn-sm" onclick="bulkStatus()">Apply</button>
+            <button class="btn btn-sm" onclick="toast('Reassign (demo)','info')">Reassign</button>
+            <button class="btn btn-sm" onclick="toast('Exported CSV (demo)','info')"><i class="fas fa-file-export"></i> Export</button>
+            <button class="btn btn-sm btn-danger" onclick="bulkDelete()"><i class="fas fa-trash"></i> Delete</button>
+          </div>
+          <div class="card">
+            <table class="data">
+              <thead><tr>
+                <th style="width:34px"><input type="checkbox" class="check" id="chkAll" onchange="toggleAll(this)" /></th>
+                <th>Ref#</th><th>Name</th><th>Inquiry Type</th><th>Status</th><th>Rep</th><th>Created</th><th>Next Follow-up</th><th>Modified</th><th style="text-align:right">Actions</th>
+              </tr></thead>
+              <tbody id="listBody"></tbody>
+            </table>
+            <div class="pagination"><span>Showing <strong id="cnt">8</strong> of 8 customers</span><div><button class="pg-btn active">1</button></div></div>
+          </div>
+        </div>
+
+        <!-- DETAIL -->
+        <div id="detailView" class="hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <button class="btn" onclick="showList()"><i class="fas fa-arrow-left"></i> Back to Customers</button>
+            <div style="display:flex;gap:6px"><button class="btn" onclick="openEdit(currentId)"><i class="fas fa-pen"></i> Edit</button><button class="btn btn-danger" onclick="askDelete(currentId)"><i class="fas fa-trash"></i> Delete</button></div>
+          </div>
+          <div class="detail-layout">
+            <aside class="panel" id="leftPanel"></aside>
+            <section>
+              <div class="tab-bar">
+                <button class="tab active" onclick="dTab('overview',this)">Overview</button>
+                <button class="tab" onclick="dTab('history',this)">History</button>
+                <button class="tab" onclick="dTab('tasks',this)">Tasks</button>
+                <button class="tab" onclick="dTab('docs',this)">Documents</button>
+              </div>
+              <div id="dTabBody"></div>
+            </section>
+          </div>
+        </div>
+
+        <!-- EDIT -->
+        <div id="editView" class="hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div><h2 id="editTitle">Add Customer</h2><div class="sub">Capture a new service inquiry</div></div>
+            <button class="btn" onclick="showList()"><i class="fas fa-times"></i> Cancel</button>
+          </div>
+          <div class="form-section">
+            <div class="fs-title">Section 1 — Contact Information</div>
+            <div class="grid3">
+              <div class="form-row" id="row-fn"><label class="fl">First Name <span class="req">*</span></label><input id="iFN" /><div class="err">Required</div></div>
+              <div class="form-row" id="row-ln"><label class="fl">Last Name <span class="req">*</span></label><input id="iLN" /><div class="err">Required</div></div>
+              <div><label class="fl">Company Name</label><input id="iCompany" /></div>
+              <div class="form-row" id="row-phone"><label class="fl">Phone <span class="req">*</span></label><input id="iPhone" placeholder="+81-90-…" /><div class="err">Required</div></div>
+              <div><label class="fl">Email</label><input id="iEmail" /></div>
+              <div><label class="fl">LINE ID</label><input id="iLine" /></div>
+            </div>
+            <label class="fl">Preferred Contact Method</label>
+            <div class="radio-group"><label><input type="radio" name="pcm" checked /> Phone</label><label><input type="radio" name="pcm" /> Email</label><label><input type="radio" name="pcm" /> LINE</label><label><input type="radio" name="pcm" /> Other</label></div>
+            <label class="fl">Best Time to Contact</label>
+            <div class="radio-group"><label><input type="radio" name="btc" /> Morning</label><label><input type="radio" name="btc" checked /> Afternoon</label><label><input type="radio" name="btc" /> Evening</label></div>
+          </div>
+          <div class="form-section">
+            <div class="fs-title">Section 2 — Inquiry Details</div>
+            <label class="fl">Inquiry Type <span class="req">*</span></label>
+            <select id="iType" style="max-width:280px"><option>Tax advice</option><option>Legal</option><option>Mortgage</option><option>Insurance</option><option>Property Management</option><option>Repair</option><option>Other</option></select>
+            <div class="form-row" id="row-desc"><label class="fl">Service Description <span class="req">*</span></label><textarea id="iDesc" placeholder="What does the customer need?"></textarea><div class="err">Required</div></div>
+            <div class="grid3">
+              <div><label class="fl">Budget Min (¥)</label><input type="number" id="iBMin" step="100000" /></div>
+              <div><label class="fl">Budget Max (¥)</label><input type="number" id="iBMax" step="100000" /></div>
+              <div><label class="fl">Timeline</label><select id="iTimeline"><option>ASAP</option><option>Within 1 month</option><option>Within 3 months</option><option selected>No rush</option></select></div>
+            </div>
+            <label class="fl">Coverage Area Needed</label>
+            <input id="iArea" placeholder="e.g. Tokyo · Minato-ku" />
+          </div>
+          <div class="form-section">
+            <div class="fs-title">Section 3 — Assignment</div>
+            <div class="grid3">
+              <div><label class="fl">Status <span class="req">*</span></label><select id="iStatus"><option value="new" selected>New</option><option value="assigned">Assigned</option><option value="viewing">Viewing</option><option value="offer">Offer</option><option value="negotiation">Negotiation</option><option value="contracted">Contracted</option><option value="closed">Closed</option><option value="lost">Closed Lost</option></select></div>
+              <div><label class="fl">Representative</label><select id="iRep"><option>Me (Yamamoto Taro)</option><option>Sato Keiko</option><option>Tanaka Jiro</option></select></div>
+              <div><label class="fl">Source</label><select id="iSource"><option>YUUSHI Platform</option><option>Referral</option><option>Direct contact</option></select></div>
+            </div>
+            <label class="fl">Next Follow-up Date</label>
+            <input type="date" id="iFollow" style="max-width:240px" />
+          </div>
+          <div class="form-section">
+            <div class="fs-title">Section 4 — Notes</div>
+            <textarea id="iNotes" maxlength="2000" placeholder="Internal notes…"></textarea>
+          </div>
+          <div class="form-footer">
+            <button class="btn" onclick="showList()">Cancel</button>
+            <button class="btn" onclick="saveCustomer(true)">Save &amp; Log Activity</button>
+            <button class="btn btn-primary" onclick="saveCustomer(false)"><i class="fas fa-check"></i> Save Customer</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Log activity modal -->
+    <div class="modal-backdrop" id="logModal">
+      <div class="modal-box">
+        <div class="modal-header"><span><i class="fas fa-plus" style="color:var(--accent)"></i> Log Activity</span><button class="btn btn-sm" onclick="closeM('logModal')"><i class="fas fa-times"></i></button></div>
+        <div class="modal-body">
+          <div class="mtab-bar">
+            <button class="mtab active" onclick="logTab('call',this)">Call</button>
+            <button class="mtab" onclick="logTab('email',this)">Email</button>
+            <button class="mtab" onclick="logTab('meeting',this)">Meeting</button>
+            <button class="mtab" onclick="logTab('note',this)">Note</button>
+          </div>
+          <div id="logBody"></div>
+        </div>
+        <div class="modal-footer"><button class="btn" onclick="closeM('logModal')">Cancel</button><button class="btn btn-primary" onclick="saveLog()"><i class="fas fa-check"></i> Save</button></div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="delModal">
+      <div class="modal-box" style="width:380px">
+        <div class="modal-header"><span><i class="fas fa-triangle-exclamation" style="color:var(--red)"></i> Delete</span></div>
+        <div class="modal-body">Delete this customer? This cannot be undone.</div>
+        <div class="modal-footer"><button class="btn" onclick="closeM('delModal')">Cancel</button><button class="btn btn-danger" onclick="doDelete()">Delete</button></div>
+      </div>
+    </div>
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+      const SB_ITEMS = [
+        { id: "dashboard", label: "Dashboard", icon: "fa-gauge-high", href: "index.html" },
+        { id: "profile", label: "My Profile &amp; Services", icon: "fa-id-card-clip", href: "profile.html" },
+        { id: "customers", label: "Leads &amp; Customers", icon: "fa-users", href: "customers.html" },
+        { id: "needs", label: "Needs Search", icon: "fa-magnifying-glass", href: "needs-search.html" },
+        { id: "messages", label: "Messages", icon: "fa-comments", href: "messages.html" },
+        { id: "advertising", label: "Advertising", icon: "fa-rectangle-ad", href: "billing.html#ads" },
+        { id: "articles", label: "Content &amp; Articles", icon: "fa-newspaper", href: "articles.html" },
+        { id: "billing", label: "Subscription &amp; Billing", icon: "fa-credit-card", href: "billing.html" },
+        { id: "settings", label: "Settings", icon: "fa-gear", href: "profile.html#settings" },
+      ];
+      document.getElementById("sidebar").innerHTML = `<div class="sb-logo"><div class="sb-logo-icon">Y</div><div class="sb-logo-text"><span class="t1">YUUSHI</span><span class="t2">Support Portal</span></div></div><nav>${SB_ITEMS.map(i => `<a class="sb-item ${i.id === "customers" ? "active" : ""}" href="${i.href}"><i class="fas ${i.icon}"></i> ${i.label}</a>`).join("")}</nav>`;
+
+      const STL = { new: "New", assigned: "Assigned", viewing: "Viewing", offer: "Offer", negotiation: "Negotiation", contracted: "Contracted", closed: "Closed", lost: "Closed Lost" };
+      const CUSTOMERS = [
+        { id: "CUS-20260001", fn: "Yuki", ln: "Tanaka", company: "", phone: "+81-90-1111-2222", email: "yuki.t@example.com", line: "", type: "Tax advice", status: "assigned", rep: "Me (Yamamoto Taro)", created: "2026-05-22", follow: "2026-05-28", followLabel: "Tomorrow", overdue: false, modified: "2 days ago", desc: "Needs tax advice for property inheritance in Tokyo.", bMin: 100000, bMax: 300000, timeline: "Within 1 month", area: "Tokyo · Minato-ku", source: "YUUSHI Platform", pcm: "Email", btc: "Morning", notes: "Inherited a condo, unsure about tax obligations." },
+        { id: "CUS-20260002", fn: "Hiromi", ln: "Sato", company: "Sato Holdings", phone: "+81-90-2222-3333", email: "hiromi.s@example.com", line: "hiro_s", type: "Legal", status: "contracted", rep: "Sato Keiko", created: "2026-05-18", follow: "2026-05-30", followLabel: "May 30", overdue: false, modified: "1 day ago", desc: "Contract review for property purchase.", bMin: 200000, bMax: 500000, timeline: "ASAP", area: "Tokyo · Chiyoda-ku", source: "Referral", pcm: "Phone", btc: "Afternoon", notes: "Signed engagement letter." },
+        { id: "CUS-20260003", fn: "Kenta", ln: "Yamamoto", company: "", phone: "+81-80-3333-4444", email: "kenta.y@example.com", line: "", type: "Mortgage", status: "negotiation", rep: "Me (Yamamoto Taro)", created: "2026-05-15", follow: "2026-05-27", followLabel: "Today", overdue: false, modified: "today", desc: "Mortgage refinancing consultation.", bMin: 0, bMax: 0, timeline: "Within 3 months", area: "Tokyo", source: "YUUSHI Platform", pcm: "Phone", btc: "Evening", notes: "Comparing 3 lenders." },
+        { id: "CUS-20260004", fn: "Aoi", ln: "Suzuki", company: "", phone: "+81-70-4444-5555", email: "aoi.s@example.com", line: "aoi_s", type: "Insurance", status: "viewing", rep: "Tanaka Jiro", created: "2026-05-14", follow: "2026-06-02", followLabel: "Jun 02", overdue: false, modified: "3 days ago", desc: "Property insurance for new apartment.", bMin: 50000, bMax: 100000, timeline: "Within 1 month", area: "Kanagawa · Yokohama", source: "Direct contact", pcm: "Email", btc: "Morning", notes: "" },
+        { id: "CUS-20260005", fn: "Min-jun", ln: "Lee", company: "", phone: "+82-10-5555-6666", email: "minjun.l@example.com", line: "", type: "Tax advice", status: "new", rep: "Me (Yamamoto Taro)", created: "2026-05-12", follow: "2026-05-24", followLabel: "May 24", overdue: true, modified: "5 days ago", desc: "International buyer needs tax guidance.", bMin: 150000, bMax: 400000, timeline: "Within 3 months", area: "Tokyo", source: "YUUSHI Platform", pcm: "Email", btc: "Morning", notes: "Korean national, English preferred." },
+        { id: "CUS-20260006", fn: "Hiroshi", ln: "Watanabe", company: "", phone: "+81-90-6666-7777", email: "h.w@example.com", line: "", type: "Tax advice", status: "closed", rep: "Sato Keiko", created: "2026-04-28", follow: "—", followLabel: "—", overdue: false, modified: "1 week ago", desc: "Completed tax filing for sold property.", bMin: 80000, bMax: 120000, timeline: "ASAP", area: "Tokyo · Shibuya", source: "Referral", pcm: "Phone", btc: "Afternoon", notes: "Successfully closed. Happy client." },
+        { id: "CUS-20260007", fn: "Soo-yeon", ln: "Kim", company: "", phone: "+82-10-7777-8888", email: "s.kim@example.com", line: "", type: "Legal", status: "offer", rep: "Tanaka Jiro", created: "2026-05-25", follow: "2026-05-31", followLabel: "May 31", overdue: false, modified: "yesterday", desc: "Estate planning legal services.", bMin: 300000, bMax: 600000, timeline: "Within 1 year", area: "Tokyo · Minato-ku", source: "Referral", pcm: "Email", btc: "Morning", notes: "Sent proposal." },
+        { id: "CUS-20260008", fn: "Kenji", ln: "Ito", company: "Ito Corp", phone: "+81-80-8888-9999", email: "kenji.i@example.com", line: "", type: "Property Management", status: "lost", rep: "Me (Yamamoto Taro)", created: "2026-04-15", follow: "—", followLabel: "—", overdue: false, modified: "2 weeks ago", desc: "Property management for rental units.", bMin: 0, bMax: 0, timeline: "No rush", area: "Osaka", source: "Direct contact", pcm: "Phone", btc: "Evening", notes: "Chose another provider." },
+      ];
+
+      let currentId = null, editingId = null, pendingDelete = null, logKind = "call", saveThenLog = false;
+      function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);}
+      function find(id){return CUSTOMERS.find(c=>c.id===id);}
+      function yen(n){return n?"¥"+Number(n).toLocaleString():"Not specified";}
+      function name(c){return c.fn+" "+c.ln;}
+
+      function renderList() {
+        const q = (document.getElementById("fSearch").value||"").toLowerCase();
+        const st = document.getElementById("fStatus").value, ty = document.getElementById("fType").value, fl = document.getElementById("fFollow").value;
+        const list = CUSTOMERS.filter(c => {
+          if (q && !(name(c)+" "+c.type+" "+c.id).toLowerCase().includes(q)) return false;
+          if (st && c.status !== st) return false;
+          if (ty && c.type !== ty) return false;
+          if (fl === "today" && c.followLabel !== "Today") return false;
+          if (fl === "overdue" && !c.overdue) return false;
+          return true;
+        });
+        document.getElementById("cnt").textContent = list.length;
+        document.getElementById("listBody").innerHTML = list.map(c => `
+          <tr>
+            <td><input type="checkbox" class="check chk-row" data-id="${c.id}" onchange="updBulk()" /></td>
+            <td><a onclick="showDetail('${c.id}')"><strong>${c.id}</strong></a></td>
+            <td>${esc(name(c))}</td>
+            <td><span class="inq-badge">${esc(c.type)}</span></td>
+            <td><span class="badge b-${c.status}">${STL[c.status]}</span></td>
+            <td style="font-size:12px">${esc(c.rep.replace(" (Yamamoto Taro)",""))}</td>
+            <td>${c.created}</td>
+            <td class="${c.overdue?"overdue":""}">${c.followLabel}</td>
+            <td style="color:var(--text-muted)">${c.modified}</td>
+            <td style="text-align:right;white-space:nowrap"><button class="btn btn-sm" onclick="showDetail('${c.id}')"><i class="fas fa-eye"></i></button> <button class="btn btn-sm" onclick="openEdit('${c.id}')"><i class="fas fa-pen"></i></button> <button class="btn btn-sm btn-danger" onclick="askDelete('${c.id}')"><i class="fas fa-trash"></i></button></td>
+          </tr>`).join("") || `<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text-muted)">No customers found.</td></tr>`;
+      }
+      window.renderList = renderList;
+
+      function toggleAll(el){document.querySelectorAll(".chk-row").forEach(c=>c.checked=el.checked);updBulk();}
+      window.toggleAll=toggleAll;
+      function updBulk(){const n=document.querySelectorAll(".chk-row:checked").length;document.getElementById("bulkN").textContent=n;document.getElementById("bulkBar").classList.toggle("show",n>0);}
+      window.updBulk=updBulk;
+      function bulkStatus(){const s=document.getElementById("bulkStatus").value;if(!s){toast("Select a status","info");return;}document.querySelectorAll(".chk-row:checked").forEach(c=>{const x=find(c.dataset.id);if(x)x.status=s;});document.getElementById("chkAll").checked=false;renderList();updBulk();toast("Status updated");}
+      window.bulkStatus=bulkStatus;
+      function bulkDelete(){const ids=[...document.querySelectorAll(".chk-row:checked")].map(c=>c.dataset.id);if(!ids.length)return;if(!confirm(`Delete ${ids.length} customers?`))return;ids.forEach(id=>{const i=CUSTOMERS.findIndex(c=>c.id===id);if(i>=0)CUSTOMERS.splice(i,1);});renderList();updBulk();toast("Deleted");}
+      window.bulkDelete=bulkDelete;
+
+      function showDetail(id) {
+        currentId = id; const c = find(id); if (!c) return;
+        document.getElementById("listView").classList.add("hidden");
+        document.getElementById("editView").classList.add("hidden");
+        document.getElementById("detailView").classList.remove("hidden");
+        document.getElementById("bc").textContent = "Customer · " + name(c);
+        renderLeft(); dTab("overview", document.querySelector(".tab")); window.scrollTo(0, 0);
+      }
+      window.showDetail = showDetail;
+      function renderLeft() {
+        const c = find(currentId);
+        document.getElementById("leftPanel").innerHTML = `
+          <div class="prof-hero">
+            <div class="prof-avatar">${(c.fn[0]+c.ln[0]).toUpperCase()}</div>
+            <div class="prof-name">${esc(name(c))}</div>
+            <div class="prof-ref">${c.id}</div>
+            <div style="margin-top:8px"><select class="status-dd badge b-${c.status}" onchange="chStatus(this.value)">${Object.entries(STL).map(([k,v])=>`<option value="${k}" ${k===c.status?"selected":""}>${v}</option>`).join("")}</select></div>
+            <div style="margin-top:6px"><span class="inq-badge">${esc(c.type)}</span></div>
+            <div style="margin-top:8px;font-size:11.5px;color:var(--text-muted)">Rep: <select style="display:inline-block;width:auto;min-height:0;padding:2px 6px;font-size:11.5px" onchange="chRep(this.value)"><option ${c.rep.includes("Me")?"selected":""}>Me (Yamamoto Taro)</option><option ${c.rep==="Sato Keiko"?"selected":""}>Sato Keiko</option><option ${c.rep==="Tanaka Jiro"?"selected":""}>Tanaka Jiro</option></select></div>
+          </div>
+          <div class="d-sect"><div class="d-sect-t">Contact Information</div>
+            <div class="kv"><div class="kv-l">Phone</div><div class="kv-v">${esc(c.phone)} <button class="copy" onclick="copy('${esc(c.phone)}')"><i class="fas fa-copy"></i></button></div></div>
+            <div class="kv"><div class="kv-l">Email</div><div class="kv-v">${esc(c.email)} <button class="copy" onclick="copy('${esc(c.email)}')"><i class="fas fa-copy"></i></button></div></div>
+            <div class="kv"><div class="kv-l">Preferred</div><div class="kv-v">${esc(c.pcm)}</div></div>
+            <div class="kv"><div class="kv-l">Best Time</div><div class="kv-v">${esc(c.btc)}</div></div>
+          </div>
+          <div class="d-sect"><div class="d-sect-t">Service Requirements</div>
+            <div class="kv"><div class="kv-l">Service Needed</div><div class="kv-v">${esc(c.desc)}</div></div>
+            <div class="kv"><div class="kv-l">Budget</div><div class="kv-v">${c.bMin||c.bMax?yen(c.bMin)+" ~ "+yen(c.bMax):"Not specified"}</div></div>
+            <div class="kv"><div class="kv-l">Timeline</div><div class="kv-v">${esc(c.timeline)}</div></div>
+            <div class="kv"><div class="kv-l">Coverage Needed</div><div class="kv-v"><span class="chip">${esc(c.area)}</span></div></div>
+            <div class="kv"><div class="kv-l">Notes</div><div class="kv-v" style="color:var(--text-muted);font-style:italic">${esc(c.notes)||"—"}</div></div>
+          </div>
+          <div class="d-sect"><div class="d-sect-t">Metadata</div>
+            <div class="kv"><div class="kv-l">Source</div><div class="kv-v">${esc(c.source)}</div></div>
+            <div class="kv"><div class="kv-l">Created</div><div class="kv-v">${c.created}</div></div>
+            <div class="kv"><div class="kv-l">Last Updated</div><div class="kv-v">${c.modified}</div></div>
+          </div>`;
+      }
+      function chStatus(s){find(currentId).status=s;toast("Status updated");renderLeft();}
+      function chRep(r){find(currentId).rep=r;toast("Representative updated");}
+      window.chStatus=chStatus;window.chRep=chRep;
+      function copy(v){navigator.clipboard&&navigator.clipboard.writeText(v);toast("Copied","info");}
+      window.copy=copy;
+
+      function dTab(name, btn) {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active")); btn.classList.add("active");
+        const b = document.getElementById("dTabBody"); const c = find(currentId);
+        if (name === "overview") {
+          b.innerHTML = `<div class="panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <div class="d-sect-t" style="margin:0">Next Follow-up</div>
+              <input type="date" value="${c.follow!=="—"?c.follow:""}" style="max-width:180px" onchange="toast('Follow-up updated')" />
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <div class="d-sect-t" style="margin:0">Recent Activity</div>
+              <button class="btn btn-sm btn-primary" onclick="openLog()"><i class="fas fa-plus"></i> Log Activity</button>
+            </div>
+            <div class="timeline">
+              <div class="tl-entry"><div class="tl-when">2026-05-26 14:00</div><div class="tl-what">📞 Call — discussed inheritance tax options (8 min)</div></div>
+              <div class="tl-entry"><div class="tl-when">2026-05-24 09:15</div><div class="tl-what">📧 Email sent — service brochure</div></div>
+              <div class="tl-entry"><div class="tl-when">2026-05-23 16:00</div><div class="tl-what">🔄 Status changed New → Assigned</div></div>
+              <div class="tl-entry"><div class="tl-when">2026-05-22 10:30</div><div class="tl-what">📝 Note — customer inherited a condo</div></div>
+              <div class="tl-entry"><div class="tl-when">2026-05-22 10:00</div><div class="tl-what">Customer created from YUUSHI Platform inquiry</div></div>
+            </div></div>`;
+        } else if (name === "history") {
+          b.innerHTML = `<div class="panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div class="d-sect-t" style="margin:0">Full Activity History</div><button class="btn btn-sm btn-primary" onclick="openLog()"><i class="fas fa-plus"></i> Log Activity</button></div>
+            <div class="timeline">
+              <div class="tl-entry"><div class="tl-when">2026-05-26 14:00 · Yamamoto Taro</div><div class="tl-what">📞 <strong>Call</strong> (8 min) — Outcome: Answered. Discussed inheritance tax options. Next: send detailed quote.</div></div>
+              <div class="tl-entry"><div class="tl-when">2026-05-24 09:15 · Yamamoto Taro</div><div class="tl-what">📧 <strong>Email</strong> (Sent) — Subject: "Service brochure & fee schedule"</div></div>
+              <div class="tl-entry"><div class="tl-when">2026-05-23 16:00 · Yamamoto Taro</div><div class="tl-what">🔄 <strong>Status change</strong> — New → Assigned</div></div>
+              <div class="tl-entry"><div class="tl-when">2026-05-22 11:00 · Yamamoto Taro</div><div class="tl-what">🤝 <strong>Meeting</strong> (Video, 30 min) — Initial consultation</div></div>
+              <div class="tl-entry"><div class="tl-when">2026-05-22 10:30 · Yamamoto Taro</div><div class="tl-what">📝 <strong>Note</strong> — Customer inherited a condo, unsure about tax obligations (internal)</div></div>
+            </div></div>`;
+        } else if (name === "tasks") {
+          b.innerHTML = `<div class="panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div class="d-sect-t" style="margin:0">Tasks linked to this customer</div><button class="btn btn-sm btn-primary" onclick="toast('Add task (demo)')"><i class="fas fa-plus"></i> Add Task</button></div>
+            <table class="data"><thead><tr><th>Title</th><th>Due Date</th><th>Priority</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead><tbody>
+              <tr><td>Send inheritance tax quote</td><td>2026-05-30</td><td><span class="badge b-offer">Medium</span></td><td>Pending</td><td style="text-align:right"><button class="btn btn-sm"><i class="fas fa-pen"></i></button> <button class="btn btn-sm"><i class="fas fa-check"></i></button></td></tr>
+              <tr><td>Prepare engagement letter</td><td>2026-06-02</td><td><span class="badge b-lost">High</span></td><td>Pending</td><td style="text-align:right"><button class="btn btn-sm"><i class="fas fa-pen"></i></button> <button class="btn btn-sm"><i class="fas fa-check"></i></button></td></tr>
+            </tbody></table></div>`;
+        } else if (name === "docs") {
+          b.innerHTML = `<div class="panel">
+            <div class="d-sect-t">Documents</div>
+            <div style="border:2px dashed var(--border-strong);border-radius:8px;padding:24px;text-align:center;background:var(--bg-alt);cursor:pointer;margin-bottom:12px" onclick="toast('File uploaded (demo)')"><i class="fas fa-cloud-arrow-up" style="font-size:28px;color:var(--accent);display:block;margin-bottom:6px"></i><div style="font-weight:600">Drop files or click to upload</div><div style="font-size:11px;color:var(--text-muted);margin-top:3px">PDF / JPG / PNG · max 10MB</div></div>
+            <table class="data"><thead><tr><th>Filename</th><th>Uploaded</th><th>Size</th><th style="text-align:right">Actions</th></tr></thead><tbody>
+              <tr><td><i class="fas fa-file-pdf" style="color:var(--red)"></i> Property deed.pdf</td><td>2026-05-22</td><td>1.2 MB</td><td style="text-align:right"><button class="btn btn-sm"><i class="fas fa-download"></i></button> <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button></td></tr>
+              <tr><td><i class="fas fa-file-image" style="color:var(--blue)"></i> ID scan.jpg</td><td>2026-05-23</td><td>480 KB</td><td style="text-align:right"><button class="btn btn-sm"><i class="fas fa-download"></i></button> <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button></td></tr>
+            </tbody></table></div>`;
+        }
+      }
+      window.dTab = dTab;
+
+      // Log activity modal
+      function openLog(){logKind="call";document.getElementById("logModal").classList.add("open");document.querySelectorAll(".mtab").forEach((m,i)=>m.classList.toggle("active",i===0));renderLogBody();}
+      window.openLog=openLog;
+      function logTab(k,btn){logKind=k;document.querySelectorAll(".mtab").forEach(m=>m.classList.remove("active"));btn.classList.add("active");renderLogBody();}
+      window.logTab=logTab;
+      function renderLogBody(){
+        const b=document.getElementById("logBody");
+        const common=`<label class="fl">Next action</label><input placeholder="Optional"><label class="fl">Next follow-up date</label><input type="date">`;
+        if(logKind==="call")b.innerHTML=`<div class="grid2"><div><label class="fl">Date *</label><input type="date"></div><div><label class="fl">Time *</label><input type="time"></div></div><label class="fl">Duration (min)</label><input type="number"><label class="fl">Outcome</label><select><option>Answered</option><option>No answer</option><option>Voicemail</option><option>Callback scheduled</option></select><label class="fl">Summary *</label><textarea></textarea>${common}`;
+        else if(logKind==="email")b.innerHTML=`<div class="grid2"><div><label class="fl">Date *</label><input type="date"></div><div><label class="fl">Direction</label><select><option>Sent</option><option>Received</option></select></div></div><label class="fl">Subject *</label><input><label class="fl">Summary *</label><textarea></textarea>${common}`;
+        else if(logKind==="meeting")b.innerHTML=`<div class="grid2"><div><label class="fl">Date *</label><input type="date"></div><div><label class="fl">Time *</label><input type="time"></div></div><label class="fl">Meeting Type</label><select><option>In-person</option><option>Phone</option><option>Video call</option></select><label class="fl">Summary *</label><textarea></textarea>${common}`;
+        else b.innerHTML=`<label class="fl">Note Content *</label><textarea maxlength="2000"></textarea><label style="display:flex;gap:6px;align-items:center;margin-top:10px;font-size:13px"><input type="checkbox" style="width:15px;height:15px;min-height:0;accent-color:var(--accent)"> Internal only (not visible to customer)</label>`;
+      }
+      function saveLog(){toast(logKind.charAt(0).toUpperCase()+logKind.slice(1)+" logged");closeM("logModal");}
+      window.saveLog=saveLog;
+
+      // Edit
+      function openEdit(id){
+        editingId=id;const c=id?find(id):null;
+        document.getElementById("listView").classList.add("hidden");document.getElementById("detailView").classList.add("hidden");
+        document.getElementById("editView").classList.remove("hidden");
+        document.getElementById("editTitle").textContent=id?"Edit Customer":"Add Customer";
+        document.getElementById("bc").textContent=id?"Edit Customer":"Add Customer";
+        const set=(i,v)=>document.getElementById(i).value=v||"";
+        set("iFN",c?.fn);set("iLN",c?.ln);set("iCompany",c?.company);set("iPhone",c?.phone);set("iEmail",c?.email);set("iLine",c?.line);
+        set("iType",c?.type||"Tax advice");set("iDesc",c?.desc);set("iBMin",c?.bMin);set("iBMax",c?.bMax);set("iTimeline",c?.timeline||"No rush");set("iArea",c?.area);
+        set("iStatus",c?.status||"new");set("iSource",c?.source||"YUUSHI Platform");set("iNotes",c?.notes);set("iFollow",c?.follow&&c.follow!=="—"?c.follow:"");
+        document.querySelectorAll(".form-row").forEach(r=>r.classList.remove("invalid"));
+        window.scrollTo(0,0);
+      }
+      window.openEdit=openEdit;
+      function saveCustomer(thenLog){
+        const req={iFN:"row-fn",iLN:"row-ln",iPhone:"row-phone",iDesc:"row-desc"};let ok=true;
+        Object.entries(req).forEach(([f,row])=>{const bad=!document.getElementById(f).value.trim();document.getElementById(row).classList.toggle("invalid",bad);if(bad)ok=false;});
+        if(!ok){toast("Fill required fields","info");return;}
+        const data={fn:document.getElementById("iFN").value,ln:document.getElementById("iLN").value,company:document.getElementById("iCompany").value,phone:document.getElementById("iPhone").value,email:document.getElementById("iEmail").value,line:document.getElementById("iLine").value,type:document.getElementById("iType").value,desc:document.getElementById("iDesc").value,bMin:+document.getElementById("iBMin").value||0,bMax:+document.getElementById("iBMax").value||0,timeline:document.getElementById("iTimeline").value,area:document.getElementById("iArea").value,status:document.getElementById("iStatus").value,rep:document.getElementById("iRep").value,source:document.getElementById("iSource").value,notes:document.getElementById("iNotes").value,follow:document.getElementById("iFollow").value||"—",followLabel:document.getElementById("iFollow").value||"—",overdue:false,modified:"just now",pcm:"Email",btc:"Morning"};
+        if(editingId){Object.assign(find(editingId),data);toast("Customer updated successfully.");}
+        else{const nid="CUS-2026"+String(CUSTOMERS.length+1).padStart(4,"0");CUSTOMERS.push({id:nid,...data,created:new Date().toISOString().slice(0,10)});editingId=nid;toast("Customer created successfully.");}
+        if(thenLog){currentId=editingId;openLog();}else showList();
+      }
+      window.saveCustomer=saveCustomer;
+
+      function askDelete(id){pendingDelete=id;document.getElementById("delModal").classList.add("open");}
+      window.askDelete=askDelete;
+      function doDelete(){const i=CUSTOMERS.findIndex(c=>c.id===pendingDelete);if(i>=0)CUSTOMERS.splice(i,1);closeM("delModal");if(currentId===pendingDelete)showList();renderList();toast("Customer deleted successfully.");}
+      window.doDelete=doDelete;
+      function showList(){document.getElementById("detailView").classList.add("hidden");document.getElementById("editView").classList.add("hidden");document.getElementById("listView").classList.remove("hidden");document.getElementById("bc").textContent="Customers";currentId=null;editingId=null;renderList();}
+      window.showList=showList;
+      function closeM(id){document.getElementById(id).classList.remove("open");}
+      window.closeM=closeM;
+      function toast(msg,kind){const el=document.createElement("div");el.className="toast "+(kind||"");el.textContent=msg;document.getElementById("toastWrap").appendChild(el);setTimeout(()=>el.remove(),2800);}
+      window.toast=toast;
+      document.querySelectorAll(".modal-backdrop").forEach(b=>b.addEventListener("click",e=>{if(e.target===b)b.classList.remove("open");}));
+      renderList();
+    </script>
+  </body>
+</html>
