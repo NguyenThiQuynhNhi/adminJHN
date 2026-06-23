@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin - Property Approval &amp; Moderation</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
     <style>
       :root{
         --bg-page:#f5f5f5;--bg-card:#ffffff;--bg-card-warm:#fffaf2;--bg-row-hover:#faf6ee;--bg-header-soft:#faf6ee;
@@ -14,6 +18,8 @@
         --r-sm:6px;--r-md:8px;--r-lg:12px;--r-full:999px;
         --shadow-card:0 10px 30px rgba(115,72,39,.05);--shadow-toast:0 8px 24px rgba(0,0,0,.3);--shadow-modal:0 18px 50px rgba(59,47,42,.28);
         --font-stack:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+        --gold:var(--color-primary-light);
+        --fs-h1:22px;--fs-card-title:14px;--fs-body:13px;--fs-small:12px;--fs-label:11px;
       }
 
       * {
@@ -375,6 +381,178 @@
         font-size: 11px;
       }
 
+      /* ===== report-style list pattern (ported from property-report-management) ===== */
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      .page-header-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .card-title {
+        font-size: var(--fs-card-title);
+        font-weight: 600;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border-soft);
+      }
+      .card-title i {
+        color: var(--color-primary);
+        font-size: 13px;
+        width: 18px;
+        text-align: center;
+      }
+      .filter-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+        gap: 10px 12px;
+        align-items: end;
+      }
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+      }
+      .field-label {
+        font-size: var(--fs-label);
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .filter-bar input,
+      .filter-bar select {
+        border-radius: var(--r-md);
+        border: 1px solid var(--border-default);
+        padding: 8px 11px;
+        font-size: var(--fs-body);
+        background: var(--bg-card);
+        color: var(--text-primary);
+        outline: none;
+        font-family: inherit;
+        width: 100%;
+        min-height: 36px;
+      }
+      .filter-bar input:focus,
+      .filter-bar select:focus {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 2px rgba(139, 115, 64, 0.18);
+      }
+      .filter-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+      }
+      .data-table-wrap {
+        overflow-x: auto;
+      }
+      table.data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--fs-small);
+      }
+      .data-table thead {
+        background: var(--bg-header-soft);
+      }
+      .data-table th,
+      .data-table td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-soft);
+        vertical-align: middle;
+      }
+      .data-table th {
+        font-weight: 600;
+        font-size: var(--fs-label);
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      .data-table tbody tr {
+        cursor: pointer;
+        transition: background 0.12s;
+      }
+      .data-table tbody tr:hover {
+        background: var(--bg-row-hover);
+      }
+      .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .results-count {
+        font-size: var(--fs-small);
+        color: var(--text-muted);
+      }
+      .results-count strong {
+        color: var(--text-primary);
+      }
+      .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+      .pagination.hidden {
+        display: none !important;
+      }
+      .pagination .page-btn {
+        min-width: 34px;
+        min-height: 34px;
+        padding: 6px 10px;
+        border-radius: var(--r-md);
+        border: 1px solid var(--border-default);
+        background: var(--bg-card);
+        color: var(--text-primary);
+        font-size: var(--fs-small);
+        font-family: inherit;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        transition: background 0.15s;
+      }
+      .pagination .page-btn:hover:not(:disabled):not(.active) {
+        background: var(--bg-row-hover);
+      }
+      .pagination .page-btn.active {
+        background: var(--gold);
+        border-color: var(--gold);
+        color: #ffffff;
+        cursor: default;
+      }
+      .pagination .page-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .pagination .page-ellipsis {
+        min-width: 24px;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: var(--fs-small);
+        user-select: none;
+      }
+
       /* ===== approval tabs + replicated detail-view chrome ===== */
       .hidden { display: none !important; }
       .mod-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
@@ -386,19 +564,22 @@
       .detail-toolbar-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
       .detail-toolbar-right { display: flex; gap: 8px; flex-wrap: wrap; }
       .detail-hero { background: var(--bg-card-warm); border-radius: var(--r-lg); border: 1px solid var(--border-warm); padding: 22px; display: flex; align-items: center; gap: 18px; margin-bottom: 16px; flex-wrap: wrap; box-shadow: var(--shadow-card); }
-      .detail-thumb { width: 96px; height: 76px; border-radius: var(--r-lg); background: var(--color-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; box-shadow: var(--shadow-card); }
+      .detail-thumb { width: 96px; height: 76px; border-radius: var(--r-lg); background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover)); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; box-shadow: 0 8px 20px rgba(139, 115, 64, 0.25); }
       .detail-hero-info { flex: 1; min-width: 0; }
       .detail-name { font-size: 20px; font-weight: 700; margin: 0 0 6px; color: var(--text-primary); }
       .detail-meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-      .detail-id-pill { font-family: ui-monospace, "Consolas", monospace; font-size: 11px; background: var(--bg-card); border: 1px solid var(--border-warm); padding: 2px 8px; border-radius: var(--r-sm); color: var(--text-muted); }
+      .detail-id-pill { font-family: ui-monospace, "Consolas", monospace; font-size: 11px; background: var(--bg-card); border: 1px solid var(--border-default); padding: 2px 8px; border-radius: var(--r-sm); color: var(--text-muted); }
       .section-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 14px; }
-      .sec-card { background: var(--bg-card-warm); border: 1px solid var(--border-warm); border-radius: var(--r-lg); padding: 16px 18px; }
-      .sec-title { font-size: 13.5px; font-weight: 700; color: var(--text-primary); margin: 0 0 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border-soft); display: flex; align-items: center; gap: 8px; }
+      /* Detail section cards: match property-list-oversight .card / .card-title exactly */
+      #dSections .card { background: var(--bg-card); border-radius: var(--r-lg); border: 1px solid var(--border-default); padding: 18px; box-shadow: var(--shadow-card); margin-bottom: 0; }
+      #dSections .card-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border-soft); }
+      #dSections .card-title i { color: var(--color-primary); font-size: 13px; width: 18px; text-align: center; }
       .kv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px 16px; }
       .kv { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
       .kv.kv-full { grid-column: 1 / -1; }
       .kv-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
-      .kv-value { font-size: 13.5px; color: var(--text-primary); word-break: break-word; min-height: 18px; }
+      .kv-label .req { color: var(--status-danger-text); margin-left: 3px; }
+      .kv-value { font-size: 13px; color: var(--text-primary); word-break: break-word; min-height: 20px; }
       .alert { display: flex; gap: 8px; align-items: flex-start; border-radius: var(--r-lg); padding: 10px 13px; font-size: 12.5px; margin-bottom: 12px; }
       .alert.warn { background: var(--status-warning-bg); border: 1px solid var(--status-warning-text); color: var(--status-warning-text); }
       .alert.info { background: var(--status-neutral-bg); border: 1px solid var(--status-neutral-text); color: var(--status-neutral-text); }
@@ -807,16 +988,18 @@
   <body>
     <div class="page" id="listPage">
       <div class="page-header">
-        <div style="margin-bottom: 8px">
+        <div>
+          <h1 class="page-title">Property Approval &amp; Moderation</h1>
+        </div>
+        <div class="page-header-actions">
           <button
             type="button"
             class="btn btn-secondary"
             onclick="window.location.href = 'property-list-oversight.html'"
           >
-            ← Back to Property List
+            <i class="fas fa-arrow-left"></i> Back to Property List
           </button>
         </div>
-        <div class="page-title">Property Approval &amp; Moderation</div>
       </div>
 
       <div class="mod-tabs">
@@ -825,114 +1008,120 @@
       </div>
 
       <!-- PENDING tab -->
-      <div class="card" id="pendingCard">
-        <div class="filters">
-          <input
-            id="searchInput"
-            type="text"
-            placeholder="Search by property ID, title, agent"
-          />
-          <div class="select-wrapper">
-            <select id="reasonFilter">
-              <option value="">All reasons</option>
-              <option value="Unverified agent">Unverified agent</option>
-              <option value="Keyword flag">Keyword flag</option>
-              <option value="Duplicate listing">Duplicate listing</option>
-              <option value="System flag">System flag</option>
-            </select>
+      <div id="pendingCard">
+        <section class="card">
+          <div class="card-title"><i class="fas fa-filter"></i> Filters</div>
+          <div class="filter-bar">
+            <div class="field-group">
+              <label class="field-label" for="searchInput">Search</label>
+              <input
+                id="searchInput"
+                type="text"
+                placeholder="Property ID, title, agent…"
+              />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="reasonFilter">Reason</label>
+              <select id="reasonFilter">
+                <option value="">All reasons</option>
+                <option value="Unverified agent">Unverified agent</option>
+                <option value="Keyword flag">Keyword flag</option>
+                <option value="Duplicate listing">Duplicate listing</option>
+                <option value="System flag">System flag</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="groupFilter">Group</label>
+              <select id="groupFilter">
+                <option value="">All groups</option>
+                <option value="Group 1 — Single Unit">Group 1 — Single Unit</option>
+                <option value="Group 2 — Whole Building">Group 2 — Whole Building</option>
+                <option value="Group 3 — Land">Group 3 — Land</option>
+                <option value="Group 5 — New Dev Apartments">Group 5 — New Dev Apartments</option>
+                <option value="Group 6 — New Dev Houses">Group 6 — New Dev Houses</option>
+              </select>
+            </div>
           </div>
-          <div class="select-wrapper">
-            <select id="groupFilter">
-              <option value="">All groups</option>
-              <option value="Group 1 — Single Unit">Group 1 — Single Unit</option>
-              <option value="Group 2 — Whole Building">Group 2 — Whole Building</option>
-              <option value="Group 3 — Land">Group 3 — Land</option>
-              <option value="Group 5 — New Dev Apartments">Group 5 — New Dev Apartments</option>
-              <option value="Group 6 — New Dev Houses">Group 6 — New Dev Houses</option>
-            </select>
+          <div class="filter-actions">
+            <button class="btn btn-secondary" id="clearFilterBtn" type="button" onclick="resetFilters()">
+              Reset
+            </button>
+            <button class="btn btn-primary" type="button" onclick="applyFilters()">
+              <i class="fas fa-search"></i> Apply
+            </button>
           </div>
-          <button class="add-filter-btn" id="clearFilterBtn" type="button">
-            Remove Filters
-          </button>
-          <div class="select-wrapper" style="margin-left: auto">
-            <select class="sort-select" id="sortSelectModeration">
-              <option value="default">Newest first</option>
-            </select>
+        </section>
+
+        <section class="card">
+          <div class="results-header">
+            <div class="results-count" id="pendingCount">Showing 0 of 0 listings</div>
           </div>
-        </div>
-        <div class="result-count" id="pendingCount">Showing 0 of 0 listings</div>
-        <table>
-          <thead>
-            <tr>
-              <th>Property</th>
-              <th>Agent</th>
-              <th>Reason</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="pendingBody"></tbody>
-        </table>
-        <div class="empty-state" id="pendingEmpty" style="display: none">
-          No pending listings.
-        </div>
-        <div class="pager" id="pendingPager"></div>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Property</th>
+                  <th>Agent</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="pendingBody"></tbody>
+            </table>
+          </div>
+          <div class="empty-state" id="pendingEmpty" style="display: none">
+            No pending listings.
+          </div>
+          <div class="pagination" id="pendingPager"></div>
+        </section>
       </div>
 
       <!-- REJECTED tab -->
-      <div class="card hidden" id="rejectedCard">
-        <div class="result-count" id="rejectedCount">Showing 0 of 0 listings</div>
-        <table>
-          <thead>
-            <tr>
-              <th>Property</th>
-              <th>Agent</th>
-              <th>Reason</th>
-              <th>Status</th>
-              <th>Reject category</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody id="rejectedBody"></tbody>
-        </table>
-        <div class="empty-state" id="rejectedEmpty" style="display: none">
-          No rejected listings.
-        </div>
-        <div class="pager" id="rejectedPager"></div>
+      <div class="hidden" id="rejectedCard">
+        <section class="card">
+          <div class="results-header">
+            <div class="results-count" id="rejectedCount">Showing 0 of 0 listings</div>
+          </div>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Property</th>
+                  <th>Agent</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                  <th>Reject category</th>
+                </tr>
+              </thead>
+              <tbody id="rejectedBody"></tbody>
+            </table>
+          </div>
+          <div class="empty-state" id="rejectedEmpty" style="display: none">
+            No rejected listings.
+          </div>
+          <div class="pagination" id="rejectedPager"></div>
+        </section>
       </div>
     </div>
 
-    <!-- DETAIL view (full width) — replicates the Property Management detail chrome -->
-    <div class="page hidden" id="detailPage">
-      <div class="detail-toolbar">
+    <!-- DETAIL view (full width) — embeds the standalone read-only detail page -->
+    <div class="hidden" id="detailPage">
+      <div class="detail-toolbar" style="padding-left:32px;padding-right:32px">
         <div class="detail-toolbar-left">
           <button class="btn btn-secondary" type="button" onclick="backToList()">
             <i class="fas fa-arrow-left"></i> Back
           </button>
           <span id="dStatusPill"></span>
+          <span class="detail-id-pill" id="dModContext"></span>
         </div>
         <div class="detail-toolbar-right" id="detailActions"></div>
       </div>
 
-      <div class="detail-hero">
-        <div class="detail-thumb"><i class="fas fa-building"></i></div>
-        <div class="detail-hero-info">
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
-            <h2 class="detail-name" id="dName" style="margin:0">—</h2>
-            <span class="group-badge" id="dGroupBadge"><i class="fas fa-layer-group"></i> <span id="dGroup">—</span></span>
-          </div>
-          <div class="detail-meta">
-            <span class="detail-id-pill" id="dId">—</span>
-            <span id="dMetaAddr">—</span>
-            <span>·</span>
-            <span id="dMetaType">—</span>
-            <span>·</span>
-            <span id="dMetaPrice">—</span>
-          </div>
-        </div>
-      </div>
-
-      <div id="dAlerts"></div>
-      <div class="section-grid" id="dSections"></div>
+      <iframe
+        id="detailFrame"
+        title="Property / Project detail"
+        style="width:100%;height:calc(100vh - 70px);border:0;background:var(--bg-page);display:block"
+      ></iframe>
     </div>
 
     <script>
@@ -943,17 +1132,17 @@
       const LS_KEY = "yuushi.moderationQueue";
       function buildSeed() {
         return [
-          { id: "P-1101", title: "Studio near Shibuya", agent: "Sakura Realty", agentEmail: "contact@sakura-realty.jp", status: "Pending", reason: "Unverified agent", severity: "Low", group: "Group 1 — Single Unit", prefecture: "Tokyo", city: "Shibuya", propType: "Apartment", price: "¥9,800,000", layout: "1R", sizeSqm: "21.5㎡", buildYear: "2018", agentLicense: "Pending verification", note: "Agent has not completed license verification. Listing is held pending KYC approval." },
-          { id: "P-1102", title: "Luxury penthouse with ocean view", agent: "Hikari Homes", agentEmail: "info@hikari-homes.jp", status: "Pending", reason: "Keyword flag", severity: "Medium", group: "Group 5 — New Dev Apartments", prefecture: "Kanagawa", city: "Yokohama", propType: "Penthouse", price: "¥185,000,000", layout: "3LDK", sizeSqm: "142.0㎡", buildYear: "2022", flaggedKeyword: "違法", note: "Listing body contains a banned keyword: '違法'. Please review before approving." },
-          { id: "P-1103", title: "1K near Osaka station", agent: "Osaka Prime Realty", agentEmail: "ops@osaka-prime.jp", status: "Pending", reason: "Duplicate listing", severity: "Medium", group: "Group 1 — Single Unit", prefecture: "Osaka", city: "Kita", propType: "Apartment", price: "¥7,200,000", layout: "1K", sizeSqm: "19.8㎡", buildYear: "2016", duplicateOf: "P-0892", note: "Potential duplicate of listing P-0892 (9/11 fields matched). Please review." },
-          { id: "P-1104", title: "2LDK family apartment Yokohama", agent: "Bay Living Co.", agentEmail: "hello@bayliving.jp", status: "Pending", reason: "System flag", severity: "High", group: "Group 2 — Whole Building", prefecture: "Kanagawa", city: "Yokohama", propType: "Apartment", price: "¥42,500,000", layout: "2LDK", sizeSqm: "61.3㎡", buildYear: "2015", note: "System flagged: uploaded photos do not match the unit's registered floor plan." },
-          { id: "P-1105", title: "Commercial space Shinjuku", agent: "Metro Properties", agentEmail: "info@metro-prop.jp", status: "Pending", reason: "System flag", severity: "Low", group: "Group 2 — Whole Building", prefecture: "Tokyo", city: "Shinjuku", propType: "Retail/Shop", price: "¥320,000,000", layout: "Open floor", sizeSqm: "210.0㎡", buildYear: "2009", note: "Flagged by system for unusual price vs area ratio." },
-          { id: "P-1106", title: "Development plot Chiba", agent: "Greenfield Land Co.", agentEmail: "info@greenfield-land.jp", status: "Pending", reason: "Duplicate listing", severity: "Low", group: "Group 3 — Land", prefecture: "Chiba", city: "Funabashi", propType: "Land", price: "¥58,000,000", layout: "—", sizeSqm: "330.0㎡", buildYear: "—", duplicateOf: "P-0913", note: "Potential duplicate of land listing P-0913 (8/10 fields matched). Please review." },
-          { id: "P-1107", title: "New build apartment Nagoya", agent: "Central Japan Realty", agentEmail: "sales@cj-realty.jp", status: "Pending", reason: "Unverified agent", severity: "Medium", group: "Group 5 — New Dev Apartments", prefecture: "Aichi", city: "Naka", propType: "Apartment", price: "¥38,400,000", layout: "2LDK", sizeSqm: "58.7㎡", buildYear: "2024", agentLicense: "Pending verification", note: "New developer account; license verification still in progress." },
-          { id: "P-1108", title: "New detached house Saitama", agent: "Sunrise Homes", agentEmail: "contact@sunrise-homes.jp", status: "Pending", reason: "Keyword flag", severity: "Low", group: "Group 6 — New Dev Houses", prefecture: "Saitama", city: "Omiya", propType: "House", price: "¥46,900,000", layout: "4LDK", sizeSqm: "108.2㎡", buildYear: "2024", flaggedKeyword: "保証", note: "Listing body contains a flagged keyword: '保証'. Please review wording before approving." },
+          { id: "P-1101", title: "Studio near Shibuya", agent: "Sakura Realty", agentEmail: "contact@sakura-realty.jp", status: "Pending", reason: "Unverified agent", severity: "Low", group: "Group 1 — Single Unit", prefecture: "Tokyo", city: "Shibuya", propType: "Apartment", price: "¥9,800,000", layout: "1R", sizeSqm: "21.5㎡", buildYear: "2018", agentLicense: "Pending verification", note: "Agent has not completed license verification. Listing is held pending KYC approval.", postCode: "150-0002", chome: "2-15-4", buildingName: "Shibuya Court", houseNo: "302", transactionType: "Buy", publishStatus: "Pending review", saleStatus: "On Sale", membersOnly: "No", dateUpdated: "2026-06-18", pricePerSqm: "¥455,814/㎡", floorTotal: "3F / 12F", buildingStructure: "RC (Reinforced Concrete)", landRight: "Ownership", photos: 8, description: "Compact studio a short walk from Shibuya station. Renovated kitchen and updated bathroom. Ideal for first-time buyers or investors seeking central-Tokyo rental yield." },
+          { id: "P-1102", title: "Luxury penthouse with ocean view", agent: "Hikari Homes", agentEmail: "info@hikari-homes.jp", status: "Pending", reason: "Keyword flag", severity: "Medium", group: "Group 5 — New Dev Apartments", prefecture: "Kanagawa", city: "Yokohama", propType: "Penthouse", price: "¥185,000,000", layout: "3LDK", sizeSqm: "142.0㎡", buildYear: "2022", flaggedKeyword: "違法", note: "Listing body contains a banned keyword: '違法'. Please review before approving.", postCode: "231-0023", chome: "1-1-8", buildingName: "Bayfront Tower Residence", houseNo: "PH-2", transactionType: "Buy", publishStatus: "Pending review", saleStatus: "On Sale", membersOnly: "Yes", dateUpdated: "2026-06-20", pricePerSqm: "¥1,302,816/㎡", buildingStructure: "RC (Reinforced Concrete)", totalFloors: "28", landRight: "Ownership", photos: 24, description: "Top-floor penthouse with panoramic ocean views, private terrace and concierge service. New development in central Yokohama with premium finishes throughout." },
+          { id: "P-1103", title: "1K near Osaka station", agent: "Osaka Prime Realty", agentEmail: "ops@osaka-prime.jp", status: "Pending", reason: "Duplicate listing", severity: "Medium", group: "Group 1 — Single Unit", prefecture: "Osaka", city: "Kita", propType: "Apartment", price: "¥7,200,000", layout: "1K", sizeSqm: "19.8㎡", buildYear: "2016", duplicateOf: "P-0892", note: "Potential duplicate of listing P-0892 (9/11 fields matched). Please review.", postCode: "530-0001", chome: "3-2-1", buildingName: "Umeda Station Front", houseNo: "705", transactionType: "Rent", publishStatus: "Pending review", saleStatus: "On Sale", membersOnly: "No", dateUpdated: "2026-06-15", floorTotal: "7F / 10F", buildingStructure: "SRC (Steel Reinforced Concrete)", landRight: "Ownership", photos: 6, description: "Efficient 1K minutes from Osaka station. Suited to single professionals; strong rental demand in the Umeda area." },
+          { id: "P-1104", title: "2LDK family apartment Yokohama", agent: "Bay Living Co.", agentEmail: "hello@bayliving.jp", status: "Pending", reason: "System flag", severity: "High", group: "Group 2 — Whole Building", prefecture: "Kanagawa", city: "Yokohama", propType: "Apartment", price: "¥42,500,000", layout: "2LDK", sizeSqm: "61.3㎡", buildYear: "2015", note: "System flagged: uploaded photos do not match the unit's registered floor plan.", postCode: "220-0011", chome: "4-7-2", buildingName: "Minato Heights", houseNo: "—", transactionType: "Buy", publishStatus: "Pending review", saleStatus: "On Sale", membersOnly: "No", dateUpdated: "2026-06-19", pricePerSqm: "¥693,311/㎡", layoutBreakdown: "4× 1LDK, 8× 2LDK, 2× 3LDK", buildingStructure: "RC (Reinforced Concrete)", totalFloors: "9", landAreaBldg: "480.0㎡", landRight: "Ownership", photos: 14, description: "Whole residential building in central Yokohama with stable occupancy. Suited to investors seeking a turnkey income property." },
+          { id: "P-1105", title: "Commercial space Shinjuku", agent: "Metro Properties", agentEmail: "info@metro-prop.jp", status: "Pending", reason: "System flag", severity: "Low", group: "Group 2 — Whole Building", prefecture: "Tokyo", city: "Shinjuku", propType: "Retail/Shop", price: "¥320,000,000", layout: "Open floor", sizeSqm: "210.0㎡", buildYear: "2009", note: "Flagged by system for unusual price vs area ratio.", postCode: "160-0022", chome: "3-1-13", buildingName: "Shinjuku Commercial Bldg", houseNo: "—", transactionType: "Buy", publishStatus: "Pending review", saleStatus: "On Sale", membersOnly: "No", dateUpdated: "2026-06-17", pricePerSqm: "¥1,523,809/㎡", buildingStructure: "S (Steel)", totalFloors: "6", landAreaBldg: "260.0㎡", landRight: "Ownership", photos: 11, description: "Prominent commercial building near Shinjuku station. Multiple tenancy potential across retail and office floors." },
+          { id: "P-1106", title: "Development plot Chiba", agent: "Greenfield Land Co.", agentEmail: "info@greenfield-land.jp", status: "Pending", reason: "Duplicate listing", severity: "Low", group: "Group 3 — Land", prefecture: "Chiba", city: "Funabashi", propType: "Land", price: "¥58,000,000", layout: "—", sizeSqm: "330.0㎡", buildYear: "—", duplicateOf: "P-0913", note: "Potential duplicate of land listing P-0913 (8/10 fields matched). Please review.", postCode: "273-0005", chome: "2-4", buildingName: "—", houseNo: "—", transactionType: "Buy", publishStatus: "Pending review", saleStatus: "On Sale", membersOnly: "No", dateUpdated: "2026-06-14", landArea: "330.0㎡", landRight: "Ownership", landUse: "Residential", zoning: "Category 1 Residential", bldgCoverage: "60%", floorAreaRatio: "200%", photos: 4, description: "Flat development plot in a residential district of Funabashi. Suited to detached-house or small apartment development." },
+          { id: "P-1107", title: "New build apartment Nagoya", agent: "Central Japan Realty", agentEmail: "sales@cj-realty.jp", status: "Pending", reason: "Unverified agent", severity: "Medium", group: "Group 5 — New Dev Apartments", prefecture: "Aichi", city: "Naka", propType: "Apartment", price: "¥38,400,000", layout: "2LDK", sizeSqm: "58.7㎡", buildYear: "2024", agentLicense: "Pending verification", note: "New developer account; license verification still in progress.", postCode: "460-0008", chome: "3-20-15", buildingName: "Sakae Grand Residence", houseNo: "1108", transactionType: "Buy", publishStatus: "Pending review", saleStatus: "On Sale", membersOnly: "No", dateUpdated: "2026-06-21", pricePerSqm: "¥654,173/㎡", layoutBreakdown: "12× 1LDK, 30× 2LDK, 8× 3LDK", buildingStructure: "RC (Reinforced Concrete)", totalFloors: "15", landRight: "Ownership", photos: 18, description: "Brand-new development in the Sakae district of Nagoya. Modern layouts, energy-efficient build and on-site amenities." },
+          { id: "P-1108", title: "New detached house Saitama", agent: "Sunrise Homes", agentEmail: "contact@sunrise-homes.jp", status: "Pending", reason: "Keyword flag", severity: "Low", group: "Group 6 — New Dev Houses", prefecture: "Saitama", city: "Omiya", propType: "House", price: "¥46,900,000", layout: "4LDK", sizeSqm: "108.2㎡", buildYear: "2024", flaggedKeyword: "保証", note: "Listing body contains a flagged keyword: '保証'. Please review wording before approving.", postCode: "330-0846", chome: "1-7-3", buildingName: "—", houseNo: "—", transactionType: "Buy", publishStatus: "Pending review", saleStatus: "On Sale", membersOnly: "No", dateUpdated: "2026-06-22", pricePerSqm: "¥433,456/㎡", buildingStructure: "Wood", totalFloors: "2", landArea: "132.0㎡", landRight: "Ownership", photos: 12, description: "Newly built 4LDK detached house near Omiya. Family-oriented layout with parking and a small garden." },
           // existing rejected examples
-          { id: "P-1090", title: "Refurbished 1LDK Kyoto", agent: "Kyoto Estate Partners", agentEmail: "info@kyoto-estate.jp", status: "Rejected", reason: "Keyword flag", severity: "Medium", group: "Group 1 — Single Unit", prefecture: "Kyoto", city: "Nakagyo", propType: "Apartment", price: "¥21,500,000", layout: "1LDK", sizeSqm: "44.0㎡", buildYear: "2011", flaggedKeyword: "違法", rejectCategory: "Inappropriate content", rejectNotes: "Banned wording in the listing body; resubmit after removing it." },
-          { id: "P-1091", title: "Duplicate land plot Ibaraki", agent: "Greenfield Land Co.", agentEmail: "info@greenfield-land.jp", status: "Rejected", reason: "Duplicate listing", severity: "Low", group: "Group 3 — Land", prefecture: "Ibaraki", city: "Tsukuba", propType: "Land", price: "¥18,900,000", layout: "—", sizeSqm: "280.0㎡", buildYear: "—", duplicateOf: "P-0771", rejectCategory: "Duplicate listing", rejectNotes: "Same parcel already listed under P-0771." },
+          { id: "P-1090", title: "Refurbished 1LDK Kyoto", agent: "Kyoto Estate Partners", agentEmail: "info@kyoto-estate.jp", status: "Rejected", reason: "Keyword flag", severity: "Medium", group: "Group 1 — Single Unit", prefecture: "Kyoto", city: "Nakagyo", propType: "Apartment", price: "¥21,500,000", layout: "1LDK", sizeSqm: "44.0㎡", buildYear: "2011", flaggedKeyword: "違法", rejectCategory: "Inappropriate content", rejectNotes: "Banned wording in the listing body; resubmit after removing it.", postCode: "604-8005", chome: "2-11", buildingName: "Kawaramachi Residence", houseNo: "404", transactionType: "Buy", publishStatus: "Rejected", saleStatus: "On Sale", membersOnly: "No", dateUpdated: "2026-06-10", pricePerSqm: "¥488,636/㎡", floorTotal: "4F / 8F", buildingStructure: "RC (Reinforced Concrete)", landRight: "Ownership", photos: 9, description: "Refurbished 1LDK in central Kyoto with updated interior. Walkable to Kawaramachi shopping and dining." },
+          { id: "P-1091", title: "Duplicate land plot Ibaraki", agent: "Greenfield Land Co.", agentEmail: "info@greenfield-land.jp", status: "Rejected", reason: "Duplicate listing", severity: "Low", group: "Group 3 — Land", prefecture: "Ibaraki", city: "Tsukuba", propType: "Land", price: "¥18,900,000", layout: "—", sizeSqm: "280.0㎡", buildYear: "—", duplicateOf: "P-0771", rejectCategory: "Duplicate listing", rejectNotes: "Same parcel already listed under P-0771.", postCode: "305-0005", chome: "3-1", buildingName: "—", houseNo: "—", transactionType: "Buy", publishStatus: "Rejected", saleStatus: "On Sale", membersOnly: "No", dateUpdated: "2026-06-08", landArea: "280.0㎡", landRight: "Ownership", landUse: "Residential", zoning: "Category 1 Residential", bldgCoverage: "50%", floorAreaRatio: "100%", photos: 3, description: "Residential development plot in Tsukuba. Level ground with road frontage." },
         ].concat(buildFiller());
       }
       // Deterministic realistic filler so the pager always shows (queue padded to ≥60).
@@ -992,7 +1181,35 @@
             sizeSqm: (isLand ? (200 + (i * 11) % 300) : (20 + (i * 9) % 120)).toFixed(1) + "㎡",
             buildYear: isLand ? "—" : String(2005 + (i % 19)),
             note: "Auto-flagged demo listing (" + reason + ") for queue volume.",
+            postCode: String(100 + (i % 8) * 10 + (i % 9)).padStart(3, "0") + "-00" + String(i % 9 + 1),
+            chome: (1 + (i % 6)) + "-" + (1 + (i % 18)),
+            buildingName: isLand ? "—" : (city[1] + " " + ["Residence", "Court", "Heights", "Tower", "Place"][i % 5]),
+            houseNo: isLand ? "—" : String(100 + (i * 7) % 900),
+            transactionType: i % 4 === 1 ? "Rent" : "Buy",
+            publishStatus: rejected ? "Rejected" : "Pending review",
+            saleStatus: "On Sale",
+            membersOnly: i % 7 === 0 ? "Yes" : "No",
+            dateUpdated: "2026-" + String(1 + (i % 6)).padStart(2, "0") + "-" + String(1 + (i % 27)).padStart(2, "0"),
+            buildingStructure: isLand ? "—" : ["RC (Reinforced Concrete)", "SRC (Steel Reinforced Concrete)", "S (Steel)", "Wood"][i % 4],
+            landRight: "Ownership",
+            photos: 3 + (i % 18),
+            description: "Demo property in " + city[1] + ", " + city[0] + ". Auto-generated detail for queue-volume testing; representative of a typical " + types[group].toLowerCase() + " listing in this area.",
           };
+          if (isLand) {
+            rec.landArea = (200 + (i * 11) % 300).toFixed(1) + "㎡";
+            rec.landUse = "Residential";
+            rec.zoning = "Category 1 Residential";
+            rec.bldgCoverage = (50 + (i % 3) * 10) + "%";
+            rec.floorAreaRatio = (100 + (i % 4) * 50) + "%";
+          } else {
+            rec.pricePerSqm = "¥" + String(300 + (i * 13) % 900) + ",000/㎡";
+            rec.totalFloors = String(3 + (i % 20));
+            if (group === "Group 2 — Whole Building" || group === "Group 5 — New Dev Apartments") {
+              rec.layoutBreakdown = (2 + (i % 5)) + "× 1LDK, " + (4 + (i % 8)) + "× 2LDK";
+            } else {
+              rec.floorTotal = (1 + (i % 10)) + "F / " + (3 + (i % 20)) + "F";
+            }
+          }
           if (reason === "Unverified agent") rec.agentLicense = "Pending verification";
           if (reason === "Keyword flag") rec.flaggedKeyword = i % 2 ? "保証" : "違法";
           if (reason === "Duplicate listing") rec.duplicateOf = "P-0" + (600 + i);
@@ -1077,24 +1294,25 @@
         const mkBtn = (label, page, opts) => {
           const b = document.createElement("button");
           b.type = "button";
-          b.textContent = label;
+          b.className = "page-btn";
+          b.innerHTML = label;
           if (opts && opts.disabled) b.disabled = true;
           if (opts && opts.active) b.classList.add("active");
           if (!(opts && opts.disabled) && !(opts && opts.active)) b.addEventListener("click", () => onGo(page));
           return b;
         };
-        pagerEl.appendChild(mkBtn("Previous", current - 1, { disabled: current === 1 }));
+        pagerEl.appendChild(mkBtn('<i class="fas fa-chevron-left"></i> Previous', current - 1, { disabled: current === 1 }));
         pageNumbers(current, totalPages).forEach((n) => {
           if (n === "…") {
             const s = document.createElement("span");
-            s.className = "pager-ellipsis";
+            s.className = "page-ellipsis";
             s.textContent = "…";
             pagerEl.appendChild(s);
           } else {
             pagerEl.appendChild(mkBtn(String(n), n, { active: n === current }));
           }
         });
-        pagerEl.appendChild(mkBtn("Next", current + 1, { disabled: current === totalPages }));
+        pagerEl.appendChild(mkBtn('Next <i class="fas fa-chevron-right"></i>', current + 1, { disabled: current === totalPages }));
       }
 
       function severityClass(sev) { return sev === "High" ? "severity-high" : sev === "Medium" ? "severity-medium" : sev === "Low" ? "severity-low" : ""; }
@@ -1140,6 +1358,26 @@
         $("pendingEmpty").style.display = all.length ? "none" : "block";
       }
 
+      // Apply the Search / Reason / Group controls to the pending list.
+      function applyFilters() {
+        filters.search = $("searchInput").value;
+        filters.reason = $("reasonFilter").value;
+        filters.group = $("groupFilter").value;
+        pendingPage = 1;
+        renderPending();
+      }
+      // Clear the three filters and re-render the pending list.
+      function resetFilters() {
+        filters = { search: "", reason: "", group: "" };
+        $("searchInput").value = "";
+        $("reasonFilter").value = "";
+        $("groupFilter").value = "";
+        pendingPage = 1;
+        renderPending();
+      }
+      window.applyFilters = applyFilters;
+      window.resetFilters = resetFilters;
+
       // ---------- Rejected table (read-only + rejection reason column) ----------
       function renderRejected() {
         const all = moderationQueue.filter((p) => p.status === "Rejected");
@@ -1153,37 +1391,97 @@
             <td>${esc(p.reason)}</td>
             <td><span class="status-pill ${statusClass(p.status)}">${esc(p.status)}</span></td>
             <td class="rej-reason">${esc(p.rejectCategory || "—")}</td>
-            <td>${esc(p.rejectNotes || "—")}</td>
           </tr>`).join("");
         $("rejectedEmpty").style.display = all.length ? "none" : "block";
       }
 
-      // ---------- detail view (replicated chrome from property-list-oversight) ----------
-      function reasonContext(p) {
-        switch (p.reason) {
-          case "Unverified agent": return { label: "Agent verification", html: '<span class="status-pill status-suspended">Agent not verified</span>' };
-          case "Keyword flag": return { label: "Flagged keyword", html: '<span class="rej-reason" style="font-weight:700">' + esc(p.flaggedKeyword || "—") + "</span>" };
-          case "Duplicate listing": return { label: "Potential duplicate of", html: '<a href="#" onclick="return false">' + esc(p.duplicateOf || "—") + "</a>" };
-          case "System flag": return { label: "System note", html: esc(p.note || "—") };
-          default: return null;
-        }
+      // ---------- detail view (embeds the standalone read-only detail page) ----------
+      // Parse the numeric group ("Group 5 — New Dev Apartments" -> 5).
+      function parseGroupNum(groupStr) {
+        const m = /Group\s+(\d+)/i.exec(groupStr || "");
+        return m ? parseInt(m[1], 10) : null;
       }
-      function kv(label, val, full) { return '<div class="kv' + (full ? " kv-full" : "") + '"><span class="kv-label">' + esc(label) + '</span><span class="kv-value">' + (val || "—") + "</span></div>"; }
-      function secCard(title, icon, inner) { return '<div class="sec-card"><div class="sec-title"><i class="fas ' + icon + '"></i> ' + esc(title) + '</div><div class="kv-grid">' + inner + "</div></div>"; }
+      // New-development groups (5/6, or any "New Dev" label) render with the PROJECT detail page.
+      function isProjectGroup(groupStr) {
+        const n = parseGroupNum(groupStr);
+        return n === 5 || n === 6 || /New Dev/i.test(groupStr || "");
+      }
+      // Integer yen from a display string like "¥9,800,000" -> 9800000.
+      function parseYen(s) {
+        if (s == null) return undefined;
+        const n = parseInt(String(s).replace(/[^0-9]/g, ""), 10);
+        return Number.isFinite(n) ? n : undefined;
+      }
+      // Number from a m² string like "21.5㎡" -> 21.5.
+      function parseArea(s) {
+        if (s == null) return undefined;
+        const n = parseFloat(String(s).replace(/[^0-9.]/g, ""));
+        return Number.isFinite(n) ? n : undefined;
+      }
+      // Map an item.status into the standalone detail's publishStatus vocabulary.
+      function publishFromStatus(p) {
+        if (p.publishStatus === "Pending review" || p.publishStatus === "Pending Review") return "Pending Review";
+        if (p.status === "Rejected" || p.publishStatus === "Rejected") return "Rejected";
+        if (p.status === "Pending") return "Pending Review";
+        return p.publishStatus || "Pending Review";
+      }
+
+      // Build the viewRecord handed to the standalone detail page via sessionStorage.
+      function buildViewRecord(p, isProject) {
+        const groupNum = parseGroupNum(p.group);
+        // Common, already-matching pass-through fields.
+        const rec = Object.assign({}, p, {
+          id: p.id,
+          group: groupNum,
+          name: p.title,
+          propType: p.propType,
+          prefecture: p.prefecture,
+          city: p.city,
+          chome: p.chome,
+          postCode: p.postCode,
+          buildingName: p.buildingName,
+          houseNo: p.houseNo,
+          priceBuy: parseYen(p.price),
+          saleStatus: p.saleStatus,
+          membersOnly: p.membersOnly,
+          buildYear: p.buildYear,
+          description: p.description,
+          photos: p.photos,
+          publishStatus: publishFromStatus(p),
+          dateUpdated: p.dateUpdated,
+          buildingStructure: p.buildingStructure,
+        });
+        const area = parseArea(p.sizeSqm);
+        if (area !== undefined) rec.exclusiveArea = area;
+        if (isProject) {
+          // Project schema keys (project-detail-view.html).
+          rec.transactionType = p.transactionType || "Buy";
+          rec.salesStatus = p.saleStatus || "On Sale";
+          rec.brokerageType = p.brokerageType || p.txTypeProject;
+          rec.nameRomaji = p.nameRomaji || p.title;
+          rec.nameJp = p.nameJp || p.title;
+          rec.unitNo = p.unitNo || p.houseNo;
+        } else {
+          // Property schema keys (property-detail-view.html).
+          rec.txType = p.transactionType || "Buy";
+        }
+        return rec;
+      }
 
       function openDetail(id) {
         const p = moderationQueue.find((x) => x.id === id);
         if (!p) return;
         selectedId = id;
-        $("dName").textContent = p.title;
-        if (p.group) { $("dGroup").textContent = p.group; $("dGroupBadge").style.display = ""; }
-        else { $("dGroupBadge").style.display = "none"; }
-        $("dId").textContent = p.id;
-        $("dMetaAddr").textContent = [p.prefecture, p.city].filter(Boolean).join(" · ") || "—";
-        $("dMetaType").textContent = p.propType || "—";
-        $("dMetaPrice").textContent = p.price || "—";
-        $("dStatusPill").innerHTML = '<span class="status-pill ' + statusClass(p.status) + '">' + esc(p.status) + "</span>";
 
+        // Status pill + moderation context line in the toolbar.
+        $("dStatusPill").innerHTML = '<span class="status-pill ' + statusClass(p.status) + '">' + esc(p.status) + "</span>";
+        const ctxParts = [p.id];
+        if (p.group) ctxParts.push(p.group);
+        if (p.reason) ctxParts.push(p.reason);
+        if (p.status === "Rejected" && p.rejectCategory) ctxParts.push("Reject: " + p.rejectCategory);
+        $("dModContext").textContent = ctxParts.join("  ·  ");
+
+        // Actions: Pending -> Approve + Reject; otherwise none.
         const act = $("detailActions");
         if (p.status === "Pending") {
           act.innerHTML =
@@ -1193,23 +1491,14 @@
           act.innerHTML = "";
         }
 
-        const alerts = [];
-        if (p.status === "Rejected" && p.rejectCategory) alerts.push({ kind: "danger", icon: "fa-ban", msg: "Rejected — " + esc(p.rejectCategory) });
-        $("dAlerts").innerHTML = alerts.map((a) => '<div class="alert ' + a.kind + '"><i class="fas ' + a.icon + '"></i><div>' + a.msg + "</div></div>").join("");
+        // Map the moderation item to the standalone detail's record shape and hand it over.
+        const isProject = isProjectGroup(p.group);
+        const viewRecord = buildViewRecord(p, isProject);
+        try { sessionStorage.setItem("yuushi.viewRecord", JSON.stringify(viewRecord)); } catch (e) {}
 
-        const rc = reasonContext(p);
-        const overview = kv("Property", esc(p.title)) + kv("Property ID", esc(p.id)) + kv("Status", '<span class="status-pill ' + statusClass(p.status) + '">' + esc(p.status) + "</span>") + kv("Type", esc(p.propType));
-        const details = kv("Prefecture", esc(p.prefecture)) + kv("City", esc(p.city)) + kv("Layout", esc(p.layout)) + kv("Size", esc(p.sizeSqm)) + kv("Build year", esc(p.buildYear)) + kv("Price", esc(p.price));
-        const agent = kv("Agent", esc(p.agent)) + kv("Agent email", esc(p.agentEmail)) + (p.agentLicense ? kv("License", esc(p.agentLicense)) : "");
-        const rejectKv = p.status === "Rejected"
-          ? kv("Reject category", esc(p.rejectCategory || "—")) + kv("Notes", esc(p.rejectNotes || "—"), true)
-          : "";
-        const moderation = kv("Moderation reason", esc(p.reason)) + (rc ? kv(rc.label, rc.html) : "") + kv("Note", esc(p.note), true) + rejectKv;
-        $("dSections").innerHTML =
-          secCard("Listing overview", "fa-circle-info", overview) +
-          secCard("Property details", "fa-building", details) +
-          secCard("Agent", "fa-user-tie", agent) +
-          secCard("Moderation", "fa-flag", moderation);
+        const file = isProject ? "project-detail-view.html" : "property-detail-view.html";
+        const param = isProject ? "projectId" : "propertyId";
+        $("detailFrame").src = file + "?" + param + "=" + encodeURIComponent(p.id);
 
         $("listPage").classList.add("hidden");
         $("detailPage").classList.remove("hidden");
@@ -1217,6 +1506,7 @@
       }
       function backToList() {
         selectedId = null;
+        $("detailFrame").src = "about:blank";
         $("detailPage").classList.add("hidden");
         $("listPage").classList.remove("hidden");
         if (currentTab === "pending") renderPending(); else renderRejected();
@@ -1229,13 +1519,11 @@
           subtitle: "Listing ID: " + p.id,
           danger: false,
           okLabel: "Approve",
-          requireNote: false,
-          noteLabel: "Audit note",
-          notePlaceholder: "Optional internal note…",
-          onConfirm(note) {
+          hideNote: true,
+          onConfirm() {
             p.status = "Approved";
-            p.decisionNote = note || "";
-            logDecision(p, "Approved", note || "");
+            p.decisionNote = "";
+            logDecision(p, "Approved", "");
             persistQueue();
             Toast.ok("Listing approved and published. Agent " + p.agent + " has been notified.");
             backToList();
@@ -1247,12 +1535,12 @@
         if (!p) return;
         openRejectModal({
           subtitle: "Listing ID: " + p.id,
-          onConfirm(category, notes) {
+          onConfirm(category) {
             p.status = "Rejected";
             p.rejectCategory = category;
-            p.rejectNotes = notes || "";
-            p.decisionNote = notes || "";
-            logDecision(p, "Rejected", category + (notes ? " — " + notes : ""));
+            p.rejectNotes = "";
+            p.decisionNote = "";
+            logDecision(p, "Rejected", category);
             persistQueue();
             Toast.err("Listing rejected. Agent " + p.agent + " has been notified with your reason.");
             $("detailPage").classList.add("hidden");
@@ -1273,7 +1561,7 @@
           <div class="ux-modal-box" style="width:480px">
             <h3 id="decisionTitle">Approve listing?</h3>
             <p id="decisionSub" style="margin:-4px 0 14px;font-size:12px;color:var(--text-muted)"></p>
-            <div style="margin-bottom:14px">
+            <div id="decisionNoteBlock" style="margin-bottom:14px">
               <label id="decisionNoteLabel" style="display:block;font-size:11.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px">Audit note</label>
               <textarea id="decisionNote" style="width:100%;min-height:84px;padding:9px 12px;border:1px solid var(--border-warm);border-radius:var(--r-md);font-size:13px;font-family:inherit;background:var(--bg-card);resize:vertical" placeholder=""></textarea>
               <span id="decisionErr" class="ux-field-error" style="display:none">A rejection reason is required.</span>
@@ -1313,6 +1601,7 @@
           errEl.style.display = "none";
           labelEl.textContent = opts.noteLabel || "Audit note";
           labelEl.className = opts.requireNote ? "req" : "";
+          modal.querySelector("#decisionNoteBlock").style.display = opts.hideNote ? "none" : "";
           noteEl.placeholder = opts.notePlaceholder || "";
           okBtn.textContent = opts.okLabel || "Confirm";
           okBtn.className = "ux-btn " + (opts.danger ? "danger" : "primary");
@@ -1350,10 +1639,6 @@
               </div>
               <span id="rejectCatErr" class="ux-field-error" style="display:none">Please select a reject category.</span>
             </div>
-            <div style="margin-bottom:14px">
-              <label for="rejectNotes" style="display:block;font-size:11.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px">Notes</label>
-              <textarea id="rejectNotes" style="width:100%;min-height:84px;padding:9px 12px;border:1px solid var(--border-warm);border-radius:var(--r-md);font-size:13px;font-family:inherit;background:var(--bg-card);resize:vertical" placeholder="Add context or specific guidance for the agent…"></textarea>
-            </div>
             <div class="ux-modal-actions">
               <button type="button" class="ux-btn" id="rejectCancel">Cancel</button>
               <button type="button" class="ux-btn danger" id="rejectOk">Reject</button>
@@ -1363,7 +1648,6 @@
 
         const subEl = modal.querySelector("#rejectSub");
         const catEl = modal.querySelector("#rejectCategory");
-        const notesEl = modal.querySelector("#rejectNotes");
         const catErr = modal.querySelector("#rejectCatErr");
         const okBtn = modal.querySelector("#rejectOk");
         const cancelBtn = modal.querySelector("#rejectCancel");
@@ -1376,14 +1660,13 @@
         catEl.addEventListener("change", () => { if (catEl.value) { catErr.style.display = "none"; catEl.classList.remove("ux-invalid"); } });
         okBtn.addEventListener("click", () => {
           if (!catEl.value) { catErr.style.display = "block"; catEl.classList.add("ux-invalid"); catEl.focus(); return; }
-          const cb = _cb; const cat = catEl.value; const notes = notesEl.value.trim(); close();
-          if (cb) cb(cat, notes);
+          const cb = _cb; const cat = catEl.value; close();
+          if (cb) cb(cat);
         });
 
         window.openRejectModal = (opts) => {
           subEl.textContent = opts.subtitle || "";
           catEl.value = "";
-          notesEl.value = "";
           catEl.classList.remove("ux-invalid");
           catErr.style.display = "none";
           _cb = typeof opts.onConfirm === "function" ? opts.onConfirm : null;
@@ -1397,19 +1680,6 @@
         $("searchInput").addEventListener("input", (e) => { filters.search = e.target.value; pendingPage = 1; renderPending(); });
         $("reasonFilter").addEventListener("change", (e) => { filters.reason = e.target.value; pendingPage = 1; renderPending(); });
         $("groupFilter").addEventListener("change", (e) => { filters.group = e.target.value; pendingPage = 1; renderPending(); });
-        const sortSel = $("sortSelectModeration");
-        if (sortSel) sortSel.addEventListener("change", (e) => { sortMode = e.target.value || "default"; pendingPage = 1; renderPending(); });
-        const clearBtn = $("clearFilterBtn");
-        if (clearBtn) clearBtn.addEventListener("click", () => {
-          filters = { search: "", reason: "", group: "" };
-          $("searchInput").value = "";
-          $("reasonFilter").value = "";
-          $("groupFilter").value = "";
-          if (sortSel) sortSel.value = "default";
-          sortMode = "default";
-          pendingPage = 1;
-          renderPending();
-        });
       });
     </script>
     <!-- ─────── UX KIT (toast · confirm · focus trap · dirty guard) ─────── -->

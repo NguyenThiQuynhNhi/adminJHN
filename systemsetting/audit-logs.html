@@ -233,7 +233,6 @@
         font-size: 10px;
       }
       tbody tr {
-        cursor: pointer;
         transition: background 0.12s ease;
       }
       tbody tr:hover {
@@ -486,10 +485,6 @@
             <div class="ms" id="msActor"></div>
           </div>
           <div class="field-group">
-            <label class="field-label">Severity</label>
-            <div class="ms" id="msSeverity"></div>
-          </div>
-          <div class="field-group">
             <label class="field-label">Action category</label>
             <div class="ms" id="msCategory"></div>
           </div>
@@ -519,9 +514,6 @@
                 <th data-sort="resource">
                   Resource <span class="sort-ind"></span>
                 </th>
-                <th data-sort="severity">
-                  Severity <span class="sort-ind"></span>
-                </th>
               </tr>
             </thead>
             <tbody id="logTbody"></tbody>
@@ -532,52 +524,6 @@
 
     </div>
 
-    <div id="detailView" style="display: none">
-      <div style="margin-bottom: 12px">
-        <button id="btnBack" class="btn btn-ghost" type="button">
-          ‹ Back to logs
-        </button>
-      </div>
-      <section class="card">
-        <div class="card-header">
-          <span class="card-title">Log details</span>
-        </div>
-        <div class="detail-section-title">General information</div>
-        <div class="detail-grid">
-          <div>
-            <div class="detail-label">Time</div>
-            <div class="detail-value" id="dTime"></div>
-          </div>
-          <div>
-            <div class="detail-label">Actor</div>
-            <div class="detail-value" id="dActor"></div>
-          </div>
-          <div>
-            <div class="detail-label">Action</div>
-            <div class="detail-value" id="dAction"></div>
-          </div>
-          <div>
-            <div class="detail-label">Resource</div>
-            <div class="detail-value" id="dResource"></div>
-          </div>
-        </div>
-
-        <div class="detail-section-title">Context &amp; result</div>
-        <div class="detail-grid" style="grid-template-columns: minmax(0, 1fr)">
-          <div>
-            <div class="detail-label">Severity</div>
-            <div class="detail-value" id="dSeverity"></div>
-          </div>
-          <div>
-            <div class="detail-label">Summary</div>
-            <div class="detail-value" id="dSummary"></div>
-          </div>
-        </div>
-
-        <div class="detail-section-title">Privacy explanation</div>
-        <div class="preview-box" id="privacyNote"></div>
-      </section>
-    </div>
 
     <div class="toast-wrap" id="toastWrap"></div>
 
@@ -761,12 +707,6 @@
         { value: "billing", label: "Billing" },
         { value: "integration", label: "Integration" },
       ];
-      const SEVERITY_OPTS = [
-        { value: "success", label: "Success" },
-        { value: "danger", label: "Danger" },
-        { value: "info", label: "Info" },
-      ];
-
       const RESOURCE_BY_ACTION = {
         RESET_PASSWORD: () => userRes(),
         SUSPEND_ACCOUNT: () => userRes(),
@@ -813,7 +753,6 @@
       const PAGE_SIZE = 50;
       let page = 1;
       let sort = { col: "ts", dir: "desc" }; // default: time descending
-      let selectedId = null;
       let _id = 0;
 
       const $ = (id) => document.getElementById(id);
@@ -952,11 +891,6 @@
           onChange: onFilterChange,
         },
       );
-      const msSeverity = makeMultiSelect($("msSeverity"), SEVERITY_OPTS, {
-        searchable: false,
-        placeholder: "All severities",
-        onChange: onFilterChange,
-      });
       const msCategory = makeMultiSelect($("msCategory"), CATEGORY_OPTS, {
         searchable: false,
         placeholder: "All categories",
@@ -978,14 +912,12 @@
           ? new Date($("dateTo").value + "T23:59:59").getTime()
           : null;
         const actors = msActor.values();
-        const sevs = msSeverity.values();
         const cats = msCategory.values();
         const q = $("searchLog").value.trim().toLowerCase();
         return logs.filter((l) => {
           if (from && l.ts < from) return false;
           if (to && l.ts > to) return false;
           if (actors.length && !actors.includes(l.actor)) return false;
-          if (sevs.length && !sevs.includes(l.severity)) return false;
           if (cats.length) {
             const ac = actionCats(l.action);
             if (!cats.some((c) => ac.includes(c))) return false;
@@ -1068,17 +1000,6 @@
       }
       window.gotoPage = gotoPage;
 
-      function severityBadgeHtml(sev) {
-        const cls =
-          sev === "success"
-            ? "badge-success"
-            : sev === "danger"
-              ? "badge-danger"
-              : "badge-info";
-        const label =
-          sev === "success" ? "Success" : sev === "danger" ? "Danger" : "Info";
-        return `<span class="badge ${cls}">${label}</span>`;
-      }
       function resourceHtml(res) {
         const m = String(res).match(/^(USER|AGENT|ADM)-/i);
         if (!m) return esc(res);
@@ -1143,56 +1064,18 @@
         tb.innerHTML = rows
           .map(
             (l) =>
-              `<tr data-id="${l.id}" class="${l.id === selectedId ? "selected-row" : ""}">
+              `<tr>
             <td>${esc(l.time)}</td>
             <td>${actorHtml(l.actor)}</td>
             <td>${actionHtml(l.action)}</td>
             <td>${resourceHtml(l.resource)}</td>
-            <td>${severityBadgeHtml(l.severity)}</td>
           </tr>`,
           )
           .join("");
-        tb.querySelectorAll("tr[data-id]").forEach((tr) =>
-          tr.addEventListener("click", () => selectLog(tr.dataset.id)),
-        );
         renderSortIndicators();
         renderPager(total);
       }
 
-      /* ════════ Detail panel ════════ */
-      function selectLog(id) {
-        const l = logs.find((x) => x.id === id);
-        if (!l) return;
-        selectedId = id;
-        $("dTime").textContent = l.time;
-        $("dActor").innerHTML = actorHtml(l.actor);
-        $("dAction").innerHTML =
-          actionHtml(l.action) +
-          (ACTIONS[l.action]
-            ? ` <span style="color:var(--text-muted)">— ${esc(ACTIONS[l.action].desc)}</span>`
-            : "");
-        $("dResource").innerHTML = resourceHtml(l.resource);
-        $("dSeverity").innerHTML = severityBadgeHtml(l.severity);
-        $("dSummary").textContent = l.summary;
-        $("privacyNote").textContent = [
-          `This log records action ${l.action} by ${l.actor} on resource ${l.resource} at ${l.time}.`,
-          "Only metadata is shown here (who, what action, on which resource, when, and outcome).",
-          "Detailed payloads (request body, personal data, message/call content…) are not visible in the admin view and are kept in a dedicated logging system with strict access control.",
-        ].join("\n");
-        renderTable();
-        showDetailView();
-      }
-      function showDetailView() {
-        $("listView").style.display = "none";
-        $("detailView").style.display = "";
-        window.scrollTo(0, 0);
-      }
-      function closeDetail() {
-        selectedId = null;
-        $("detailView").style.display = "none";
-        $("listView").style.display = "";
-        renderTable();
-      }
 
       /* ════════ Meta-audit ════════ */
       function metaAudit(code) {
@@ -1218,7 +1101,6 @@
           "action",
           "action_description",
           "resource",
-          "severity",
           "summary",
         ];
         const rows = list.map((l) => [
@@ -1227,7 +1109,6 @@
           l.action,
           (ACTIONS[l.action] && ACTIONS[l.action].desc) || "",
           l.resource,
-          l.severity,
           l.summary,
         ]);
         const csv = [header, ...rows]
@@ -1310,7 +1191,6 @@
         $("dateFrom").value = "";
         $("dateTo").value = "";
         msActor.clear();
-        msSeverity.clear();
         msCategory.clear();
         $("searchLog").value = "";
         sort = { col: "ts", dir: "desc" };
@@ -1335,7 +1215,6 @@
       });
       $("btnReset").addEventListener("click", resetFilters);
       $("btnExportCsv").addEventListener("click", exportCsv);
-      $("btnBack").addEventListener("click", closeDetail);
 
       document.querySelectorAll("th[data-sort]").forEach((th) => {
         th.addEventListener("click", () => {

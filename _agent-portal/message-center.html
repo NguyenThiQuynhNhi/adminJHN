@@ -1,0 +1,4435 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Message Center — Agent Portal</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --bg: #f5f0e8;
+        --navy: #1e3a5f;
+        --navy-dark: #16293f;
+        --accent: #c4714a;
+        --accent-dark: #a55232;
+        --gold: #c4a25f;
+        --card: #ffffff;
+        --thead: #f0ede8;
+        --text: #1a1a1a;
+        --text-sec: #888888;
+        --border: #ece4d6;
+        --radius: 14px;
+      }
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Arial,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        padding: 22px;
+      }
+      .layout {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+        max-width: 1320px;
+        margin: 0 auto;
+      }
+
+      /* ===== LEFT SIDEBAR ===== */
+      .mc-sidebar {
+        width: 260px;
+        min-width: 260px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: 0 4px 16px rgba(120, 80, 40, 0.05);
+        padding: 18px 14px;
+        position: sticky;
+        top: 22px;
+      }
+      .mc-title {
+        font-size: 18px;
+        font-weight: 800;
+        padding: 4px 8px 14px;
+      }
+      .mc-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 12px;
+        border-radius: 10px;
+        font-size: 14px;
+        color: #4a4a4a;
+        cursor: pointer;
+        border-left: 3px solid transparent;
+        margin-bottom: 3px;
+        transition: background 0.15s;
+      }
+      .mc-nav-item i {
+        width: 18px;
+        text-align: center;
+        font-size: 15px;
+        color: var(--text-sec);
+      }
+      .mc-nav-item:hover {
+        background: #faf6ef;
+      }
+      .mc-nav-item.active {
+        background: var(--bg);
+        border-left-color: var(--accent);
+        font-weight: 700;
+        color: var(--text);
+      }
+      .mc-nav-item.active i {
+        color: var(--accent);
+      }
+
+      /* ===== CONTENT ===== */
+      .mc-content {
+        flex: 1;
+        min-width: 0;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: 0 4px 16px rgba(120, 80, 40, 0.05);
+        padding: 26px 28px;
+      }
+      .screen {
+        display: none;
+        animation: fade 0.2s ease;
+      }
+      .screen.active {
+        display: block;
+      }
+      @keyframes fade {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .page-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .page-title {
+        font-size: 24px;
+        font-weight: 800;
+      }
+      .page-title.sm {
+        font-size: 20px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: 24px;
+        font-size: 13.5px;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1px solid transparent;
+        font-family: inherit;
+      }
+      .btn-navy {
+        background: var(--navy);
+        color: #fff;
+      }
+      .btn-navy:hover {
+        background: var(--navy-dark);
+      }
+      .btn-outline {
+        background: #fff;
+        color: var(--text);
+        border-color: var(--border);
+      }
+      .btn-outline:hover {
+        background: #faf6ef;
+      }
+      .btn-terra {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-terra:hover {
+        background: var(--accent-dark);
+      }
+      .btn-sm {
+        padding: 6px 13px;
+        font-size: 12.5px;
+      }
+
+      /* filter bar */
+      .filter-bar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+      }
+      .filter-bar input,
+      .filter-bar select {
+        padding: 9px 13px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-size: 13px;
+        background: #fdfbf7;
+        font-family: inherit;
+        outline: none;
+      }
+      .filter-bar input {
+        flex: 1;
+        min-width: 200px;
+      }
+      .filter-bar input:focus,
+      .filter-bar select:focus {
+        border-color: var(--gold);
+      }
+
+      .result-count {
+        font-size: 12.5px;
+        color: var(--text-sec);
+        margin-bottom: 10px;
+      }
+      .pager {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 14px;
+        flex-wrap: wrap;
+      }
+      .pager button {
+        min-width: 34px;
+        height: 34px;
+        padding: 0 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--text);
+        font-size: 13px;
+        font-family: inherit;
+        cursor: pointer;
+      }
+      .pager button:hover:not(:disabled) {
+        background: #faf6ef;
+      }
+      .pager button.current {
+        background: var(--gold);
+        border-color: var(--gold);
+        color: #fff;
+        font-weight: 700;
+      }
+      .pager button:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+      .pager .pager-ellipsis {
+        padding: 0 4px;
+        color: var(--text-sec);
+      }
+      /* tables */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13.5px;
+      }
+      .tbl-wrap {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      thead {
+        background: var(--thead);
+      }
+      th {
+        text-align: left;
+        padding: 13px 14px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #6a6258;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      td {
+        padding: 13px 14px;
+        border-top: 1px solid #f1ebe1;
+      }
+      tbody tr:nth-child(even) {
+        background: #fcfaf6;
+      }
+      tbody tr:hover {
+        background: #faf5ec;
+      }
+      .cell-strong {
+        font-weight: 600;
+      }
+      /* Pinned Admin announcement rows, kept at the top of the campaign list */
+      tbody tr.camp-pinned,
+      tbody tr.camp-pinned:nth-child(even) {
+        background: #faf4e9;
+      }
+      tbody tr.camp-pinned:hover {
+        background: #f4ecdb;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 3px 11px;
+        border-radius: 12px;
+        font-size: 11.5px;
+        font-weight: 700;
+      }
+      .badge.sent {
+        background: #e3f5e9;
+        color: #1f8a4c;
+      }
+      .badge.scheduled {
+        background: #e4eefb;
+        color: #2563a8;
+      }
+      .badge.draft {
+        background: #eeeae3;
+        color: #8a8276;
+      }
+
+      .pill {
+        display: inline-block;
+        padding: 3px 11px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .pill.green {
+        background: #e3f5e9;
+        color: #1f8a4c;
+      }
+      .pill.amber {
+        background: #fdf0db;
+        color: #b5791b;
+      }
+      .pill.red {
+        background: #fbe4e4;
+        color: #c0392b;
+      }
+      .pill.grey {
+        background: #eeeae3;
+        color: #8a8276;
+      }
+
+      /* Analytics table: horizontal scroll + sticky Actions (Recreate) column */
+      .an-wrap {
+        overflow-x: auto;
+      }
+      .an-table {
+        min-width: 760px;
+      }
+      .an-table th,
+      .an-table td {
+        white-space: nowrap;
+      }
+      .an-table th:nth-child(1),
+      .an-table td:nth-child(1) {
+        min-width: 200px;
+        max-width: 240px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .an-table th:nth-child(2),
+      .an-table td:nth-child(2) {
+        min-width: 100px;
+      }
+      .an-table th:nth-child(3),
+      .an-table td:nth-child(3) {
+        min-width: 110px;
+      }
+      .an-table th:nth-child(4),
+      .an-table td:nth-child(4) {
+        min-width: 100px;
+      }
+      .an-table th:nth-child(5),
+      .an-table td:nth-child(5) {
+        min-width: 120px;
+      }
+      .an-table th:nth-child(6),
+      .an-table td:nth-child(6) {
+        min-width: 120px;
+      }
+      .an-table th:last-child,
+      .an-table td:last-child {
+        position: sticky;
+        right: 0;
+        z-index: 1;
+        min-width: 110px;
+        background: var(--card);
+        border-left: 1px solid var(--border);
+      }
+      .an-table thead th:last-child {
+        background: var(--thead);
+      }
+
+      /* actions menu */
+      .act-wrap {
+        position: relative;
+      }
+      .act-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: #fff;
+        cursor: pointer;
+        color: #6a6258;
+      }
+      .act-btn:hover {
+        background: #f6f1e8;
+      }
+      .act-menu {
+        position: absolute;
+        right: 0;
+        top: 34px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        box-shadow: 0 10px 28px rgba(80, 50, 20, 0.16);
+        padding: 5px;
+        z-index: 30;
+        display: none;
+        min-width: 140px;
+      }
+      .act-menu.open {
+        display: block;
+      }
+      .act-item {
+        padding: 8px 12px;
+        font-size: 13px;
+        border-radius: 7px;
+        cursor: pointer;
+      }
+      .act-item:hover {
+        background: #f6f1e8;
+      }
+      .act-item.danger {
+        color: #c0392b;
+      }
+
+      /* ===== STEP INDICATOR ===== */
+      .steps {
+        display: flex;
+        align-items: center;
+        margin: 4px 0 26px;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .step {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+      .step-num {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #ece4d6;
+        color: #8a8276;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .step.active .step-num {
+        background: var(--navy);
+        color: #fff;
+      }
+      .step.done .step-num {
+        background: #1f8a4c;
+        color: #fff;
+      }
+      .step-label {
+        font-size: 13px;
+        color: var(--text-sec);
+        font-weight: 600;
+      }
+      .step.active .step-label {
+        color: var(--text);
+      }
+      .step-line {
+        width: 32px;
+        height: 2px;
+        background: #e3dccf;
+        margin: 0 4px;
+      }
+
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13.5px;
+        color: var(--text-sec);
+        cursor: pointer;
+        margin-bottom: 14px;
+      }
+      .back-link:hover {
+        color: var(--accent);
+      }
+
+      /* forms */
+      .field {
+        margin-bottom: 18px;
+      }
+      .field label {
+        display: block;
+        font-size: 12.5px;
+        font-weight: 700;
+        margin-bottom: 6px;
+        color: #4a4439;
+      }
+      .req::after {
+        content: " *";
+        color: #c0392b;
+      }
+      .field input[type="text"],
+      .field input[type="number"],
+      .field input[type="date"],
+      .field input[type="time"],
+      .field select,
+      .field textarea {
+        width: 100%;
+        padding: 10px 13px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-size: 13.5px;
+        font-family: inherit;
+        background: #fdfbf7;
+        outline: none;
+      }
+      .field input:focus,
+      .field select:focus,
+      .field textarea:focus {
+        border-color: var(--gold);
+        background: #fff;
+      }
+      .field textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      .field .err {
+        display: none;
+        font-size: 11.5px;
+        color: #c0392b;
+        margin-top: 4px;
+      }
+      .field.invalid input,
+      .field.invalid select,
+      .field.invalid textarea {
+        border-color: #c0392b;
+        box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.1);
+      }
+      .field.invalid .err {
+        display: block;
+      }
+
+      .radio-cards {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .radio-card {
+        flex: 1;
+        min-width: 150px;
+        border: 1.5px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+        cursor: pointer;
+        background: #fdfbf7;
+      }
+      .radio-card.on {
+        border-color: var(--accent);
+        background: #fdf3ec;
+      }
+      .radio-card .rc-title {
+        font-weight: 700;
+        font-size: 13.5px;
+        margin-bottom: 3px;
+      }
+      .radio-card .rc-desc {
+        font-size: 12px;
+        color: var(--text-sec);
+      }
+
+      .radio-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 11px 0;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      .radio-row input {
+        margin-top: 3px;
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 24px;
+        padding-top: 18px;
+        border-top: 1px solid var(--border);
+      }
+
+      /* audience group picker */
+      .group-picker {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+        margin-top: 12px;
+        background: #fdfbf7;
+      }
+      .group-search {
+        width: 100%;
+        padding: 9px 13px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-size: 13px;
+        margin-bottom: 10px;
+        background: #fff;
+        font-family: inherit;
+      }
+      .group-opt {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13.5px;
+      }
+      .group-opt:hover {
+        background: #f6f1e8;
+      }
+      .group-opt .gcount {
+        margin-left: auto;
+        font-size: 12px;
+        color: var(--text-sec);
+      }
+      .reach-note {
+        margin-top: 12px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--navy);
+      }
+      .picker-note {
+        font-size: 12px;
+        color: var(--text-sec);
+        margin-top: 10px;
+        line-height: 1.5;
+      }
+      .create-group-link {
+        display: inline-block;
+        margin-top: 10px;
+        font-size: 13px;
+        color: var(--accent);
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .card-box {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+        margin-bottom: 16px;
+        background: #fdfbf7;
+      }
+      .card-box h4 {
+        font-size: 14.5px;
+        margin-bottom: 12px;
+      }
+
+      /* ===== RICH TEXT EDITOR ===== */
+      .channel-tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 16px;
+        background: #f3efe8;
+        padding: 4px;
+        border-radius: 10px;
+        width: fit-content;
+      }
+      .channel-tab {
+        padding: 8px 18px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-sec);
+        cursor: pointer;
+      }
+      .channel-tab.on {
+        background: #fff;
+        color: var(--text);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+
+      .rte {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+      .rte-main {
+        flex: 1;
+        min-width: 280px;
+      }
+      .rte-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+        border: 1px solid var(--border);
+        border-bottom: none;
+        border-radius: 10px 10px 0 0;
+        padding: 7px;
+        background: #f7f3ec;
+        position: relative;
+      }
+      .rte-tb {
+        width: 32px;
+        height: 30px;
+        border: none;
+        background: transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        color: #5a5248;
+      }
+      .rte-tb:hover {
+        background: #e9e1d3;
+      }
+      .rte-tb b,
+      .rte-tb i,
+      .rte-tb u {
+        font-style: normal;
+        font-weight: 700;
+      }
+      .rte-body {
+        border: 1px solid var(--border);
+        border-radius: 0 0 10px 10px;
+        min-height: 170px;
+        padding: 14px;
+        font-size: 14px;
+        line-height: 1.6;
+        outline: none;
+        background: #fff;
+      }
+      .rte-body:empty:before {
+        content: attr(data-ph);
+        color: #b7afa2;
+      }
+      .rte-vars {
+        width: 190px;
+        flex-shrink: 0;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px;
+        background: #fdfbf7;
+        height: fit-content;
+      }
+      .rte-vars-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 12.5px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        cursor: pointer;
+      }
+      .var-chip {
+        display: inline-block;
+        margin: 0 5px 6px 0;
+        padding: 5px 10px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        font-size: 11.5px;
+        cursor: pointer;
+        color: var(--navy);
+        font-family: monospace;
+      }
+      .var-chip:hover {
+        background: var(--navy);
+        color: #fff;
+      }
+      .var-dropdown {
+        position: absolute;
+        top: 44px;
+        left: 7px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        box-shadow: 0 10px 24px rgba(80, 50, 20, 0.16);
+        padding: 10px;
+        display: none;
+        z-index: 20;
+        width: 220px;
+      }
+      .var-dropdown.open {
+        display: block;
+      }
+
+      .tpl-lib {
+        margin-top: 18px;
+      }
+      .tpl-lib-head {
+        font-size: 13.5px;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+      .tpl-cards {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        padding-bottom: 6px;
+      }
+      .tpl-card {
+        min-width: 200px;
+        border: 1px solid var(--border);
+        border-radius: 11px;
+        padding: 13px;
+        background: #fdfbf7;
+      }
+      .tpl-card .tc-name {
+        font-weight: 700;
+        font-size: 13px;
+        margin-bottom: 6px;
+      }
+      .tpl-card .tc-prev {
+        font-size: 12px;
+        color: var(--text-sec);
+        line-height: 1.45;
+        height: 34px;
+        overflow: hidden;
+        margin-bottom: 10px;
+      }
+
+      .preview-toggle {
+        display: flex;
+        gap: 6px;
+        margin: 18px 0 12px;
+      }
+      .pv-btn {
+        padding: 7px 14px;
+        border-radius: 18px;
+        border: 1px solid var(--border);
+        background: #fff;
+        font-size: 12.5px;
+        cursor: pointer;
+        font-weight: 600;
+        color: var(--text-sec);
+      }
+      .pv-btn.on {
+        background: var(--navy);
+        color: #fff;
+        border-color: var(--navy);
+      }
+      .preview-frame {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        background: #f6f3ee;
+      }
+      .pv-inapp {
+        max-width: 300px;
+        margin: 0 auto;
+      }
+      .pv-bubble {
+        background: #fff;
+        border-radius: 14px;
+        border-bottom-left-radius: 4px;
+        padding: 12px 15px;
+        font-size: 13.5px;
+        line-height: 1.5;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .pv-email {
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+      }
+      .pv-email-head {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        font-size: 12.5px;
+        color: var(--text-sec);
+      }
+      .pv-email-head .pe-subj {
+        font-size: 14.5px;
+        font-weight: 700;
+        color: var(--text);
+        margin-top: 4px;
+      }
+      .pv-email-body {
+        padding: 16px;
+        font-size: 13.5px;
+        line-height: 1.6;
+      }
+
+      /* ===== ANALYTICS ===== */
+      .kpi-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 22px;
+      }
+      .kpi {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        background: #fdfbf7;
+      }
+      .kpi .k-label {
+        font-size: 13px;
+        color: var(--text-sec);
+        margin-bottom: 8px;
+      }
+      .kpi .k-val {
+        font-size: 32px;
+        font-weight: 800;
+      }
+      .analytics-card {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+        margin-bottom: 20px;
+      }
+      .analytics-card h3 {
+        font-size: 16px;
+        margin-bottom: 14px;
+      }
+
+      /* templates / automations list */
+      .list-card {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .list-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 18px;
+        border-top: 1px solid #f1ebe1;
+        cursor: pointer;
+      }
+      .list-row:first-child {
+        border-top: none;
+      }
+      .list-row:hover {
+        background: #faf5ec;
+      }
+      .lr-main {
+        flex: 1;
+        min-width: 0;
+      }
+      .lr-name {
+        font-size: 15.5px;
+        font-weight: 700;
+      }
+      .lr-sub {
+        font-size: 12.5px;
+        color: var(--text-sec);
+        margin-top: 3px;
+      }
+      .lr-cat {
+        display: inline-block;
+        font-size: 11px;
+        color: #8a8276;
+        background: #eeeae3;
+        padding: 2px 9px;
+        border-radius: 10px;
+        margin-top: 5px;
+      }
+      .lr-right {
+        font-size: 12.5px;
+        color: var(--text-sec);
+        flex-shrink: 0;
+      }
+      .lr-icons {
+        display: none;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .list-row:hover .lr-icons {
+        display: flex;
+      }
+      .lr-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: #fff;
+        cursor: pointer;
+        color: #6a6258;
+      }
+      .lr-icon:hover {
+        background: #f6f1e8;
+      }
+      .lr-icon.danger:hover {
+        color: #c0392b;
+      }
+
+      /* toggle switch */
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 46px;
+        height: 26px;
+        flex-shrink: 0;
+      }
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .slider {
+        position: absolute;
+        inset: 0;
+        background: #cfc7b8;
+        border-radius: 26px;
+        transition: 0.25s;
+        cursor: pointer;
+      }
+      .slider:before {
+        content: "";
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        left: 3px;
+        top: 3px;
+        background: #fff;
+        border-radius: 50%;
+        transition: 0.25s;
+      }
+      .switch input:checked + .slider {
+        background: #1f8a4c;
+      }
+      .switch input:checked + .slider:before {
+        transform: translateX(20px);
+      }
+
+      /* modal */
+      .modal-ov {
+        position: fixed;
+        inset: 0;
+        background: rgba(40, 30, 20, 0.42);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+      }
+      .modal-ov.open {
+        display: flex;
+      }
+      .modal {
+        background: #fff;
+        border-radius: 14px;
+        padding: 24px;
+        width: 440px;
+        max-width: calc(100% - 36px);
+      }
+      .modal h3 {
+        font-size: 17px;
+        margin-bottom: 16px;
+      }
+
+      /* toast */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: #2f2a24;
+        color: #fff;
+        padding: 12px 22px;
+        border-radius: 24px;
+        font-size: 13.5px;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.25s ease;
+        z-index: 200;
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      /* ===== ENTITY PICKER (property / agency) ===== */
+      .picker-modal {
+        background: #fff;
+        border-radius: 14px;
+        width: 920px;
+        max-width: calc(100% - 36px);
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .picker-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 22px;
+        border-bottom: 1px solid var(--border);
+      }
+      .picker-head h3 {
+        font-size: 17px;
+      }
+      .picker-x {
+        border: none;
+        background: transparent;
+        font-size: 22px;
+        line-height: 1;
+        color: var(--text-sec);
+        cursor: pointer;
+      }
+      .picker-filters {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        padding: 14px 22px;
+        border-bottom: 1px solid var(--border);
+        background: #fdfbf7;
+      }
+      .picker-filters .pf {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+      }
+      .picker-filters label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-sec);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      .picker-filters input,
+      .picker-filters select {
+        padding: 8px 11px;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        font-size: 13px;
+        background: #fff;
+        font-family: inherit;
+        outline: none;
+        width: 100%;
+      }
+      .picker-filters input:focus,
+      .picker-filters select:focus {
+        border-color: var(--gold);
+      }
+      .picker-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 22px;
+        flex-wrap: wrap;
+      }
+      .picker-count {
+        font-size: 12.5px;
+        color: var(--text-sec);
+      }
+      .picker-view-toggle {
+        display: inline-flex;
+        gap: 4px;
+        margin-left: auto;
+        background: #f3efe8;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 3px;
+      }
+      .pvt-btn {
+        border: none;
+        background: transparent;
+        border-radius: 999px;
+        padding: 5px 13px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text-sec);
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .pvt-btn.on {
+        background: var(--navy);
+        color: #fff;
+      }
+      .picker-body {
+        padding: 4px 22px 8px;
+        overflow: auto;
+        flex: 1;
+      }
+      .picker-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+        gap: 12px;
+        padding: 8px 0;
+      }
+      .pk-card {
+        border: 1.5px solid var(--border);
+        border-radius: 12px;
+        padding: 12px 14px;
+        cursor: pointer;
+        background: #fdfbf7;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .pk-card.on {
+        border-color: var(--accent);
+        background: #fdf3ec;
+      }
+      .pk-card input {
+        margin-top: 3px;
+        flex-shrink: 0;
+      }
+      .pk-card .pk-name {
+        font-weight: 700;
+        font-size: 13.5px;
+        margin-bottom: 2px;
+      }
+      .pk-card .pk-sub {
+        font-size: 11.5px;
+        color: var(--text-sec);
+        line-height: 1.45;
+      }
+      .pk-nd {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        color: #fff;
+        background: var(--accent);
+        padding: 1px 7px;
+        border-radius: 999px;
+        margin-left: 6px;
+        vertical-align: middle;
+      }
+      .picker-table td {
+        cursor: pointer;
+      }
+      .picker-empty {
+        text-align: center;
+        color: var(--text-sec);
+        padding: 30px;
+      }
+      .picker-pager {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 10px 0 4px;
+      }
+      .picker-pager button {
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 8px;
+        padding: 5px 11px;
+        font-size: 12.5px;
+        cursor: pointer;
+        font-family: inherit;
+        color: var(--text);
+      }
+      .picker-pager button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .picker-pager button.on {
+        background: var(--navy);
+        color: #fff;
+        border-color: var(--navy);
+      }
+      .picker-foot {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 22px;
+        border-top: 1px solid var(--border);
+        background: #fdfbf7;
+      }
+      .picker-sel {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--navy);
+      }
+      .picker-foot .spacer {
+        margin-left: auto;
+      }
+
+      @media (max-width: 860px) {
+        .layout {
+          flex-direction: column;
+        }
+        .mc-sidebar {
+          width: 100%;
+          min-width: 0;
+          position: static;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+        .mc-title {
+          width: 100%;
+        }
+        .mc-nav-item {
+          flex: 1;
+          min-width: 120px;
+        }
+        .kpi-row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <!-- ===== SIDEBAR ===== -->
+      <aside class="mc-sidebar">
+        <div class="mc-title">Message Center</div>
+        <div
+          class="mc-nav-item active"
+          data-screen="campaigns"
+          onclick="navTo('campaigns')"
+        >
+          <i class="fas fa-chart-column"></i> Message Campaigns
+        </div>
+        <div
+          class="mc-nav-item"
+          data-screen="templates"
+          onclick="navTo('templates')"
+        >
+          <i class="fas fa-clipboard-list"></i> Message Templates
+        </div>
+        <div
+          class="mc-nav-item"
+          data-screen="automations"
+          onclick="navTo('automations')"
+        >
+          <i class="fas fa-bolt"></i> Automations
+        </div>
+        <div
+          class="mc-nav-item"
+          data-screen="analytics"
+          onclick="navTo('analytics')"
+        >
+          <i class="fas fa-chart-line"></i> Delivery Analytics
+        </div>
+      </aside>
+
+      <!-- ===== CONTENT ===== -->
+      <main class="mc-content">
+        <!-- ===================== SCREEN 1: CAMPAIGNS ===================== -->
+        <section class="screen active" id="screen-campaigns">
+          <!-- list view -->
+          <div id="camp-list">
+            <div class="page-head">
+              <div class="page-title">Message Campaigns</div>
+              <button class="btn btn-navy" onclick="openBuilder()">
+                <i class="fas fa-plus"></i> New Message Campaign
+              </button>
+            </div>
+            <div class="filter-bar">
+              <input
+                type="text"
+                id="campSearch"
+                placeholder="Search campaigns..."
+                oninput="renderCampaigns(true)"
+              />
+              <select id="campStatus" onchange="renderCampaigns(true)">
+                <option value="">All Status</option>
+                <option>Sent</option>
+                <option>Scheduled</option>
+                <option>Draft</option>
+              </select>
+              <select id="campAud" onchange="renderCampaigns(true)">
+                <option value="">All Audiences</option>
+                <option value="Admin">Admin</option>
+                <option value="Client">Client</option>
+                <option value="Custom">Custom Group</option>
+              </select>
+            </div>
+            <div class="result-count" id="campCount"></div>
+            <div class="tbl-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Campaign Name</th>
+                    <th>Audience</th>
+                    <th>Status</th>
+                    <th>Scheduled</th>
+                    <th>Sent</th>
+                    <th>Delivered</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="campBody"></tbody>
+              </table>
+            </div>
+            <div class="pager" id="campPager"></div>
+          </div>
+
+          <!-- builder view -->
+          <div id="camp-builder" style="display: none">
+            <div class="back-link" onclick="closeBuilder()">
+              <i class="fas fa-arrow-left"></i> Back to campaigns
+            </div>
+            <div class="page-title sm" id="builderTitle">
+              New Message Campaign
+            </div>
+            <div class="steps" id="stepIndicator"></div>
+
+            <!-- STEP 1 -->
+            <div class="builder-step" data-step="1">
+              <div class="field" id="f-name">
+                <label class="req">Campaign Name</label>
+                <input
+                  type="text"
+                  id="bName"
+                  placeholder="e.g. Spring Investor Outreach"
+                />
+                <span class="err">Campaign name is required.</span>
+              </div>
+              <div class="field">
+                <label>Description</label>
+                <textarea
+                  id="bDesc"
+                  placeholder="Optional notes about this campaign..."
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- STEP 2 -->
+            <div class="builder-step" data-step="2" style="display: none">
+              <h3 style="font-size: 17px; margin-bottom: 14px">
+                Select your audience
+              </h3>
+              <div id="bAudience">
+                <label class="radio-row"
+                  ><input
+                    type="radio"
+                    name="aud"
+                    value="all_users"
+                    checked
+                    onchange="onAudChange()"
+                  />
+                  All Clients</label
+                >
+                <label class="radio-row"
+                  ><input
+                    type="radio"
+                    name="aud"
+                    value="all_agents"
+                    onchange="onAudChange()"
+                  />
+                  Admin Announcement</label
+                >
+                <label class="radio-row"
+                  ><input
+                    type="radio"
+                    name="aud"
+                    value="all_leads"
+                    onchange="onAudChange()"
+                  />
+                  All (Clients + Admin)</label
+                >
+                <label class="radio-row"
+                  ><input
+                    type="radio"
+                    name="aud"
+                    value="custom"
+                    onchange="onAudChange()"
+                  />
+                  Custom Group</label
+                >
+              </div>
+              <div class="group-picker" id="groupPicker" style="display: none">
+                <input
+                  class="group-search"
+                  id="groupSearch"
+                  placeholder="Search groups..."
+                  oninput="renderGroupPicker()"
+                />
+                <div id="groupOpts"></div>
+                <span class="create-group-link" onclick="openCreateGroup()"
+                  ><i class="fas fa-plus"></i> Create new group</span
+                >
+              </div>
+              <div class="reach-note" id="reachNote">
+                Estimated recipients: ~1,240
+              </div>
+            </div>
+
+            <!-- STEP 3 -->
+            <div class="builder-step" data-step="3" style="display: none">
+              <h3 style="font-size: 17px; margin-bottom: 6px">
+                Compose your message
+              </h3>
+              <p
+                style="
+                  font-size: 12.5px;
+                  color: var(--text-sec);
+                  margin-bottom: 14px;
+                "
+              >
+                <i class="fas fa-comment-dots"></i> Delivered as an in-app chat
+                message.
+              </p>
+              <div id="bEditorMount"></div>
+              <div class="tpl-lib">
+                <div class="tpl-lib-head">Use a template</div>
+                <div class="tpl-cards" id="bTplCards"></div>
+              </div>
+            </div>
+
+            <!-- STEP 4 -->
+            <div class="builder-step" data-step="4" style="display: none">
+              <h3 style="font-size: 17px; margin-bottom: 14px">
+                When should this be sent?
+              </h3>
+              <label class="radio-row"
+                ><input
+                  type="radio"
+                  name="sched"
+                  value="now"
+                  checked
+                  onchange="onSchedChange()"
+                />
+                Send immediately (after review)</label
+              >
+              <label class="radio-row"
+                ><input
+                  type="radio"
+                  name="sched"
+                  value="schedule"
+                  onchange="onSchedChange()"
+                />
+                Schedule for specific date &amp; time</label
+              >
+              <div
+                id="schedFields"
+                style="display: none; padding: 4px 0 4px 28px"
+              >
+                <div style="display: flex; gap: 12px; flex-wrap: wrap">
+                  <div class="field" style="flex: 1; min-width: 160px">
+                    <label>Date</label><input type="date" id="bDate" />
+                  </div>
+                  <div class="field" style="flex: 1; min-width: 160px">
+                    <label>Time</label><input type="time" id="bTime" />
+                  </div>
+                </div>
+              </div>
+              <label class="radio-row"
+                ><input
+                  type="radio"
+                  name="sched"
+                  value="recurring"
+                  onchange="onSchedChange()"
+                />
+                Recurring</label
+              >
+              <div
+                id="recurFields"
+                style="display: none; padding: 4px 0 4px 28px"
+              >
+                <div style="display: flex; gap: 12px; flex-wrap: wrap">
+                  <div class="field" style="flex: 1; min-width: 140px">
+                    <label>Frequency</label
+                    ><select id="bFreq">
+                      <option>Daily</option>
+                      <option>Weekly</option>
+                      <option>Monthly</option>
+                    </select>
+                  </div>
+                  <div class="field" style="flex: 1; min-width: 140px">
+                    <label>Time</label><input type="time" id="bRecurTime" />
+                  </div>
+                  <div class="field" style="flex: 1; min-width: 140px">
+                    <label>End date (optional)</label
+                    ><input type="date" id="bEndDate" />
+                  </div>
+                </div>
+              </div>
+              <div
+                style="
+                  font-size: 12.5px;
+                  color: var(--text-sec);
+                  margin-top: 10px;
+                "
+              >
+                <i class="fas fa-clock"></i> Timezone: JST (UTC+9)
+              </div>
+            </div>
+
+            <!-- STEP 5 -->
+            <div class="builder-step" data-step="5" style="display: none">
+              <h3 style="font-size: 17px; margin-bottom: 14px">
+                Review &amp; launch
+              </h3>
+              <div class="card-box" id="reviewCard"></div>
+            </div>
+
+            <div class="form-actions" id="builderActions"></div>
+          </div>
+        </section>
+
+        <!-- ===================== SCREEN 2: TEMPLATES ===================== -->
+        <section class="screen" id="screen-templates">
+          <div id="tpl-list">
+            <div class="page-head">
+              <div class="page-title">Message Templates</div>
+              <button class="btn btn-navy" onclick="openTplEditor()">
+                <i class="fas fa-plus"></i> New Template
+              </button>
+            </div>
+            <div class="list-card" id="tplListBody"></div>
+          </div>
+          <div id="tpl-editor" style="display: none">
+            <div class="back-link" onclick="closeTplEditor()">
+              <i class="fas fa-arrow-left"></i> Back to Templates
+            </div>
+            <div class="page-title sm" id="tplEditorTitle">New Template</div>
+            <div style="max-width: 760px; margin-top: 18px">
+              <div class="field" id="t-name">
+                <label class="req">Template Name</label
+                ><input
+                  type="text"
+                  id="tName"
+                  placeholder="e.g. New Property Alert"
+                /><span class="err">Template name is required.</span>
+              </div>
+              <div style="display: flex; gap: 14px; flex-wrap: wrap">
+                <div class="field" style="flex: 1; min-width: 200px">
+                  <label class="req">Category</label
+                  ><select id="tCat">
+                    <option>Automation</option>
+                    <option>Campaign</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field" id="t-body">
+                <label class="req">Message Body</label>
+                <div id="tEditorMount"></div>
+              </div>
+              <div class="field">
+                <label>Tags</label
+                ><input
+                  type="text"
+                  id="tTags"
+                  placeholder="comma, separated, tags"
+                />
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-outline" onclick="closeTplEditor()">
+                  Cancel
+                </button>
+                <button class="btn btn-navy" onclick="saveTemplate()">
+                  Save Template
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== SCREEN 3: AUTOMATIONS ===================== -->
+        <section class="screen" id="screen-automations">
+          <style id="autoTabCss">
+            .auto-intro {
+              font-size: 12.5px;
+              color: var(--text-sec);
+              margin: -8px 0 16px;
+              max-width: 760px;
+            }
+            .auto-filter {
+              display: flex;
+              gap: 10px;
+              align-items: center;
+              flex-wrap: wrap;
+              margin-bottom: 14px;
+            }
+            .auto-filter .srch {
+              position: relative;
+              flex: 1;
+              min-width: 220px;
+              max-width: 380px;
+            }
+            .auto-filter .srch i {
+              position: absolute;
+              left: 11px;
+              top: 50%;
+              transform: translateY(-50%);
+              color: var(--text-sec);
+              font-size: 12px;
+            }
+            .auto-filter .srch input {
+              width: 100%;
+              height: 36px;
+              padding: 0 12px 0 32px;
+              border: 1px solid var(--border);
+              border-radius: 8px;
+              font-size: 13px;
+              font-family: inherit;
+              background: #fff;
+              color: var(--navy);
+              outline: none;
+            }
+            .auto-filter select {
+              height: 36px;
+              border: 1px solid var(--border);
+              border-radius: 8px;
+              font-size: 13px;
+              padding: 0 10px;
+              font-family: inherit;
+              background: #fff;
+              color: var(--navy);
+            }
+            .auto-filter .auto-count {
+              font-size: 12px;
+              color: var(--text-sec);
+              margin-left: auto;
+            }
+            .auto-table-wrap {
+              background: #fff;
+              border: 1px solid var(--border);
+              border-radius: 12px;
+              overflow: hidden;
+            }
+            .auto-table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 13px;
+            }
+            .auto-table thead th {
+              text-align: left;
+              padding: 11px 14px;
+              font-size: 11px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.04em;
+              color: var(--text-sec);
+              background: #f7f4ef;
+              border-bottom: 1px solid var(--border);
+              white-space: nowrap;
+            }
+            .auto-table tbody td {
+              padding: 11px 14px;
+              border-bottom: 1px solid #f1ece4;
+              vertical-align: middle;
+            }
+            .auto-table tbody tr {
+              cursor: pointer;
+              transition: background 0.12s;
+            }
+            .auto-table tbody tr:hover {
+              background: #faf7f1;
+            }
+            .auto-table tbody tr:last-child td {
+              border-bottom: none;
+            }
+            .at-name {
+              font-weight: 600;
+              color: var(--navy);
+            }
+            .at-id {
+              font-size: 11px;
+              color: var(--text-sec);
+              margin-top: 1px;
+            }
+            .at-edit {
+              text-align: right;
+            }
+            .auto-empty {
+              text-align: center;
+              color: var(--text-sec);
+              padding: 26px;
+            }
+            .ab {
+              display: inline-flex;
+              align-items: center;
+              padding: 3px 9px;
+              border-radius: 999px;
+              font-size: 10.5px;
+              font-weight: 700;
+              letter-spacing: 0.02em;
+            }
+            .ab-blue {
+              background: #e8f1fb;
+              color: #2c5fa5;
+              border: 1px solid #c5dbf3;
+            }
+            .ab-grey {
+              background: #f1efea;
+              color: #7b7468;
+              border: 1px solid #ddd6cb;
+            }
+            .switch.locked {
+              opacity: 0.55;
+            }
+            .switch.locked .slider {
+              cursor: not-allowed;
+            }
+            .auto-drawer-backdrop {
+              position: fixed;
+              inset: 0;
+              background: rgba(30, 22, 12, 0.4);
+              z-index: 120;
+              display: none;
+            }
+            .auto-drawer-backdrop.open {
+              display: block;
+            }
+            .auto-drawer {
+              position: fixed;
+              top: 0;
+              right: 0;
+              height: 100vh;
+              width: 480px;
+              max-width: 94vw;
+              background: #fff;
+              box-shadow: -12px 0 36px rgba(40, 30, 20, 0.22);
+              z-index: 130;
+              display: flex;
+              flex-direction: column;
+              transform: translateX(100%);
+              transition: transform 0.22s ease;
+            }
+            .auto-drawer.open {
+              transform: none;
+            }
+            .ad-head {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              gap: 12px;
+              padding: 18px 20px;
+              border-bottom: 1px solid var(--border);
+              background: #faf7f1;
+            }
+            .ad-id {
+              font-size: 11px;
+              font-weight: 700;
+              color: var(--text-sec);
+              letter-spacing: 0.05em;
+            }
+            .ad-name {
+              font-size: 16px;
+              font-weight: 700;
+              color: var(--navy);
+              margin-top: 2px;
+            }
+            .ad-x {
+              border: none;
+              background: transparent;
+              font-size: 22px;
+              line-height: 1;
+              color: var(--text-sec);
+              cursor: pointer;
+            }
+            .ad-body {
+              padding: 16px 20px;
+              overflow: auto;
+              flex: 1;
+            }
+            .ad-meta {
+              background: #f7f4ef;
+              border: 1px solid var(--border);
+              border-radius: 10px;
+              padding: 10px 12px;
+              margin-bottom: 16px;
+            }
+            .ad-meta-row {
+              display: flex;
+              gap: 10px;
+              font-size: 12.5px;
+              padding: 3px 0;
+            }
+            .ad-meta-k {
+              width: 96px;
+              color: var(--text-sec);
+              font-weight: 600;
+              flex-shrink: 0;
+            }
+            .chbadge {
+              display: inline-flex;
+              width: 18px;
+              height: 18px;
+              align-items: center;
+              justify-content: center;
+              border-radius: 50%;
+              font-size: 10px;
+              font-weight: 800;
+              margin: 0 2px;
+            }
+            .chbadge.on {
+              background: #e6f6ef;
+              color: #1f7a4d;
+            }
+            .chbadge.off {
+              background: #f1efea;
+              color: #a39a8c;
+            }
+            .ad-label {
+              display: block;
+              font-size: 12px;
+              font-weight: 700;
+              color: var(--navy);
+              text-transform: uppercase;
+              letter-spacing: 0.03em;
+              margin-bottom: 7px;
+            }
+            .ad-textarea {
+              width: 100%;
+              min-height: 150px;
+              border: 1px solid var(--border);
+              border-radius: 9px;
+              padding: 11px 12px;
+              font-size: 13.5px;
+              line-height: 1.55;
+              font-family: inherit;
+              color: var(--navy);
+              background: #fff;
+              outline: none;
+              resize: vertical;
+            }
+            .ad-textarea:focus {
+              border-color: var(--accent);
+              box-shadow: 0 0 0 3px rgba(196, 113, 74, 0.14);
+            }
+            .ad-vars {
+              margin-top: 10px;
+              display: flex;
+              flex-wrap: wrap;
+              gap: 6px;
+              align-items: center;
+            }
+            .ad-vars-lbl {
+              font-size: 11.5px;
+              color: var(--text-sec);
+              margin-right: 2px;
+            }
+            .varchip {
+              display: inline-block;
+              padding: 4px 9px;
+              border: 1px solid var(--border);
+              border-radius: 14px;
+              font-size: 11px;
+              font-family: monospace;
+              color: var(--navy);
+              background: #faf7f1;
+              cursor: pointer;
+            }
+            .varchip:hover {
+              background: var(--navy);
+              color: #fff;
+            }
+            .ad-foot {
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              padding: 14px 20px;
+              border-top: 1px solid var(--border);
+              background: #faf7f1;
+            }
+            .ad-restore {
+              margin-left: auto;
+              font-size: 12.5px;
+              color: var(--accent);
+              cursor: pointer;
+              font-weight: 600;
+            }
+            .ad-restore:hover {
+              text-decoration: underline;
+            }
+          </style>
+          <div class="page-head">
+            <div class="page-title">Automated Messages</div>
+          </div>
+          <div class="auto-filter">
+            <div class="srch">
+              <i class="fas fa-magnifying-glass"></i
+              ><input
+                id="autoSearch"
+                type="text"
+                placeholder="Search by trigger name"
+                oninput="renderAutomations()"
+              />
+            </div>
+            <select id="autoStatusFilter" onchange="renderAutomations()">
+              <option value="all">All status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <span class="auto-count" id="autoCount"></span>
+          </div>
+          <div class="auto-table-wrap">
+            <table class="auto-table">
+              <thead>
+                <tr>
+                  <th style="width: 64px">Active</th>
+                  <th>Trigger</th>
+                  <th style="width: 200px">Timing</th>
+                  <th style="width: 150px">Admin Can Disable</th>
+                  <th style="width: 48px"></th>
+                </tr>
+              </thead>
+              <tbody id="autoTbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ===================== SCREEN 4: ANALYTICS ===================== -->
+        <section class="screen" id="screen-analytics">
+          <div class="page-head">
+            <div class="page-title">Message Delivery Analytics</div>
+          </div>
+          <div class="analytics-card">
+            <h3>Campaign Delivery Detail</h3>
+            <p
+              style="
+                font-size: 12.5px;
+                color: var(--text-sec);
+                margin: -8px 0 14px;
+              "
+            >
+              Showing sent message campaigns only.
+            </p>
+            <div class="filter-bar">
+              <input
+                type="text"
+                id="anSearch"
+                placeholder="Search campaigns..."
+                oninput="renderDelivery()"
+              />
+              <select id="anRange" onchange="onAnRangeChange()">
+                <option value="all">All time</option>
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="custom">Custom</option>
+              </select>
+              <input
+                type="date"
+                id="anFrom"
+                style="display: none; flex: 0 0 auto; min-width: 0"
+                onchange="renderDelivery()"
+              />
+              <input
+                type="date"
+                id="anTo"
+                style="display: none; flex: 0 0 auto; min-width: 0"
+                onchange="renderDelivery()"
+              />
+              <select id="anAud" onchange="renderDelivery()">
+                <option value="">All Audiences</option>
+                <option value="Admin">Admin</option>
+                <option value="Client">Client</option>
+                <option value="Custom">Custom Group</option>
+              </select>
+            </div>
+            <div class="tbl-wrap an-wrap">
+              <table class="an-table">
+                <thead>
+                  <tr id="anHeadRow"></tr>
+                </thead>
+                <tbody id="deliveryBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <h3>Delivery Trend (Last 30 Days)</h3>
+            <canvas id="trendChart" height="110"></canvas>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- create group modal -->
+    <div class="modal-ov" id="cgModal">
+      <div class="modal">
+        <h3>Create new group</h3>
+        <div class="field">
+          <label class="req">Group name</label
+          ><input
+            type="text"
+            id="cgName"
+            placeholder="e.g. VIP Buyers — Tokyo"
+          />
+        </div>
+        <div class="field">
+          <label>Audience base</label>
+          <div style="display: flex; gap: 18px">
+            <label class="radio-row" style="padding: 4px 0"
+              ><input type="radio" name="cgBase" value="Client" checked />
+              Client</label
+            >
+            <label class="radio-row" style="padding: 4px 0"
+              ><input type="radio" name="cgBase" value="Admin" /> Admin</label
+            >
+            <label class="radio-row" style="padding: 4px 0"
+              ><input type="radio" name="cgBase" value="Both" /> Both</label
+            >
+          </div>
+        </div>
+        <div class="field">
+          <label>Filter (optional)</label>
+          <div style="display: flex; gap: 10px">
+            <select id="cgFilter" style="flex: 1">
+              <option value="">— None —</option>
+              <option>Plan type</option>
+              <option>Registration date</option>
+              <option>Activity level</option>
+            </select>
+            <input
+              type="text"
+              id="cgFilterVal"
+              placeholder="value"
+              style="flex: 1"
+            />
+          </div>
+        </div>
+        <div class="form-actions" style="border: none; padding-top: 6px">
+          <button class="btn btn-outline" onclick="closeCreateGroup()">
+            Cancel
+          </button>
+          <button class="btn btn-navy" onclick="saveNewGroup()">
+            Save Group
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PROPERTY PICKER MODAL ===== -->
+    <div class="modal-ov" id="propPickerOv">
+      <div class="picker-modal">
+        <div class="picker-head">
+          <h3>Insert property</h3>
+          <button class="picker-x" type="button" onclick="closePropPicker()">
+            &times;
+          </button>
+        </div>
+        <div class="picker-filters">
+          <div class="pf" style="grid-column: span 2">
+            <label>Search</label>
+            <input
+              type="text"
+              id="ppSearch"
+              placeholder="Search by name or ID"
+              oninput="renderPropPicker()"
+            />
+          </div>
+          <div class="pf">
+            <label>Listing Type</label>
+            <select id="ppTx" onchange="renderPropPicker()">
+              <option value="">All</option>
+              <option value="For Sale">For Sale</option>
+              <option value="For Rent">For Rent</option>
+              <option value="Sale + Rent">Sale + Rent</option>
+            </select>
+          </div>
+          <div class="pf">
+            <label>Property Type</label>
+            <select id="ppType" onchange="renderPropPicker()">
+              <option value="">All</option>
+            </select>
+          </div>
+          <div class="pf">
+            <label>Prefecture</label>
+            <select id="ppPref" onchange="renderPropPicker()">
+              <option value="">All</option>
+            </select>
+          </div>
+          <div class="pf">
+            <label>City</label>
+            <select id="ppCity" onchange="renderPropPicker()">
+              <option value="">All</option>
+            </select>
+          </div>
+          <div class="pf">
+            <label>Price min (¥M)</label>
+            <input
+              type="number"
+              id="ppPriceMin"
+              min="0"
+              placeholder="0"
+              oninput="renderPropPicker()"
+            />
+          </div>
+          <div class="pf">
+            <label>Price max (¥M)</label>
+            <input
+              type="number"
+              id="ppPriceMax"
+              min="0"
+              placeholder="∞"
+              oninput="renderPropPicker()"
+            />
+          </div>
+        </div>
+        <div class="picker-toolbar">
+          <span class="picker-count" id="ppCount"></span>
+          <div class="picker-view-toggle">
+            <button
+              type="button"
+              class="pvt-btn on"
+              id="ppViewGrid"
+              onclick="setPropPickerView('grid')"
+            >
+              <i class="fas fa-table-cells-large"></i> Grid
+            </button>
+            <button
+              type="button"
+              class="pvt-btn"
+              id="ppViewTable"
+              onclick="setPropPickerView('table')"
+            >
+              <i class="fas fa-table-list"></i> Table
+            </button>
+          </div>
+        </div>
+        <div class="picker-body" id="ppBody"></div>
+        <div class="picker-foot">
+          <span class="picker-sel" id="ppSel">No property selected</span>
+          <span class="spacer"></span>
+          <button
+            class="btn btn-outline"
+            type="button"
+            onclick="closePropPicker()"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-navy"
+            type="button"
+            id="ppInsertBtn"
+            onclick="insertSelectedProperty()"
+          >
+            Insert property
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== AGENCY PICKER MODAL ===== -->
+    <div class="modal-ov" id="agentPickerOv">
+      <div class="picker-modal">
+        <div class="picker-head">
+          <h3>Insert agency</h3>
+          <button class="picker-x" type="button" onclick="closeAgentPicker()">
+            &times;
+          </button>
+        </div>
+        <div class="picker-filters">
+          <div class="pf" style="grid-column: span 2">
+            <label>Search</label>
+            <input
+              type="text"
+              id="apSearch"
+              placeholder="Search by name or ID"
+              oninput="renderAgentPicker()"
+            />
+          </div>
+          <div class="pf">
+            <label>Status</label>
+            <select id="apStatus" onchange="renderAgentPicker()">
+              <option value="">All</option>
+              <option value="Active">Active</option>
+              <option value="Suspended">Suspended</option>
+              <option value="Withdrawn">Withdrawn</option>
+            </select>
+          </div>
+          <div class="pf">
+            <label>Plan</label>
+            <select id="apPlan" onchange="renderAgentPicker()">
+              <option value="">All</option>
+              <option value="Free">Free</option>
+              <option value="Bronze">Bronze</option>
+              <option value="Silver">Silver</option>
+              <option value="Gold">Gold</option>
+            </select>
+          </div>
+          <div class="pf">
+            <label>Service Area</label>
+            <select id="apArea" onchange="renderAgentPicker()">
+              <option value="">All</option>
+            </select>
+          </div>
+          <div class="pf">
+            <label>Language</label>
+            <select id="apLang" onchange="renderAgentPicker()">
+              <option value="">All</option>
+            </select>
+          </div>
+          <div class="pf">
+            <label>Specialism</label>
+            <select id="apSpec" onchange="renderAgentPicker()">
+              <option value="">All</option>
+            </select>
+          </div>
+        </div>
+        <div class="picker-toolbar">
+          <span class="picker-count" id="apCount"></span>
+          <div class="picker-view-toggle">
+            <button
+              type="button"
+              class="pvt-btn on"
+              id="apViewGrid"
+              onclick="setAgentPickerView('grid')"
+            >
+              <i class="fas fa-table-cells-large"></i> Grid
+            </button>
+            <button
+              type="button"
+              class="pvt-btn"
+              id="apViewTable"
+              onclick="setAgentPickerView('table')"
+            >
+              <i class="fas fa-table-list"></i> Table
+            </button>
+          </div>
+        </div>
+        <div class="picker-body" id="apBody"></div>
+        <div class="picker-foot">
+          <span class="picker-sel" id="apSel">No agency selected</span>
+          <span class="spacer"></span>
+          <button
+            class="btn btn-outline"
+            type="button"
+            onclick="closeAgentPicker()"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-navy"
+            type="button"
+            id="apInsertBtn"
+            onclick="insertSelectedAgent()"
+          >
+            Insert agency
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Automation edit drawer -->
+    <div
+      class="auto-drawer-backdrop"
+      id="autoBackdrop"
+      onclick="if (event.target === this) closeAutoDrawer();"
+    ></div>
+    <aside class="auto-drawer" id="autoDrawer" aria-hidden="true">
+      <div class="ad-head">
+        <div>
+          <div class="ad-id" id="adId">—</div>
+          <div class="ad-name" id="adName">—</div>
+        </div>
+        <button
+          class="ad-x"
+          type="button"
+          onclick="closeAutoDrawer()"
+          aria-label="Close"
+        >
+          &times;
+        </button>
+      </div>
+      <div class="ad-body">
+        <div class="ad-meta">
+          <div class="ad-meta-row">
+            <span class="ad-meta-k">Timing</span><span id="adTiming">—</span>
+          </div>
+          <div class="ad-meta-row">
+            <span class="ad-meta-k">Channels</span
+            ><span id="adChannels">—</span>
+          </div>
+          <div class="ad-meta-row">
+            <span class="ad-meta-k">Email Pattern</span
+            ><span id="adPattern">—</span>
+          </div>
+        </div>
+        <label class="ad-label">Chat Body</label>
+        <textarea
+          id="adChatBody"
+          class="ad-textarea"
+          placeholder="Enter chat message…"
+          oninput="autoDirty = true"
+        ></textarea>
+        <div class="ad-vars" id="adChatVars"></div>
+      </div>
+      <div class="ad-foot">
+        <button class="btn btn-navy" type="button" onclick="saveAutoDrawer()">
+          Save
+        </button>
+        <button
+          class="btn btn-outline"
+          type="button"
+          onclick="closeAutoDrawer()"
+        >
+          Cancel
+        </button>
+        <span class="ad-restore" onclick="restoreAutoDrawer()"
+          >Restore default</span
+        >
+      </div>
+    </aside>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="automation-catalog.js"></script>
+    <script>
+      const $ = (id) => document.getElementById(id);
+
+      /* ===================== MOCK DATA ===================== */
+      let campaigns = [
+        {
+          id: "c1",
+          name: "Dormant Client Re-engagement",
+          audience: "Client — Dormant Investors",
+          audType: "Client",
+          status: "Sent",
+          scheduled: "2026-04-05 14:00",
+          sent: 1240,
+          delivered: 1180,
+          desc: "Win back inactive client accounts.",
+          aud: "all_users",
+          body: "Hi {full_name}, we've missed you! New investment opportunities are waiting on YUUSHI.",
+        },
+        {
+          id: "c2",
+          name: "Admin Monthly Announcement",
+          audience: "Admin — Platform Updates",
+          audType: "Admin",
+          status: "Scheduled",
+          scheduled: "2026-04-25 09:00",
+          sent: 0,
+          delivered: 0,
+          desc: "",
+          aud: "all_agents",
+          body: "Hi {agent_name}, your monthly performance summary is ready on {platform_name}.",
+        },
+        {
+          id: "c3",
+          name: "New Listing Alert",
+          audience: "Client — All Investors",
+          audType: "Client",
+          status: "Sent",
+          scheduled: "2026-04-10 10:30",
+          sent: 850,
+          delivered: 820,
+          desc: "",
+          aud: "all_users",
+          body: "A new property — {property_name} — just matched your saved search.",
+        },
+        {
+          id: "c4",
+          name: "Admin Platform Outreach",
+          audience: "Admin — Announcements",
+          audType: "Admin",
+          status: "Draft",
+          scheduled: "—",
+          sent: 0,
+          delivered: 0,
+          desc: "",
+          aud: "all_agents",
+          body: "Hi {agent_name}, partner with {platform_name} to grow your listings.",
+        },
+      ];
+
+      /* ---- deterministic filler so the campaigns list exceeds one page (>=60 rows) ---- */
+      (function padCampaigns() {
+        const audiencePool = [
+          {
+            audience: "Client — All Investors",
+            audType: "Client",
+            aud: "all_users",
+          },
+          {
+            audience: "Client — Dormant Investors",
+            audType: "Client",
+            aud: "all_users",
+          },
+          {
+            audience: "Client — Premium Members",
+            audType: "Client",
+            aud: "all_users",
+          },
+          {
+            audience: "Admin — Announcements",
+            audType: "Admin",
+            aud: "all_agents",
+          },
+          {
+            audience: "Admin — Platform Updates",
+            audType: "Admin",
+            aud: "all_agents",
+          },
+          {
+            audience: "Custom Group — VIP Buyers Tokyo",
+            audType: "Custom",
+            aud: "custom",
+          },
+          {
+            audience: "Custom Group — High-Intent Leads Q2",
+            audType: "Custom",
+            aud: "custom",
+          },
+        ];
+        const titlePool = [
+          "New Listing Alert",
+          "Re-engagement Nudge",
+          "Price Drop Notice",
+          "Saved Search Update",
+          "Admin Reminder",
+          "Viewing Follow-up",
+          "Featured Property Push",
+          "Investor Opportunity Ping",
+          "Welcome Sequence",
+          "Monthly Recap Message",
+        ];
+        const statusPool = ["Sent", "Sent", "Sent", "Scheduled", "Draft"];
+        const target = 60;
+        let n = 1;
+        while (campaigns.length < target) {
+          const a = audiencePool[n % audiencePool.length];
+          const status = statusPool[n % statusPool.length];
+          const title = titlePool[n % titlePool.length];
+          const isSent = status === "Sent";
+          const sent = isSent ? 300 + ((n * 113) % 2500) : 0;
+          const delivered = isSent
+            ? Math.floor(sent * (0.92 + (n % 5) * 0.01))
+            : 0;
+          const mo = ((n % 6) + 1).toString().padStart(2, "0");
+          const da = ((n % 27) + 1).toString().padStart(2, "0");
+          const hh = (8 + (n % 10)).toString().padStart(2, "0");
+          campaigns.push({
+            id: "cf" + n,
+            name: title + " #" + n,
+            audience: a.audience,
+            audType: a.audType,
+            status,
+            scheduled:
+              status === "Draft"
+                ? "—"
+                : "2026-" + mo + "-" + da + " " + hh + ":00",
+            sent,
+            delivered,
+            desc: "Auto-seeded demo campaign " + n + ".",
+            aud: a.aud,
+            body:
+              "Hi {full_name}, here is your update #" +
+              n +
+              " from {platform_name}.",
+          });
+          n++;
+        }
+      })();
+
+      let templates = [
+        {
+          id: "t1",
+          name: "New Property Alert",
+          category: "Automation",
+          channel: "both",
+          subject: "A new property just matched your search",
+          body: "Hi {full_name}, a new property — {property_name} — just hit the market and matches your saved search. Take a look before it's gone!",
+          lastUsed: "Yesterday",
+        },
+        {
+          id: "t2",
+          name: "Re-engagement Message",
+          category: "Campaign",
+          channel: "inapp",
+          subject: "",
+          body: "Hi {full_name}, we've missed you! New investment opportunities are waiting on YUUSHI. Come back and explore the latest listings.",
+          lastUsed: "3 days ago",
+        },
+        {
+          id: "t3",
+          name: "Price Drop Notification",
+          category: "Automation",
+          channel: "both",
+          subject: "Price drop on {property_name}",
+          body: "Good news {full_name}! The price for {property_name} has just dropped. Don't miss this opportunity.",
+          lastUsed: "1 week ago",
+        },
+        {
+          id: "t4",
+          name: "Welcome Message",
+          category: "Campaign",
+          channel: "email",
+          subject: "Welcome to {platform_name}!",
+          body: "Welcome aboard, {full_name}! We're thrilled to have you on {platform_name}. Let's find your perfect property together.",
+          lastUsed: "2 weeks ago",
+        },
+        {
+          id: "t5",
+          name: "Monthly Portfolio Summary",
+          category: "Automation",
+          channel: "email",
+          subject: "Your monthly portfolio summary",
+          body: "Hi {agent_name}, here is your performance summary for this month. Keep up the great work!",
+          lastUsed: "1 month ago",
+        },
+      ];
+
+      // Built-in synthetic audience segments (estimates only).
+      let audienceGroups = [
+        { id: "ag1", name: "Client — Dormant Investors", members: 342 },
+        { id: "ag2", name: "Client — All Investors", members: 1240 },
+        { id: "ag3", name: "Client — Premium Members", members: 89 },
+        { id: "ag4", name: "Admin — Platform Updates", members: 156 },
+        { id: "ag5", name: "Admin — Announcements", members: 430 },
+        { id: "ag6", name: "Admin — Compliance Notices", members: 67 },
+        { id: "ag7", name: "VIP Buyers — Tokyo", members: 25 },
+        { id: "ag8", name: "High-Intent Leads Q2", members: 58 },
+      ];
+
+      /* Shared Lead Management groups — same localStorage key Lead Management
+         uses. Groups created in this builder persist there too. */
+      const LEAD_GROUP_KEY = "yuushiLeadGroups";
+      function readLeadGroups() {
+        try {
+          return JSON.parse(localStorage.getItem(LEAD_GROUP_KEY)) || [];
+        } catch (e) {
+          return [];
+        }
+      }
+      function writeLeadGroups(arr) {
+        localStorage.setItem(LEAD_GROUP_KEY, JSON.stringify(arr));
+      }
+      // Combined list for the Custom-Group picker: synthetic segments + shared
+      // lead groups (mapped to {id, name, members, shared}).
+      function allGroups() {
+        const lead = readLeadGroups().map((g) => ({
+          id: g.id,
+          name: g.name,
+          members: (g.leadIds || []).length,
+          shared: true,
+        }));
+        return audienceGroups.concat(lead);
+      }
+
+      const VARIABLES = [
+        "{full_name}",
+        "{agent_name}",
+        "{property_name}",
+        "{platform_name}",
+      ];
+
+      /* ANALYTICS DATA — Sent message campaigns only (last 90 days).
+         Each row: name, audience (audType), sentDate, recipients, delivered,
+         read. Recurring campaigns carry a `sends[]` array (per-send rows) and
+         `since` (first send date). One-time campaigns omit `sends`. */
+      const analyticsCampaigns = [
+        {
+          id: "a1",
+          name: "Dormant Client Re-engagement",
+          audType: "Client",
+          audience: "Client — Dormant Investors",
+          sentDate: "2026-06-12",
+          recipients: 1240,
+          delivered: 1180,
+          read: 742,
+          template: "Re-engagement Message",
+          subject: "",
+          body: "Hi {full_name}, we've missed you! New investment opportunities are waiting on YUUSHI.",
+        },
+        {
+          id: "a2",
+          name: "New Listing Alert",
+          audType: "Client",
+          audience: "Client — All Investors",
+          sentDate: "2026-06-05",
+          recipients: 850,
+          delivered: 820,
+          read: 503,
+          template: "New Property Alert",
+          subject: "",
+          body: "A new property — {property_name} — just hit the market and matches your saved search.",
+        },
+        {
+          id: "a3",
+          name: "Admin Premium Briefing",
+          audType: "Admin",
+          audience: "Admin — Platform Updates",
+          sentDate: "2026-05-28",
+          recipients: 156,
+          delivered: 150,
+          read: 96,
+          template: "",
+          subject: "",
+          body: "Hi {agent_name}, here is your monthly premium briefing from {platform_name}.",
+        },
+        {
+          id: "a4",
+          name: "Spring Open House Invites",
+          audType: "Custom",
+          audience: "VIP Buyers — Tokyo",
+          sentDate: "2026-05-15",
+          recipients: 25,
+          delivered: 25,
+          read: 18,
+          template: "",
+          subject: "",
+          body: "You're invited to an exclusive open house for {property_name}.",
+        },
+        {
+          id: "a5",
+          name: "Price Drop Notice",
+          audType: "Client",
+          audience: "Client — All Investors",
+          sentDate: "2026-04-22",
+          recipients: 1240,
+          delivered: 1090,
+          read: 410,
+          template: "Price Drop Notification",
+          subject: "",
+          body: "Good news {full_name}! The price for {property_name} has just dropped.",
+        },
+        {
+          id: "a6",
+          name: "Admin Compliance Reminder",
+          audType: "Admin",
+          audience: "Admin — Announcements",
+          sentDate: "2026-04-08",
+          recipients: 430,
+          delivered: 180,
+          read: 40,
+          template: "",
+          subject: "",
+          body: "Hi {agent_name}, please complete your compliance review on {platform_name}.",
+        },
+        {
+          id: "a7",
+          name: "Weekly Market Digest",
+          audType: "Client",
+          audience: "Client — All Investors",
+          recurring: true,
+          since: "2026-04-13",
+          template: "",
+          subject: "",
+          body: "Hi {full_name}, here's your weekly market digest from {platform_name}.",
+          sends: [
+            {
+              sentDate: "2026-06-15",
+              recipients: 1240,
+              delivered: 1200,
+              read: 690,
+            },
+            {
+              sentDate: "2026-06-08",
+              recipients: 1220,
+              delivered: 1175,
+              read: 660,
+            },
+            {
+              sentDate: "2026-06-01",
+              recipients: 1180,
+              delivered: 1130,
+              read: 615,
+            },
+            {
+              sentDate: "2026-05-25",
+              recipients: 1150,
+              delivered: 1100,
+              read: 580,
+            },
+          ],
+        },
+      ];
+
+      /* ===================== ENTITY PICKERS ===================== */
+      /* Property Picker — mirrors the Property Management list (filters, grid/
+         table, single-select, pagination). Only Published/Active rows. */
+      const PROP_TYPES = [
+        "Apartment",
+        "Tower Mansion",
+        "House",
+        "Retail Unit",
+        "Office Unit",
+        "Residential Multi-Family Building",
+        "Office Building",
+        "Mixed-Use Building",
+        "Hotel & Ryokan",
+        "Residential Land",
+        "Commercial Land",
+        "New Dev Apartment",
+        "New Dev House",
+      ];
+      const PROP_PREFS = [
+        "Tokyo",
+        "Osaka",
+        "Kanagawa",
+        "Kyoto",
+        "Hokkaido",
+        "Fukuoka",
+        "Aichi",
+        "Hyogo",
+      ];
+      const PROP_CITY_BY_PREF = {
+        Tokyo: ["Shibuya", "Shinjuku", "Minato", "Setagaya", "Shinagawa"],
+        Osaka: ["Osaka", "Sakai", "Suita"],
+        Kanagawa: ["Yokohama", "Kawasaki", "Fujisawa"],
+        Kyoto: ["Kyoto", "Uji"],
+        Hokkaido: ["Sapporo", "Hakodate"],
+        Fukuoka: ["Fukuoka", "Kitakyushu"],
+        Aichi: ["Nagoya", "Toyota"],
+        Hyogo: ["Kobe", "Himeji"],
+      };
+      const PROP_TX = ["For Sale", "For Rent", "Sale + Rent"];
+
+      // Deterministic seed of 32 published properties (≥5 New Development).
+      const pickerProperties = (function () {
+        const baseNames = [
+          "Minami-Aoyama Penthouse",
+          "Shibuya Sky Residence",
+          "Shinjuku Studio Suites",
+          "Setagaya Garden House",
+          "Minato Bay Tower",
+          "Umeda Central Apartment",
+          "Namba Retail Suite",
+          "Suita Family House",
+          "Yokohama Harbour View",
+          "Kawasaki Riverside Flat",
+          "Fujisawa Coastal Villa",
+          "Kyoto Machiya Residence",
+          "Uji Riverside House",
+          "Sapporo Snow Lodge",
+          "Hakodate Hillside House",
+          "Fukuoka Tenjin Office",
+          "Kitakyushu Logistics Hub",
+          "Nagoya Sakae Tower",
+          "Toyota Industrial Unit",
+          "Kobe Kitano Mansion",
+          "Himeji Castle View Flat",
+          "Ginza Boutique Building",
+          "Roppongi Hills Suite",
+          "Ebisu Designer Loft",
+          "Sakai Commercial Plot",
+          "Nishi-Shinjuku Land",
+          "Shinagawa Bayfront Residence",
+          "Umeda Sky Towers",
+          "Kohoku New Town Houses",
+          "Sapporo Garden Villas",
+          "Nagoya Riverside Heights",
+          "Yokohama New Dev Court",
+        ];
+        // last 5 entries (indexes 27..31) plus index 26 = 6 New Development
+        const ndIndexes = new Set([26, 27, 28, 29, 30, 31]);
+        const prices = [
+          78, 62, 31, 54, 120, 47, 38, 44, 66, 29, 88, 52, 36, 41, 33, 59, 72,
+          95, 27, 64, 49, 110, 130, 57, 45, 39, 78, 62, 54, 41, 48, 69,
+        ];
+        return baseNames.map((nm, i) => {
+          const nd = ndIndexes.has(i);
+          const pref = PROP_PREFS[i % PROP_PREFS.length];
+          const cities = PROP_CITY_BY_PREF[pref];
+          const city = cities[i % cities.length];
+          let type;
+          if (nd) type = i % 2 === 0 ? "New Dev Apartment" : "New Dev House";
+          else type = PROP_TYPES[i % 11];
+          const tx = nd ? "For Sale" : PROP_TX[i % 3];
+          const id = nd
+            ? "PRJ-" + (1040 + i)
+            : "PROP-" + String(1001 + i).padStart(4, "0");
+          return {
+            id,
+            name: nm,
+            type,
+            tx,
+            prefecture: pref,
+            city,
+            price: prices[i],
+            nd,
+          };
+        });
+      })();
+
+      let propPickerView = "grid";
+      let propPickerPage = 1;
+      let propPickerSel = null;
+      let propPickerTarget = null; // {prefix} where to insert
+
+      function populatePropFilterOpts() {
+        const tSel = $("ppType");
+        if (tSel && tSel.options.length <= 1) {
+          PROP_TYPES.forEach((t) => {
+            const o = document.createElement("option");
+            o.value = t;
+            o.textContent = t;
+            tSel.appendChild(o);
+          });
+        }
+        const pSel = $("ppPref");
+        if (pSel && pSel.options.length <= 1) {
+          PROP_PREFS.forEach((p) => {
+            const o = document.createElement("option");
+            o.value = p;
+            o.textContent = p;
+            pSel.appendChild(o);
+          });
+        }
+      }
+      function refreshPropCityOpts() {
+        const pref = $("ppPref").value;
+        const cSel = $("ppCity");
+        const cur = cSel.value;
+        cSel.innerHTML = '<option value="">All</option>';
+        const cities = pref
+          ? PROP_CITY_BY_PREF[pref] || []
+          : [...new Set(pickerProperties.map((p) => p.city))].sort();
+        cities.forEach((c) => {
+          const o = document.createElement("option");
+          o.value = c;
+          o.textContent = c;
+          cSel.appendChild(o);
+        });
+        if ([...cSel.options].some((o) => o.value === cur)) cSel.value = cur;
+      }
+      function openPropPicker(prefix) {
+        propPickerTarget = prefix || "b";
+        propPickerSel = null;
+        propPickerPage = 1;
+        populatePropFilterOpts();
+        $("ppSearch").value = "";
+        $("ppTx").value = "";
+        $("ppType").value = "";
+        $("ppPref").value = "";
+        $("ppPriceMin").value = "";
+        $("ppPriceMax").value = "";
+        refreshPropCityOpts();
+        $("propPickerOv").classList.add("open");
+        renderPropPicker();
+        setTimeout(() => $("ppSearch").focus(), 30);
+      }
+      function closePropPicker() {
+        $("propPickerOv").classList.remove("open");
+      }
+      function setPropPickerView(v) {
+        propPickerView = v;
+        $("ppViewGrid").classList.toggle("on", v === "grid");
+        $("ppViewTable").classList.toggle("on", v === "table");
+        renderPropPicker();
+      }
+      function filteredProperties() {
+        const q = ($("ppSearch").value || "").toLowerCase().trim();
+        const tx = $("ppTx").value;
+        const ty = $("ppType").value;
+        const pref = $("ppPref").value;
+        const city = $("ppCity").value;
+        const min = parseFloat($("ppPriceMin").value);
+        const max = parseFloat($("ppPriceMax").value);
+        return pickerProperties.filter((p) => {
+          if (
+            q &&
+            !(
+              p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q)
+            )
+          )
+            return false;
+          if (tx && p.tx !== tx) return false;
+          if (ty && p.type !== ty) return false;
+          if (pref && p.prefecture !== pref) return false;
+          if (city && p.city !== city) return false;
+          if (!isNaN(min) && p.price < min) return false;
+          if (!isNaN(max) && p.price > max) return false;
+          return true;
+        });
+      }
+      function renderPropPicker() {
+        refreshPropCityOpts();
+        const rows = filteredProperties();
+        const per = 10;
+        const pages = Math.max(1, Math.ceil(rows.length / per));
+        if (propPickerPage > pages) propPickerPage = pages;
+        const start = (propPickerPage - 1) * per;
+        const pageRows = rows.slice(start, start + per);
+        $("ppCount").textContent =
+          rows.length + (rows.length === 1 ? " property" : " properties");
+        const body = $("ppBody");
+        if (!rows.length) {
+          body.innerHTML =
+            '<div class="picker-empty">No properties match your filters.</div>';
+          updatePropSelLabel();
+          return;
+        }
+        if (propPickerView === "grid") {
+          body.innerHTML =
+            '<div class="picker-grid">' +
+            pageRows
+              .map((p) => {
+                const on = propPickerSel === p.id ? "on" : "";
+                const chk = propPickerSel === p.id ? "checked" : "";
+                return `<label class="pk-card ${on}">
+                  <input type="radio" name="ppSel" ${chk} onclick="selectPickerProp('${p.id}')">
+                  <div>
+                    <div class="pk-name">${escapeHtml(p.name)}${p.nd ? '<span class="pk-nd">New Dev</span>' : ""}</div>
+                    <div class="pk-sub">${p.id} · ${escapeHtml(p.type)}<br>${escapeHtml(p.tx)} · ${escapeHtml(p.city)}, ${escapeHtml(p.prefecture)}<br>¥${p.price}M</div>
+                  </div>
+                </label>`;
+              })
+              .join("") +
+            "</div>";
+        } else {
+          body.innerHTML =
+            '<div class="tbl-wrap" style="margin-top:8px"><table class="picker-table"><thead><tr><th style="width:36px"></th><th>Property</th><th>Type</th><th>Listing</th><th>Location</th><th>Price</th></tr></thead><tbody>' +
+            pageRows
+              .map((p) => {
+                const chk = propPickerSel === p.id ? "checked" : "";
+                return `<tr onclick="selectPickerProp('${p.id}')">
+                  <td><input type="radio" name="ppSelT" ${chk} onclick="event.stopPropagation();selectPickerProp('${p.id}')"></td>
+                  <td class="cell-strong">${escapeHtml(p.name)}${p.nd ? '<span class="pk-nd">New Dev</span>' : ""}<div style="font-size:11px;color:var(--text-sec)">${p.id}</div></td>
+                  <td>${escapeHtml(p.type)}</td>
+                  <td>${escapeHtml(p.tx)}</td>
+                  <td>${escapeHtml(p.city)}, ${escapeHtml(p.prefecture)}</td>
+                  <td>¥${p.price}M</td>
+                </tr>`;
+              })
+              .join("") +
+            "</tbody></table></div>";
+        }
+        // pager (hidden when ≤10 results)
+        if (rows.length > per) {
+          let pg = '<div class="picker-pager">';
+          pg += `<button type="button" ${propPickerPage === 1 ? "disabled" : ""} onclick="propPickerGo(${propPickerPage - 1})">Prev</button>`;
+          for (let i = 1; i <= pages; i++)
+            pg += `<button type="button" class="${i === propPickerPage ? "on" : ""}" onclick="propPickerGo(${i})">${i}</button>`;
+          pg += `<button type="button" ${propPickerPage === pages ? "disabled" : ""} onclick="propPickerGo(${propPickerPage + 1})">Next</button>`;
+          pg += "</div>";
+          body.insertAdjacentHTML("beforeend", pg);
+        }
+        updatePropSelLabel();
+      }
+      function propPickerGo(p) {
+        propPickerPage = p;
+        renderPropPicker();
+      }
+      function selectPickerProp(id) {
+        propPickerSel = id;
+        renderPropPicker();
+      }
+      function updatePropSelLabel() {
+        const p = pickerProperties.find((x) => x.id === propPickerSel);
+        $("ppSel").textContent = p
+          ? "Selected: " + p.name
+          : "No property selected";
+      }
+      function insertSelectedProperty() {
+        const p = pickerProperties.find((x) => x.id === propPickerSel);
+        if (!p) {
+          $("ppSearch").focus();
+          return;
+        }
+        insertAtCursorForTarget(propPickerTarget, p.name);
+        closePropPicker();
+        toast("Property inserted.");
+      }
+
+      /* Agency Picker — mirrors Agent Management filters. */
+      const AGENT_AREAS = [
+        "Tokyo",
+        "Kanagawa",
+        "Osaka",
+        "Saitama",
+        "Chiba",
+        "Kyoto",
+      ];
+      const AGENT_LANGS = [
+        "Japanese",
+        "English",
+        "Chinese (Simplified)",
+        "Chinese (Traditional)",
+        "Vietnamese",
+        "Korean",
+      ];
+      const AGENT_SPECS = [
+        "Real Estate Brokerage",
+        "Direct Property Acquisition",
+        "Rental Brokerage",
+        "Property Management",
+        "Short Sale",
+        "Inheritance Consultation",
+      ];
+      const AGENT_STATUSES = ["Active", "Suspended", "Withdrawn"];
+      const AGENT_PLANS = ["Free", "Bronze", "Silver", "Gold"];
+
+      const pickerAgents = (function () {
+        const names = [
+          "Sakura Realty",
+          "Tokyo Estate Partners",
+          "Minato Property Group",
+          "Yokohama Homes",
+          "Osaka Living Co.",
+          "Kyoto Heritage Estates",
+          "Sapporo North Realty",
+          "Fukuoka Bay Agents",
+          "Nagoya Central Realty",
+          "Kobe Coastal Homes",
+          "Chiba Garden Realty",
+          "Saitama Family Estates",
+          "Setagaya Select Homes",
+          "Shibuya Urban Realty",
+          "Ginza Prime Partners",
+          "Roppongi Luxe Estates",
+          "Ebisu Boutique Realty",
+          "Shinjuku Skyline Agents",
+          "Harborview Realty",
+          "Greenfield Estates",
+        ];
+        return names.map((nm, i) => ({
+          id: "AG-" + String(2001 + i).padStart(4, "0"),
+          name: nm,
+          // mostly Active, with a couple Suspended / Withdrawn for variety
+          status: i === 5 ? "Suspended" : i === 12 ? "Withdrawn" : "Active",
+          plan: AGENT_PLANS[i % 4],
+          area: AGENT_AREAS[i % AGENT_AREAS.length],
+          lang: AGENT_LANGS[i % AGENT_LANGS.length],
+          spec: AGENT_SPECS[i % AGENT_SPECS.length],
+        }));
+      })();
+
+      let agentPickerView = "grid";
+      let agentPickerPage = 1;
+      let agentPickerSel = null;
+      let agentPickerTarget = null;
+
+      function populateAgentFilterOpts() {
+        const fill = (sel, arr) => {
+          if (sel && sel.options.length <= 1)
+            arr.forEach((v) => {
+              const o = document.createElement("option");
+              o.value = v;
+              o.textContent = v;
+              sel.appendChild(o);
+            });
+        };
+        fill($("apArea"), AGENT_AREAS);
+        fill($("apLang"), AGENT_LANGS);
+        fill($("apSpec"), AGENT_SPECS);
+      }
+      function openAgentPicker(prefix) {
+        agentPickerTarget = prefix || "b";
+        agentPickerSel = null;
+        agentPickerPage = 1;
+        populateAgentFilterOpts();
+        $("apSearch").value = "";
+        $("apStatus").value = "";
+        $("apPlan").value = "";
+        $("apArea").value = "";
+        $("apLang").value = "";
+        $("apSpec").value = "";
+        $("agentPickerOv").classList.add("open");
+        renderAgentPicker();
+        setTimeout(() => $("apSearch").focus(), 30);
+      }
+      function closeAgentPicker() {
+        $("agentPickerOv").classList.remove("open");
+      }
+      function setAgentPickerView(v) {
+        agentPickerView = v;
+        $("apViewGrid").classList.toggle("on", v === "grid");
+        $("apViewTable").classList.toggle("on", v === "table");
+        renderAgentPicker();
+      }
+      function filteredAgents() {
+        const q = ($("apSearch").value || "").toLowerCase().trim();
+        const st = $("apStatus").value;
+        const pl = $("apPlan").value;
+        const ar = $("apArea").value;
+        const lg = $("apLang").value;
+        const sp = $("apSpec").value;
+        return pickerAgents.filter((a) => {
+          if (
+            q &&
+            !(
+              a.name.toLowerCase().includes(q) || a.id.toLowerCase().includes(q)
+            )
+          )
+            return false;
+          if (st && a.status !== st) return false;
+          if (pl && a.plan !== pl) return false;
+          if (ar && a.area !== ar) return false;
+          if (lg && a.lang !== lg) return false;
+          if (sp && a.spec !== sp) return false;
+          return true;
+        });
+      }
+      function renderAgentPicker() {
+        const rows = filteredAgents();
+        const per = 10;
+        const pages = Math.max(1, Math.ceil(rows.length / per));
+        if (agentPickerPage > pages) agentPickerPage = pages;
+        const start = (agentPickerPage - 1) * per;
+        const pageRows = rows.slice(start, start + per);
+        $("apCount").textContent =
+          rows.length + (rows.length === 1 ? " agency" : " agencies");
+        const body = $("apBody");
+        if (!rows.length) {
+          body.innerHTML =
+            '<div class="picker-empty">No agencies match your filters.</div>';
+          updateAgentSelLabel();
+          return;
+        }
+        if (agentPickerView === "grid") {
+          body.innerHTML =
+            '<div class="picker-grid">' +
+            pageRows
+              .map((a) => {
+                const on = agentPickerSel === a.id ? "on" : "";
+                const chk = agentPickerSel === a.id ? "checked" : "";
+                return `<label class="pk-card ${on}">
+                  <input type="radio" name="apSel" ${chk} onclick="selectPickerAgent('${a.id}')">
+                  <div>
+                    <div class="pk-name">${escapeHtml(a.name)}</div>
+                    <div class="pk-sub">${a.id} · ${escapeHtml(a.status)} · ${escapeHtml(a.plan)}<br>${escapeHtml(a.area)} · ${escapeHtml(a.lang)}<br>${escapeHtml(a.spec)}</div>
+                  </div>
+                </label>`;
+              })
+              .join("") +
+            "</div>";
+        } else {
+          body.innerHTML =
+            '<div class="tbl-wrap" style="margin-top:8px"><table class="picker-table"><thead><tr><th style="width:36px"></th><th>Agency</th><th>Status</th><th>Plan</th><th>Service Area</th><th>Specialism</th></tr></thead><tbody>' +
+            pageRows
+              .map((a) => {
+                const chk = agentPickerSel === a.id ? "checked" : "";
+                return `<tr onclick="selectPickerAgent('${a.id}')">
+                  <td><input type="radio" name="apSelT" ${chk} onclick="event.stopPropagation();selectPickerAgent('${a.id}')"></td>
+                  <td class="cell-strong">${escapeHtml(a.name)}<div style="font-size:11px;color:var(--text-sec)">${a.id}</div></td>
+                  <td>${escapeHtml(a.status)}</td>
+                  <td>${escapeHtml(a.plan)}</td>
+                  <td>${escapeHtml(a.area)}</td>
+                  <td>${escapeHtml(a.spec)}</td>
+                </tr>`;
+              })
+              .join("") +
+            "</tbody></table></div>";
+        }
+        if (rows.length > per) {
+          let pg = '<div class="picker-pager">';
+          pg += `<button type="button" ${agentPickerPage === 1 ? "disabled" : ""} onclick="agentPickerGo(${agentPickerPage - 1})">Prev</button>`;
+          for (let i = 1; i <= pages; i++)
+            pg += `<button type="button" class="${i === agentPickerPage ? "on" : ""}" onclick="agentPickerGo(${i})">${i}</button>`;
+          pg += `<button type="button" ${agentPickerPage === pages ? "disabled" : ""} onclick="agentPickerGo(${agentPickerPage + 1})">Next</button>`;
+          pg += "</div>";
+          body.insertAdjacentHTML("beforeend", pg);
+        }
+        updateAgentSelLabel();
+      }
+      function agentPickerGo(p) {
+        agentPickerPage = p;
+        renderAgentPicker();
+      }
+      function selectPickerAgent(id) {
+        agentPickerSel = id;
+        renderAgentPicker();
+      }
+      function updateAgentSelLabel() {
+        const a = pickerAgents.find((x) => x.id === agentPickerSel);
+        $("apSel").textContent = a
+          ? "Selected: " + a.name
+          : "No agency selected";
+      }
+      function insertSelectedAgent() {
+        const a = pickerAgents.find((x) => x.id === agentPickerSel);
+        if (!a) {
+          $("apSearch").focus();
+          return;
+        }
+        // insert the agency name but keep an internal data reference
+        insertAtCursorForTarget(agentPickerTarget, a.name, {
+          agentId: a.id,
+        });
+        closeAgentPicker();
+        toast("Agent inserted.");
+      }
+
+      // Insert text at the cursor of the RTE body identified by prefix.
+      // Optional meta is recorded for an internal data reference (agency id).
+      let insertedAgentRefs = [];
+      function insertAtCursorForTarget(prefix, text, meta) {
+        const body = $((prefix || "b") + "_rteBody");
+        if (body) {
+          body.focus();
+          document.execCommand("insertText", false, text + " ");
+          rtePreviewRender(prefix || "b");
+        }
+        if (meta && meta.agentId)
+          insertedAgentRefs.push({ name: text, agentId: meta.agentId });
+      }
+
+      /* ===================== NAV ===================== */
+      function navTo(screen) {
+        document
+          .querySelectorAll(".mc-nav-item")
+          .forEach((n) =>
+            n.classList.toggle("active", n.dataset.screen === screen),
+          );
+        document
+          .querySelectorAll(".screen")
+          .forEach((s) => s.classList.remove("active"));
+        $("screen-" + screen).classList.add("active");
+        if (screen === "campaigns") renderCampaigns(true);
+        if (screen === "analytics") setTimeout(initChart, 30);
+      }
+
+      /* ===================== TOAST ===================== */
+      function toast(msg) {
+        const t = $("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        clearTimeout(t._t);
+        t._t = setTimeout(() => t.classList.remove("show"), 3000);
+      }
+
+      /* ===================== CAMPAIGNS LIST ===================== */
+      /* ===================== PAGINATION (universal 50/page) ===================== */
+      const PAGE_SIZE = 50;
+      let campPage = 1;
+      function buildPager(containerId, totalRows, curPage, onGo) {
+        const el = $(containerId);
+        if (!el) return;
+        const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+        if (totalRows <= PAGE_SIZE) {
+          el.innerHTML = "";
+          return;
+        }
+        const pages = [];
+        if (totalPages <= 7) {
+          for (let i = 1; i <= totalPages; i++) pages.push(i);
+        } else {
+          pages.push(1);
+          let lo = Math.max(2, curPage - 1);
+          let hi = Math.min(totalPages - 1, curPage + 1);
+          if (curPage <= 3) {
+            lo = 2;
+            hi = 4;
+          }
+          if (curPage >= totalPages - 2) {
+            lo = totalPages - 3;
+            hi = totalPages - 1;
+          }
+          if (lo > 2) pages.push("…");
+          for (let i = lo; i <= hi; i++) pages.push(i);
+          if (hi < totalPages - 1) pages.push("…");
+          pages.push(totalPages);
+        }
+        let html =
+          "<button " +
+          (curPage === 1 ? "disabled" : "") +
+          ' data-go="' +
+          (curPage - 1) +
+          '">Previous</button>';
+        pages.forEach((p) => {
+          if (p === "…") {
+            html += '<span class="pager-ellipsis">…</span>';
+          } else {
+            html +=
+              '<button class="' +
+              (p === curPage ? "current" : "") +
+              '" data-go="' +
+              p +
+              '">' +
+              p +
+              "</button>";
+          }
+        });
+        html +=
+          "<button " +
+          (curPage === totalPages ? "disabled" : "") +
+          ' data-go="' +
+          (curPage + 1) +
+          '">Next</button>';
+        el.innerHTML = html;
+        el.querySelectorAll("button[data-go]").forEach((b) => {
+          b.addEventListener("click", () => {
+            if (b.disabled) return;
+            onGo(parseInt(b.dataset.go, 10));
+          });
+        });
+      }
+
+      function renderCampaigns(resetPage) {
+        if (resetPage) campPage = 1;
+        const q = ($("campSearch").value || "").toLowerCase();
+        const st = $("campStatus").value;
+        const au = $("campAud").value;
+        const body = $("campBody");
+        const filtered = campaigns.filter((c) => {
+          if (q && !c.name.toLowerCase().includes(q)) return false;
+          if (st && c.status !== st) return false;
+          if (au === "Custom" ? c.audType !== "Custom" : au && c.audType !== au)
+            return false;
+          return true;
+        });
+        // Admin announcements are pinned to the top of the list (stable sort).
+        filtered
+          .map((c, i) => [c, i])
+          .sort((a, b) => {
+            const ap = a[0].audType === "Admin" ? 0 : 1;
+            const bp = b[0].audType === "Admin" ? 0 : 1;
+            return ap - bp || a[1] - b[1];
+          })
+          .forEach(([c], i) => (filtered[i] = c));
+        const total = filtered.length;
+        const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        if (campPage > totalPages) campPage = totalPages;
+        if (campPage < 1) campPage = 1;
+        const start = total === 0 ? 0 : (campPage - 1) * PAGE_SIZE + 1;
+        const end = Math.min(campPage * PAGE_SIZE, total);
+        $("campCount").textContent =
+          total === 0
+            ? "Showing 0 of 0 campaigns"
+            : "Showing " + start + "–" + end + " of " + total + " campaigns";
+        const rows = filtered.slice(
+          (campPage - 1) * PAGE_SIZE,
+          campPage * PAGE_SIZE,
+        );
+        body.innerHTML = rows.length
+          ? rows
+              .map(
+                (c) => `
+            <tr class="${c.audType === "Admin" ? "camp-pinned" : ""}">
+              <td class="cell-strong">${c.audType === "Admin" ? '<i class="fas fa-thumbtack" title="Pinned admin announcement" style="color:var(--gold);margin-right:7px"></i>' : ""}${c.name}</td>
+              <td>${c.audience}</td>
+              <td><span class="badge ${c.status.toLowerCase()}">${c.status}</span></td>
+              <td>${c.scheduled}</td>
+              <td>${c.sent.toLocaleString()}</td>
+              <td>${c.delivered.toLocaleString()}</td>
+              <td>
+                <div class="act-wrap">
+                  <button class="act-btn" onclick="toggleActMenu(event,'${c.id}')"><i class="fas fa-ellipsis"></i></button>
+                  <div class="act-menu" id="act-${c.id}">
+                    <div class="act-item" onclick="campAction('view','${c.id}')">View</div>
+                    <div class="act-item" onclick="campAction('edit','${c.id}')">Edit</div>
+                    <div class="act-item" onclick="campAction('recreate','${c.id}')">Recreate</div>
+                    <div class="act-item danger" onclick="campAction('delete','${c.id}')">Delete</div>
+                  </div>
+                </div>
+              </td>
+            </tr>`,
+              )
+              .join("")
+          : `<tr><td colspan="7" style="text-align:center;color:#999;padding:30px">No campaigns found.</td></tr>`;
+        buildPager("campPager", total, campPage, (p) => {
+          campPage = p;
+          renderCampaigns();
+        });
+      }
+
+      function toggleActMenu(e, id) {
+        e.stopPropagation();
+        const m = $("act-" + id);
+        const open = m.classList.contains("open");
+        document
+          .querySelectorAll(".act-menu")
+          .forEach((x) => x.classList.remove("open"));
+        if (!open) m.classList.add("open");
+      }
+
+      function campAction(action, id) {
+        document
+          .querySelectorAll(".act-menu")
+          .forEach((x) => x.classList.remove("open"));
+        const c = campaigns.find((x) => x.id === id);
+        if (action === "edit" || action === "view") {
+          openBuilder(c);
+          return;
+        }
+        if (action === "recreate") {
+          recreateCampaign(c);
+        }
+        if (action === "delete") {
+          campaigns = campaigns.filter((x) => x.id !== id);
+          renderCampaigns();
+          toast("Campaign deleted");
+        }
+      }
+
+      /* ===================== CAMPAIGN BUILDER ===================== */
+      let currentStep = 1;
+      let editingCampaign = null;
+
+      // prefill: optional object to seed a fresh (independent) campaign, used by
+      // Recreate. When prefill is supplied, editingCampaign stays null so Save/
+      // Launch creates a new campaign.
+      function openBuilder(camp, prefill) {
+        editingCampaign = camp || null;
+        currentStep = 1;
+        $("camp-list").style.display = "none";
+        $("camp-builder").style.display = "block";
+        $("builderTitle").textContent = prefill
+          ? "New Message Campaign"
+          : camp
+            ? "Edit Campaign"
+            : "New Message Campaign";
+        const src = prefill || camp;
+        $("bName").value = src ? src.name : "";
+        $("bDesc").value = src && src.desc ? src.desc : "";
+        buildRTE("bEditorMount", "b");
+        renderTplCards("bTplCards", "b");
+        renderGroupPicker();
+        // audience radio
+        const audVal = (src && src.aud) || "all_users";
+        const audInput = document.querySelector(
+          'input[name="aud"][value="' + audVal + '"]',
+        );
+        if (audInput) audInput.checked = true;
+        // schedule reset to "Send immediately"
+        const nowInput = document.querySelector(
+          'input[name="sched"][value="now"]',
+        );
+        if (nowInput) nowInput.checked = true;
+        onSchedChange();
+        onAudChange();
+        renderStep();
+        // body (after RTE built)
+        if (src && src.body) {
+          setTimeout(() => {
+            if ($("b_rteBody")) {
+              $("b_rteBody").innerText = src.body;
+              rtePreviewRender("b");
+            }
+          }, 10);
+        }
+      }
+      function recreateCampaign(src) {
+        const orig = src.name;
+        openBuilder(null, {
+          name: orig + " (Copy)",
+          desc: src.desc || "",
+          aud: src.aud || audTypeToRadio(src.audType),
+          body: src.body || "",
+        });
+        toast('Recreated from "' + orig + '". Adjust and launch when ready.');
+      }
+      function audTypeToRadio(t) {
+        if (t === "Admin") return "all_agents";
+        if (t === "Custom") return "custom";
+        return "all_users";
+      }
+      function recreateFromAnalytics(id) {
+        const c = analyticsCampaigns.find((x) => x.id === id);
+        if (!c) return;
+        navTo("campaigns");
+        recreateCampaign({
+          name: c.name,
+          desc: "",
+          aud: audTypeToRadio(c.audType),
+          audType: c.audType,
+          body: c.body || "",
+        });
+      }
+      function closeBuilder() {
+        $("camp-builder").style.display = "none";
+        $("camp-list").style.display = "block";
+      }
+
+      function renderStep() {
+        const labels = ["Details", "Audience", "Message", "Schedule", "Review"];
+        $("stepIndicator").innerHTML = labels
+          .map((l, i) => {
+            const n = i + 1;
+            const cls =
+              n === currentStep ? "active" : n < currentStep ? "done" : "";
+            return `<div class="step ${cls}"><div class="step-num">${n < currentStep ? '<i class="fas fa-check"></i>' : n}</div><div class="step-label">${l}</div></div>${n < 5 ? '<div class="step-line"></div>' : ""}`;
+          })
+          .join("");
+        document.querySelectorAll(".builder-step").forEach((s) => {
+          s.style.display = +s.dataset.step === currentStep ? "block" : "none";
+        });
+        // actions
+        let html = "";
+        if (currentStep > 1)
+          html += `<button class="btn btn-outline" onclick="prevStep()"><i class="fas fa-arrow-left"></i> Back</button>`;
+        if (currentStep < 5)
+          html += `<button class="btn btn-navy" onclick="nextStep()">Next <i class="fas fa-arrow-right"></i></button>`;
+        else
+          html += `<button class="btn btn-outline" onclick="saveDraft()">Save as Draft</button><button class="btn btn-navy" onclick="launchCampaign()">Launch Campaign</button>`;
+        $("builderActions").innerHTML = html;
+        if (currentStep === 5) renderReview();
+      }
+
+      function nextStep() {
+        if (currentStep === 1) {
+          const nameOk = $("bName").value.trim();
+          $("f-name").classList.toggle("invalid", !nameOk);
+          if (!nameOk) return;
+        }
+        if (currentStep < 5) {
+          currentStep++;
+          renderStep();
+        }
+      }
+      function prevStep() {
+        if (currentStep > 1) {
+          currentStep--;
+          renderStep();
+        }
+      }
+
+      function onAudChange() {
+        const v = document.querySelector('input[name="aud"]:checked').value;
+        $("groupPicker").style.display = v === "custom" ? "block" : "none";
+        updateReach();
+      }
+      function renderGroupPicker() {
+        const q = ($("groupSearch").value || "").toLowerCase();
+        $("groupOpts").innerHTML = allGroups()
+          .filter((g) => g.name.toLowerCase().includes(q))
+          .map(
+            (g) => `
+          <label class="group-opt"><input type="checkbox" value="${g.id}" onchange="updateReach()"> ${escapeHtml(g.name)} <span class="gcount">${g.members.toLocaleString()} members</span></label>
+        `,
+          )
+          .join("");
+      }
+      function updateReach() {
+        const v = document.querySelector('input[name="aud"]:checked').value;
+        let n = 0;
+        if (v === "all_users") n = 1240;
+        else if (v === "all_agents") n = 430;
+        else if (v === "all_leads") n = 1670;
+        else {
+          const groups = allGroups();
+          document
+            .querySelectorAll("#groupOpts input:checked")
+            .forEach((cb) => {
+              const g = groups.find((x) => x.id === cb.value);
+              if (g) n += g.members;
+            });
+        }
+        $("reachNote").textContent =
+          "Estimated recipients: ~" + n.toLocaleString();
+      }
+
+      function onSchedChange() {
+        const v = document.querySelector('input[name="sched"]:checked').value;
+        $("schedFields").style.display = v === "schedule" ? "block" : "none";
+        $("recurFields").style.display = v === "recurring" ? "block" : "none";
+      }
+
+      function renderReview() {
+        const c = editingCampaign;
+        const name =
+          $("bName").value.trim() || (c ? c.name : "Untitled campaign");
+        const audV = document.querySelector('input[name="aud"]:checked').value;
+        let audText =
+          {
+            all_users: "All Clients",
+            all_agents: "Admin Announcement",
+            all_leads: "All (Clients + Admin)",
+          }[audV] || "Custom Group";
+        const reach = $("reachNote").textContent.replace(
+          "Estimated recipients: ~",
+          "",
+        );
+        const schedV = document.querySelector(
+          'input[name="sched"]:checked',
+        ).value;
+        let sched = "Immediately";
+        if (schedV === "schedule")
+          sched =
+            ($("bDate").value || "[date]") +
+            " " +
+            ($("bTime").value || "[time]") +
+            " JST";
+        if (schedV === "recurring")
+          sched =
+            $("bFreq").value +
+            " at " +
+            ($("bRecurTime").value || "[time]") +
+            " JST";
+        const bodyText = (
+          $("b_rteBody") ? $("b_rteBody").innerText : ""
+        ).trim();
+        $("reviewCard").innerHTML = `
+          <div style="display:grid;gap:10px;font-size:13.5px">
+            <div><b>Campaign name:</b> ${name}</div>
+            <div><b>Audience:</b> ${audText} — Estimated ${reach} recipients</div>
+            <div><b>Channel:</b> In-app chat message</div>
+            <div><b>Scheduled:</b> ${sched}</div>
+            <div><b>Message preview:</b> ${bodyText ? escapeHtml(bodyText.slice(0, 100)) + (bodyText.length > 100 ? "…" : "") : "<span style='color:#999'>(empty)</span>"}</div>
+          </div>`;
+      }
+
+      function saveDraft() {
+        persistCampaign("Draft");
+        toast("Draft saved successfully.");
+        closeBuilder();
+      }
+      function launchCampaign() {
+        persistCampaign("Sent");
+        toast("Message campaign launched successfully.");
+        closeBuilder();
+      }
+      function persistCampaign(status) {
+        const name = $("bName").value.trim() || "Untitled campaign";
+        const schedV = document.querySelector(
+          'input[name="sched"]:checked',
+        ).value;
+        const sched =
+          schedV === "now"
+            ? status === "Draft"
+              ? "—"
+              : "2026-06-02 12:00"
+            : schedV === "schedule"
+              ? ($("bDate").value + " " + $("bTime").value).trim()
+              : "Recurring";
+        if (editingCampaign) {
+          editingCampaign.name = name;
+          editingCampaign.status = status;
+        } else {
+          campaigns.push({
+            id: "c" + Date.now(),
+            name,
+            audience: "Custom audience",
+            audType: "Custom",
+            status,
+            scheduled:
+              status === "Scheduled" || schedV !== "now"
+                ? sched
+                : status === "Draft"
+                  ? "—"
+                  : sched,
+            sent: 0,
+            delivered: 0,
+          });
+        }
+        renderCampaigns();
+      }
+
+      /* ===================== TEMPLATES ===================== */
+      let editingTemplate = null;
+      function renderTemplates() {
+        $("tplListBody").innerHTML = templates
+          .map(
+            (t) => `
+          <div class="list-row" onclick="openTplEditor(templates.find(x=>x.id==='${t.id}'))">
+            <div class="lr-main">
+              <div class="lr-name">${t.name}</div>
+              <div><span class="lr-cat">${t.category}</span></div>
+            </div>
+            <div class="lr-right">Last used: ${t.lastUsed}</div>
+            <div class="lr-icons"><button class="lr-icon" title="Edit" onclick="event.stopPropagation();openTplEditor(templates.find(x=>x.id==='${t.id}'))"><i class="fas fa-pen"></i></button><button class="lr-icon" title="Delete" onclick="event.stopPropagation();deleteTemplate('${t.id}')"><i class="fas fa-trash"></i></button></div>
+          </div>`,
+          )
+          .join("");
+      }
+      function deleteTemplate(id) {
+        const t = templates.find((x) => x.id === id);
+        if (!t) return;
+        if (!confirm(`Delete template "${t.name}"? This cannot be undone.`))
+          return;
+        templates = templates.filter((x) => x.id !== id);
+        renderTemplates();
+        refreshAutoTplSelect();
+        toast("Template deleted");
+      }
+      function openTplEditor(tpl) {
+        editingTemplate = tpl || null;
+        $("tpl-list").style.display = "none";
+        $("tpl-editor").style.display = "block";
+        $("tplEditorTitle").textContent = tpl
+          ? "Edit Template"
+          : "New Template";
+        $("tName").value = tpl ? tpl.name : "";
+        $("tCat").value = tpl ? tpl.category : "Automation";
+        $("tTags").value = "";
+        buildRTE("tEditorMount", "t");
+        if (tpl)
+          setTimeout(() => {
+            if ($("t_rteBody")) {
+              $("t_rteBody").innerText = tpl.body;
+              rtePreviewRender("t");
+            }
+          }, 10);
+      }
+      function closeTplEditor() {
+        $("tpl-editor").style.display = "none";
+        $("tpl-list").style.display = "block";
+      }
+      function saveTemplate() {
+        const name = $("tName").value.trim();
+        $("t-name").classList.toggle("invalid", !name);
+        if (!name) return;
+        const body = $("t_rteBody") ? $("t_rteBody").innerText.trim() : "";
+        if (editingTemplate) {
+          Object.assign(editingTemplate, {
+            name,
+            category: $("tCat").value,
+            body,
+          });
+        } else {
+          templates.push({
+            id: "t" + Date.now(),
+            name,
+            category: $("tCat").value,
+            body,
+            lastUsed: "Just now",
+          });
+        }
+        renderTemplates();
+        refreshAutoTplSelect();
+        closeTplEditor();
+        toast("Template saved");
+      }
+
+      /* ===================== AUTOMATIONS ===================== */
+      /* Automated Messages — catalog-driven list + edit drawer (chat channel) */
+      const escAuto = (s) =>
+        String(s ?? "").replace(
+          /[&<>"]/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+        );
+      let autoEditingId = null;
+      let autoDirty = false;
+
+      function autoVisible() {
+        return AUTOMATION_CATALOG.filter((e) => e.chat === "O");
+      }
+      function renderAutomations() {
+        const store = AutoStore.get();
+        const q = ($("autoSearch") ? $("autoSearch").value : "")
+          .toLowerCase()
+          .trim();
+        const sf = $("autoStatusFilter") ? $("autoStatusFilter").value : "all";
+        const rows = autoVisible().filter((e) => {
+          const st = store[e.id];
+          if (sf === "active" && !st.active) return false;
+          if (sf === "inactive" && st.active) return false;
+          if (
+            q &&
+            !(
+              e.name.toLowerCase().includes(q) || e.id.toLowerCase().includes(q)
+            )
+          )
+            return false;
+          return true;
+        });
+        if ($("autoCount"))
+          $("autoCount").textContent =
+            rows.length + " trigger" + (rows.length === 1 ? "" : "s");
+        const tb = $("autoTbody");
+        if (!tb) return;
+        if (!rows.length) {
+          tb.innerHTML =
+            '<tr><td colspan="5" class="auto-empty">No triggers match your filters.</td></tr>';
+          return;
+        }
+        tb.innerHTML = rows
+          .map((e) => {
+            const st = store[e.id];
+            const locked = AutoStore.isLocked(e);
+            const badge =
+              e.userConfig === "Yes"
+                ? '<span class="ab ab-blue">Admin can disable</span>'
+                : '<span class="ab ab-grey">Required</span>';
+            const tog = `<label class="switch ${locked ? "locked" : ""}" ${locked ? 'title="This notification is required and cannot be disabled."' : ""} onclick="event.stopPropagation()"><input type="checkbox" ${st.active ? "checked" : ""} ${locked ? "disabled" : ""} onchange="toggleAuto('${e.id}',this.checked)"><span class="slider"></span></label>`;
+            return `<tr onclick="openAutoDrawer('${e.id}')">
+            <td>${tog}</td>
+            <td><div class="at-name">${escAuto(e.name)}</div><div class="at-id">${e.id}</div></td>
+            <td>${escAuto(e.timing)}</td>
+            <td>${badge}</td>
+            <td class="at-edit"><button class="lr-icon" title="Edit" onclick="event.stopPropagation();openAutoDrawer('${e.id}')"><i class="fas fa-pen"></i></button></td>
+          </tr>`;
+          })
+          .join("");
+      }
+      function toggleAuto(id, val) {
+        const e = AutoStore.byId(id);
+        if (!e || AutoStore.isLocked(e)) {
+          renderAutomations();
+          return;
+        }
+        AutoStore.setActive(id, val);
+        toast(e.name + (val ? " enabled" : " disabled"));
+      }
+      function channelBadge(on) {
+        return on === "O"
+          ? '<span class="chbadge on">O</span>'
+          : '<span class="chbadge off">X</span>';
+      }
+      // Drawer variable chips — unified 4-variable set (no {date}); does not
+      // mutate the shared automation catalog (AUTO_VARS) or its localStorage.
+      const MC_AUTO_VARS = [
+        "{full_name}",
+        "{agent_name}",
+        "{property_name}",
+        "{platform_name}",
+      ];
+      function renderAutoVars(mountId, targetId) {
+        const el = $(mountId);
+        if (!el) return;
+        el.innerHTML =
+          '<span class="ad-vars-lbl">Insert variables:</span>' +
+          MC_AUTO_VARS.map(
+            (v) =>
+              `<span class="varchip" onclick="insertAutoVar('${targetId}','${v}')">${v}</span>`,
+          ).join("");
+      }
+      function insertAutoVar(targetId, v) {
+        const ta = $(targetId);
+        if (!ta) return;
+        ta.focus();
+        const s =
+          ta.selectionStart != null ? ta.selectionStart : ta.value.length;
+        const en = ta.selectionEnd != null ? ta.selectionEnd : ta.value.length;
+        ta.value = ta.value.slice(0, s) + v + " " + ta.value.slice(en);
+        ta.selectionStart = ta.selectionEnd = s + v.length + 1;
+        autoDirty = true;
+      }
+      function openAutoDrawer(id) {
+        const e = AutoStore.byId(id);
+        if (!e) return;
+        const st = AutoStore.state(id);
+        autoEditingId = id;
+        autoDirty = false;
+        $("adId").textContent = e.id;
+        $("adName").textContent = e.name;
+        $("adTiming").textContent = e.timing;
+        $("adChannels").innerHTML =
+          "Chat " + channelBadge(e.chat) + " · Email " + channelBadge(e.email);
+        $("adPattern").innerHTML =
+          "<b>" + e.pattern + "</b> — " + escAuto(AUTO_PATTERN_DESC[e.pattern]);
+        $("adChatBody").value = st.chatBody || "";
+        renderAutoVars("adChatVars", "adChatBody");
+        $("autoBackdrop").classList.add("open");
+        $("autoDrawer").classList.add("open");
+        $("autoDrawer").setAttribute("aria-hidden", "false");
+      }
+      function closeAutoDrawer() {
+        if (autoDirty && !confirm("You have unsaved changes. Discard them?"))
+          return;
+        $("autoBackdrop").classList.remove("open");
+        $("autoDrawer").classList.remove("open");
+        $("autoDrawer").setAttribute("aria-hidden", "true");
+        autoEditingId = null;
+        autoDirty = false;
+      }
+      function saveAutoDrawer() {
+        if (!autoEditingId) return;
+        AutoStore.save(autoEditingId, { chatBody: $("adChatBody").value });
+        autoDirty = false;
+        renderAutomations();
+        toast("Automation saved");
+        $("autoBackdrop").classList.remove("open");
+        $("autoDrawer").classList.remove("open");
+        autoEditingId = null;
+      }
+      function restoreAutoDrawer() {
+        if (!autoEditingId) return;
+        if (
+          !confirm(
+            "Restore this trigger's message to the catalog default? Your edits will be replaced.",
+          )
+        )
+          return;
+        const st = AutoStore.restore(autoEditingId);
+        $("adChatBody").value = st.chatBody || "";
+        autoDirty = false;
+        renderAutomations();
+        toast("Restored to default");
+      }
+      // kept (null-safe) for campaign / group / template flows on other tabs
+      function renderAutoGroupPicker() {
+        const box = $("autoGroupOpts");
+        if (!box) return;
+        const q = (
+          ($("autoGroupSearch") && $("autoGroupSearch").value) ||
+          ""
+        ).toLowerCase();
+        box.innerHTML = allGroups()
+          .filter((g) => g.name.toLowerCase().includes(q))
+          .map(
+            (g) => `
+          <label class="group-opt"><input type="checkbox" value="${g.id}"> ${escapeHtml(g.name)} <span class="gcount">${g.members.toLocaleString()} members</span></label>`,
+          )
+          .join("");
+      }
+      function refreshAutoTplSelect() {
+        const sel = $("autoTplSelect");
+        if (!sel) return;
+        sel.innerHTML = templates
+          .map((t) => `<option value="${t.id}">${t.name}</option>`)
+          .join("");
+      }
+
+      /* ===================== RICH TEXT EDITOR ===================== */
+      function buildRTE(mountId, prefix) {
+        const mount = $(mountId);
+        mount.innerHTML = `
+          <div class="rte">
+            <div class="rte-main">
+              <div class="rte-toolbar">
+                <button type="button" class="rte-tb" title="Bold" onmousedown="event.preventDefault()" onclick="rteExec(this,'bold')"><b>B</b></button>
+                <button type="button" class="rte-tb" title="Italic" onmousedown="event.preventDefault()" onclick="rteExec(this,'italic')"><i>I</i></button>
+                <button type="button" class="rte-tb" title="Underline" onmousedown="event.preventDefault()" onclick="rteExec(this,'underline')"><u>U</u></button>
+                <button type="button" class="rte-tb" title="Heading" onmousedown="event.preventDefault()" onclick="rteExec(this,'formatBlock','<h2>')">H2</button>
+                <button type="button" class="rte-tb" title="Bullet list" onmousedown="event.preventDefault()" onclick="rteExec(this,'insertUnorderedList')"><i class="fas fa-list-ul"></i></button>
+                <button type="button" class="rte-tb" title="Numbered list" onmousedown="event.preventDefault()" onclick="rteExec(this,'insertOrderedList')"><i class="fas fa-list-ol"></i></button>
+                <button type="button" class="rte-tb" title="Link" onmousedown="event.preventDefault()" onclick="rteLink(this)"><i class="fas fa-link"></i></button>
+                <button type="button" class="rte-tb" title="Insert image" onmousedown="event.preventDefault()" onclick="rteImage(this)"><i class="fas fa-image"></i></button>
+                <button type="button" class="rte-tb" title="Insert property" onmousedown="event.preventDefault()" onclick="openPropPicker('${prefix}')"><i class="fas fa-building"></i></button>
+                <button type="button" class="rte-tb" title="Insert agency" onmousedown="event.preventDefault()" onclick="openAgentPicker('${prefix}')"><i class="fas fa-user-tie"></i></button>
+                <button type="button" class="rte-tb" title="Insert variable" onmousedown="event.preventDefault()" onclick="rteVarToggle(this)"><i class="fas fa-code"></i></button>
+                <div class="var-dropdown">${VARIABLES.map((v) => `<span class="var-chip" onmousedown="event.preventDefault()" onclick="rteInsertVar(this,'${v}')">${v}</span>`).join("")}</div>
+              </div>
+              <div class="rte-body" id="${prefix}_rteBody" contenteditable="true" data-ph="Write your message here..."></div>
+              <div style="font-size:11.5px;color:var(--text-sec);margin:14px 0 8px;font-weight:700">In-app message preview</div>
+              <div class="preview-frame" id="${prefix}_preview"></div>
+            </div>
+            <div class="rte-vars">
+              <div class="rte-vars-head">Insert Variables <i class="fas fa-chevron-down"></i></div>
+              <div>${VARIABLES.map((v) => `<span class="var-chip" onmousedown="event.preventDefault()" onclick="rteInsertVarFromPanel('${prefix}','${v}')">${v}</span>`).join("")}</div>
+            </div>
+          </div>`;
+        rtePreviewRender(prefix);
+        $(prefix + "_rteBody").addEventListener("input", () =>
+          rtePreviewRender(prefix),
+        );
+      }
+      function rteBody(el) {
+        return el.closest(".rte").querySelector(".rte-body");
+      }
+      function rteExec(el, cmd, val) {
+        rteBody(el).focus();
+        document.execCommand(cmd, false, val || null);
+      }
+      function rteLink(el) {
+        const url = prompt("Enter URL:", "https://");
+        if (url) {
+          rteBody(el).focus();
+          document.execCommand("createLink", false, url);
+        }
+      }
+      function rteImage(el) {
+        const url = prompt("Enter image URL:", "https://");
+        if (url) {
+          rteBody(el).focus();
+          document.execCommand("insertImage", false, url);
+        }
+      }
+      function rteVarToggle(el) {
+        el.closest(".rte-toolbar")
+          .querySelector(".var-dropdown")
+          .classList.toggle("open");
+      }
+      // Resolve which RTE prefix a toolbar/dropdown element belongs to.
+      function rtePrefixFromEl(el) {
+        const bodyEl = el.closest(".rte").querySelector(".rte-body");
+        return bodyEl ? bodyEl.id.replace("_rteBody", "") : "b";
+      }
+      // {property_name} → Property Picker, {agent_name} → Agency Picker,
+      // {full_name}/{platform_name} → direct literal insert.
+      function dispatchVar(prefix, v) {
+        if (v === "{property_name}") {
+          openPropPicker(prefix);
+          return;
+        }
+        if (v === "{agent_name}") {
+          openAgentPicker(prefix);
+          return;
+        }
+        const body = $(prefix + "_rteBody");
+        if (body) {
+          body.focus();
+          document.execCommand("insertText", false, v + " ");
+          rtePreviewRender(prefix);
+        }
+      }
+      function rteInsertVar(el, v) {
+        const prefix = rtePrefixFromEl(el);
+        el.closest(".var-dropdown").classList.remove("open");
+        dispatchVar(prefix, v);
+      }
+      function rteInsertVarFromPanel(prefix, v) {
+        dispatchVar(prefix, v);
+      }
+      function rtePreviewRender(prefix) {
+        const html =
+          $(prefix + "_rteBody").innerHTML ||
+          '<span style="color:#999">Your message preview will appear here…</span>';
+        $(prefix + "_preview").innerHTML =
+          `<div class="pv-inapp"><div class="pv-bubble">${html}</div></div>`;
+      }
+
+      /* template library cards (builder step 3) */
+      function renderTplCards(mountId, prefix) {
+        $(mountId).innerHTML = templates
+          .map(
+            (t) => `
+          <div class="tpl-card">
+            <div class="tc-name">${t.name}</div>
+            <div class="tc-prev">${escapeHtml(t.body.slice(0, 80))}…</div>
+            <button class="btn btn-outline btn-sm" onclick="applyTemplate('${t.id}','${prefix}')">Use</button>
+          </div>`,
+          )
+          .join("");
+      }
+      function applyTemplate(id, prefix) {
+        const t = templates.find((x) => x.id === id);
+        if (!t) return;
+        if ($(prefix + "_rteBody")) {
+          $(prefix + "_rteBody").innerText = t.body;
+          rtePreviewRender(prefix);
+        }
+        toast("Template applied");
+      }
+
+      /* ===================== CREATE GROUP MODAL ===================== */
+      function openCreateGroup() {
+        $("cgModal").classList.add("open");
+        setTimeout(() => $("cgName").focus(), 30);
+      }
+      function closeCreateGroup() {
+        $("cgModal").classList.remove("open");
+        $("cgName").value = "";
+      }
+      function saveNewGroup() {
+        const name = $("cgName").value.trim();
+        if (!name) {
+          $("cgName").focus();
+          return;
+        }
+        // Persist to the SAME store Lead Management uses (yuushiLeadGroups).
+        const baseEl = document.querySelector('input[name="cgBase"]:checked');
+        const base = baseEl ? baseEl.value : "Client";
+        const entityType = base === "Admin" ? "agent" : "end_user";
+        const groups = readLeadGroups();
+        groups.push({
+          id: "g" + Date.now(),
+          name,
+          entityType,
+          leadIds: [],
+          createdDate: new Date().toISOString().slice(0, 10),
+        });
+        writeLeadGroups(groups);
+        renderGroupPicker();
+        renderAutoGroupPicker();
+        closeCreateGroup();
+        toast('Group "' + name + '" created successfully.');
+      }
+
+      /* ===================== ANALYTICS ===================== */
+      // 3-state sort: column key + dir (1 asc, -1 desc). Default Sent Date desc.
+      let anSort = { key: "sentDate", dir: -1 };
+      const AN_COLS = [
+        { key: "name", label: "Campaign Name", sortable: true },
+        { key: "audType", label: "Audience", sortable: false },
+        { key: "sentDate", label: "Sent Date", sortable: true },
+        {
+          key: "recipients",
+          label: "Recipients",
+          sortable: true,
+          tip: "Actual number of recipients at send time. Users who joined later are not included.",
+        },
+        { key: "read", label: "Read", sortable: true },
+        { key: "readRate", label: "Read Rate", sortable: true },
+        { key: "actions", label: "Actions", sortable: false },
+      ];
+      let anExpanded = {}; // recurring campaign id -> expanded?
+
+      function onAnRangeChange() {
+        const v = $("anRange").value;
+        const show = v === "custom" ? "inline-block" : "none";
+        $("anFrom").style.display = show;
+        $("anTo").style.display = show;
+        renderDelivery();
+      }
+      function anSortClick(key) {
+        if (anSort.key !== key) {
+          anSort = { key, dir: 1 };
+        } else if (anSort.dir === 1) {
+          anSort.dir = -1;
+        } else if (anSort.dir === -1) {
+          anSort = { key: "sentDate", dir: -1 }; // unsorted -> default
+        } else {
+          anSort = { key, dir: 1 };
+        }
+        // if clicking the default column twice to "unsort", fall back to default
+        renderDelivery();
+      }
+      function rate(n, d) {
+        return d ? Math.round((n / d) * 100) : 0;
+      }
+      function deliveryPill(rt, sent) {
+        let cls = "grey";
+        if (!sent) cls = "grey";
+        else if (rt >= 90) cls = "green";
+        else if (rt >= 50) cls = "amber";
+        else cls = "red";
+        return `<span class="pill ${cls}">${rt}%</span>`;
+      }
+      function readPill(rt) {
+        let cls = rt >= 50 ? "green" : rt >= 30 ? "amber" : "red";
+        return `<span class="pill ${cls}">${rt}%</span>`;
+      }
+      // Build an aggregate view object for a campaign (one-time or recurring).
+      function anAgg(c) {
+        if (c.recurring && c.sends && c.sends.length) {
+          const recipients = c.sends.reduce((s, x) => s + x.recipients, 0);
+          const read = c.sends.reduce((s, x) => s + x.read, 0);
+          const firstSent = c.sends
+            .map((x) => x.sentDate)
+            .sort()
+            .slice(-1)[0]; // latest send date for sorting
+          return {
+            recurring: true,
+            recipients,
+            read,
+            readRate: rate(read, recipients),
+            sentDate: firstSent,
+            since: c.since,
+          };
+        }
+        return {
+          recurring: false,
+          recipients: c.recipients,
+          read: c.read,
+          readRate: rate(c.read, c.recipients),
+          sentDate: c.sentDate,
+        };
+      }
+      function anInRange(dateStr) {
+        const v = $("anRange").value;
+        if (v === "all") return true;
+        const d = new Date(dateStr + "T00:00:00");
+        if (v === "custom") {
+          const f = $("anFrom").value;
+          const t = $("anTo").value;
+          if (f && d < new Date(f + "T00:00:00")) return false;
+          if (t && d > new Date(t + "T23:59:59")) return false;
+          return true;
+        }
+        const days = parseInt(v, 10);
+        const today = new Date("2026-06-21T23:59:59");
+        const cutoff = new Date(today);
+        cutoff.setDate(cutoff.getDate() - days);
+        return d >= cutoff;
+      }
+      function renderDelivery() {
+        // head
+        $("anHeadRow").innerHTML = AN_COLS.map((c) => {
+          let arrow = "";
+          if (c.sortable) {
+            if (anSort.key === c.key) arrow = anSort.dir === 1 ? " ▲" : " ▼";
+          }
+          const tip = c.tip ? ` title="${c.tip}"` : "";
+          const click = c.sortable
+            ? ` style="cursor:pointer" onclick="anSortClick('${c.key}')"`
+            : "";
+          return `<th${tip}${click}>${c.label}${arrow}</th>`;
+        }).join("");
+
+        const q = ($("anSearch") ? $("anSearch").value : "")
+          .toLowerCase()
+          .trim();
+        const aud = $("anAud") ? $("anAud").value : "";
+        let rows = analyticsCampaigns
+          .map((c) => ({ c, agg: anAgg(c) }))
+          .filter(({ c, agg }) => {
+            if (q && !c.name.toLowerCase().includes(q)) return false;
+            if (aud && c.audType !== aud) return false;
+            if (!anInRange(agg.sentDate)) return false;
+            return true;
+          });
+        // sort
+        const k = anSort.key;
+        rows.sort((A, B) => {
+          let av, bv;
+          if (k === "name") {
+            av = A.c.name.toLowerCase();
+            bv = B.c.name.toLowerCase();
+          } else {
+            av = A.agg[k];
+            bv = B.agg[k];
+          }
+          if (av < bv) return -1 * anSort.dir;
+          if (av > bv) return 1 * anSort.dir;
+          return 0;
+        });
+
+        const audLabel = {
+          Client: "Client",
+          Admin: "Admin",
+          Custom: "Custom Group",
+        };
+        const html = rows
+          .map(({ c, agg }) => {
+            const expanded = !!anExpanded[c.id];
+            const arrow = agg.recurring
+              ? `<span style="cursor:pointer;margin-right:6px" onclick="toggleAnExpand('${c.id}')">${expanded ? "▼" : "▶"}</span>`
+              : "";
+            const sentCell = agg.recurring
+              ? `since ${agg.since}`
+              : agg.sentDate;
+            let main = `<tr>
+              <td class="cell-strong" title="${escapeHtml(c.name)}">${arrow}${escapeHtml(c.name)}</td>
+              <td>${audLabel[c.audType] || c.audType}</td>
+              <td>${sentCell}</td>
+              <td>${agg.recipients.toLocaleString()}</td>
+              <td>${agg.read.toLocaleString()}</td>
+              <td>${readPill(agg.readRate)}</td>
+              <td><button class="btn btn-outline btn-sm" onclick="recreateFromAnalytics('${c.id}')"><i class="fas fa-rotate-left"></i> Recreate</button></td>
+            </tr>`;
+            if (agg.recurring && expanded) {
+              main += c.sends
+                .slice()
+                .sort((a, b) => (a.sentDate < b.sentDate ? 1 : -1))
+                .map((s) => {
+                  const rr = rate(s.read, s.recipients);
+                  return `<tr style="background:#fbf8f2">
+                    <td style="padding-left:34px;color:var(--text-sec)">${s.sentDate}</td>
+                    <td>${audLabel[c.audType] || c.audType}</td>
+                    <td>${s.sentDate}</td>
+                    <td>${s.recipients.toLocaleString()}</td>
+                    <td>${s.read.toLocaleString()}</td>
+                    <td>${readPill(rr)}</td>
+                    <td></td>
+                  </tr>`;
+                })
+                .join("");
+            }
+            return main;
+          })
+          .join("");
+        $("deliveryBody").innerHTML =
+          html ||
+          `<tr><td colspan="7" style="text-align:center;color:#999;padding:30px">No sent campaigns found.</td></tr>`;
+      }
+      function toggleAnExpand(id) {
+        anExpanded[id] = !anExpanded[id];
+        renderDelivery();
+      }
+      let chartInstance = null;
+      function initChart() {
+        renderDelivery();
+        if (chartInstance) return;
+        const ctx = $("trendChart");
+        if (!ctx || !window.Chart) return;
+        const labels = [
+          "May 24",
+          "May 25",
+          "May 26",
+          "May 27",
+          "May 28",
+          "May 29",
+          "May 30",
+          "May 31",
+          "Jun 1",
+          "Jun 2",
+        ];
+        const sent = [120, 180, 150, 210, 240, 190, 260, 300, 280, 320];
+        const delivered = [110, 170, 145, 200, 230, 182, 250, 288, 270, 308];
+        chartInstance = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: "Sent",
+                data: sent,
+                borderColor: "#1e3a5f",
+                backgroundColor: "rgba(30,58,95,0.08)",
+                tension: 0.35,
+                fill: true,
+                pointRadius: 3,
+              },
+              {
+                label: "Delivered",
+                data: delivered,
+                borderColor: "#c4714a",
+                backgroundColor: "rgba(196,113,74,0.08)",
+                tension: 0.35,
+                fill: true,
+                pointRadius: 3,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: { usePointStyle: true, boxWidth: 8 },
+              },
+            },
+            scales: {
+              y: { beginAtZero: true, grid: { color: "#f0ebe1" } },
+              x: { grid: { display: false } },
+            },
+          },
+        });
+      }
+
+      /* ===================== HELPERS ===================== */
+      function escapeHtml(s) {
+        return (s || "").replace(
+          /[&<>"]/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+        );
+      }
+
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest(".act-wrap"))
+          document
+            .querySelectorAll(".act-menu")
+            .forEach((x) => x.classList.remove("open"));
+        if (!e.target.closest(".rte-toolbar"))
+          document
+            .querySelectorAll(".var-dropdown")
+            .forEach((x) => x.classList.remove("open"));
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          if ($("propPickerOv").classList.contains("open")) {
+            closePropPicker();
+            return;
+          }
+          if ($("agentPickerOv").classList.contains("open")) {
+            closeAgentPicker();
+            return;
+          }
+          if ($("autoDrawer").classList.contains("open")) {
+            closeAutoDrawer();
+            return;
+          }
+          closeCreateGroup();
+          document
+            .querySelectorAll(".act-menu,.var-dropdown")
+            .forEach((x) => x.classList.remove("open"));
+        }
+      });
+
+      /* ===================== INIT ===================== */
+      renderCampaigns();
+      renderTemplates();
+      renderAutomations();
+      refreshAutoTplSelect();
+    </script>
+  </body>
+</html>

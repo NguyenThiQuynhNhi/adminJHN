@@ -2,11 +2,591 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="refresh" content="0; url=dashboard.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>YUUSHI Agent Portal</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --accent: #8b7340;
+        --accent-hover: #6f5c33;
+        --accent-light: #c9a85c;
+        --bg: #f5f5f5;
+        --card: #fff;
+        --warm: #fffaf2;
+        --border: #e0e0e0;
+        --text: #1a1a1a;
+        --muted: #7a6a5c;
+        --soft: #a89a83;
+        --danger: #c53030;
+        --danger-bg: #fde8e8;
+        --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: var(--font);
+        color: var(--text);
+      }
+
+      .layout {
+        display: flex;
+        width: 100%;
+        height: 100vh;
+      }
+
+      /* ===== SIDEBAR ===== */
+      .sidebar {
+        width: 248px;
+        flex-shrink: 0;
+        background: #fff;
+        border-right: 1px solid var(--border);
+        height: 100vh;
+        overflow-y: auto;
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 18px 20px;
+        border-bottom: 1px solid #f0ece4;
+        position: sticky;
+        top: 0;
+        background: #fff;
+        z-index: 2;
+      }
+      .logo-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--accent-light), var(--accent));
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 17px;
+      }
+      .logo-text {
+        font-size: 17px;
+        font-weight: 800;
+        color: var(--text);
+        letter-spacing: 0.01em;
+      }
+      .logo-badge {
+        margin-left: auto;
+        background: var(--warm);
+        color: var(--accent-hover);
+        border: 1px solid #ecdfc6;
+        font-size: 10px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+      .menu-section {
+        padding: 10px 0 4px;
+      }
+      .section-title {
+        padding: 8px 20px;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--soft);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 9px 20px;
+        color: var(--text);
+        text-decoration: none;
+        font-size: 13.5px;
+        cursor: pointer;
+        border-left: 3px solid transparent;
+        transition: background 0.15s, color 0.15s;
+      }
+      .menu-item:hover {
+        background: #f5f1ea;
+      }
+      .menu-item.active {
+        background: var(--warm);
+        color: var(--accent-hover);
+        font-weight: 600;
+        border-left-color: var(--accent);
+      }
+      .menu-item i {
+        width: 18px;
+        text-align: center;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .menu-item.active i {
+        color: var(--accent);
+      }
+
+      /* ===== CONTENT AREA ===== */
+      .content-area {
+        flex: 1;
+        height: 100vh;
+        overflow: hidden;
+        background: var(--bg);
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .top-bar {
+        height: 56px;
+        background: #fff;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 12px;
+        padding: 0 22px;
+        flex-shrink: 0;
+      }
+      .content-frame {
+        width: 100%;
+        flex: 1;
+        border: none;
+        background: var(--bg);
+      }
+
+      /* ===== CHAT BUTTON ===== */
+      .chat-btn {
+        position: relative;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: #fff;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 15px;
+        transition: background 0.15s, border-color 0.15s, color 0.15s;
+      }
+      .chat-btn:hover {
+        background: var(--warm);
+        border-color: var(--accent);
+        color: var(--accent-hover);
+      }
+      .chat-badge {
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        min-width: 17px;
+        height: 17px;
+        padding: 0 4px;
+        background: linear-gradient(135deg, #d24a3d, #a73128);
+        color: #fff;
+        font-size: 9.5px;
+        font-weight: 700;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #fff;
+      }
+
+      /* ===== ACCOUNT DROPDOWN ===== */
+      .acct-menu {
+        position: relative;
+        flex-shrink: 0;
+      }
+      .acct-trigger {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        padding: 4px 9px 4px 4px;
+        border: 1px solid transparent;
+        background: transparent;
+        border-radius: 999px;
+        cursor: pointer;
+        font-family: inherit;
+        color: var(--text);
+        transition: background 0.15s, border-color 0.15s;
+      }
+      .acct-trigger:hover,
+      .acct-menu.open .acct-trigger {
+        background: var(--warm);
+        border-color: var(--border);
+      }
+      .acct-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent-light), var(--accent));
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12.5px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+      .acct-meta {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.15;
+        text-align: left;
+      }
+      .acct-meta .name {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--text);
+        white-space: nowrap;
+      }
+      .acct-meta .role {
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .acct-caret {
+        color: var(--soft);
+        font-size: 10px;
+        transition: transform 0.2s;
+      }
+      .acct-menu.open .acct-caret {
+        transform: rotate(180deg);
+      }
+      .acct-dropdown {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        min-width: 260px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: 0 16px 40px rgba(60, 41, 28, 0.18);
+        padding: 8px;
+        z-index: 250;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-6px);
+        transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+      }
+      .acct-menu.open .acct-dropdown {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+      .acct-dropdown-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--warm), #fdf0e7);
+        margin-bottom: 6px;
+      }
+      .acct-dropdown-header .avatar-lg {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent-light), var(--accent));
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+      .acct-dropdown-header .name {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .acct-dropdown-header .email {
+        font-size: 11.5px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .acct-dropdown-header .role {
+        display: inline-block;
+        margin-top: 6px;
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--accent-hover);
+        background: #fff;
+        border: 1px solid #ecdfc6;
+        padding: 2px 8px;
+        border-radius: 999px;
+      }
+      .acct-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        color: var(--text);
+        text-decoration: none;
+        cursor: pointer;
+        background: transparent;
+        border: 0;
+        width: 100%;
+        text-align: left;
+        font-family: inherit;
+      }
+      .acct-item:hover {
+        background: #f5f1ea;
+      }
+      .acct-item i {
+        width: 18px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .acct-item.danger,
+      .acct-item.danger i {
+        color: var(--danger);
+      }
+      .acct-item.danger:hover {
+        background: var(--danger-bg);
+      }
+      .acct-divider {
+        height: 1px;
+        background: #f0e3d2;
+        margin: 6px 4px;
+      }
+
+      @media (max-width: 860px) {
+        .sidebar {
+          width: 64px;
+        }
+        .logo-text,
+        .logo-badge,
+        .section-title,
+        .menu-item span,
+        .acct-meta {
+          display: none;
+        }
+        .menu-item {
+          justify-content: center;
+          padding: 11px 0;
+        }
+      }
+    </style>
   </head>
-  <body style="font-family:Arial,sans-serif;padding:24px;color:#3b2f2a;background:#f5f0e8">
-    <script>location.replace("dashboard.html");</script>
-    Redirecting to <a href="dashboard.html" style="color:#c4714a">dashboard</a>…
+  <body>
+    <div class="layout">
+      <!-- ===== SIDEBAR ===== -->
+      <aside class="sidebar">
+        <div class="logo">
+          <div class="logo-icon">Y</div>
+          <span class="logo-text">YUUSHI</span>
+          <span class="logo-badge">AGENT</span>
+        </div>
+
+        <div class="menu-section">
+          <div class="section-title">Workspace</div>
+          <a class="menu-item active" data-content="dashboard.html"
+            ><i class="fas fa-gauge-high"></i><span>Dashboard</span></a
+          >
+          <a class="menu-item" data-content="property-list-oversight.html"
+            ><i class="fas fa-house-chimney"></i><span>Properties</span></a
+          >
+          <a class="menu-item" data-content="project-management.html"
+            ><i class="fas fa-building-circle-arrow-right"></i
+            ><span>Projects</span></a
+          >
+          <a class="menu-item" data-content="lead-management.html"
+            ><i class="fas fa-users"></i><span>Leads</span></a
+          >
+          <a class="menu-item" data-content="crm-activities.html"
+            ><i class="fas fa-calendar-check"></i><span>CRM Activities</span></a
+          >
+          <a class="menu-item" data-content="ad-monetisation.html"
+            ><i class="fas fa-rectangle-ad"></i><span>Advertising</span></a
+          >
+          <a class="menu-item" data-content="billing.html"
+            ><i class="fas fa-credit-card"></i><span>Subscription</span></a
+          >
+        </div>
+
+        <div class="menu-section">
+          <div class="section-title">Messages</div>
+          <a class="menu-item" data-content="leads-inquiries.html"
+            ><i class="fas fa-comments"></i><span>Inquiries</span></a
+          >
+          <a class="menu-item" data-content="admin-messages.html"
+            ><i class="fas fa-headset"></i><span>Admin Messages</span></a
+          >
+          <a class="menu-item" data-content="message-center.html"
+            ><i class="fas fa-paper-plane"></i><span>Message Center</span></a
+          >
+        </div>
+
+        <div class="menu-section">
+          <div class="section-title">Agency</div>
+          <a class="menu-item" data-content="staff-management.html"
+            ><i class="fas fa-user-group"></i><span>Staff Management</span></a
+          >
+          <a class="menu-item" data-content="role-and-permission.html"
+            ><i class="fas fa-user-shield"></i
+            ><span>Roles &amp; Permissions</span></a
+          >
+          <a class="menu-item" data-content="profile.html"
+            ><i class="fas fa-id-badge"></i><span>Agency Profile</span></a
+          >
+        </div>
+      </aside>
+
+      <!-- ===== CONTENT AREA ===== -->
+      <div class="content-area">
+        <div class="top-bar">
+          <!-- Chat / inbox shortcut -->
+          <button
+            class="chat-btn"
+            type="button"
+            id="chatBtn"
+            onclick="openInbox()"
+            aria-label="Open messages"
+            title="Messages"
+          >
+            <i class="fa-solid fa-comment-dots"></i>
+            <span class="chat-badge" id="chatBadge">5</span>
+          </button>
+
+          <!-- Global account menu -->
+          <div class="acct-menu" id="acctMenu">
+            <button
+              class="acct-trigger"
+              type="button"
+              id="acctTrigger"
+              onclick="toggleAcctMenu(event)"
+              aria-haspopup="true"
+              aria-expanded="false"
+              aria-label="Open account menu"
+            >
+              <span class="acct-avatar">TT</span>
+              <span class="acct-meta">
+                <span class="name">Taro Tanaka</span>
+                <span class="role">Senior Sales Agent</span>
+              </span>
+              <i class="fas fa-chevron-down acct-caret"></i>
+            </button>
+            <div class="acct-dropdown" role="menu" aria-label="Account menu">
+              <div class="acct-dropdown-header">
+                <div class="avatar-lg">TT</div>
+                <div class="info">
+                  <div class="name">Taro Tanaka</div>
+                  <div class="email">taro.tanaka@anna-fudosan.co.jp</div>
+                  <span class="role">Senior Sales Agent</span>
+                </div>
+              </div>
+              <button
+                class="acct-item"
+                type="button"
+                role="menuitem"
+                onclick="acctOpenMyProfile()"
+              >
+                <i class="fas fa-user-circle"></i> My Profile
+              </button>
+              <div class="acct-divider"></div>
+              <button
+                class="acct-item danger"
+                type="button"
+                role="menuitem"
+                onclick="acctLogout()"
+              >
+                <i class="fas fa-arrow-right-from-bracket"></i> Log out
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <iframe
+          id="contentFrame"
+          class="content-frame"
+          src="dashboard.html"
+          title="Agent portal content"
+        ></iframe>
+      </div>
+    </div>
+
+    <script>
+      // ===== Switch iframe content from sidebar =====
+      document.addEventListener("DOMContentLoaded", function () {
+        const frame = document.getElementById("contentFrame");
+        document
+          .querySelectorAll(".menu-item[data-content]")
+          .forEach((item) => {
+            item.addEventListener("click", function (e) {
+              e.preventDefault();
+              const target = this.getAttribute("data-content");
+              if (target && frame) frame.src = target;
+              document
+                .querySelectorAll(".menu-item")
+                .forEach((el) => el.classList.remove("active"));
+              this.classList.add("active");
+            });
+          });
+      });
+
+      function setActiveMenu(target) {
+        document
+          .querySelectorAll(".menu-item")
+          .forEach((el) => el.classList.remove("active"));
+        const t = document.querySelector(
+          '.menu-item[data-content="' + target + '"]',
+        );
+        if (t) t.classList.add("active");
+      }
+
+      // ===== Account dropdown =====
+      function toggleAcctMenu(e) {
+        if (e) e.stopPropagation();
+        const menu = document.getElementById("acctMenu");
+        if (!menu) return;
+        const open = menu.classList.toggle("open");
+        const trigger = document.getElementById("acctTrigger");
+        if (trigger) trigger.setAttribute("aria-expanded", open ? "true" : "false");
+      }
+      function closeAcctMenu() {
+        const menu = document.getElementById("acctMenu");
+        if (menu) menu.classList.remove("open");
+        const trigger = document.getElementById("acctTrigger");
+        if (trigger) trigger.setAttribute("aria-expanded", "false");
+      }
+      function acctOpenMyProfile() {
+        closeAcctMenu();
+        const frame = document.getElementById("contentFrame");
+        if (frame) frame.src = "profile.html";
+        setActiveMenu("profile.html");
+      }
+      function acctLogout() {
+        closeAcctMenu();
+        if (!confirm("Log out of the Agent Portal?\nAll unsaved changes will be lost."))
+          return;
+        window.location.href = "agent_signin.html";
+      }
+      function openInbox() {
+        const frame = document.getElementById("contentFrame");
+        if (frame) frame.src = "admin-messages.html";
+        setActiveMenu("admin-messages.html");
+      }
+      document.addEventListener("click", function (e) {
+        const menu = document.getElementById("acctMenu");
+        if (menu && menu.classList.contains("open") && !e.target.closest("#acctMenu"))
+          closeAcctMenu();
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") closeAcctMenu();
+      });
+    </script>
   </body>
 </html>

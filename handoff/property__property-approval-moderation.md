@@ -1,6 +1,6 @@
 ## Property Approval & Moderation
 
-**Purpose:** Lets an admin review property listings that are waiting for a decision and either Approve or Reject each one. Rejecting captures a structured reason (a required reject category plus optional notes) that is sent to the agent; approving optionally records an internal audit note. The screen separates listings into a Pending queue and a Rejected archive. Approved listings disappear from this screen entirely.
+**Purpose:** Lets an admin review property listings that are waiting for a decision and either Approve or Reject each one. Clicking a queued listing opens a full detail-style page (hero + Listing overview / Property details / Agent / Moderation sections) with Approve and Reject actions. Rejecting captures a structured reason (a single required reject category — no free-text notes) that is sent to the agent; approving is a simple confirm with no note field. The screen separates listings into a Pending queue and a Rejected archive. Approved listings disappear from this screen entirely.
 
 **Access:** Admin sidebar → PROPERTY MANAGEMENT → "Property Approval". (Internal admin tool; no sub-role gating is built into the screen.)
 
@@ -33,7 +33,7 @@ The screen has two states that swap in place (you only ever see one at a time):
    - A tab bar with two tabs: **Pending** (selected by default) and **Rejected**.
    - The body of whichever tab is active:
      - **Pending tab:** a filter bar (search + reason dropdown + group dropdown + Remove Filters + sort), a result-count line, then a 4-column table, then an empty-state line if no rows, then pagination controls.
-     - **Rejected tab:** a result-count line, then a 6-column read-only table (no filter bar), then an empty-state line if no rows, then pagination controls.
+     - **Rejected tab:** a result-count line, then a 5-column read-only table (no filter bar), then an empty-state line if no rows, then pagination controls.
 
 2. **Detail view** (full-width) — opens when any table row is clicked, hiding the list page. It contains:
    - A sticky toolbar at the top (Back button + a status pill on the left; action buttons on the right).
@@ -88,7 +88,7 @@ There is no two-column side-by-side panel; the list and detail are separate full
 - **Reason** — the original moderation reason that put it in the queue.
 - **Status** — a status pill reading "Rejected" (danger status-variant).
 - **Reject category** — the structured reject category the admin chose at rejection time (read-only; shows "—" if none).
-- **Notes** — the optional free-text notes the admin added at rejection time (read-only; shows "—" if empty).
+- (There is **no "Notes" column** — the free-text reject Notes field was removed.)
 - Entire row is clickable and opens the detail view. The Rejected table has no filter/sort bar and no action buttons — it is purely a read-only archive.
 
 **Status pills (status-variant mapping)**
@@ -116,7 +116,7 @@ There is no two-column side-by-side panel; the list and detail are separate full
 - **Listing overview** — Property (title), Property ID, Status (as a pill), Type.
 - **Property details** — Prefecture, City, Layout, Size, Build year, Price.
 - **Agent** — Agent (name), Agent email, and License (shown only if the listing has a license value, e.g. "Pending verification").
-- **Moderation** — Moderation reason, a reason-specific context field (see Conditional Display), and Note (a full-width free-text note explaining the flag). For Rejected listings only, this card additionally shows **Reject category** (the chosen category) and **Notes** (the rejection notes, or "—" if empty). Missing values show "—".
+- **Moderation** — Moderation reason, a reason-specific context field (see Conditional Display), and Note (a full-width free-text note explaining the flag). For Rejected listings only, this card additionally shows **Reject category** (the chosen category). (There is no rejection-Notes row — that field was removed.) Missing values show "—".
 
 ---
 
@@ -139,23 +139,21 @@ Both the Pending table and the Rejected table are paginated using the platform's
 
 ### Modals & Popups
 
-There are two dialogs: a simple Approve dialog and a structured Reject dialog. Both are triggered by their button in the detail toolbar.
+There are two dialogs: a simple Approve confirm dialog and a structured Reject dialog. Both are triggered by their button in the detail toolbar.
 
-- **Approve dialog** (single optional note)
+- **Approve dialog** (simple confirm — no note field)
   - Title: "Approve this listing?"
   - Subtitle: "Listing ID: <the property ID>"
-  - Note field label: "Audit note"
-  - Note placeholder: "Optional internal note…"
-  - Note is **optional**.
+  - There is **no "Audit note" field** — the note block is hidden; the dialog is a plain confirm that approves & publishes and notifies the agent.
   - Buttons: Cancel and a primary **Approve** button.
 
-- **Reject dialog** (structured form)
+- **Reject dialog** (structured form — reason only)
   - Title: "Reject this listing?"
   - Subtitle: "Listing ID: <the property ID>"
-  - **Field 1 — Reject category** (dropdown, **required**). First option is a placeholder "Select a category…" with no value. Real options, in order: Incomplete information, Inappropriate content, Duplicate listing, Invalid license, Poor image quality, Policy violation, Other.
-  - **Field 2 — Notes** (textarea, **optional**). Label: "Notes". Placeholder: "Add context or specific guidance for the agent…".
+  - **Reject category** (dropdown, **required**) — the only field. First option is a placeholder "Select a category…" with no value. Real options, in order: Incomplete information, Inappropriate content, Duplicate listing, Invalid license, Poor image quality, Policy violation, Other.
+  - (There is **no free-text "Notes" field** — it was removed.)
   - Buttons: Cancel and a danger-styled **Reject** button.
-  - On confirm, both the chosen category and the notes are stored on the listing (category → "Reject category" column / Moderation card; notes → "Notes" column / Moderation card).
+  - On confirm, the chosen category is stored on the listing (category → "Reject category" column / Moderation card); any stored reject-notes value is cleared.
 
 - **Closing either dialog:** Cancel button, clicking the dark backdrop outside the box, or pressing Escape. Closing without confirming makes no change.
 
@@ -166,8 +164,8 @@ There are two dialogs: a simple Approve dialog and a structured Reject dialog. B
 - **Approve / Reject buttons** — shown in the detail toolbar **only when the listing's status is Pending**. For non-Pending statuses no action buttons are shown (no read-only "Rejected" badge — the toolbar status pill conveys status).
 - **Group badge** — shown in the hero next to the property name when the listing has a group; hidden otherwise.
 - **Filter bar** — appears on the Pending tab only (search + reason + group + Remove Filters + sort). The Rejected tab has no filter/sort controls.
-- **Reject category & Notes columns** — appear only in the Rejected table.
-- **Reject category & Notes rows** in the Moderation card — appear only when the listing is Rejected.
+- **Reject category column** — appears only in the Rejected table (there is no Notes column).
+- **Reject category row** in the Moderation card — appears only when the listing is Rejected (there is no Notes row).
 - **Rejected alert** — in the detail view, if the listing is Rejected and has a reject category, a danger status-variant alert banner shows: "Rejected — <the reject category>".
 - **Reason-specific context field** (in the detail Moderation card) — the extra field depends on the moderation reason:
   - **Unverified agent** → field "Agent verification" showing a danger status-variant pill "Agent not verified".
@@ -192,15 +190,15 @@ There are two dialogs: a simple Approve dialog and a structured Reject dialog. B
 
 **Approve a listing**
 1. From a Pending listing's detail view, click **Approve**.
-2. The Approve dialog opens; optionally type an internal audit note.
+2. The Approve confirm dialog opens (no note field).
 3. Click **Approve** to confirm (or Cancel to abort).
 4. The listing's status becomes Approved, the change is saved, a success toast appears, and the screen returns to the list. The listing no longer appears on either tab.
 
 **Reject a listing (structured form)**
 1. From a Pending listing's detail view, click **Reject**.
-2. The structured Reject dialog opens; choose a **Reject category** (required) and optionally type **Notes**.
+2. The structured Reject dialog opens; choose a **Reject category** (required) — this is the only field.
 3. Click **Reject** to confirm. If no category is selected, the dialog stays open and shows an inline error (see Validation).
-4. On confirm: the listing's status becomes Rejected, the chosen category and notes are stored on the listing, the change is saved, an error-style toast appears, and the screen switches to the **Rejected** tab so the admin sees the listing in its new home.
+4. On confirm: the listing's status becomes Rejected, the chosen category is stored on the listing, the change is saved, an error-style toast appears, and the screen switches to the **Rejected** tab so the admin sees the listing in its new home.
 
 **Back to list**
 1. From the detail view, click **Back** in the toolbar.
@@ -213,8 +211,8 @@ There are two dialogs: a simple Approve dialog and a structured Reject dialog. B
 - **Reject — reject category is required.** If the admin clicks the dialog's Reject button without selecting a category, the dialog does not close, the category dropdown is highlighted as invalid, it is focused, and an inline error message appears:
   - Exact error text: **"Please select a reject category."**
   - The error clears as soon as the admin selects a category.
-  - **Notes are optional** — an empty notes field is accepted.
-- **Approve — audit note is optional.** No validation; an empty note is accepted.
+  - (There is no Notes field, so nothing else is validated in the Reject dialog.)
+- **Approve — no fields, no validation.** The Approve dialog is a plain confirm with no note field.
 - No other field-level validation exists on this screen (search/filter/sort accept any input).
 
 ---
@@ -244,4 +242,4 @@ All feedback is via toast messages (bottom-right) or the inline modal error. No 
 - **"← Back to Property List"** button (top-left of the list page) → goes to the Property List screen (`property-list-oversight.html`).
 - **Detail Back button** → returns to the list, staying on the tab the admin came from.
 - **Sidebar entry:** PROPERTY MANAGEMENT → "Property Approval".
-- **Persistence:** the moderation queue is saved in the browser under the key **`yuushi.moderationQueue`** (unchanged). It is seeded with demo listings on first load and updated (saved) after every Approve or Reject decision, so decisions survive a page refresh. The seed is padded to **66 entries** (the original hand-authored Pending examples spanning all five groups and four moderation reasons, two hand-authored Rejected examples, plus deterministic realistic filler) so both tables exceed one page and the pagination controls are exercised — the Pending tab seeds 53 listings (2 pages) and the Rejected tab seeds 13. On load, an existing stored queue is auto-migrated to the current shape: any "User report" reason becomes "System flag", and any legacy single `rejectionReason` value is converted to a "Reject category" of "Other" plus that text as the "Notes". Approved listings remain saved with an "Approved" status but are not displayed on either tab. An in-memory decision log is also kept during the session (not persisted, not shown on screen).
+- **Persistence:** the moderation queue is saved in the browser under the key **`yuushi.moderationQueue`** (unchanged). It is seeded with demo listings on first load and updated (saved) after every Approve or Reject decision, so decisions survive a page refresh. The seed is padded to **66 entries** (the original hand-authored Pending examples spanning all five groups and four moderation reasons, two hand-authored Rejected examples, plus deterministic realistic filler) so both tables exceed one page and the pagination controls are exercised — the Pending tab seeds 53 listings (2 pages) and the Rejected tab seeds 13. On load, an existing stored queue is auto-migrated to the current shape: any "User report" reason becomes "System flag", and any legacy single `rejectionReason` value is converted to a "Reject category" of "Other" (its text is stored in the now-unused `rejectNotes` field, which is no longer surfaced in the UI). Approved listings remain saved with an "Approved" status but are not displayed on either tab. An in-memory decision log is also kept during the session (not persisted, not shown on screen).
