@@ -531,7 +531,12 @@
         word-break: break-word;
         min-height: 20px;
       }
-      .kv-hint { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-style: italic; }
+      .kv-hint {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 2px;
+        font-style: italic;
+      }
       .kv-full {
         grid-column: 1 / -1;
       }
@@ -1167,6 +1172,7 @@
           <div class="field-group">
             <label class="field-label" for="fStatus">Status</label
             ><select id="fStatus" multiple size="3">
+              <option value="All">All</option>
               <option value="Active">Active</option>
               <option value="Suspended">Suspended</option>
               <option value="Withdrawn">Withdrawn</option>
@@ -1203,6 +1209,7 @@
           <div class="field-group">
             <label class="field-label" for="fBuyerStatus">Buyer Status</label
             ><select id="fBuyerStatus" multiple size="5">
+              <option value="All">All</option>
               <option value="First-time buyer">First-time buyer</option>
               <option value="Cash buyer">Cash buyer</option>
               <option value="Need to sell existing property first">
@@ -1232,7 +1239,7 @@
           <div class="field-group">
             <label class="field-label" for="fAuthProvider">Auth Provider</label
             ><select id="fAuthProvider" multiple size="4">
-              <option value="None">None</option>
+              <option value="All">All</option>
               <option value="Email">Email</option>
               <option value="Google">Google</option>
               <option value="Apple">Apple</option>
@@ -1240,11 +1247,13 @@
               <option value="WeChat">WeChat</option>
               <option value="Line">Line</option>
               <option value="Facebook">Facebook</option>
+              <option value="None">None</option>
             </select>
           </div>
           <div class="field-group">
             <label class="field-label" for="fPlan">Subscription Plan</label
             ><select id="fPlan" multiple size="2">
+              <option value="All">All</option>
               <option value="Free">Free</option>
               <option value="Premium">Premium</option>
             </select>
@@ -1262,6 +1271,7 @@
             <label class="field-label" for="fResidentCountry"
               >Resident Country</label
             ><select id="fResidentCountry" multiple size="4">
+              <option value="All">All</option>
               <option value="JP">Japan</option>
               <option value="VN">Vietnam</option>
               <option value="US">United States</option>
@@ -1651,7 +1661,10 @@
             <div class="kv">
               <span class="kv-label">Identity Verification</span>
               <span class="kv-value" id="dIdVerify">—</span>
-              <span class="kv-hint">Auto-derived from Phone Number — Verified when phone is present, Unverified when blank.</span>
+              <span class="kv-hint"
+                >Auto-derived from Phone Number — Verified when phone is
+                present, Unverified when blank.</span
+              >
             </div>
             <div class="kv kv-full">
               <span class="kv-label">Password Reset</span>
@@ -2450,8 +2463,7 @@
         const titleEl = $("confirmTitle");
         titleEl.querySelector("span").textContent = opts.title || "Confirm";
         const iconEl = titleEl.querySelector("i");
-        iconEl.className =
-          "fas " + (opts.icon || "fa-circle-question");
+        iconEl.className = "fas " + (opts.icon || "fa-circle-question");
         $("confirmBody").innerHTML = opts.body || "";
         $("confirmCancelLabel").textContent = opts.cancelLabel || "Cancel";
         const ok = $("confirmOkBtn");
@@ -2509,7 +2521,7 @@
       };
       const badge2FA = (on) =>
         on
-          ? '<span class="badge badge-on">ON · Email OTP</span>'
+          ? '<span class="badge badge-on">ON</span>'
           : '<span class="badge badge-off">OFF</span>';
       const badgePlan = (p) =>
         `<span class="badge ${p === "Premium" ? "badge-premium" : "badge-none"}">${p}</span>`;
@@ -2531,7 +2543,9 @@
       // Verified = phone has non-empty value; Unverified = phone is blank/whitespace.
       // This is the single source of truth — do not read u.idVerify directly anywhere.
       const computeIdVerify = (u) =>
-        u && u.phone && String(u.phone).trim() !== "" ? "Verified" : "Unverified";
+        u && u.phone && String(u.phone).trim() !== ""
+          ? "Verified"
+          : "Unverified";
 
       function alertCount(u) {
         let n = 0;
@@ -3458,8 +3472,7 @@
             frame.src =
               "messagesupport/admin-messages.html?userId=" +
               encodeURIComponent(id);
-            const items =
-              window.parent.document.querySelectorAll(".menu-item");
+            const items = window.parent.document.querySelectorAll(".menu-item");
             items.forEach((el) => el.classList.remove("active"));
             const target = window.parent.document.querySelector(
               '.menu-item[data-content="messagesupport/admin-messages.html"]',
@@ -3600,8 +3613,7 @@
           const raw = localStorage.getItem("yuushi.basicSecuritySettings");
           if (raw) {
             const v = JSON.parse(raw);
-            const cust =
-              v && v.passwordPolicy && v.passwordPolicy.customer;
+            const cust = v && v.passwordPolicy && v.passwordPolicy.customer;
             if (cust) {
               const n = cust.minChars;
               if (typeof n === "number" && n > 0) minChars = n;
@@ -3609,9 +3621,11 @@
                 minChars = +n;
               const cx = cust.complexity;
               if (cx && typeof cx === "object") {
-                ["uppercase", "lowercase", "numbers", "symbols"].forEach((k) => {
-                  if (typeof cx[k] === "boolean") complexity[k] = cx[k];
-                });
+                ["uppercase", "lowercase", "numbers", "symbols"].forEach(
+                  (k) => {
+                    if (typeof cx[k] === "boolean") complexity[k] = cx[k];
+                  },
+                );
               }
             }
           }
@@ -3670,7 +3684,9 @@
         };
         Object.defineProperty(c, "all", {
           get() {
-            return this.len && this.upper && this.lower && this.num && this.special;
+            return (
+              this.len && this.upper && this.lower && this.num && this.special
+            );
           },
         });
         return c;
@@ -3713,10 +3729,7 @@
         );
       }
       function exportCsv() {
-        showToast(
-          `Exported ${filtered.length} users to CSV.`,
-          "success",
-        );
+        showToast(`Exported ${filtered.length} users to CSV.`, "success");
       }
 
       // ===== Modal close wiring: backdrop click + ESC for all modals =====
