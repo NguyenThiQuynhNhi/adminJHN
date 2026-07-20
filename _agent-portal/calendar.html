@@ -1,0 +1,916 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calendar — YUUSHI Agent CRM</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+      :root {
+        --bg-body: #f5f0e8;
+        --bg-card: #ffffff;
+        --bg-alt: #fdf9f3;
+        --border-subtle: #eadccd;
+        --border-strong: #d9c8b4;
+        --accent: #c4714a;
+        --accent-dark: #a55232;
+        --accent-soft: #fef1e6;
+        --accent-tint: #faf0e9;
+        --text-main: #3b2f2a;
+        --text-head: #2a1f1b;
+        --text-muted: #7a6a5c;
+        --text-dim: #9b8568;
+        --pink: #e74c7a;
+        --today-highlight: #fdf3d3;
+
+        /* activity type accents — kept inside the same warm/earthy family */
+        --t-viewing: #c4714a;
+        --t-task: #8a6d3b;
+        --t-job: #6b5a8e;
+        --t-call: #a55232;
+        --t-email: #5f8f7c;
+        --t-sms: #7a6a9c;
+        --t-comment: #9b8568;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 13px;
+        background: var(--bg-body);
+        color: var(--text-main);
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+      }
+      #main { padding: 24px; max-width: 1240px; margin: 0 auto; }
+
+      /* ===== Header ===== */
+      .cal-title { font-family: Georgia, serif; font-size: 24px; font-weight: 700; color: var(--text-head); }
+      .cal-subtitle { font-size: 13px; color: var(--accent); font-style: italic; margin-top: 2px; font-weight: 600; }
+
+      /* ===== Nav row ===== */
+      .cal-nav { display: flex; align-items: center; gap: 10px; margin: 18px 0 16px; flex-wrap: wrap; }
+      .nav-circle {
+        width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border-strong);
+        background: #fff; color: var(--text-main); cursor: pointer; display: inline-flex;
+        align-items: center; justify-content: center; font-size: 13px; transition: 0.15s;
+      }
+      .nav-circle:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-dark); }
+      .btn {
+        border-radius: 20px; border: 1px solid var(--border-strong); padding: 8px 16px; font-size: 13px;
+        background: #fff; cursor: pointer; font-weight: 600; color: var(--text-main); font-family: inherit;
+        display: inline-flex; align-items: center; gap: 7px; transition: 0.15s;
+      }
+      .btn:hover { background: var(--bg-alt); }
+      .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .btn-primary:hover { background: var(--accent-dark); }
+      .cal-range { font-size: 17px; font-weight: 700; color: var(--text-head); margin: 0 6px; white-space: nowrap; }
+      .nav-spacer { flex: 1; }
+
+      .view-toggle { display: inline-flex; border: 1px solid var(--accent); border-radius: 20px; overflow: hidden; }
+      .view-toggle button {
+        border: 0; background: #fff; color: var(--accent); padding: 8px 16px; font-size: 12.5px;
+        font-weight: 700; cursor: pointer; font-family: inherit; border-right: 1px solid var(--accent);
+      }
+      .view-toggle button:last-child { border-right: 0; }
+      .view-toggle button.active { background: var(--accent); color: #fff; }
+      .view-toggle button:hover:not(.active) { background: var(--accent-soft); }
+
+      /* ===== Filter row ===== */
+      .filter-row { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+      .filter-field { display: flex; flex-direction: column; gap: 4px; }
+      .filter-field label { font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+      .filter-field select, .filter-field .type-btn {
+        height: 38px; border-radius: 8px; border: 1px solid var(--border-strong); padding: 0 30px 0 12px;
+        font-size: 13px; background: #fff; outline: none; min-width: 190px; color: var(--text-main);
+        display: flex; align-items: center; cursor: pointer; position: relative;
+      }
+      .filter-field select:focus, .filter-field .type-btn:focus { border-color: var(--accent); }
+      .filter-field select { appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a6a5c' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>"); background-repeat: no-repeat; background-position: right 10px center; }
+      .type-wrap { position: relative; }
+      .type-btn { justify-content: space-between; }
+      .type-btn span.tb-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .type-btn i { color: var(--text-dim); font-size: 10px; margin-left: 8px; }
+      .type-panel {
+        position: absolute; top: calc(100% + 6px); left: 0; background: #fff; border: 1px solid var(--border-subtle);
+        border-radius: 10px; box-shadow: 0 12px 30px rgba(60, 41, 28, 0.14); padding: 8px; min-width: 220px;
+        z-index: 60; display: none;
+      }
+      .type-panel.open { display: block; }
+      .type-option { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 7px; cursor: pointer; font-size: 13px; }
+      .type-option:hover { background: var(--bg-alt); }
+      .type-option input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+      .type-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+      .type-panel-foot { border-top: 1px solid var(--border-subtle); margin-top: 6px; padding-top: 6px; display: flex; justify-content: space-between; }
+      .type-panel-foot a { font-size: 12px; color: var(--accent); cursor: pointer; font-weight: 600; }
+      .type-panel-foot a:hover { color: var(--accent-dark); text-decoration: underline; }
+
+      /* ===== Quick add ===== */
+      .quick-add-wrap { position: relative; margin-left: auto; }
+      .quick-menu {
+        position: absolute; right: 0; top: calc(100% + 8px); background: #fff; border: 1px solid var(--border-subtle);
+        border-radius: 10px; box-shadow: 0 12px 30px rgba(60, 41, 28, 0.14); padding: 8px; min-width: 220px;
+        z-index: 60; display: none;
+      }
+      .quick-menu.open { display: block; }
+      .quick-menu .qm-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 7px; cursor: pointer; font-size: 13px; color: var(--text-main); font-weight: 500; }
+      .quick-menu .qm-item:hover { background: var(--accent-soft); color: var(--accent-dark); }
+      .quick-menu .qm-item i { width: 16px; text-align: center; }
+
+      /* ===== Calendar card ===== */
+      .cal-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+
+      /* ---- Week / Day grid ---- */
+      .grid-scroll { overflow: auto; max-height: 560px; }
+      .week-head { display: grid; grid-template-columns: 60px repeat(var(--ncols, 7), 1fr); position: sticky; top: 0; background: var(--bg-alt); z-index: 5; border-bottom: 1px solid var(--border-subtle); }
+      .week-head .corner { border-right: 1px solid var(--border-subtle); }
+      .day-head { padding: 10px 6px; text-align: center; border-right: 1px solid var(--border-subtle); }
+      .day-head:last-child { border-right: 0; }
+      .day-head .dname { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+      .day-head .dnum { font-size: 15px; font-weight: 700; color: var(--text-head); margin-top: 2px; }
+      .day-head.today .dname, .day-head.today .dnum { color: var(--accent-dark); }
+
+      .allday-row { display: grid; grid-template-columns: 60px repeat(var(--ncols, 7), 1fr); border-bottom: 1px solid var(--border-subtle); min-height: 32px; }
+      .allday-label { font-size: 11px; color: var(--text-muted); padding: 6px 8px; border-right: 1px solid var(--border-subtle); display: flex; align-items: center; }
+      .allday-cell { border-right: 1px solid var(--border-subtle); padding: 4px; display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-start; }
+      .allday-cell:last-child { border-right: 0; }
+      .allday-cell.today, .day-col.today { background: var(--today-highlight); }
+
+      .time-grid { display: grid; grid-template-columns: 60px repeat(var(--ncols, 7), 1fr); position: relative; }
+      .time-col { border-right: 1px solid var(--border-subtle); }
+      .hour-label { height: 44px; font-size: 11px; color: var(--text-dim); padding: 4px 8px 0 0; text-align: right; border-bottom: 1px solid var(--border-subtle); position: relative; top: -6px; }
+      .day-col { border-right: 1px solid var(--border-subtle); position: relative; }
+      .day-col:last-child { border-right: 0; }
+      .hour-row { height: 44px; border-bottom: 1px solid var(--border-subtle); cursor: pointer; }
+      .hour-row:hover { background: var(--accent-soft); }
+
+      .evt {
+        position: absolute; left: 3px; right: 3px; border-radius: 6px; padding: 3px 7px; font-size: 11px;
+        color: #fff; overflow: hidden; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.15); line-height: 1.3;
+      }
+      .evt .evt-time { font-size: 10px; opacity: 0.85; display: block; }
+      .evt-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 12px; font-size: 11px; color: #fff; cursor: pointer; }
+
+      /* ---- Month view ---- */
+      .month-head { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--bg-alt); border-bottom: 1px solid var(--border-subtle); }
+      .month-head div { padding: 10px 6px; text-align: center; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; border-right: 1px solid var(--border-subtle); }
+      .month-head div:last-child { border-right: 0; }
+      .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+      .month-cell { min-height: 108px; border-right: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle); padding: 6px; cursor: pointer; }
+      .month-cell:nth-child(7n) { border-right: 0; }
+      .month-cell.other-month { background: var(--bg-alt); }
+      .month-cell.today { background: var(--today-highlight); }
+      .month-cell .mnum { font-size: 12.5px; font-weight: 700; color: var(--text-head); }
+      .month-cell.other-month .mnum { color: var(--text-dim); }
+      .month-evt { margin-top: 4px; font-size: 10.5px; padding: 2px 6px; border-radius: 5px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+      .month-more { font-size: 10.5px; color: var(--accent); font-weight: 600; margin-top: 3px; cursor: pointer; }
+
+      /* ---- List view ---- */
+      .list-view { padding: 6px 0; }
+      .list-date-group { padding: 10px 20px 4px; font-size: 12px; font-weight: 700; color: var(--accent-dark); background: var(--bg-alt); text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid var(--border-subtle); border-top: 1px solid var(--border-subtle); }
+      .list-row { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--border-subtle); cursor: pointer; }
+      .list-row:hover { background: var(--accent-soft); }
+      .list-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+      .list-time { font-size: 12px; color: var(--text-muted); width: 90px; flex-shrink: 0; }
+      .list-title { font-weight: 600; color: var(--text-main); flex: 1; }
+      .list-assignee { font-size: 12px; color: var(--text-dim); }
+      .empty-list { padding: 40px 0; text-align: center; color: var(--text-dim); }
+      .empty-list i { font-size: 26px; display: block; margin-bottom: 8px; }
+
+      /* ===== Quick-create modal ===== */
+      .qc-overlay { position: fixed; inset: 0; background: rgba(59, 47, 42, 0.35); display: none; align-items: center; justify-content: center; z-index: 100; }
+      .qc-overlay.open { display: flex; }
+      .qc-modal { background: #fff; border-radius: 12px; width: 420px; max-width: 92vw; padding: 22px; box-shadow: 0 20px 50px rgba(0,0,0,0.25); }
+      .qc-head { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+      .qc-head .qc-icon { width: 34px; height: 34px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 15px; }
+      .qc-head h3 { font-family: Georgia, serif; font-size: 17px; color: var(--text-head); margin: 0; }
+      .qc-sub { font-size: 12px; color: var(--text-muted); margin: 2px 0 16px 44px; }
+      .fld { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+      .fld label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+      .fld input, .fld select, .fld textarea {
+        border: 1px solid var(--border-strong); border-radius: 6px; padding: 8px 12px; font-size: 13px;
+        font-family: inherit; background: #fff; outline: none; width: 100%;
+      }
+      .fld input:focus, .fld select:focus, .fld textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+      .fld input:disabled, .fld select:disabled { background: var(--bg-alt); color: var(--text-dim); cursor: not-allowed; }
+      .fld-row { display: flex; gap: 10px; }
+      .fld-row .fld { flex: 1; min-width: 0; }
+      .fld-row3 { display: flex; gap: 10px; }
+      .fld-row3 .fld { flex: 1; min-width: 0; }
+      .fld-hint { font-size: 10.5px; color: var(--text-dim); font-weight: 500; text-transform: none; letter-spacing: 0; }
+
+      /* All day + Recurring toggle row */
+      .qc-toggle-row { display: flex; align-items: center; gap: 16px; margin: 2px 0 14px; }
+      .qc-checkbox { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--text-main); cursor: pointer; font-weight: 600; }
+      .qc-checkbox input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+      .toggle-btn {
+        border: 1.5px solid var(--border-strong); background: #fff; border-radius: 8px; padding: 7px 14px;
+        font-size: 12.5px; font-weight: 700; color: var(--text-main); cursor: pointer; font-family: inherit;
+        display: inline-flex; align-items: center; gap: 7px; transition: 0.15s;
+      }
+      .toggle-btn:hover { background: var(--bg-alt); }
+      .toggle-btn.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-dark); }
+
+      /* Weekday circle picker */
+      .weekday-picker { display: flex; gap: 6px; flex-wrap: wrap; }
+      .wd-btn {
+        width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-strong); background: #fff;
+        color: var(--text-muted); font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit;
+        display: inline-flex; align-items: center; justify-content: center; transition: 0.15s;
+      }
+      .wd-btn:hover { border-color: var(--accent); color: var(--accent-dark); }
+      .wd-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+      /* Time suggestions preview list */
+      .suggest-head { display: flex; align-items: center; gap: 6px; }
+      .suggest-head i { font-size: 11px; color: var(--text-dim); }
+      .suggest-list { border: 1px solid var(--border-subtle); border-radius: 8px; overflow-y: auto; max-height: 180px; }
+      .suggest-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border-subtle); font-size: 12px; }
+      .suggest-row:last-child { border-bottom: 0; }
+      .suggest-row > i { color: var(--text-dim); font-size: 11px; flex-shrink: 0; }
+      .suggest-desc { flex: 1; min-width: 0; color: var(--text-main); }
+      .suggest-desc b { font-weight: 700; }
+      .suggest-time { color: var(--text-muted); white-space: nowrap; }
+      .suggest-badge { display: flex; align-items: center; gap: 5px; color: #2f855a; font-weight: 600; white-space: nowrap; font-size: 11.5px; flex-shrink: 0; }
+      .suggest-empty { padding: 16px; text-align: center; color: var(--text-dim); font-size: 12px; }
+
+      .qc-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+      .btn-ghost { background: transparent; border: 1px solid var(--border-strong); color: var(--text-main); }
+      .btn-ghost:hover { background: var(--bg-alt); }
+
+      /* ===== Toast ===== */
+      .toast-wrap { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+      .toast { background: var(--accent); color: #fff; padding: 11px 16px; border-radius: 8px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+      .toast.success { background: #2f855a; }
+
+      @media (max-width: 900px) {
+        .cal-nav { gap: 8px; }
+        .cal-range { font-size: 14px; }
+        .filter-field select, .filter-field .type-btn { min-width: 140px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="main">
+      <!-- Header -->
+      <div class="cal-title">Calendar</div>
+      <div class="cal-subtitle">Calls, viewings &amp; more…</div>
+
+      <!-- Nav -->
+      <div class="cal-nav">
+        <button class="nav-circle" onclick="navStep(-1)"><i class="fas fa-chevron-left"></i></button>
+        <button class="nav-circle" onclick="navStep(1)"><i class="fas fa-chevron-right"></i></button>
+        <button class="btn btn-primary" onclick="goToday()">Today</button>
+        <div class="cal-range" id="rangeLabel">3 – 9 Nov 2025</div>
+        <div class="nav-spacer"></div>
+        <div class="view-toggle" id="viewToggle">
+          <button data-v="month" onclick="setView('month')">Month</button>
+          <button data-v="week" class="active" onclick="setView('week')">Week</button>
+          <button data-v="day" onclick="setView('day')">Day</button>
+          <button data-v="list" onclick="setView('list')">List</button>
+        </div>
+      </div>
+
+      <!-- Filters + quick add -->
+      <div class="filter-row">
+        <div class="filter-field">
+          <label>Assignee</label>
+          <select id="assigneeSelect" onchange="onAssigneeChange()">
+            <option value="all">All assignees</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>Type</label>
+          <div class="type-wrap">
+            <div class="type-btn" onclick="toggleTypePanel(event)">
+              <span class="tb-text" id="typeSummary">All types</span>
+              <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="type-panel" id="typePanel"></div>
+          </div>
+        </div>
+
+        <div class="quick-add-wrap">
+          <label style="font-size:10.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px;">&nbsp;</label>
+          <button class="btn btn-primary" onclick="toggleQuickMenu(event)"><i class="fas fa-plus"></i> Add Activity</button>
+          <div class="quick-menu" id="quickMenu"></div>
+        </div>
+      </div>
+
+      <!-- Calendar card -->
+      <div class="cal-card" id="calCard"></div>
+    </div>
+
+    <!-- Quick create modal -->
+    <div class="qc-overlay" id="qcOverlay" onclick="if(event.target===this) closeQuickCreate()">
+      <div class="qc-modal">
+        <div class="qc-head">
+          <span class="qc-icon" id="qcIcon"></span>
+          <h3 id="qcTitle">New Viewing</h3>
+        </div>
+        <div class="qc-sub" id="qcSub">Schedule a property viewing on the calendar</div>
+
+        <div class="fld"><label>Title</label><input type="text" id="qcTitleInput" placeholder="Enter a title" /></div>
+
+        <div class="fld-row3">
+          <div class="fld"><label>Start Date</label><input type="date" id="qcStartDate" onchange="onStartDateChange()" /></div>
+          <div class="fld"><label>Start Time</label><select id="qcStartTime" onchange="renderSuggestions()"></select></div>
+          <div class="fld"><label>End Time</label><select id="qcEndTime" onchange="renderSuggestions()"></select></div>
+        </div>
+
+        <div class="qc-toggle-row">
+          <label class="qc-checkbox"><input type="checkbox" id="qcAllDay" onchange="onAllDayChange()" /> All day</label>
+          <button type="button" class="toggle-btn" id="qcRecurBtn" onclick="toggleRecurring()"><i class="fas fa-rotate"></i> Recurring</button>
+        </div>
+
+        <div id="qcRecurBlock" style="display:none">
+          <div class="fld-row">
+            <div class="fld" style="max-width:120px"><label>Repeat every</label><input type="number" id="qcInterval" min="1" value="1" onchange="renderSuggestions()" /></div>
+            <div class="fld"><label>&nbsp;</label>
+              <select id="qcUnit" onchange="onUnitChange()">
+                <option value="day">day(s)</option>
+                <option value="week" selected>week(s)</option>
+                <option value="month">month(s)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="fld" id="qcWeekdayWrap">
+            <label>On</label>
+            <div class="weekday-picker" id="weekdayPicker"></div>
+          </div>
+
+          <div class="fld-row">
+            <div class="fld"><label>Until</label><input type="date" id="qcUntil" onchange="renderSuggestions()" /></div>
+            <div class="fld" style="justify-content:flex-end;flex-direction:row;align-items:center;">
+              <button type="button" class="nav-circle" title="Turn off recurring" onclick="clearRecurring()" style="margin-bottom:1px"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="fld">
+          <label class="suggest-head"><i class="fas fa-calendar-days"></i> Time suggestions</label>
+          <div class="suggest-list" id="suggestList"></div>
+        </div>
+
+        <div class="fld"><label>Assignee</label><select id="qcAssignee"></select></div>
+        <div class="fld"><label>Notes</label><textarea rows="2" id="qcNotes" placeholder="Optional details…"></textarea></div>
+
+        <div class="qc-actions">
+          <button class="btn btn-ghost" onclick="closeQuickCreate()">Cancel</button>
+          <button class="btn btn-primary" onclick="saveQuickCreate()"><i class="fas fa-check"></i> Create</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+      /* ============================================================
+         DATA
+      ============================================================ */
+      const ASSIGNEES = [
+        { id: "hana", name: "Hana Kobayashi" },
+        { id: "fran", name: "Fran Tick" },
+        { id: "chris", name: "Chris Sales" },
+        { id: "maria", name: "Maria Sales" },
+        { id: "tony", name: "Tony Sales" },
+      ];
+      const TYPES = [
+        { id: "viewing", label: "Viewing", icon: "fa-eye", color: "var(--t-viewing)" },
+        { id: "task", label: "Task", icon: "fa-check-square", color: "var(--t-task)" },
+        { id: "job", label: "Job", icon: "fa-briefcase", color: "var(--t-job)" },
+        { id: "call", label: "Call", icon: "fa-phone-alt", color: "var(--t-call)" },
+        { id: "email", label: "Email", icon: "fa-envelope", color: "var(--t-email)" },
+        { id: "sms", label: "SMS", icon: "fa-sms", color: "var(--t-sms)" },
+        { id: "comment", label: "Comment", icon: "fa-comment-alt", color: "var(--t-comment)" },
+      ];
+      function typeOf(id) { return TYPES.find((t) => t.id === id); }
+      function colorOf(id) {
+        return getComputedStyle(document.documentElement).getPropertyValue("--t-" + id).trim() || "#c4714a";
+      }
+
+      const TODAY = new Date(2025, 10, 5); // Wed 5 Nov 2025 — reference "today"
+
+      let events = [
+        { id: "e1", type: "viewing", title: "Viewing with Abby Kermal", assignee: "hana", date: "2025-11-03", hour: 10, dur: 1, allDay: false },
+        { id: "e2", type: "call", title: "Sales Call — Santi Argo", assignee: "chris", date: "2025-11-03", hour: 14, dur: 0.5, allDay: false },
+        { id: "e3", type: "task", title: "Prep proposal doc", assignee: "fran", date: "2025-11-04", hour: 9, dur: 1, allDay: false },
+        { id: "e4", type: "email", title: "Send property recommendation", assignee: "fran", date: "2025-11-05", hour: 11, dur: 0.5, allDay: false },
+        { id: "e5", type: "viewing", title: "Viewing — San Jose 4-bed Villa", assignee: "hana", date: "2025-11-05", hour: 15, dur: 1.5, allDay: false },
+        { id: "e6", type: "job", title: "Portfolio project follow-up", assignee: "tony", date: "2025-11-05", hour: 0, dur: 0, allDay: true },
+        { id: "e7", type: "sms", title: "Reminder SMS to lead", assignee: "maria", date: "2025-11-06", hour: 13, dur: 0.5, allDay: false },
+        { id: "e8", type: "comment", title: "Note: lead very interested", assignee: "fran", date: "2025-11-06", hour: 16, dur: 0.5, allDay: false },
+        { id: "e9", type: "call", title: "Follow-up call", assignee: "chris", date: "2025-11-07", hour: 10, dur: 1, allDay: false },
+        { id: "e10", type: "viewing", title: "Viewing with Colin Sik", assignee: "hana", date: "2025-11-08", hour: 11, dur: 1, allDay: false },
+        { id: "e11", type: "task", title: "Chase KYC documents", assignee: "maria", date: "2025-11-09", hour: 9, dur: 1, allDay: false },
+        { id: "e12", type: "email", title: "Weekly newsletter batch", assignee: "tony", date: "2025-10-29", hour: 9, dur: 1, allDay: false },
+        { id: "e13", type: "viewing", title: "Viewing — Palo Alto House", assignee: "hana", date: "2025-11-12", hour: 14, dur: 1, allDay: false },
+        { id: "e14", type: "call", title: "Negotiation call", assignee: "chris", date: "2025-11-20", hour: 10, dur: 1, allDay: false },
+      ];
+
+      /* ============================================================
+         STATE
+      ============================================================ */
+      let view = "week";
+      let anchor = new Date(TODAY);
+      let assigneeFilter = "all";
+      let typeFilter = new Set(TYPES.map((t) => t.id));
+
+      const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      function ymd(d) { return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+      function sameDay(a,b){ return ymd(a)===ymd(b); }
+      function startOfWeek(d) { const x = new Date(d); const day = (x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; }
+      function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+      function addMonths(d,n){ const x=new Date(d); x.setMonth(x.getMonth()+n); return x; }
+      function fmtHM(dec) { let h = Math.floor(dec), m = Math.round((dec - h) * 60); if (m === 60) { h += 1; m = 0; } return String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0"); }
+      function fmtHM12(dec) {
+        let h = Math.floor(dec), m = Math.round((dec - h) * 60);
+        if (m === 60) { h += 1; m = 0; }
+        const period = h < 12 ? "AM" : "PM";
+        let h12 = h % 12; if (h12 === 0) h12 = 12;
+        return `${h12}:${String(m).padStart(2, "0")} ${period}`;
+      }
+      function fmtDuration(dur) {
+        const totalMin = Math.round(dur * 60);
+        const h = Math.floor(totalMin / 60), m = totalMin % 60;
+        if (h && m) return `${h}h ${m}m`;
+        if (h) return `${h}h`;
+        return `${m} min`;
+      }
+      // Fills a <select> with 15-minute steps across the full day, shown in 12-hour AM/PM format
+      function generateTimeOptions(selectEl) {
+        selectEl.innerHTML = "";
+        for (let totalMin = 0; totalMin < 24 * 60; totalMin += 15) {
+          const hh = Math.floor(totalMin / 60), mm = totalMin % 60;
+          const val = hh + mm / 60;
+          const o = document.createElement("option"); o.value = val; o.textContent = fmtHM12(val); selectEl.appendChild(o);
+        }
+      }
+
+      /* ============================================================
+         INIT SELECTS / DROPDOWNS
+      ============================================================ */
+      function initControls() {
+        const asel = document.getElementById("assigneeSelect");
+        ASSIGNEES.forEach((a) => {
+          const o = document.createElement("option"); o.value = a.id; o.textContent = a.name; asel.appendChild(o);
+        });
+        asel.value = "hana"; assigneeFilter = "hana";
+
+        const panel = document.getElementById("typePanel");
+        panel.innerHTML = TYPES.map((t) => `
+          <label class="type-option">
+            <input type="checkbox" checked data-type="${t.id}" onchange="onTypeToggle('${t.id}', this.checked)" />
+            <span class="type-dot" style="background:${t.color}"></span>
+            <i class="fas ${t.icon}" style="color:var(--text-dim);width:14px;"></i>
+            ${t.label}
+          </label>`).join("") +
+          `<div class="type-panel-foot"><a onclick="setAllTypes(true)">Select all</a><a onclick="setAllTypes(false)">Clear</a></div>`;
+        updateTypeSummary();
+
+        const qmenu = document.getElementById("quickMenu");
+        const QUICK = [
+          { id: "viewing", label: "Manage Showing", icon: "fa-eye" },
+          { id: "task", label: "Create a Task", icon: "fa-check-square" },
+          { id: "job", label: "Create a Job", icon: "fa-briefcase" },
+          { id: "call", label: "Make or Log a Call", icon: "fa-phone-alt" },
+          { id: "email", label: "Send an Email", icon: "fa-envelope" },
+          { id: "sms", label: "Send an SMS", icon: "fa-sms" },
+          { id: "comment", label: "Add a Comment", icon: "fa-comment-alt" },
+        ];
+        qmenu.innerHTML = QUICK.map((q) => `<div class="qm-item" onclick="openQuickCreate('${q.id}')"><i class="fas ${q.icon}" style="color:${colorOf(q.id)}"></i> ${q.label}</div>`).join("");
+
+        generateTimeOptions(document.getElementById("qcStartTime"));
+        generateTimeOptions(document.getElementById("qcEndTime"));
+
+        const wdWrap = document.getElementById("weekdayPicker");
+        wdWrap.innerHTML = DOW.map((d, i) => `<button type="button" class="wd-btn" data-day="${i}" onclick="toggleWeekday(${i})">${d.slice(0, 2)}</button>`).join("");
+
+        const qcAssignee = document.getElementById("qcAssignee");
+        ASSIGNEES.forEach((a) => { const o = document.createElement("option"); o.value = a.id; o.textContent = a.name; qcAssignee.appendChild(o); });
+      }
+
+      function onAssigneeChange() { assigneeFilter = document.getElementById("assigneeSelect").value; render(); }
+      window.onAssigneeChange = onAssigneeChange;
+
+      function toggleTypePanel(e) { e.stopPropagation(); const p = document.getElementById("typePanel"); p.classList.toggle("open"); document.addEventListener("click", closeTypePanelOnce, { once: true }); }
+      function closeTypePanelOnce() { document.getElementById("typePanel").classList.remove("open"); }
+      window.toggleTypePanel = toggleTypePanel;
+
+      function onTypeToggle(id, checked) { if (checked) typeFilter.add(id); else typeFilter.delete(id); updateTypeSummary(); render(); }
+      window.onTypeToggle = onTypeToggle;
+      function setAllTypes(all) {
+        typeFilter = new Set(all ? TYPES.map((t) => t.id) : []);
+        document.querySelectorAll('#typePanel input[type=checkbox]').forEach((cb) => cb.checked = all);
+        updateTypeSummary(); render();
+      }
+      window.setAllTypes = setAllTypes;
+      function updateTypeSummary() {
+        const sel = TYPES.filter((t) => typeFilter.has(t.id));
+        const el = document.getElementById("typeSummary");
+        if (sel.length === TYPES.length) { el.textContent = "All types"; return; }
+        if (sel.length === 0) { el.textContent = "No types"; return; }
+        const shown = sel.slice(0, 2).map((t) => t.label.slice(0, 4) + (t.label.length > 4 ? "…" : ""));
+        el.textContent = shown.join(", ") + (sel.length > 2 ? `, +${sel.length - 2}` : "");
+      }
+
+      function toggleQuickMenu(e) { e.stopPropagation(); const m = document.getElementById("quickMenu"); m.classList.toggle("open"); document.addEventListener("click", () => m.classList.remove("open"), { once: true }); }
+      window.toggleQuickMenu = toggleQuickMenu;
+
+      /* ============================================================
+         NAV / VIEW
+      ============================================================ */
+      function setView(v) {
+        view = v;
+        document.querySelectorAll("#viewToggle button").forEach((b) => b.classList.toggle("active", b.dataset.v === v));
+        render();
+      }
+      window.setView = setView;
+      function goToday() { anchor = new Date(TODAY); render(); }
+      window.goToday = goToday;
+      function navStep(dir) {
+        if (view === "week") anchor = addDays(anchor, 7 * dir);
+        else if (view === "day") anchor = addDays(anchor, 1 * dir);
+        else if (view === "month") anchor = new Date(anchor.getFullYear(), anchor.getMonth() + dir, 1);
+        else anchor = addDays(anchor, 14 * dir);
+        render();
+      }
+      window.navStep = navStep;
+
+      function rangeLabel() {
+        if (view === "week") {
+          const s = startOfWeek(anchor), e = addDays(s, 6);
+          const sameMonth = s.getMonth() === e.getMonth();
+          return `${s.getDate()} – ${e.getDate()} ${MONTHS[e.getMonth()]}${sameMonth ? "" : " "}${sameMonth ? "" : ""} ${e.getFullYear()}`.replace("  ", " ");
+        }
+        if (view === "day") return `${DOW[(anchor.getDay()+6)%7]}, ${anchor.getDate()} ${MONTHS[anchor.getMonth()]} ${anchor.getFullYear()}`;
+        if (view === "month") return `${MONTHS[anchor.getMonth()]} ${anchor.getFullYear()}`;
+        return "Upcoming activities";
+      }
+
+      /* ============================================================
+         FILTERED EVENTS
+      ============================================================ */
+      function filteredEvents() {
+        return events.filter((e) => typeFilter.has(e.type) && (assigneeFilter === "all" || e.assignee === assigneeFilter));
+      }
+
+      /* ============================================================
+         RENDER — WEEK / DAY (shared grid renderer)
+      ============================================================ */
+      function renderTimeGrid(days) {
+        const n = days.length;
+        const evs = filteredEvents();
+        let html = `<div class="grid-scroll"><div class="week-head" style="--ncols:${n}"><div class="corner"></div>`;
+        days.forEach((d) => {
+          const isToday = sameDay(d, TODAY);
+          html += `<div class="day-head ${isToday ? "today" : ""}"><div class="dname">${DOW[(d.getDay()+6)%7]}</div><div class="dnum">${d.getDate()}</div></div>`;
+        });
+        html += `</div>`;
+
+        html += `<div class="allday-row" style="--ncols:${n}"><div class="allday-label">all-day</div>`;
+        days.forEach((d) => {
+          const isToday = sameDay(d, TODAY);
+          const dayEvs = evs.filter((e) => e.allDay && e.date === ymd(d));
+          html += `<div class="allday-cell ${isToday ? "today" : ""}">` +
+            dayEvs.map((e) => `<span class="evt-pill" style="background:${colorOf(e.type)}" onclick="alertEvent('${e.id}')">${e.title}</span>`).join("") +
+            `</div>`;
+        });
+        html += `</div>`;
+
+        html += `<div class="time-grid" style="--ncols:${n}"><div class="time-col">` +
+          Array.from({ length: 24 }, (_, h) => `<div class="hour-label">${String(h).padStart(2,"0")}:00</div>`).join("") +
+          `</div>`;
+
+        days.forEach((d) => {
+          const isToday = sameDay(d, TODAY);
+          const dayEvs = evs.filter((e) => !e.allDay && e.date === ymd(d));
+          html += `<div class="day-col ${isToday ? "today" : ""}">`;
+          for (let h = 0; h < 24; h++) html += `<div class="hour-row" onclick="quickAddAt('${ymd(d)}', ${h})"></div>`;
+          dayEvs.forEach((e) => {
+            const top = e.hour * 44 + 2, height = Math.max(e.dur, 0.4) * 44 - 4;
+            html += `<div class="evt" style="top:${top}px;height:${height}px;background:${colorOf(e.type)}" onclick="event.stopPropagation();alertEvent('${e.id}')">
+              <span class="evt-time">${fmtHM(e.hour)}</span>${e.title}</div>`;
+          });
+          html += `</div>`;
+        });
+        html += `</div></div>`;
+        return html;
+      }
+
+      function renderWeek() { const s = startOfWeek(anchor); const days = Array.from({ length: 7 }, (_, i) => addDays(s, i)); return renderTimeGrid(days); }
+      function renderDay() { return renderTimeGrid([anchor]); }
+
+      /* ============================================================
+         RENDER — MONTH
+      ============================================================ */
+      function renderMonth() {
+        const y = anchor.getFullYear(), m = anchor.getMonth();
+        const first = new Date(y, m, 1);
+        const gridStart = startOfWeek(first);
+        const evs = filteredEvents();
+        let html = `<div class="month-head">${DOW.map((d) => `<div>${d}</div>`).join("")}</div><div class="month-grid">`;
+        for (let i = 0; i < 42; i++) {
+          const d = addDays(gridStart, i);
+          const otherMonth = d.getMonth() !== m;
+          const isToday = sameDay(d, TODAY);
+          const dayEvs = evs.filter((e) => e.date === ymd(d));
+          html += `<div class="month-cell ${otherMonth ? "other-month" : ""} ${isToday ? "today" : ""}" onclick="jumpToDay('${ymd(d)}')">
+            <div class="mnum">${d.getDate()}</div>`;
+          dayEvs.slice(0, 3).forEach((e) => { html += `<div class="month-evt" style="background:${colorOf(e.type)}" onclick="event.stopPropagation();alertEvent('${e.id}')">${e.title}</div>`; });
+          if (dayEvs.length > 3) html += `<div class="month-more">+${dayEvs.length - 3} more</div>`;
+          html += `</div>`;
+        }
+        html += `</div>`;
+        return html;
+      }
+      function jumpToDay(dateStr) { const [y,m,d] = dateStr.split("-").map(Number); anchor = new Date(y, m-1, d); setView("day"); }
+      window.jumpToDay = jumpToDay;
+
+      /* ============================================================
+         RENDER — LIST
+      ============================================================ */
+      function renderList() {
+        const evs = filteredEvents().slice().sort((a, b) => (a.date + String(a.hour).padStart(2,"0")).localeCompare(b.date + String(b.hour).padStart(2,"0")));
+        if (!evs.length) return `<div class="empty-list"><i class="fas fa-calendar-xmark"></i>No activities match the current filters.</div>`;
+        let html = `<div class="list-view">`; let lastDate = "";
+        evs.forEach((e) => {
+          if (e.date !== lastDate) {
+            lastDate = e.date;
+            const [y,m,d] = e.date.split("-").map(Number);
+            const dd = new Date(y, m-1, d);
+            html += `<div class="list-date-group">${DOW[(dd.getDay()+6)%7]}, ${dd.getDate()} ${MONTHS[dd.getMonth()]} ${y}</div>`;
+          }
+          const a = ASSIGNEES.find((x) => x.id === e.assignee);
+          html += `<div class="list-row" onclick="alertEvent('${e.id}')">
+            <span class="list-dot" style="background:${colorOf(e.type)}"></span>
+            <span class="list-time">${e.allDay ? "All day" : fmtHM(e.hour)}</span>
+            <span class="list-title">${e.title}</span>
+            <span class="list-assignee"><i class="fas fa-user" style="font-size:10px;margin-right:4px"></i>${a ? a.name : ""}</span>
+          </div>`;
+        });
+        html += `</div>`;
+        return html;
+      }
+
+      /* ============================================================
+         MASTER RENDER
+      ============================================================ */
+      function render() {
+        document.getElementById("rangeLabel").textContent = rangeLabel();
+        const card = document.getElementById("calCard");
+        if (view === "week") card.innerHTML = renderWeek();
+        else if (view === "day") card.innerHTML = renderDay();
+        else if (view === "month") card.innerHTML = renderMonth();
+        else card.innerHTML = renderList();
+      }
+
+      function alertEvent(id) {
+        const e = events.find((x) => x.id === id);
+        if (!e) return;
+        const a = ASSIGNEES.find((x) => x.id === e.assignee);
+        toast(`${typeOf(e.type).label}: "${e.title}" — ${a ? a.name : ""}`);
+      }
+      window.alertEvent = alertEvent;
+
+      /* ============================================================
+         QUICK CREATE
+      ============================================================ */
+      const QC_LABELS = {
+        viewing: { title: "New Viewing", sub: "Schedule a property viewing on the calendar" },
+        task: { title: "New Task", sub: "Create a task with a due date" },
+        job: { title: "New Job", sub: "Log a commercial operational job" },
+        call: { title: "Log a Call", sub: "Schedule or log a phone call" },
+        email: { title: "Compose Email", sub: "Send an email to a client" },
+        sms: { title: "Send SMS", sub: "Send a short text message" },
+        comment: { title: "Add Comment", sub: "Post an internal note" },
+      };
+      let qcType = "viewing";
+      let isRecurring = false;
+      let selectedWeekdays = new Set();
+
+      function openQuickCreate(type, dateStr, hour) {
+        document.getElementById("quickMenu").classList.remove("open");
+        qcType = type;
+        const info = QC_LABELS[type];
+        document.getElementById("qcTitle").textContent = info.title;
+        document.getElementById("qcSub").textContent = info.sub;
+        const icon = document.getElementById("qcIcon");
+        icon.style.background = colorOf(type);
+        icon.innerHTML = `<i class="fas ${typeOf(type).icon}"></i>`;
+        document.getElementById("qcTitleInput").value = "";
+        document.getElementById("qcNotes").value = "";
+
+        const d = dateStr ? new Date(dateStr) : (view === "day" ? anchor : new Date(TODAY));
+        document.getElementById("qcStartDate").value = ymd(d);
+        const startH = hour != null ? hour : 9;
+        document.getElementById("qcStartTime").value = startH;
+        document.getElementById("qcEndTime").value = Math.min(startH + 1, 23.75);
+        document.getElementById("qcAllDay").checked = false;
+        document.getElementById("qcStartTime").disabled = false;
+        document.getElementById("qcEndTime").disabled = false;
+
+        // reset recurrence
+        isRecurring = false;
+        document.getElementById("qcRecurBtn").classList.remove("active");
+        document.getElementById("qcRecurBlock").style.display = "none";
+        document.getElementById("qcInterval").value = 1;
+        document.getElementById("qcUnit").value = "week";
+        document.getElementById("qcWeekdayWrap").style.display = "flex";
+        document.getElementById("qcUntil").value = "";
+        const todayWd = (d.getDay() + 6) % 7;
+        selectedWeekdays = new Set([todayWd]);
+        document.querySelectorAll(".wd-btn").forEach((b) => b.classList.toggle("active", Number(b.dataset.day) === todayWd));
+
+        document.getElementById("qcAssignee").value = assigneeFilter !== "all" ? assigneeFilter : ASSIGNEES[0].id;
+        document.getElementById("qcOverlay").classList.add("open");
+        renderSuggestions();
+      }
+      window.openQuickCreate = openQuickCreate;
+      function quickAddAt(dateStr, hour) { openQuickCreate(qcType || "viewing", dateStr, hour); }
+      window.quickAddAt = quickAddAt;
+      function closeQuickCreate() { document.getElementById("qcOverlay").classList.remove("open"); }
+      window.closeQuickCreate = closeQuickCreate;
+
+      function onAllDayChange() {
+        const allDay = document.getElementById("qcAllDay").checked;
+        document.getElementById("qcStartTime").disabled = allDay;
+        document.getElementById("qcEndTime").disabled = allDay;
+        renderSuggestions();
+      }
+      window.onAllDayChange = onAllDayChange;
+
+      function onStartDateChange() {
+        const startDate = document.getElementById("qcStartDate").value;
+        if (isRecurring && selectedWeekdays.size === 0 && startDate) {
+          const wd = (new Date(startDate).getDay() + 6) % 7;
+          selectedWeekdays = new Set([wd]);
+          document.querySelectorAll(".wd-btn").forEach((b) => b.classList.toggle("active", Number(b.dataset.day) === wd));
+        }
+        renderSuggestions();
+      }
+      window.onStartDateChange = onStartDateChange;
+
+      function toggleRecurring() {
+        isRecurring = !isRecurring;
+        document.getElementById("qcRecurBtn").classList.toggle("active", isRecurring);
+        document.getElementById("qcRecurBlock").style.display = isRecurring ? "block" : "none";
+        const startDate = document.getElementById("qcStartDate").value;
+        if (isRecurring && startDate && !document.getElementById("qcUntil").value) {
+          document.getElementById("qcUntil").value = ymd(addDays(new Date(startDate), 28));
+        }
+        renderSuggestions();
+      }
+      window.toggleRecurring = toggleRecurring;
+
+      function clearRecurring() {
+        isRecurring = false;
+        document.getElementById("qcRecurBtn").classList.remove("active");
+        document.getElementById("qcRecurBlock").style.display = "none";
+        document.getElementById("qcUntil").value = "";
+        renderSuggestions();
+      }
+      window.clearRecurring = clearRecurring;
+
+      function toggleWeekday(i) {
+        if (selectedWeekdays.has(i)) selectedWeekdays.delete(i); else selectedWeekdays.add(i);
+        document.querySelectorAll(".wd-btn").forEach((b) => { if (Number(b.dataset.day) === i) b.classList.toggle("active", selectedWeekdays.has(i)); });
+        renderSuggestions();
+      }
+      window.toggleWeekday = toggleWeekday;
+
+      function onUnitChange() {
+        const unit = document.getElementById("qcUnit").value;
+        document.getElementById("qcWeekdayWrap").style.display = unit === "week" ? "flex" : "none";
+        renderSuggestions();
+      }
+      window.onUnitChange = onUnitChange;
+
+      // Shared date-generation logic, used by both the suggestions preview and Save
+      function computeOccurrences(limit) {
+        const startDate = document.getElementById("qcStartDate").value;
+        if (!startDate) return [];
+        if (!isRecurring) return [startDate];
+
+        const until = document.getElementById("qcUntil").value;
+        if (!until) return [];
+        const interval = Math.max(1, Number(document.getElementById("qcInterval").value) || 1);
+        const unit = document.getElementById("qcUnit").value;
+        const start = new Date(startDate);
+        const untilD = new Date(until);
+        let dates = [];
+
+        if (unit === "week") {
+          const weekdays = Array.from(selectedWeekdays).sort((a, b) => a - b);
+          if (!weekdays.length) return [];
+          let weekStart = startOfWeek(start), guard = 0;
+          while (weekStart <= untilD && guard < 80) {
+            weekdays.forEach((wd) => { const dd = addDays(weekStart, wd); if (dd >= start && dd <= untilD) dates.push(ymd(dd)); });
+            weekStart = addDays(weekStart, 7 * interval); guard++;
+          }
+          dates.sort();
+        } else if (unit === "day") {
+          let d = new Date(start), guard = 0;
+          while (d <= untilD && guard < 366) { dates.push(ymd(d)); d = addDays(d, interval); guard++; }
+        } else {
+          let d = new Date(start), guard = 0;
+          while (d <= untilD && guard < 120) { dates.push(ymd(d)); d = addMonths(d, interval); guard++; }
+        }
+        return typeof limit === "number" ? dates.slice(0, limit) : dates;
+      }
+
+      function recurrenceDescription() {
+        if (!isRecurring) return "One-time";
+        const interval = Math.max(1, Number(document.getElementById("qcInterval").value) || 1);
+        const unit = document.getElementById("qcUnit").value;
+        if (unit === "week") {
+          const names = Array.from(selectedWeekdays).sort((a, b) => a - b).map((i) => DOW[i]);
+          if (!names.length) return "Select a day of the week";
+          return `Occurs every ${interval > 1 ? interval + " weeks" : "week"} on ${names.join("/")}`;
+        }
+        if (unit === "day") return `Occurs every ${interval > 1 ? interval + " days" : "day"}`;
+        return `Occurs every ${interval > 1 ? interval + " months" : "month"}`;
+      }
+
+      function renderSuggestions() {
+        const list = document.getElementById("suggestList");
+        const allDay = document.getElementById("qcAllDay").checked;
+        const startVal = Number(document.getElementById("qcStartTime").value);
+        const endVal = Number(document.getElementById("qcEndTime").value);
+        const dur = allDay ? null : endVal - startVal;
+
+        if (!allDay && dur <= 0) { list.innerHTML = `<div class="suggest-empty">End time must be after start time.</div>`; return; }
+
+        const dates = computeOccurrences(3);
+        if (!dates.length) {
+          list.innerHTML = `<div class="suggest-empty">${isRecurring ? "Choose a day of week and an end date to preview occurrences." : "Choose a start date to preview."}</div>`;
+          return;
+        }
+        const desc = recurrenceDescription();
+        list.innerHTML = dates.map((dt) => {
+          const [y, m, day] = dt.split("-").map(Number);
+          const dd = new Date(y, m - 1, day);
+          const dayLabel = `${DOW[(dd.getDay() + 6) % 7]}, ${dd.getDate()} ${MONTHS[dd.getMonth()]}`;
+          const timeLabel = allDay ? "All day" : `${fmtHM12(startVal)} – ${fmtHM12(endVal)} (${fmtDuration(dur)})`;
+          return `<div class="suggest-row">
+            <i class="fas ${isRecurring ? "fa-rotate" : "fa-calendar"}"></i>
+            <div class="suggest-desc"><b>${dayLabel}</b> — ${desc}</div>
+            <div class="suggest-time">${timeLabel}</div>
+            <div class="suggest-badge"><i class="fas fa-circle-check"></i> 100% available</div>
+          </div>`;
+        }).join("");
+      }
+      window.renderSuggestions = renderSuggestions;
+
+      function saveQuickCreate() {
+        const title = document.getElementById("qcTitleInput").value.trim();
+        if (!title) { toast("Please enter a title"); return; }
+        const startDate = document.getElementById("qcStartDate").value;
+        if (!startDate) { toast("Please choose a start date"); return; }
+
+        const allDay = document.getElementById("qcAllDay").checked;
+        const startVal = Number(document.getElementById("qcStartTime").value);
+        const endVal = Number(document.getElementById("qcEndTime").value);
+        const dur = allDay ? 1 : endVal - startVal;
+        if (!allDay && dur <= 0) { toast("End time must be after start time"); return; }
+
+        if (isRecurring && document.getElementById("qcUnit").value === "week" && selectedWeekdays.size === 0) { toast("Please select at least one day of the week"); return; }
+        if (isRecurring && !document.getElementById("qcUntil").value) { toast("Please choose an end date for the recurrence"); return; }
+
+        const assignee = document.getElementById("qcAssignee").value;
+        const dates = computeOccurrences(52);
+        if (!dates.length) { toast("No valid dates in the selected range"); return; }
+
+        dates.forEach((dt, i) => {
+          events.push({ id: "e" + Date.now() + "_" + i, type: qcType, title, assignee, date: dt, hour: startVal, dur, allDay });
+        });
+
+        closeQuickCreate();
+        typeFilter.add(qcType);
+        document.querySelectorAll('#typePanel input[type=checkbox]').forEach((cb) => { if (cb.dataset.type === qcType) cb.checked = true; });
+        updateTypeSummary();
+        anchor = new Date(startDate);
+        render();
+        toast(`${typeOf(qcType).label} created — ${dates.length} occurrence${dates.length > 1 ? "s" : ""}`, "success");
+      }
+      window.saveQuickCreate = saveQuickCreate;
+
+      /* ============================================================
+         TOAST
+      ============================================================ */
+      function toast(msg, kind) {
+        const el = document.createElement("div"); el.className = "toast " + (kind || ""); el.textContent = msg;
+        document.getElementById("toastWrap").appendChild(el); setTimeout(() => el.remove(), 2800);
+      }
+      window.toast = toast;
+
+      /* ============================================================
+         BOOT
+      ============================================================ */
+      initControls();
+      render();
+    </script>
+  </body>
+</html>

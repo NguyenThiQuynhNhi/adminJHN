@@ -79,6 +79,21 @@
       .btn-sm { padding: 5px 10px; font-size: 11.5px; min-height: 28px; }
       .btn-danger { color: var(--badge-red); border-color: #fbcaca; }
 
+      .more-menu { position: relative; }
+      .menu-pop {
+        position: absolute; right: 0; top: calc(100% + 6px);
+        background: #fff; border: 1px solid var(--border-subtle);
+        border-radius: 8px; box-shadow: 0 10px 28px rgba(60, 41, 28, 0.16);
+        padding: 6px; min-width: 160px; z-index: 50; display: none;
+      }
+      .menu-pop.open { display: block; }
+      .menu-pop button {
+        display: block; width: 100%; text-align: left; padding: 8px 12px;
+        border: 0; background: 0; font-size: 13px; cursor: pointer;
+        border-radius: 6px; font-family: inherit; color: var(--text-main);
+      }
+      .menu-pop button:hover { background: var(--bg-alt); }
+
       .toolbar {
         display: flex; gap: 8px; align-items: center;
         margin-bottom: 12px; flex-wrap: wrap;
@@ -401,7 +416,13 @@
         <span style="font-size:12px;color:var(--text-muted)">→</span>
         <input type="date" id="logTo" style="max-width:160px" onchange="renderLog()" />
         <div class="right">
-          <button class="btn" onclick="exportCsv()"><i class="fas fa-file-export"></i> Export CSV</button>
+          <div class="more-menu">
+            <button class="btn" onclick="toggleExportMenu(event)"><i class="fas fa-file-export"></i> Export <i class="fas fa-chevron-down" style="font-size:10px;color:var(--text-dim)"></i></button>
+            <div class="menu-pop" id="exportPop">
+              <button onclick="exportData('csv')">CSV</button>
+              <button onclick="exportData('excel')">Excel</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -751,19 +772,48 @@
       }
       window.renderLog = renderLog;
 
-      function exportCsv() {
-        const k = document.getElementById("logFilter").value;
-        const rows = LOG.filter(e => !k || e.kind === k);
-        const csv = ["Time,Kind,Description", ...rows.map(e => `"${e.at}","${e.kind}","${e.text.replace(/<[^>]+>/g, "").replace(/"/g, '""')}"`)].join("\n");
-        const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+      function downloadText(content, filename, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = "activity-log.csv";
+        a.download = filename;
         a.click();
         URL.revokeObjectURL(a.href);
+      }
+
+      function exportData(format) {
+        const k = document.getElementById("logFilter").value;
+        const rows = LOG.filter(e => !k || e.kind === k);
+        const plainRows = rows.map(e => [e.at, e.kind, e.text.replace(/<[^>]+>/g, "").replace(/"/g, '""')]);
+        if (format === "excel") {
+          const html = `
+            <html>
+              <head><meta charset="UTF-8"></head>
+              <body>
+                <table border="1">
+                  <tr><th>Time</th><th>Kind</th><th>Description</th></tr>
+                  ${plainRows.map(row => `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td></tr>`).join("")}
+                </table>
+              </body>
+            </html>`;
+          downloadText(html, "activity-log.xls", "application/vnd.ms-excel;charset=utf-8");
+          toast("Excel exported");
+          return;
+        }
+        const csv = ["Time,Kind,Description", ...plainRows.map(row => `"${row[0]}","${row[1]}","${row[2]}"`)].join("\n");
+        downloadText("\uFEFF" + csv, "activity-log.csv", "text/csv;charset=utf-8");
         toast("CSV exported");
       }
-      window.exportCsv = exportCsv;
+      window.exportData = exportData;
+
+      function toggleExportMenu(e) {
+        if (e) e.stopPropagation();
+        const menu = document.getElementById("exportPop");
+        if (!menu) return;
+        menu.classList.toggle("open");
+        document.addEventListener("click", () => menu.classList.remove("open"), { once: true });
+      }
+      window.toggleExportMenu = toggleExportMenu;
 
       // ============ Tabs ============
       function switchTab(t) {

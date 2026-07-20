@@ -34,9 +34,10 @@ The Agent Portal now uses an **iframe shell exactly like the Admin Portal**.
 | Properties | `property-list-oversight.html` | `agent-portal__property-list-oversight.md` |
 | Projects | `project-management.html` | `agent-portal__project-management.md` |
 | Leads | `lead-management.html` | `agent-portal__lead-management.md` |
-| CRM Activities | `crm-activities.html` | `agent-portal__crm-activities.md` |
-| Advertising | `ad-monetisation.html` | `agent-portal__ad-monetisation.md` |
-| Subscription | `billing.html` | `agent-portal__billing.md` |
+| Transactions | `transaction-management.html` | `agent-portal__transaction-management.md` |
+| Offers | `offer-management.html` | `agent-portal__offer-management.md` |
+| Agreement Management | `agreement-management.html` | `agent-portal__agreement-management.md` |
+| CRM Activities | `crm-activities.html#viewing` / `#task` / `#jobs` / `#calls` / `#emails` / `#sms` / `#comments` | `agent-portal__crm-activities.md` |
 
 **Messages**
 | Label | `data-content` | Doc |
@@ -51,6 +52,8 @@ The Agent Portal now uses an **iframe shell exactly like the Admin Portal**.
 | Staff Management | `staff-management.html` | `agent-portal__staff-management.md` |
 | Roles & Permissions | `role-and-permission.html` | `agent-portal__role-and-permission.md` |
 | Agency Profile | `profile.html` | `agent-portal__profile.md` |
+| Advertising | `ad-monetisation.html` | `agent-portal__ad-monetisation.md` |
+| Subscription | `billing.html` | `agent-portal__billing.md` |
 
 ### Files present but NOT linked in the sidebar
 
@@ -78,17 +81,20 @@ These exist on disk and are reachable only programmatically or as lighter siblin
 6. `agent-portal__project-management.md` — new-development projects (copy of admin screen).
 7. `agent-portal__property-detail-view.md` — read-only property detail (copy of admin screen).
 8. `agent-portal__lead-management.md` — lead CRM (list / detail / edit).
-9. `agent-portal__crm-activities.md` — full CRM activities (7 modules).
+9. `agent-portal__crm-activities.md` — full CRM activities (7 modules, now hash-navigated from the shell sidebar).
 10. `agent-portal__crm.md` — lighter CRM (Tasks kanban / Viewings / Activity Log).
-11. `agent-portal__ad-monetisation.md` — full advertising/monetisation console.
-12. `agent-portal__advertising.md` — lighter advertising page.
-13. `agent-portal__billing.md` — subscription & billing.
-14. `agent-portal__leads-inquiries.md` — inquiry inbox + users who saved properties.
-15. `agent-portal__admin-messages.md` — 1:1 chat (agent perspective; pinned Admin/Support + Clients).
-16. `agent-portal__message-center.md` — broadcast/campaign center (Admin/Client audiences).
-17. `agent-portal__staff-management.md` — staff table + add/edit drawer.
-18. `agent-portal__role-and-permission.md` — roles list + permission matrix.
-19. `agent-portal__profile.md` — Agency Profile + My Profile.
+11. `agent-portal__transaction-management.md` — transactions list, closed-deal detail, and suspended-listing detail/editor.
+12. `agent-portal__offer-management.md` — offers list/detail/editor with lead-linked negotiation flow.
+13. `agent-portal__agreement-management.md` — agreement management shell entry; current file is an empty placeholder.
+14. `agent-portal__ad-monetisation.md` — full advertising/monetisation console.
+15. `agent-portal__advertising.md` — lighter advertising page.
+16. `agent-portal__billing.md` — subscription & billing.
+17. `agent-portal__leads-inquiries.md` — inquiry inbox + users who saved properties.
+18. `agent-portal__admin-messages.md` — 1:1 chat (agent perspective; pinned Admin/Support + Clients).
+19. `agent-portal__message-center.md` — broadcast/campaign center (Admin/Client audiences).
+20. `agent-portal__staff-management.md` — staff table + add/edit drawer.
+21. `agent-portal__role-and-permission.md` — roles list + permission matrix.
+22. `agent-portal__profile.md` — Agency Profile + My Profile.
 
 ---
 

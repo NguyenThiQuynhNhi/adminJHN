@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agreement Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+      :root {
+        --accent: #c4714a; --accent-dark: #a55232; --accent-soft: #fdeee4; --accent-tint: #faf0e9;
+        --bg-body: #f5f0e8; --bg-card: #fff; --bg-alt: #fdfcf9;
+        --border: #e9e2d6; --border-soft: #f0ece4;
+        --text-main: #333; --text-head: #222; --text-muted: #8a8178; --text-dim: #aaa094;
+        --pink: #e74c7a; --grey-pill: #eceae4; --grey-pill-dark: #ddd8cf;
+        --green: #2f855a; --green-soft: #e3f3ea;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; }
+      body { font-family: Arial, Helvetica, system-ui, sans-serif; background: var(--bg-body); color: var(--text-main); font-size: 13px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+      a { color: var(--accent); text-decoration: none; cursor: pointer; }
+
+      .page { max-width: 1180px; margin: 0 auto; padding: 28px 24px 48px; }
+      .hidden { display: none !important; }
+
+      /* ===== Buttons ===== */
+      .btn { border-radius: 6px; border: 1px solid var(--border); padding: 8px 16px; font-size: 13px; background: #fff; cursor: pointer; display: inline-flex; gap: 7px; align-items: center; justify-content: center; color: var(--text-main); font-family: inherit; font-weight: 600; }
+      .btn:hover { background: var(--bg-alt); }
+      .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .btn-primary:hover { background: var(--accent-dark); }
+      .btn-pill { border-radius: 20px; }
+
+      /* ===== Page header ===== */
+      .page-title { font-size: 24px; font-weight: 800; color: var(--text-head); }
+      .page-subtitle { font-size: 12.5px; color: var(--accent); font-style: italic; margin-top: 2px; }
+      .list-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+
+      /* ===== Filter bar ===== */
+      .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+      .filter-field { position: relative; }
+      .filter-field input, .filter-field select { height: 38px; border-radius: 8px; border: 1px solid var(--border); padding: 0 32px 0 12px; font-size: 13px; background: #fff; outline: none; min-width: 150px; color: var(--text-main); appearance: none; cursor: pointer; }
+      .filter-field.has-icon input { padding-left: 34px; }
+      .filter-field .fi-left { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; }
+      .filter-field .fi-right { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; font-size: 11px; }
+
+      /* ===== Card ===== */
+      .card { background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 1px 3px rgba(60,41,28,0.04); overflow: hidden; }
+
+      /* ===== Table ===== */
+      table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+      .data thead { background: #f6f3ec; }
+      .data th { padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 700; color: #555; white-space: nowrap; cursor: pointer; user-select: none; }
+      .data th .sort { color: var(--text-dim); margin-left: 5px; font-size: 10px; }
+      .data th.asc .sort, .data th.desc .sort { color: var(--accent); }
+      .data td { padding: 11px 14px; border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
+      .data tbody tr { cursor: pointer; }
+      .data tbody tr:nth-child(even) { background: var(--bg-alt); }
+      .data tbody tr:hover { background: var(--accent-tint); }
+      .name-cell { display: flex; align-items: center; gap: 10px; }
+      .ini-avatar { width: 30px; height: 30px; border-radius: 50%; background: #e7e2d8; color: #6b6256; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+      .act-icons { display: flex; gap: 10px; color: #b3a89c; }
+      .act-icons i { cursor: pointer; }
+      .act-icons i:hover { color: var(--accent); }
+
+      /* ===== Badge (accepted) ===== */
+      .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 700; letter-spacing: .2px; background: var(--green-soft); color: var(--green); }
+      .badge i { font-size: 10px; }
+
+      /* ===== Pagination ===== */
+      .pagination { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; flex-wrap: wrap; gap: 10px; }
+      .pg-left { display: flex; align-items: center; gap: 12px; font-size: 12.5px; color: var(--text-muted); }
+      .pg-right { display: flex; align-items: center; gap: 4px; }
+      .pg-btn { min-width: 28px; height: 28px; border-radius: 50%; border: 0; background: 0; cursor: pointer; font-size: 13px; color: var(--text-main); display: inline-flex; align-items: center; justify-content: center; font-family: inherit; }
+      .pg-btn:hover { background: var(--bg-alt); }
+      .pg-btn.active { background: var(--accent); color: #fff; }
+      .pg-btn:disabled { opacity: .4; cursor: not-allowed; }
+      .pg-arrow { color: var(--text-muted); }
+
+      /* ===== Detail screen ===== */
+      .dt-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+      .back-arrow { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: #fff; cursor: pointer; color: var(--text-main); font-size: 15px; flex-shrink: 0; }
+      .back-arrow:hover { background: var(--bg-alt); }
+      .dt-name { font-size: 22px; font-weight: 800; color: var(--text-head); line-height: 1.1; }
+      .dt-created { font-size: 12px; color: var(--text-muted); }
+      .dt-stats { margin-left: auto; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+      .detail-layout { display: grid; grid-template-columns: 1fr 300px; gap: 18px; align-items: start; }
+      @media (max-width: 1000px) { .detail-layout { grid-template-columns: 1fr; } }
+
+      .sec { padding: 18px 22px; border-bottom: 1px solid var(--border-soft); }
+      .sec:first-child { padding-top: 20px; }
+      .sec:last-child { border-bottom: 0; }
+      .sec-title { font-size: 15px; font-weight: 700; color: var(--text-head); }
+      .sec-sub { font-size: 12px; color: var(--accent); font-style: italic; margin: 2px 0 14px; }
+      .kv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 18px; }
+      @media (max-width: 760px) { .kv-grid { grid-template-columns: 1fr 1fr; } }
+      .kv-l { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 3px; }
+      .kv-v { font-size: 13px; color: var(--text-main); }
+
+      /* ===== Agreement rich-text body =====
+         Mirrors the admin editor's .editor-content output 1:1 so content
+         authored with the rich-text toolbar (headings, lists, blockquote,
+         inline code, code block, hr, links, images, bold/italic/underline/
+         strike) renders identically on the agent side. */
+      .agreement-body { font-size: 14px; line-height: 1.75; color: var(--text-main); }
+      .agreement-body h1 { font-size: 19px; font-weight: 700; margin: 0 0 14px; color: var(--text-head); }
+      .agreement-body h2 { font-size: 16px; font-weight: 600; margin: 18px 0 10px; color: var(--text-head); }
+      .agreement-body h3 { font-size: 14.5px; font-weight: 600; margin: 16px 0 8px; color: var(--text-head); }
+      .agreement-body p { margin: 0 0 14px; }
+      .agreement-body ul, .agreement-body ol { margin: 0 0 14px; padding-left: 22px; }
+      .agreement-body li { margin-bottom: 4px; }
+      .agreement-body a { color: var(--accent); text-decoration: underline; }
+      .agreement-body b, .agreement-body strong { font-weight: 700; }
+      .agreement-body i, .agreement-body em { font-style: italic; }
+      .agreement-body u { text-decoration: underline; }
+      .agreement-body s, .agreement-body strike { text-decoration: line-through; }
+      .agreement-body blockquote { border-left: 3px solid var(--accent); padding-left: 14px; color: var(--text-muted); margin: 12px 0; }
+      .agreement-body code { background: #f4f0e9; padding: 2px 5px; border-radius: 3px; font-size: 12.5px; font-family: "SFMono-Regular", Consolas, monospace; }
+      .agreement-body pre { background: #2b2b2b; color: #eee; padding: 14px 16px; border-radius: 6px; overflow-x: auto; margin: 12px 0; font-size: 12.5px; font-family: "SFMono-Regular", Consolas, monospace; }
+      .agreement-body hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+      .agreement-body img { max-width: 100%; display: block; margin: 12px 0; border-radius: 6px; }
+
+      /* Right panel */
+      .rp-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+      .rp-title { font-size: 15px; font-weight: 700; color: var(--text-head); display: flex; align-items: center; gap: 7px; margin-bottom: 12px; }
+      .accepted-panel { text-align: center; padding: 6px 4px 4px; }
+      .accepted-panel .ap-icon { width: 46px; height: 46px; border-radius: 50%; background: var(--green-soft); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 10px; }
+      .accepted-panel .ap-title { font-size: 14px; font-weight: 700; color: var(--text-head); margin-bottom: 4px; }
+      .accepted-panel .ap-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+      /* Empty state */
+      .empty-state { min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; }
+      .empty-state .et { font-size: 16px; font-weight: 700; color: var(--text-head); }
+      .empty-state .es { font-size: 13px; color: var(--text-muted); }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <!-- ========== SCREEN 1: LIST (accepted agreements only) ========== -->
+      <div id="screenList">
+        <div class="list-head">
+          <div>
+            <div class="page-title">Agreement Management</div>
+            <div class="page-subtitle">Agreements you have reviewed and accepted</div>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="filter-field has-icon"><i class="fas fa-search fi-left"></i><input id="searchInput" placeholder="Search by title" /></div>
+          <div class="filter-field">
+            <select id="sortSelect">
+              <option value="new">Newest accepted</option>
+              <option value="old">Oldest accepted</option>
+              <option value="title">Title A–Z</option>
+            </select>
+            <i class="fas fa-chevron-down fi-right"></i>
+          </div>
+        </div>
+
+        <div class="card">
+          <table class="data">
+            <thead><tr>
+              <th>Title</th>
+              <th style="width:140px">Status</th>
+              <th style="width:190px">Published</th>
+              <th style="width:190px">Accepted On</th>
+              <th style="width:70px">Actions</th>
+            </tr></thead>
+            <tbody id="listBody"></tbody>
+          </table>
+          <div class="pagination">
+            <div class="pg-left"><span id="entriesLabel">Showing 0 of 0 entries</span></div>
+            <div class="pg-right" id="pgRight"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== SCREEN 2: DETAIL ========== -->
+      <div id="screenDetail" class="hidden">
+        <div class="dt-bar">
+          <button class="back-arrow" onclick="showList()"><i class="fas fa-arrow-left"></i></button>
+          <div>
+            <div class="dt-name" id="dtName">Agreement title</div>
+            <div class="dt-created" id="dtPublished">Published: —</div>
+          </div>
+          <div class="dt-stats">
+            <span class="badge"><i class="fas fa-check"></i> ACCEPTED</span>
+          </div>
+        </div>
+
+        <div class="detail-layout">
+          <div class="card">
+            <div class="sec">
+              <div class="sec-title">Details</div>
+              <div class="sec-sub">Basic information about this agreement</div>
+              <div class="kv-grid">
+                <div><div class="kv-l">Status</div><div class="kv-v">Accepted</div></div>
+                <div><div class="kv-l">Published</div><div class="kv-v" id="kvPublished">—</div></div>
+                <div><div class="kv-l">Last Update</div><div class="kv-v" id="kvLastUpdate">—</div></div>
+                <div><div class="kv-l">Accepted On</div><div class="kv-v" id="kvAcceptedOn">—</div></div>
+                <div><div class="kv-l">Accepted By</div><div class="kv-v" id="kvAcceptedBy">—</div></div>
+                <div><div class="kv-l">Ref</div><div class="kv-v" id="kvRef">—</div></div>
+              </div>
+            </div>
+            <div class="sec">
+              <div class="sec-title">Agreement Content</div>
+              <div class="sec-sub">Exact content published by the admin</div>
+              <div class="agreement-body" id="agreementBody"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="rp-card">
+              <div class="rp-title"><i class="fas fa-file-signature" style="color:var(--accent)"></i> Acceptance</div>
+              <div class="accepted-panel">
+                <div class="ap-icon"><i class="fas fa-check"></i></div>
+                <div class="ap-title">You accepted this agreement</div>
+                <div class="ap-desc" id="apDesc">Accepted on —</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+      /* Only agreements the current user has accepted are ever shown here.
+         Content below is exactly what the admin editor (contenteditable
+         rich-text box) would have produced — same tags the toolbar emits:
+         h1/h2/h3, p, ul/ol, blockquote, code, pre, hr, a, img, b/i/u/s. */
+      const CURRENT_USER = "Chris Sales";
+
+      const agreements = [
+        {
+          id: "agent-code",
+          title: "Agent Code of Conduct",
+          ref: "AGR-1001",
+          published: "25 May 2025",
+          lastUpdate: "25 May 2025",
+          acceptedOn: "26 May 2025, 09:12",
+          content: `
+            <h1>Agent Code of Conduct</h1>
+            <p>This code sets out the minimum standard of behaviour expected from every agent operating on the platform. By accepting this agreement you confirm that you understand and will follow the rules below.</p>
+            <h2>1. Professional conduct</h2>
+            <p>Agents must deal with clients <b>honestly</b> and <i>transparently</i> at all times, and must never misrepresent a property's condition, price, or availability.</p>
+            <ul>
+              <li>Respond to client enquiries within a reasonable timeframe.</li>
+              <li>Disclose any conflict of interest before proceeding with a deal.</li>
+              <li>Keep client information confidential.</li>
+            </ul>
+            <h2>2. Prohibited actions</h2>
+            <blockquote>Agents may not accept side payments, gifts, or commissions from third parties that are not disclosed to the agency.</blockquote>
+            <p>Violation of this clause may result in <u>immediate suspension</u> pending investigation.</p>
+            <hr>
+            <h2>3. Reference</h2>
+            <p>The internal disciplinary code is referenced as <code>POLICY-CONDUCT-07</code>. For questions, contact compliance via the agency portal.</p>
+          `,
+        },
+        {
+          id: "listing-quality-standard",
+          title: "Listing Quality Standard",
+          ref: "AGR-1004",
+          published: "08 Jan 2026",
+          lastUpdate: "20 Jan 2026",
+          acceptedOn: "22 Jan 2026, 11:03",
+          content: `
+            <h1>Listing Quality Standard</h1>
+            <p>All property listings must meet the minimum quality bar below before they are published to the marketplace.</p>
+            <ol>
+              <li>At least <b>6 photos</b> per listing, in landscape orientation.</li>
+              <li>Accurate floor area and construction stage.</li>
+              <li>Bedrooms/bathrooms counts must match the floor plan.</li>
+            </ol>
+            <p>Listings that fail to meet the standard within 7 days of creation will be automatically hidden from search results until corrected.</p>
+          `,
+        },
+        {
+          id: "data-usage",
+          title: "Data Usage & Privacy Policy (Agents)",
+          ref: "AGR-1002",
+          published: "25 May 2025",
+          lastUpdate: "25 May 2025",
+          acceptedOn: "27 May 2025, 21:08",
+          content: `
+            <h1>Data Usage & Privacy Policy</h1>
+            <p>Explains how platform data may be accessed by agents and which logs are recorded for security and compliance.</p>
+            <ul>
+              <li>Do not share client contact details outside the platform.</li>
+              <li>All exports are logged and auditable.</li>
+              <li>Report suspected breaches within <b>24 hours</b>.</li>
+            </ul>
+            <blockquote>This policy is reviewed annually alongside the agency's data protection audit.</blockquote>
+          `,
+        },
+        {
+          id: "commission-schedule-v3",
+          title: "Commission Schedule v3",
+          ref: "AGR-1005",
+          published: "14 Feb 2026",
+          lastUpdate: "14 Feb 2026",
+          acceptedOn: "15 Feb 2026, 08:47",
+          content: `
+            <h1>Commission Schedule v3</h1>
+            <p>Updated commission tiers effective for all listings closed after the publish date.</p>
+            <ul>
+              <li>Standard residential: <b>2.5%</b></li>
+              <li>Luxury tier (over ¥50,000,000): <b>1.8%</b></li>
+              <li>Referral split: 20% of agent commission when a lead is passed between offices.</li>
+            </ul>
+            <hr>
+            <p><i>Rates are subject to review every two quarters.</i></p>
+          `,
+        },
+      ];
+
+      let rowsPerPage = 10, page = 1;
+
+      function ini2(t) { const p = t.trim().split(/\s+/); return ((p[0]?.[0] || "") + (p[1]?.[0] || "")).toUpperCase(); }
+
+      function getFiltered() {
+        const kw = $("searchInput").value.trim().toLowerCase();
+        const sortV = $("sortSelect").value;
+        let rows = agreements.filter(a => !kw || a.title.toLowerCase().includes(kw));
+        rows.sort((a, b) => {
+          if (sortV === "title") return a.title.localeCompare(b.title);
+          const da = new Date(a.acceptedOn), db = new Date(b.acceptedOn);
+          return sortV === "old" ? da - db : db - da;
+        });
+        return rows;
+      }
+
+      function renderList() {
+        const filtered = getFiltered();
+        const total = filtered.length;
+        const pages = Math.max(1, Math.ceil(total / rowsPerPage));
+        if (page > pages) page = pages;
+        const start = (page - 1) * rowsPerPage;
+        const shown = filtered.slice(start, start + rowsPerPage);
+
+        if (!total) {
+          $("listBody").innerHTML = `<tr><td colspan="5">${emptyBox("No accepted agreements yet", "Agreements you accept will show up here.")}</td></tr>`;
+        } else {
+          $("listBody").innerHTML = shown.map(a => `
+            <tr onclick="showDetail('${a.id}')">
+              <td><div class="name-cell"><span class="ini-avatar">${ini2(a.title)}</span> ${esc(a.title)}</div></td>
+              <td><span class="badge"><i class="fas fa-check"></i> ACCEPTED</span></td>
+              <td>${esc(a.published)}</td>
+              <td>${esc(a.acceptedOn)}</td>
+              <td onclick="event.stopPropagation()"><div class="act-icons"><i class="fas fa-eye" onclick="showDetail('${a.id}')"></i></div></td>
+            </tr>`).join("");
+        }
+
+        const startLabel = total ? start + 1 : 0;
+        const endLabel = Math.min(start + rowsPerPage, total);
+        $("entriesLabel").textContent = `Showing ${startLabel} to ${endLabel} of ${total} entries`;
+        renderPagination(total);
+      }
+
+      function renderPagination(total) {
+        const pages = Math.max(1, Math.ceil(total / rowsPerPage));
+        let h = `<button class="pg-btn pg-arrow" ${page <= 1 ? "disabled" : ""} onclick="goPage(${page - 1})">‹</button>`;
+        for (let i = 1; i <= pages; i++) h += `<button class="pg-btn ${i === page ? "active" : ""}" onclick="goPage(${i})">${i}</button>`;
+        h += `<button class="pg-btn pg-arrow" ${page >= pages ? "disabled" : ""} onclick="goPage(${page + 1})">›</button>`;
+        $("pgRight").innerHTML = h;
+      }
+      function goPage(p) { page = p; renderList(); }
+      window.goPage = goPage;
+
+      function emptyBox(title, sub) {
+        return `<div class="empty-state">
+          <svg width="120" height="96" viewBox="0 0 120 96" fill="none">
+            <ellipse cx="60" cy="86" rx="40" ry="6" fill="#eceae4"/>
+            <path d="M30 44 L60 54 L90 44 L90 74 L60 84 L30 74 Z" fill="#dbe6ef"/>
+            <path d="M30 44 L60 54 L60 84 L30 74 Z" fill="#c7d7e6"/>
+            <path d="M30 44 L42 34 L72 44 L60 54 Z" fill="#eaf1f7"/>
+            <path d="M90 44 L78 34 L48 44 L60 54 Z" fill="#dbe6ef"/>
+            <circle cx="76" cy="26" r="3.5" fill="#f0b429"/>
+            <circle cx="50" cy="20" r="2.5" fill="#f7c948"/>
+          </svg>
+          <div class="et">${title}</div>
+          ${sub ? `<div class="es">${sub}</div>` : ""}
+        </div>`;
+      }
+
+      function showList() {
+        $("screenList").classList.remove("hidden");
+        $("screenDetail").classList.add("hidden");
+      }
+      function showDetail(id) {
+        const a = agreements.find(x => x.id === id);
+        if (!a) return;
+        $("dtName").textContent = a.title;
+        $("dtPublished").textContent = "Published: " + a.published;
+        $("kvPublished").textContent = a.published;
+        $("kvLastUpdate").textContent = a.lastUpdate;
+        $("kvAcceptedOn").textContent = a.acceptedOn;
+        $("kvAcceptedBy").textContent = CURRENT_USER;
+        $("kvRef").textContent = a.ref;
+        $("agreementBody").innerHTML = a.content;
+        $("apDesc").textContent = "Accepted on " + a.acceptedOn;
+        $("screenList").classList.add("hidden");
+        $("screenDetail").classList.remove("hidden");
+        window.scrollTo(0, 0);
+      }
+      window.showList = showList; window.showDetail = showDetail;
+
+      $("searchInput").addEventListener("input", () => { page = 1; renderList(); });
+      $("sortSelect").addEventListener("change", () => { page = 1; renderList(); });
+
+      renderList();
+    </script>
+  </body>
+</html>

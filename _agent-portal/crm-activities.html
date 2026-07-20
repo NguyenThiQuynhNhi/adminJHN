@@ -41,44 +41,6 @@
         min-height: 100vh;
       }
 
-      /* Sidebar Matrix Styles */
-      #sidebar {
-        width: 200px;
-        background: #2a1f1b;
-        color: #fff;
-        min-height: 100vh;
-        padding: 20px 12px;
-        border-right: 1px solid var(--border-strong);
-        flex-shrink: 0;
-      }
-      #sidebar h3 {
-        font-family: "Georgia", serif;
-        font-size: 16px;
-        color: #c8a25f;
-        margin: 0 0 20px 8px;
-        letter-spacing: 0.05em;
-      }
-      #sidebar div {
-        padding: 12px 14px;
-        cursor: pointer;
-        border-radius: 6px;
-        color: #e2ddd6;
-        font-weight: 500;
-        transition: 0.2s;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-      #sidebar div:hover {
-        background: #3d2e29;
-        color: #fff;
-      }
-      #sidebar div.active {
-        background: var(--accent);
-        color: #fff;
-        font-weight: 600;
-      }
-
       /* Main Container Framework */
       #main {
         flex: 1;
@@ -344,17 +306,6 @@
     </style>
   </head>
   <body>
-    <div id="sidebar">
-      <h3>YUUSHI ACTIVITY</h3>
-      <div
-        onclick="switchActivityType(this, 'viewing')"
-        data-type="viewing"
-        class="active"
-      >
-        <i class="fas fa-chart-line"></i> Activities
-      </div>
-    </div>
-
     <div id="main">
       <div class="container">
         <div class="topbar">
@@ -397,35 +348,6 @@
               ><i class="fas fa-comment-alt"></i> Add a Comment</span
             >
           </div>
-        </div>
-
-        <div class="related-tabs" id="activity-type-tabs">
-          <span
-            class="active"
-            data-type="viewing"
-            onclick="switchActivityType(this, 'viewing')"
-            >Viewing</span
-          >
-          <span data-type="task" onclick="switchActivityType(this, 'task')"
-            >Task</span
-          >
-          <span data-type="jobs" onclick="switchActivityType(this, 'jobs')"
-            >Jobs</span
-          >
-          <span data-type="calls" onclick="switchActivityType(this, 'calls')"
-            >Calls</span
-          >
-          <span data-type="emails" onclick="switchActivityType(this, 'emails')"
-            >Emails</span
-          >
-          <span data-type="sms" onclick="switchActivityType(this, 'sms')"
-            >SMS</span
-          >
-          <span
-            data-type="comments"
-            onclick="switchActivityType(this, 'comments')"
-            >Comments</span
-          >
         </div>
 
         <div class="activity-type-block panel active" id="act-viewing">
@@ -879,16 +801,15 @@ Here are some properties matching your criteria...</textarea
     </div>
 
     <script>
+      const ACTIVITY_TYPES = ["viewing", "task", "jobs", "calls", "emails", "sms", "comments"];
+
       function toggleAddActivity() {
         const p = document.getElementById("add-activity-panel");
         p.style.display = p.style.display === "none" ? "block" : "none";
       }
 
-      function switchActivityType(el, type) {
-        document
-          .querySelectorAll("#activity-type-tabs span")
-          .forEach((s) => s.classList.remove("active"));
-        el.classList.add("active");
+      function setActivityType(type) {
+        if (!ACTIVITY_TYPES.includes(type)) type = "viewing";
         document
           .querySelectorAll(".activity-type-block")
           .forEach((b) => b.classList.remove("active"));
@@ -896,6 +817,15 @@ Here are some properties matching your criteria...</textarea
         document
           .getElementById("compose-email-panel")
           .classList.remove("active");
+      }
+
+      function syncActivityFromHash() {
+        const hashType = window.location.hash.replace("#", "").trim();
+        setActivityType(hashType || "viewing");
+      }
+
+      function switchActivityType(type) {
+        setActivityType(type);
       }
 
       function openActivityDetail(type, title) {
@@ -923,9 +853,8 @@ Here are some properties matching your criteria...</textarea
 
       function addActivityAs(type) {
         toggleAddActivity();
-        document
-          .querySelector('#activity-type-tabs span[data-type="' + type + '"]')
-          .click();
+        setActivityType(type);
+        history.replaceState(null, "", "#" + type);
       }
 
       function openComposeEmail() {
@@ -939,13 +868,16 @@ Here are some properties matching your criteria...</textarea
         document
           .getElementById("compose-email-panel")
           .classList.remove("active");
-        document.getElementById("act-emails").classList.add("active");
+        syncActivityFromHash();
       }
 
       function sendComposedEmail() {
         alert("Outbound mail queue packet dispatched safely.");
         closeComposeEmail();
       }
+
+      window.addEventListener("hashchange", syncActivityFromHash);
+      syncActivityFromHash();
     </script>
   </body>
 </html>

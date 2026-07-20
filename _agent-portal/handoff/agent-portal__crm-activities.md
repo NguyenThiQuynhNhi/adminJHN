@@ -2,7 +2,7 @@
 
 **Purpose:** The full agent CRM "Activities" workspace. One self-contained page that renders **7 swappable modules** (Viewings, Tasks, Jobs, Calls, Emails, SMS, Comments) into a shared table / filter / modal framework, with full add/edit/delete. All data is in-memory demo content.
 
-**Access:** Sidebar → Workspace → CRM Activities. (Note: this is the richer of the two CRM pages; `crm.html` is the lighter sibling and is not in the sidebar.)
+**Access:** Sidebar → Workspace → CRM Activities → module submenu (`Viewing`, `Task`, `Jobs`, `Calls`, `Emails`, `SMS`, `Comments`). `crm.html` is the lighter sibling and is not in the sidebar.
 
 ---
 
@@ -10,7 +10,7 @@
 
 Topbar (page title + bell with red dot + gear + "TK" avatar) → a dynamically built `#content` area per module: page-header (icon + module name + "Manage your …" subtitle + Add button) → filter bar → card with a sortable data table → pagination bar.
 
-Module switching is via `switchMod()`, driven by the URL hash (`#tasks`, `#jobs`, …; default `viewings`). The file has sidebar CSS but does **not** render `.sb-item[data-mod]` elements — switching is hash/JS only.
+Module switching is hash-driven (`#viewing`, `#task`, `#jobs`, `#calls`, `#emails`, `#sms`, `#comments`) and is now controlled from the Agent Portal shell sidebar. The page itself no longer renders an internal sidebar or horizontal module tabs.
 
 ---
 

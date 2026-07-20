@@ -1,0 +1,1075 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transactions — YUUSHI Agent</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+      :root {
+        --accent: #c4714a; --accent-dark: #a55232; --accent-soft: #fdeee4; --accent-tint: #faf0e9;
+        --bg-body: #f5f0e8; --bg-card: #fff; --bg-alt: #fdfcf9;
+        --border: #e9e2d6; --border-soft: #f0ece4;
+        --text-main: #333; --text-head: #222; --text-muted: #8a8178; --text-dim: #aaa094;
+        --pink: #e74c7a; --grey-pill: #eceae4; --grey-pill-dark: #ddd8cf;
+        --green: #2f855a; --green-soft: #e6f7ef; --green-text: #1a7a45;
+        --blue: #1a6fa0; --blue-soft: #e6f4ff;
+        --red: #c53030; --red-soft: #fff0f0;
+        --orange-soft: #fff7ed; --orange-text: #92400e;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; }
+      body { font-family: Arial, Helvetica, system-ui, sans-serif; background: var(--bg-body); color: var(--text-main); font-size: 13px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+      a { color: var(--accent); text-decoration: none; cursor: pointer; }
+
+      /* ===== Main ===== */
+      .main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+      .content { flex: 1; overflow-y: auto; padding: 24px; }
+
+      /* ===== Buttons ===== */
+      .btn { border-radius: 6px; border: 1px solid var(--border); padding: 8px 16px; font-size: 13px; background: #fff; cursor: pointer; display: inline-flex; gap: 7px; align-items: center; justify-content: center; color: var(--text-main); font-family: inherit; font-weight: 600; }
+      .btn:hover { background: var(--bg-alt); }
+      .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .btn-primary:hover { background: var(--accent-dark); }
+      .btn-pill { border-radius: 20px; }
+      .btn-danger { border-color: var(--red); color: var(--red); }
+      .btn-danger:hover { background: var(--red-soft); }
+
+      /* ===== Page header ===== */
+      .page-title { font-size: 24px; font-weight: 800; color: var(--text-head); }
+      .page-subtitle { font-size: 12.5px; color: var(--accent); font-style: italic; margin-top: 2px; }
+      .list-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+      .head-right { display: flex; align-items: center; gap: 10px; }
+      .rows-sel { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; background: #fff; font-size: 13px; cursor: pointer; }
+
+      /* ===== Stats strip ===== */
+      .stats-strip { display: flex; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+      .stat-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; flex: 1; min-width: 140px; box-shadow: 0 1px 3px rgba(60,41,28,0.04); }
+      .stat-label { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+      .stat-value { font-size: 22px; font-weight: 800; color: var(--text-head); line-height: 1; }
+      .stat-sub { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+      .stat-card.accent .stat-value { color: var(--accent); }
+      .stat-card.green .stat-value { color: var(--green); }
+      .stat-card.blue .stat-value { color: var(--blue); }
+
+      /* ===== Filter bar ===== */
+      .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+      .pill-toggle { display: inline-flex; border-radius: 20px; overflow: hidden; border: 1px solid var(--accent); }
+      .pill-toggle button { border: 0; background: #fff; color: var(--accent); padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+      .pill-toggle button.active { background: var(--accent); color: #fff; }
+      .filter-field { position: relative; }
+      .filter-field input, .filter-field select { height: 38px; border-radius: 8px; border: 1px solid var(--border); padding: 0 32px 0 12px; font-size: 13px; background: #fff; outline: none; min-width: 150px; color: var(--text-main); appearance: none; cursor: pointer; }
+      .filter-field.has-icon input { padding-left: 34px; }
+      .filter-field .fi-left { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; }
+      .filter-field .fi-right { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; font-size: 11px; }
+
+      /* ===== Card ===== */
+      .card { background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 1px 3px rgba(60,41,28,0.04); overflow: hidden; }
+
+      /* ===== Badges ===== */
+      .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+      .badge-closed { background: var(--green-soft); color: var(--green-text); }
+      .badge-suspended { background: var(--orange-soft); color: var(--orange-text); }
+      .badge-new { background: var(--blue-soft); color: var(--blue); }
+      .badge-pub { background: var(--accent-soft); color: var(--accent-dark); }
+      .badge-priv { background: var(--grey-pill); color: #6b6256; }
+      .badge-sold { background: var(--green-soft); color: var(--green-text); }
+      .badge-others { background: var(--blue-soft); color: var(--blue); }
+      .badge-withdrew { background: #fef3c7; color: #92400e; }
+      .badge-expired { background: #f3f4f6; color: #6b7280; }
+      .badge-withdrawn { background: #fde8f0; color: #9d174d; }
+      .badge-dup { background: #f5f3ff; color: #5b21b6; }
+      .badge-legal { background: var(--red-soft); color: var(--red); }
+
+      /* ===== Table ===== */
+      table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+      .data thead { background: #f6f3ec; }
+      .data th { padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 700; color: #555; white-space: nowrap; cursor: pointer; user-select: none; }
+      .data th .sort { color: var(--text-dim); margin-left: 5px; font-size: 10px; }
+      .data td { padding: 11px 14px; border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
+      .data tbody tr { cursor: pointer; }
+      .data tbody tr:nth-child(even) { background: var(--bg-alt); }
+      .data tbody tr:hover { background: var(--accent-tint); }
+      .circle-check { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--border-soft); display: inline-block; cursor: pointer; background: #fff; }
+      .circle-check.checked { background: var(--accent); border-color: var(--accent); position: relative; }
+      .circle-check.checked::after { content: "✓"; color: #fff; font-size: 11px; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+      .name-cell { display: flex; align-items: center; gap: 10px; }
+      .prop-avatar { width: 30px; height: 30px; border-radius: 7px; background: #e7e2d8; color: #6b6256; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+      .ini-avatar { width: 30px; height: 30px; border-radius: 50%; background: #e7e2d8; color: #6b6256; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+      .owner-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--pink); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+      .act-icons { display: flex; gap: 10px; color: #b3a89c; }
+      .act-icons i { cursor: pointer; }
+      .act-icons i:hover { color: var(--accent); }
+      .price-cell { font-weight: 700; color: var(--text-head); }
+      .price-cell.hidden-price { color: var(--text-dim); font-weight: 400; font-style: italic; }
+
+      /* Toggle switch */
+      .toggle-wrap { display: inline-flex; align-items: center; gap: 6px; }
+      .toggle { position: relative; width: 34px; height: 18px; cursor: pointer; }
+      .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+      .toggle-slider { position: absolute; inset: 0; background: #ddd8cf; border-radius: 9px; transition: 0.2s; }
+      .toggle-slider::before { content: ""; position: absolute; width: 14px; height: 14px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: 0.2s; }
+      .toggle input:checked + .toggle-slider { background: var(--accent); }
+      .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+      .toggle-label { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+
+      /* ===== Pagination ===== */
+      .pagination { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; flex-wrap: wrap; gap: 10px; }
+      .pg-left { display: flex; align-items: center; gap: 12px; font-size: 12.5px; color: var(--text-muted); }
+      .pg-right { display: flex; align-items: center; gap: 4px; }
+      .pg-btn { min-width: 28px; height: 28px; border-radius: 50%; border: 0; background: 0; cursor: pointer; font-size: 13px; color: var(--text-main); display: inline-flex; align-items: center; justify-content: center; font-family: inherit; }
+      .pg-btn:hover { background: var(--bg-alt); }
+      .pg-btn.active { background: var(--accent); color: #fff; }
+      .pg-arrow { color: var(--text-muted); }
+
+      /* ===== Detail screen ===== */
+      .detail-top { position: sticky; top: 0; background: var(--bg-body); z-index: 10; padding-bottom: 12px; }
+      .dt-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+      .back-arrow { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: #fff; cursor: pointer; color: var(--text-main); font-size: 15px; flex-shrink: 0; }
+      .back-arrow:hover { background: var(--bg-alt); }
+      .dt-name { font-size: 22px; font-weight: 800; color: var(--text-head); line-height: 1.1; }
+      .dt-created { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+      .dt-stats { margin-left: auto; display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+      .dt-stat { display: flex; align-items: center; gap: 8px; }
+      .dt-stat i { color: var(--accent); font-size: 16px; }
+      .dt-stat .l { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+      .dt-stat .v { font-size: 13px; color: var(--accent); font-weight: 700; }
+
+      /* Transaction type banner */
+      .type-banner { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 8px; margin-bottom: 14px; font-size: 13px; font-weight: 600; }
+      .type-banner.closed { background: var(--green-soft); color: var(--green-text); border: 1px solid #9ae6b4; }
+      .type-banner.suspended { background: var(--orange-soft); color: var(--orange-text); border: 1px solid #fcd34d; }
+      .type-banner i { font-size: 15px; }
+      .type-banner .banner-sub { font-weight: 400; font-size: 12px; opacity: 0.8; margin-left: 4px; }
+
+      .pipeline { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 14px; }
+      .pipe-step { padding: 6px 13px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--grey-pill); color: #8a8178; cursor: pointer; white-space: nowrap; }
+      .pipe-step.past { background: var(--grey-pill-dark); color: #6b6256; }
+      .pipe-step.active { background: var(--accent); color: #fff; }
+      .pipe-step.done { background: var(--green); color: #fff; }
+      .pipe-sep { color: var(--text-dim); font-size: 11px; }
+
+      /* ===== Detail layout ===== */
+      .detail-layout { display: grid; grid-template-columns: 1fr 300px; gap: 18px; margin-top: 16px; align-items: start; }
+      @media (max-width: 1100px) { .detail-layout { grid-template-columns: 1fr; } }
+
+      .sec { padding: 18px 0; border-bottom: 1px solid var(--border-soft); }
+      .sec:first-child { padding-top: 4px; }
+      .sec:last-child { border-bottom: 0; }
+      .sec-title { font-size: 15px; font-weight: 700; color: var(--text-head); }
+      .sec-sub { font-size: 12px; color: var(--accent); font-style: italic; margin: 2px 0 14px; }
+      .kv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 18px; }
+      @media (max-width: 760px) { .kv-grid { grid-template-columns: 1fr 1fr; } }
+      .kv-grid.two { grid-template-columns: repeat(2, 1fr); }
+      .kv-grid.three { grid-template-columns: repeat(3, 1fr); }
+      .kv-l { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 3px; }
+      .kv-v { font-size: 13px; color: var(--text-main); }
+      .kv-v.link { color: var(--accent); }
+      .kv-v.price { font-size: 16px; font-weight: 800; color: var(--text-head); }
+      .kv-v.reason-badge { display: inline-flex; }
+
+      /* Price visibility row */
+      .price-visibility { display: flex; align-items: center; justify-content: space-between; background: var(--accent-soft); border: 1px solid #f0c9b0; border-radius: 8px; padding: 12px 16px; margin-top: 14px; }
+      .pv-left .pv-title { font-size: 13px; font-weight: 700; color: var(--accent-dark); }
+      .pv-left .pv-sub { font-size: 11px; color: var(--accent); margin-top: 2px; }
+      .pv-right { display: flex; align-items: center; gap: 8px; }
+
+      /* Removal reason box */
+      .reason-box { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 14px 16px; margin-top: 14px; }
+      .reason-box .rb-title { font-size: 11px; font-weight: 700; color: #92400e; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+      .reason-box .rb-reason { font-size: 15px; font-weight: 800; color: #78350f; }
+      .reason-box .rb-sub { font-size: 12px; color: #92400e; margin-top: 3px; }
+
+      /* Tabs */
+      .btabs { display: flex; gap: 8px; margin: 6px 0 16px; flex-wrap: wrap; }
+      .btab { padding: 7px 16px; border-radius: 20px; font-size: 12.5px; font-weight: 600; background: var(--grey-pill); color: #7a7064; cursor: pointer; border: 0; font-family: inherit; }
+      .btab.active { background: var(--accent); color: #fff; }
+
+      /* Empty state */
+      .empty-state { min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; }
+      .empty-state .et { font-size: 16px; font-weight: 700; color: var(--text-head); }
+      .empty-state .es { font-size: 13px; color: var(--text-muted); }
+
+      /* Right panel */
+      .rp-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+      .rp-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+      .rp-title { font-size: 15px; font-weight: 700; color: var(--text-head); display: flex; align-items: center; gap: 7px; }
+      .rp-add-btn { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; border: 0; cursor: pointer; font-size: 12px; }
+      .activity { position: relative; padding-left: 18px; margin-bottom: 14px; }
+      .activity::before { content: ""; position: absolute; left: 0; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--pink); }
+      .activity.green::before { background: var(--green); }
+      .activity.blue::before { background: var(--blue); }
+      .activity .a-title { font-weight: 700; font-size: 13px; }
+      .activity .a-line { font-size: 12.5px; color: var(--text-main); }
+      .activity .a-time { font-size: 11.5px; color: var(--text-muted); margin: 2px 0; }
+      .rp-sub { font-size: 12px; color: var(--accent); font-style: italic; margin-bottom: 10px; }
+      .comment-input { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 13px; font-family: inherit; resize: vertical; min-height: 60px; outline: none; }
+      .comment-input:focus { border-color: var(--accent); }
+      .press-enter { text-align: right; font-size: 11px; color: var(--text-dim); margin: 4px 0 12px; }
+      .comment { border-top: 1px solid var(--border-soft); padding-top: 12px; margin-top: 4px; }
+      .comment .c-body { font-size: 12.5px; color: var(--text-main); }
+      .comment .c-attr { font-size: 11.5px; margin-top: 5px; }
+      .comment .c-attr .who { color: var(--accent); font-weight: 600; }
+      .comment .c-attr .when { color: var(--text-muted); }
+      .full-btn { width: 100%; margin-top: 12px; }
+
+      /* Public profile preview */
+      .profile-preview { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 10px; padding: 14px; margin-top: 12px; }
+      .pp-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+      .pp-prop { background: rgba(255,255,255,0.08); border-radius: 7px; padding: 10px; }
+      .pp-prop-name { font-size: 12px; font-weight: 700; color: #fff; }
+      .pp-prop-addr { font-size: 11px; color: rgba(255,255,255,0.6); margin: 2px 0; }
+      .pp-prop-row { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+      .pp-prop-date { font-size: 10px; color: rgba(255,255,255,0.5); }
+      .pp-prop-price { font-size: 13px; font-weight: 800; color: #f6ad55; }
+      .pp-prop-price.hidden { font-size: 11px; font-weight: 400; color: rgba(255,255,255,0.4); font-style: italic; }
+      .pp-badge { display: inline-block; background: rgba(196,113,74,0.3); color: #f6ad55; border-radius: 4px; padding: 2px 7px; font-size: 10px; font-weight: 700; margin-top: 4px; }
+
+      /* ===== Edit/Create form ===== */
+      .edit-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+      .form-sec { padding: 20px 0; border-bottom: 1px solid var(--border-soft); }
+      .form-sec:last-of-type { border-bottom: 0; }
+      .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+      @media (max-width: 900px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+      .fld { display: flex; flex-direction: column; gap: 5px; }
+      .fld.full { grid-column: 1 / -1; }
+      .fld.half { grid-column: span 2; }
+      .fld label { font-size: 11px; font-weight: 700; color: #6b6256; }
+      .fld label .req { color: var(--accent); }
+      .fld input, .fld select, .fld textarea { border: 1px solid #ddd6c9; border-radius: 6px; padding: 8px 12px; font-size: 13px; font-family: inherit; background: #fff; outline: none; width: 100%; }
+      .fld select { appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px; }
+      .fld input:focus, .fld select:focus, .fld textarea:focus { border-color: var(--accent); }
+      .fld textarea { min-height: 70px; resize: vertical; }
+      .fld-combo { display: flex; gap: 6px; }
+      .fld-combo select { flex: 1; min-width: 0; }
+      .mini-add { width: 38px; flex-shrink: 0; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); border-radius: 6px; cursor: pointer; }
+
+      /* Reason selector cards */
+      .reason-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; }
+      .reason-card { border: 2px solid var(--border); border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.12s; background: #fff; }
+      .reason-card:hover { border-color: var(--accent); background: var(--accent-tint); }
+      .reason-card.selected { border-color: var(--accent); background: var(--accent-soft); }
+      .reason-card.selected .rc-icon { color: var(--accent); }
+      .reason-card.selected .rc-title { color: var(--accent-dark); }
+      .rc-icon { font-size: 18px; color: var(--text-dim); margin-bottom: 6px; }
+      .rc-title { font-size: 12px; font-weight: 700; color: var(--text-head); }
+      .rc-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+      .rc-price { margin-top: 8px; display: none; }
+      .reason-card.selected .rc-price { display: block; }
+      .rc-price input { width: 100%; border: 1px solid #ddd6c9; border-radius: 6px; padding: 7px 10px; font-size: 13px; font-family: inherit; outline: none; }
+      .rc-price input:focus { border-color: var(--accent); }
+      .rc-price label { font-size: 10px; font-weight: 700; color: var(--accent); display: block; margin-bottom: 4px; }
+
+      /* Price visibility toggle form */
+      .price-vis-form { background: var(--accent-soft); border: 1px solid #f0c9b0; border-radius: 8px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+      .pvf-left .pvf-title { font-size: 13px; font-weight: 700; color: var(--accent-dark); }
+      .pvf-left .pvf-sub { font-size: 11px; color: var(--accent); margin-top: 2px; }
+
+      /* Info callout */
+      .info-callout { background: var(--blue-soft); border: 1px solid #90cdf4; border-radius: 8px; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; }
+      .info-callout i { color: var(--blue); margin-top: 1px; flex-shrink: 0; }
+      .info-callout .ic-text { font-size: 12px; color: #1a365d; line-height: 1.5; }
+      .info-callout .ic-text strong { font-weight: 700; }
+
+      /* Suspend mode indicator */
+      .suspend-mode { background: var(--orange-soft); border: 1px solid #fcd34d; border-radius: 8px; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; margin-bottom: 16px; }
+      .suspend-mode i { color: #b45309; margin-top: 1px; flex-shrink: 0; }
+      .suspend-mode .sm-text { font-size: 12px; color: #78350f; line-height: 1.5; }
+      .suspend-mode .sm-text strong { font-weight: 700; }
+
+      /* ===== More menu ===== */
+      .more-menu { position: relative; }
+      .menu-pop { position: absolute; right: 0; top: calc(100% + 6px); background: #fff; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 10px 28px rgba(60,41,28,0.16); padding: 6px; min-width: 160px; z-index: 50; display: none; }
+      .menu-pop.open { display: block; }
+      .menu-pop button { display: block; width: 100%; text-align: left; padding: 8px 12px; border: 0; background: 0; font-size: 13px; cursor: pointer; border-radius: 6px; font-family: inherit; color: var(--text-main); }
+      .menu-pop button:hover { background: var(--bg-alt); }
+      .menu-pop button.danger { color: var(--red); }
+      .menu-pop hr { border: 0; border-top: 1px solid var(--border-soft); margin: 4px 0; }
+
+      .hidden { display: none !important; }
+
+      /* ===== Toast ===== */
+      .toast-wrap { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+      .toast { background: var(--accent); color: #fff; padding: 11px 16px; border-radius: 8px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+      .toast.success { background: var(--green); }
+      .toast.info { background: var(--blue); }
+    </style>
+  </head>
+  <body>
+    <!-- ===== MAIN CONTENT ONLY ===== -->
+    <main class="main">
+      <div class="content">
+
+        <!-- ========== SCREEN 1: LIST ========== -->
+        <div id="screenList">
+          <div class="list-head">
+            <div>
+              <div class="page-title">Transactions</div>
+              <div class="page-subtitle">Closed deals &amp; suspended listings — source of truth for pricing and agent profile</div>
+            </div>
+            <div class="head-right">
+              <div class="rows-sel" onclick="cycleRows()"><span id="rowsLabel">10</span> <i class="fas fa-chevron-down" style="font-size:10px;color:var(--text-dim)"></i></div>
+              <div class="more-menu">
+                <button class="btn btn-pill" onclick="toggleMenu('addMenu')"><i class="fas fa-plus"></i> Log Transaction <i class="fas fa-chevron-down" style="font-size:10px"></i></button>
+                <div class="menu-pop" id="addMenu">
+                  <button onclick="showEdit('closed')"><i class="fas fa-handshake" style="width:16px;color:var(--green-text)"></i> Log Closed Deal</button>
+                  <button onclick="showEdit('suspended')"><i class="fas fa-circle-pause" style="width:16px;color:var(--orange-text)"></i> Suspend Listing</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stats strip -->
+          <div class="stats-strip">
+            <div class="stat-card accent">
+              <div class="stat-label">Total Transactions</div>
+              <div class="stat-value">47</div>
+              <div class="stat-sub">This year</div>
+            </div>
+            <div class="stat-card green">
+              <div class="stat-label">Closed Deals</div>
+              <div class="stat-value">31</div>
+              <div class="stat-sub">¥84.6M total volume</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Suspended Listings</div>
+              <div class="stat-value">16</div>
+              <div class="stat-sub">8 by seller withdrawal</div>
+            </div>
+            <div class="stat-card blue">
+              <div class="stat-label">Public on Profile</div>
+              <div class="stat-value">22</div>
+              <div class="stat-sub">Visible to clients</div>
+            </div>
+          </div>
+
+          <!-- Filter bar -->
+          <div class="filter-bar">
+            <div class="pill-toggle">
+              <button class="active" id="pillAll" onclick="setTypeFilter('all')">All</button>
+              <button id="pillClosed" onclick="setTypeFilter('closed')">Closed Deals</button>
+              <button id="pillSusp" onclick="setTypeFilter('suspended')">Suspended</button>
+            </div>
+            <div class="filter-field has-icon"><i class="fas fa-search fi-left"></i><input placeholder="Search property…" /></div>
+            <div class="filter-field"><select><option value="">Reason</option><option>Sold</option><option>Sold by others</option><option>Seller withdrew</option><option>Expired</option><option>Withdrawn by agent</option><option>Duplicate</option><option>Legal hold</option></select><i class="fas fa-chevron-down fi-right"></i></div>
+            <div class="filter-field"><select><option value="">Visibility</option><option>Public</option><option>Private</option></select><i class="fas fa-chevron-down fi-right"></i></div>
+            <div class="filter-field"><select><option value="">Agent</option><option>Chris Sales</option><option>Maria Sales</option><option>Tony Sales</option></select><i class="fas fa-chevron-down fi-right"></i></div>
+            <div class="filter-field has-icon"><i class="fas fa-calendar fi-left"></i><input placeholder="Date range" /></div>
+          </div>
+
+          <div class="card">
+            <table class="data">
+              <thead><tr>
+                <th style="width:40px"></th>
+                <th>Property <span class="sort">↕</span></th>
+                <th>Type <span class="sort">↕</span></th>
+                <th>Client <span class="sort">↕</span></th>
+                <th>Transaction Date <span class="sort">↕</span></th>
+                <th>Transaction Price <span class="sort">↕</span></th>
+                <th>Reason <span class="sort">↕</span></th>
+                <th>Visibility <span class="sort">↕</span></th>
+                <th>Agent <span class="sort">↕</span></th>
+                <th>Actions</th>
+              </tr></thead>
+              <tbody id="listBody"></tbody>
+            </table>
+            <div class="pagination">
+              <div class="pg-left">
+                <div class="rows-sel" onclick="cycleRows()"><span id="rowsLabel2">10</span> <i class="fas fa-chevron-down" style="font-size:10px;color:var(--text-dim)"></i></div>
+                <span id="entriesLabel">Showing 1 to 10 of 47 entries</span>
+              </div>
+              <div class="pg-right" id="pgRight"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== SCREEN 2A: DETAIL — CLOSED DEAL ========== -->
+        <div id="screenDetailClosed" class="hidden">
+          <div class="detail-top">
+            <div class="dt-bar">
+              <button class="back-arrow" onclick="showList()"><i class="fas fa-arrow-left"></i></button>
+              <div>
+                <div class="dt-name">Minami Hills — Unit 4B</div>
+                <div class="dt-created">Transaction logged: 22 May, 2025 &nbsp;·&nbsp; Ref: TXN-100012</div>
+              </div>
+              <div class="dt-stats">
+                <div class="dt-stat"><i class="fas fa-handshake"></i><div><div class="l">Type</div><div class="v">Closed Deal</div></div></div>
+                <div class="dt-stat"><i class="fas fa-yen-sign"></i><div><div class="l">Price</div><div class="v">¥3,800,000</div></div></div>
+                <div class="dt-stat"><i class="fas fa-eye"></i><div><div class="l">Visibility</div><div class="v">Public</div></div></div>
+                <button class="btn btn-primary btn-pill" onclick="showEdit('closed')">Edit</button>
+                <div class="more-menu">
+                  <button class="nav-icon" onclick="toggleMenu('morePopClosed')"><i class="fas fa-ellipsis-vertical"></i></button>
+                  <div class="menu-pop" id="morePopClosed">
+                    <button onclick="toast('Duplicating (demo)')">Duplicate</button>
+                    <button onclick="toast('Exporting (demo)')">Export PDF</button>
+                    <hr>
+                    <button class="danger" onclick="if(confirm('Delete?'))toast('Deleted (demo)')">Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="pipeline" id="pipelineClosed"></div>
+          </div>
+
+          <div class="type-banner closed">
+            <i class="fas fa-circle-check"></i> Closed Deal — Agent Sale
+            <span class="banner-sub">Originally from Lead #100029 · Santi Argo</span>
+          </div>
+
+          <div class="detail-layout">
+            <div class="card" style="padding:0 22px">
+              <!-- Transaction details -->
+              <div class="sec">
+                <div class="sec-title">Transaction Details</div>
+                <div class="sec-sub">Core information about this closed deal</div>
+                <div class="kv-grid">
+                  <div><div class="kv-l">Property</div><div class="kv-v link">Minami Hills — Unit 4B</div></div>
+                  <div><div class="kv-l">Client (Buyer)</div><div class="kv-v link">Santi Argo</div></div>
+                  <div><div class="kv-l">Agent</div><div class="kv-v">Chris Sales</div></div>
+                  <div><div class="kv-l">Transaction Date</div><div class="kv-v">22 May 2025</div></div>
+                  <div><div class="kv-l">Transaction Type</div><div class="kv-v">To Buy</div></div>
+                  <div><div class="kv-l">Listing Price</div><div class="kv-v">¥4,200,000</div></div>
+                  <div><div class="kv-l">Transaction Price</div><div class="kv-v price">¥3,800,000</div></div>
+                  <div><div class="kv-l">Discount</div><div class="kv-v">¥400,000 (9.5%)</div></div>
+                  <div><div class="kv-l">Ref</div><div class="kv-v">TXN-100012</div></div>
+                  <div><div class="kv-l">Lead Ref</div><div class="kv-v link">#100029</div></div>
+                  <div><div class="kv-l">Created</div><div class="kv-v">22 May 2025, 19:31</div></div>
+                  <div><div class="kv-l">Modified</div><div class="kv-v">23 May 2025, 10:14</div></div>
+                </div>
+                <div class="price-visibility">
+                  <div class="pv-left">
+                    <div class="pv-title"><i class="fas fa-eye" style="margin-right:6px"></i>Transaction price is <strong>Public</strong></div>
+                    <div class="pv-sub">Visible on your Agent Profile and Market Analysis reports</div>
+                  </div>
+                  <div class="pv-right">
+                    <label class="toggle"><input type="checkbox" checked onchange="togglePriceVis(this)"><span class="toggle-slider"></span></label>
+                    <span class="toggle-label" id="visLabel">Public</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Property info -->
+              <div class="sec">
+                <div class="sec-title">Property Details</div>
+                <div class="sec-sub">Property at time of transaction</div>
+                <div class="kv-grid">
+                  <div><div class="kv-l">Property Name</div><div class="kv-v link">Minami Hills — Unit 4B</div></div>
+                  <div><div class="kv-l">Address</div><div class="kv-v">2-14 Minami Azabu, Minato, Tokyo</div></div>
+                  <div><div class="kv-l">Type</div><div class="kv-v">Apartment</div></div>
+                  <div><div class="kv-l">Bedrooms</div><div class="kv-v">3</div></div>
+                  <div><div class="kv-l">Bathrooms</div><div class="kv-v">2</div></div>
+                  <div><div class="kv-l">Area</div><div class="kv-v">88 m²</div></div>
+                </div>
+              </div>
+
+              <!-- Client info (only on Closed Deal) -->
+              <div class="sec">
+                <div class="sec-title">Client Details</div>
+                <div class="sec-sub">Buyer information linked from lead</div>
+                <div class="kv-grid">
+                  <div><div class="kv-l">Name</div><div class="kv-v link">Santi Argo</div></div>
+                  <div><div class="kv-l">Phone</div><div class="kv-v">+34-655-5231</div></div>
+                  <div><div class="kv-l">Email</div><div class="kv-v link">santi-argo@gmail.com</div></div>
+                  <div><div class="kv-l">Nationality</div><div class="kv-v">Spanish</div></div>
+                </div>
+              </div>
+
+              <!-- Source -->
+              <div class="sec">
+                <div class="sec-title">Source &amp; Origin</div>
+                <div class="sec-sub">How this deal was generated</div>
+                <div class="kv-grid two">
+                  <div><div class="kv-l">Lead Source</div><div class="kv-v">Direct — Walk-In</div></div>
+                  <div><div class="kv-l">Campaign</div><div class="kv-v">Spring 2025</div></div>
+                </div>
+              </div>
+
+              <!-- Documents -->
+              <div class="sec">
+                <div class="sec-title">Documents</div>
+                <div class="sec-sub">Contracts, KYC, and supporting files</div>
+                <div style="display:flex;gap:24px">
+                  <div style="display:flex;align-items:center;gap:8px;font-size:13px">Transaction Files <span style="width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-muted)">2</span></div>
+                  <div style="display:flex;align-items:center;gap:8px;font-size:13px">KYC Documents <span style="width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-muted)">1</span></div>
+                  <div style="display:flex;align-items:center;gap:8px;font-size:13px">VIP Documents <span style="width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-muted)">0</span></div>
+                </div>
+              </div>
+
+              <!-- Tabs section -->
+              <div class="sec" style="border-bottom:0">
+                <div class="btabs">
+                  <button class="btab active" onclick="detailTab('offer',this)">Offer History</button>
+                  <button class="btab" onclick="detailTab('timeline',this)">Deal Timeline</button>
+                  <button class="btab" onclick="detailTab('related',this)">Related Lead</button>
+                </div>
+                <div id="detailTabBodyClosed"></div>
+              </div>
+            </div>
+
+            <!-- Right panel -->
+            <div>
+              <!-- Profile preview -->
+              <div class="rp-card">
+                <div class="rp-head">
+                  <div class="rp-title"><i class="fas fa-user-circle" style="color:var(--accent)"></i> Agent Profile Preview</div>
+                </div>
+                <div class="rp-sub">How this appears on your public profile</div>
+                <div class="profile-preview">
+                  <div class="pp-label">Sold Properties · Chris Sales</div>
+                  <div class="pp-prop">
+                    <div class="pp-badge">SOLD</div>
+                    <div class="pp-prop-name">Minami Hills — Unit 4B</div>
+                    <div class="pp-prop-addr">2-14 Minami Azabu, Minato, Tokyo</div>
+                    <div class="pp-prop-row">
+                      <div class="pp-prop-date">22 May 2025</div>
+                      <div class="pp-prop-price" id="profilePrice">¥3,800,000</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="info-callout" style="margin-top:10px">
+                  <i class="fas fa-circle-info"></i>
+                  <div class="ic-text">This card feeds <strong>C47 Sold Properties</strong> on your client portal and <strong>A32 Market Analysis</strong> in the admin dashboard.</div>
+                </div>
+              </div>
+
+              <!-- Activities -->
+              <div class="rp-card">
+                <div class="rp-head">
+                  <div class="rp-title">Activities</div>
+                  <div>
+                    <button class="rp-add-btn" onclick="toast('Add activity (demo)')"><i class="fas fa-plus"></i></button>
+                  </div>
+                </div>
+                <div class="activity green">
+                  <div class="a-title">Deal Closed</div>
+                  <div class="a-line">Transaction logged at ¥3,800,000</div>
+                  <div class="a-time">22 May 2025, 19:31</div>
+                </div>
+                <div class="activity blue">
+                  <div class="a-title">Agreement Signed</div>
+                  <div class="a-line">Sales agreement executed</div>
+                  <div class="a-time">20 May 2025, 14:00</div>
+                </div>
+                <div class="activity">
+                  <div class="a-title">Offer Accepted</div>
+                  <div class="a-line">Counteroffer at ¥3,800,000 accepted</div>
+                  <div class="a-time">18 May 2025, 11:22</div>
+                </div>
+                <button class="btn btn-pill full-btn" onclick="toast('View all (demo)')">View All</button>
+              </div>
+
+              <!-- Comments -->
+              <div class="rp-card">
+                <div class="rp-title"><i class="fas fa-quote-left" style="color:var(--accent)"></i> Comments</div>
+                <div class="rp-sub">Deal notes and internal remarks</div>
+                <textarea class="comment-input" id="commentInputClosed" placeholder="Add a note…" onkeydown="commentKey(event,'commentListClosed')"></textarea>
+                <div class="press-enter">Press Enter to submit</div>
+                <div id="commentListClosed">
+                  <div class="comment" style="border-top:0;padding-top:0">
+                    <div class="c-body">Buyer confirmed wire transfer. Title deed handover scheduled 1 Jun.</div>
+                    <div class="c-attr"><span class="who">Chris Sales</span> &nbsp; <span class="when">23 May 2025, 10:14</span></div>
+                  </div>
+                </div>
+                <button class="btn btn-pill full-btn" onclick="toast('View all (demo)')">View All</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== SCREEN 2B: DETAIL — SUSPENDED LISTING ========== -->
+        <div id="screenDetailSuspended" class="hidden">
+          <div class="detail-top">
+            <div class="dt-bar">
+              <button class="back-arrow" onclick="showList()"><i class="fas fa-arrow-left"></i></button>
+              <div>
+                <div class="dt-name">Sakura Villa — Block C</div>
+                <div class="dt-created">Suspended: 15 Apr, 2025 &nbsp;·&nbsp; Ref: TXN-100008</div>
+              </div>
+              <div class="dt-stats">
+                <div class="dt-stat"><i class="fas fa-circle-pause"></i><div><div class="l">Type</div><div class="v">Suspended</div></div></div>
+                <div class="dt-stat"><i class="fas fa-ban"></i><div><div class="l">Reason</div><div class="v">Seller Withdrew</div></div></div>
+                <div class="dt-stat"><i class="fas fa-eye-slash"></i><div><div class="l">Visibility</div><div class="v">Private</div></div></div>
+                <button class="btn btn-primary btn-pill" onclick="showEdit('suspended')">Edit</button>
+                <div class="more-menu">
+                  <button class="nav-icon" onclick="toggleMenu('morePopSusp')"><i class="fas fa-ellipsis-vertical"></i></button>
+                  <div class="menu-pop" id="morePopSusp">
+                    <button onclick="toast('Re-listing (demo)')"><i class="fas fa-rotate-left" style="width:16px"></i> Re-list Property</button>
+                    <button onclick="toast('Exporting (demo)')">Export PDF</button>
+                    <hr>
+                    <button class="danger" onclick="if(confirm('Delete?'))toast('Deleted (demo)')">Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="pipeline" id="pipelineSuspended"></div>
+          </div>
+
+          <div class="type-banner suspended">
+            <i class="fas fa-circle-pause"></i> Suspended Listing
+            <span class="banner-sub">From Property Management · Property ID: PROP-2041</span>
+          </div>
+
+          <div class="detail-layout">
+            <div class="card" style="padding:0 22px">
+              <!-- Removal reason (hero section for suspended) -->
+              <div class="sec">
+                <div class="sec-title">Removal Details</div>
+                <div class="sec-sub">Why this listing was removed from the market</div>
+                <div class="reason-box">
+                  <div class="rb-title"><i class="fas fa-triangle-exclamation"></i> Reason for Removal</div>
+                  <div class="rb-reason">Seller Did Not Want to Sell</div>
+                  <div class="rb-sub">Seller changed their mind. No sale price recorded.</div>
+                </div>
+                <div class="kv-grid three" style="margin-top:16px">
+                  <div><div class="kv-l">Suspension Date</div><div class="kv-v">15 Apr 2025</div></div>
+                  <div><div class="kv-l">Days on Market</div><div class="kv-v">47 days</div></div>
+                  <div><div class="kv-l">Listing Agent</div><div class="kv-v">Maria Sales</div></div>
+                  <div><div class="kv-l">Transaction Price</div><div class="kv-v" style="color:var(--text-dim);font-style:italic">N/A — no sale</div></div>
+                  <div><div class="kv-l">Ref</div><div class="kv-v">TXN-100008</div></div>
+                  <div><div class="kv-l">Property Ref</div><div class="kv-v link">PROP-2041</div></div>
+                </div>
+                <div class="price-visibility" style="margin-top:14px">
+                  <div class="pv-left">
+                    <div class="pv-title"><i class="fas fa-eye-slash" style="margin-right:6px"></i>Transaction is <strong>Private</strong></div>
+                    <div class="pv-sub">Not visible on Agent Profile (no price to show)</div>
+                  </div>
+                  <div class="pv-right">
+                    <label class="toggle"><input type="checkbox" onchange="togglePriceVisSusp(this)"><span class="toggle-slider"></span></label>
+                    <span class="toggle-label" id="visLabelSusp">Private</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Property info -->
+              <div class="sec">
+                <div class="sec-title">Property Details</div>
+                <div class="sec-sub">The listing that was suspended</div>
+                <div class="kv-grid">
+                  <div><div class="kv-l">Property Name</div><div class="kv-v link">Sakura Villa — Block C</div></div>
+                  <div><div class="kv-l">Address</div><div class="kv-v">8-3 Sakuragaoka, Shibuya, Tokyo</div></div>
+                  <div><div class="kv-l">Type</div><div class="kv-v">Villa</div></div>
+                  <div><div class="kv-l">Asking Price</div><div class="kv-v">¥6,500,000</div></div>
+                  <div><div class="kv-l">Bedrooms</div><div class="kv-v">4</div></div>
+                  <div><div class="kv-l">Area</div><div class="kv-v">210 m²</div></div>
+                </div>
+              </div>
+
+              <!-- Suspension notes -->
+              <div class="sec" style="border-bottom:0">
+                <div class="sec-title">Notes</div>
+                <div class="sec-sub">Additional context on this suspension</div>
+                <p style="font-size:13px;color:var(--text-main);line-height:1.6">Seller received a family inheritance situation and decided to retain the property. No buyer was involved. Listing to remain off-market indefinitely. May re-list Q4 2025.</p>
+              </div>
+            </div>
+
+            <!-- Right panel (lite — no client/activities) -->
+            <div>
+              <div class="rp-card">
+                <div class="rp-head">
+                  <div class="rp-title"><i class="fas fa-user-circle" style="color:var(--accent)"></i> Agent Profile</div>
+                </div>
+                <div class="rp-sub">Impact on public profile</div>
+                <div class="info-callout">
+                  <i class="fas fa-eye-slash"></i>
+                  <div class="ic-text">This suspension is set to <strong>Private</strong>. It will <strong>not appear</strong> on your Agent Profile (C47) since there is no sale price to display. Toggle to Public only if you want the suspension event visible.</div>
+                </div>
+              </div>
+
+              <div class="rp-card">
+                <div class="rp-title"><i class="fas fa-quote-left" style="color:var(--accent)"></i> Comments</div>
+                <div class="rp-sub">Internal notes on this suspension</div>
+                <textarea class="comment-input" id="commentInputSusp" placeholder="Add a note…" onkeydown="commentKey(event,'commentListSusp')"></textarea>
+                <div class="press-enter">Press Enter to submit</div>
+                <div id="commentListSusp">
+                  <div class="comment" style="border-top:0;padding-top:0">
+                    <div class="c-body">Spoke to seller. Definitive withdrawal. Archiving listing in property system.</div>
+                    <div class="c-attr"><span class="who">Maria Sales</span> &nbsp; <span class="when">15 Apr 2025, 16:50</span></div>
+                  </div>
+                </div>
+                <button class="btn btn-pill full-btn" onclick="toast('View all (demo)')">View All</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== SCREEN 3A: EDIT — CLOSED DEAL ========== -->
+        <div id="screenEditClosed" class="hidden">
+          <div class="edit-top">
+            <div>
+              <div class="dt-name">Log Closed Deal</div>
+              <div class="dt-created">Create from Lead → Closed Won</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-pill" onclick="showList()">Cancel</button>
+              <button class="btn btn-primary btn-pill" onclick="saveTransaction('closed')"><i class="fas fa-check"></i> Save Transaction</button>
+            </div>
+          </div>
+
+          <div class="card" style="padding:0 24px">
+            <div class="form-sec">
+              <div class="sec-title">Transaction Details</div>
+              <div class="sec-sub">Core deal information</div>
+              <div class="form-grid">
+                <div class="fld"><label>Property <span class="req">*</span></label><div class="fld-combo"><select><option>Minami Hills — Unit 4B (PROP-2041)</option><option>Sakura Villa Block C</option></select><button class="mini-add"><i class="fas fa-plus"></i></button></div></div>
+                <div class="fld"><label>Lead (Closed Won) <span class="req">*</span></label><div class="fld-combo"><select><option>Santi Argo — #100029</option><option>Neil Down — #100031</option></select><button class="mini-add"><i class="fas fa-plus"></i></button></div></div>
+                <div class="fld"><label>Transaction Date <span class="req">*</span></label><input type="date" value="2025-05-22" /></div>
+                <div class="fld"><label>Agent <span class="req">*</span></label><select><option>Chris Sales</option><option>Maria Sales</option><option>Tony Sales</option></select></div>
+                <div class="fld"><label>Transaction Type</label><select><option>To Buy</option><option>To Rent</option></select></div>
+                <div class="fld"><label>Listing Price</label><input placeholder="¥0" /></div>
+                <div class="fld"><label>Transaction Price <span class="req">*</span></label><input placeholder="¥0" value="¥3,800,000" /></div>
+                <div class="fld"><label>Commission (%)</label><input placeholder="e.g. 3.5" /></div>
+              </div>
+            </div>
+
+            <!-- Price visibility -->
+            <div class="form-sec">
+              <div class="sec-title">Price Visibility</div>
+              <div class="sec-sub">Control how the transaction price appears publicly</div>
+              <div class="price-vis-form">
+                <div class="pvf-left">
+                  <div class="pvf-title"><i class="fas fa-eye" style="margin-right:6px"></i>Make transaction price public</div>
+                  <div class="pvf-sub">Visible on Agent Profile (C47) and feeds Market Analysis (A32)</div>
+                </div>
+                <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="info-callout">
+                <i class="fas fa-circle-info"></i>
+                <div class="ic-text">Public prices appear on your <strong>Agent Profile → Sold Properties</strong> and are used in <strong>Admin Market Analysis</strong> for price trend reports. Private prices are stored internally only.</div>
+              </div>
+            </div>
+
+            <!-- Client info -->
+            <div class="form-sec">
+              <div class="sec-title">Client Details</div>
+              <div class="sec-sub">Auto-filled from linked lead</div>
+              <div class="form-grid">
+                <div class="fld"><label>Client Name</label><input value="Santi Argo" /></div>
+                <div class="fld"><label>Phone</label><input value="+34-655-5231" /></div>
+                <div class="fld"><label>Email</label><input value="santi-argo@gmail.com" /></div>
+                <div class="fld"><label>Nationality</label><input placeholder="Enter" /></div>
+              </div>
+            </div>
+
+            <!-- Documents -->
+            <div class="form-sec">
+              <div class="sec-title">Documents</div>
+              <div class="sec-sub">Upload contracts and KYC files</div>
+              <div class="form-grid">
+                <div class="fld"><label>Transaction Files</label><input placeholder="0 files" /></div>
+                <div class="fld"><label>KYC Documents</label><input placeholder="0 files" /></div>
+                <div class="fld"><label>VIP Documents</label><input placeholder="0 files" /></div>
+              </div>
+            </div>
+
+            <div class="form-sec" style="border-bottom:0">
+              <div class="sec-title">Notes</div>
+              <div class="sec-sub">Internal notes on this transaction</div>
+              <div class="fld"><textarea placeholder="Enter any additional notes…"></textarea></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== SCREEN 3B: EDIT — SUSPENDED LISTING ========== -->
+        <div id="screenEditSuspended" class="hidden">
+          <div class="edit-top">
+            <div>
+              <div class="dt-name">Suspend Listing</div>
+              <div class="dt-created">Remove this property from the market</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-pill" onclick="showList()">Cancel</button>
+              <button class="btn btn-primary btn-pill" onclick="saveTransaction('suspended')"><i class="fas fa-circle-pause"></i> Confirm Suspension</button>
+            </div>
+          </div>
+
+          <div class="suspend-mode">
+            <i class="fas fa-triangle-exclamation"></i>
+            <div class="sm-text">You are suspending a listing from <strong>Property Management</strong>. This will remove it from public search. You must provide a reason. If sold, a transaction price is required.</div>
+          </div>
+
+          <div class="card" style="padding:0 24px">
+            <!-- Property select -->
+            <div class="form-sec">
+              <div class="sec-title">Property</div>
+              <div class="sec-sub">Select the listing to suspend</div>
+              <div class="form-grid">
+                <div class="fld half"><label>Property <span class="req">*</span></label><div class="fld-combo"><select><option>Sakura Villa — Block C (PROP-2041)</option><option>Riverside Tower 12F</option><option>Koenji Terrace House</option></select><button class="mini-add"><i class="fas fa-plus"></i></button></div></div>
+                <div class="fld"><label>Suspension Date <span class="req">*</span></label><input type="date" value="2025-04-15" /></div>
+                <div class="fld"><label>Listing Agent</label><select><option>Maria Sales</option><option>Chris Sales</option></select></div>
+              </div>
+            </div>
+
+            <!-- Reason — the core unique feature -->
+            <div class="form-sec">
+              <div class="sec-title">Reason for Removal <span class="req" style="font-size:13px">*</span></div>
+              <div class="sec-sub">This is required and feeds directly into listing analytics</div>
+
+              <div class="reason-cards" id="reasonCards">
+                <div class="reason-card" onclick="selectReason(this,'sold')">
+                  <div class="rc-icon"><i class="fas fa-handshake"></i></div>
+                  <div class="rc-title">Sold</div>
+                  <div class="rc-sub">Agent closed the deal</div>
+                  <div class="rc-price">
+                    <label>Transaction Price <span style="color:var(--accent)">*</span></label>
+                    <input placeholder="¥0" onclick="event.stopPropagation()" />
+                  </div>
+                </div>
+                <div class="reason-card" onclick="selectReason(this,'sold-others')">
+                  <div class="rc-icon"><i class="fas fa-people-arrows"></i></div>
+                  <div class="rc-title">Sold by Others</div>
+                  <div class="rc-sub">Another agent/agency sold it</div>
+                  <div class="rc-price">
+                    <label>Transaction Price (optional)</label>
+                    <input placeholder="¥0 (if known)" onclick="event.stopPropagation()" />
+                  </div>
+                </div>
+                <div class="reason-card" onclick="selectReason(this,'seller-withdrew')">
+                  <div class="rc-icon"><i class="fas fa-person-walking-arrow-right"></i></div>
+                  <div class="rc-title">Seller Withdrew</div>
+                  <div class="rc-sub">Seller did not want to sell</div>
+                </div>
+                <div class="reason-card" onclick="selectReason(this,'expired')">
+                  <div class="rc-icon"><i class="fas fa-clock"></i></div>
+                  <div class="rc-title">Listing Expired</div>
+                  <div class="rc-sub">Contract period ended</div>
+                </div>
+                <div class="reason-card" onclick="selectReason(this,'withdrawn-agent')">
+                  <div class="rc-icon"><i class="fas fa-user-minus"></i></div>
+                  <div class="rc-title">Withdrawn by Agent</div>
+                  <div class="rc-sub">Agency chose to delist</div>
+                </div>
+                <div class="reason-card" onclick="selectReason(this,'duplicate')">
+                  <div class="rc-icon"><i class="fas fa-copy"></i></div>
+                  <div class="rc-title">Duplicate Listing</div>
+                  <div class="rc-sub">Entry was duplicated</div>
+                </div>
+                <div class="reason-card" onclick="selectReason(this,'legal')">
+                  <div class="rc-icon"><i class="fas fa-gavel"></i></div>
+                  <div class="rc-title">Legal Hold</div>
+                  <div class="rc-sub">Legal dispute or freeze</div>
+                </div>
+                <div class="reason-card" onclick="selectReason(this,'price-change')">
+                  <div class="rc-icon"><i class="fas fa-arrow-trend-up"></i></div>
+                  <div class="rc-title">Price Renegotiation</div>
+                  <div class="rc-sub">Temp removal to reprice</div>
+                </div>
+                <div class="reason-card" onclick="selectReason(this,'other')">
+                  <div class="rc-icon"><i class="fas fa-ellipsis"></i></div>
+                  <div class="rc-title">Other</div>
+                  <div class="rc-sub">See notes below</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Price visibility -->
+            <div class="form-sec">
+              <div class="sec-title">Price Visibility</div>
+              <div class="sec-sub">Only applies if a transaction price was entered</div>
+              <div class="price-vis-form">
+                <div class="pvf-left">
+                  <div class="pvf-title"><i class="fas fa-eye" style="margin-right:6px"></i>Make transaction price public</div>
+                  <div class="pvf-sub">Show on Agent Profile and include in Market Analysis</div>
+                </div>
+                <label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+
+            <div class="form-sec" style="border-bottom:0">
+              <div class="sec-title">Notes</div>
+              <div class="sec-sub">Context for this suspension</div>
+              <div class="fld"><textarea placeholder="Add any context about why this listing was removed…" style="min-height:100px"></textarea></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /content -->
+    </main>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+      const OWNERS = { CS: "Chris Sales", MS: "Maria Sales", TS: "Tony Sales", JS: "Jenny Sales" };
+
+      const TRANSACTIONS = [
+        { ref:"TXN-100012", property:"Minami Hills — Unit 4B", type:"closed", client:"Santi Argo", date:"2025-05-22", price:"¥3,800,000", reason:"Sold", pub:true, owner:"CS" },
+        { ref:"TXN-100011", property:"Riverside Tower 12F", type:"closed", client:"Neil Down", date:"2025-05-18", price:"¥5,200,000", reason:"Sold", pub:true, owner:"MS" },
+        { ref:"TXN-100010", property:"Koenji Terrace House", type:"suspended", client:"—", date:"2025-05-10", price:"—", reason:"Expired", pub:false, owner:"TS" },
+        { ref:"TXN-100009", property:"Aoyama Garden Suite", type:"closed", client:"Art Decco", date:"2025-05-05", price:"¥8,100,000", reason:"Sold", pub:true, owner:"CS" },
+        { ref:"TXN-100008", property:"Sakura Villa — Block C", type:"suspended", client:"—", date:"2025-04-15", price:"—", reason:"Seller Withdrew", pub:false, owner:"MS" },
+        { ref:"TXN-100007", property:"Ueno Parkside 3F", type:"closed", client:"Dee End", date:"2025-04-10", price:"¥2,950,000", reason:"Sold", pub:true, owner:"JS" },
+        { ref:"TXN-100006", property:"Shinjuku Heights B2", type:"suspended", client:"—", date:"2025-04-02", price:"¥4,400,000", reason:"Sold by Others", pub:false, owner:"TS" },
+        { ref:"TXN-100005", property:"Daikanyama Loft", type:"closed", client:"Audi Yose", date:"2025-03-28", price:"¥6,700,000", reason:"Sold", pub:true, owner:"CS" },
+        { ref:"TXN-100004", property:"Harajuku Corner Unit", type:"suspended", client:"—", date:"2025-03-20", price:"—", reason:"Legal Hold", pub:false, owner:"MS" },
+        { ref:"TXN-100003", property:"Nakameguro River View", type:"closed", client:"Mark Ateer", date:"2025-03-15", price:"¥4,100,000", reason:"Sold", pub:true, owner:"JS" },
+      ];
+
+      let rowsPerPage = 10, page = 1, typeFilter = "all";
+      const TOTAL = 47;
+
+      function reasonBadge(r) {
+        const map = {
+          "Sold": "badge-sold",
+          "Sold by Others": "badge-others",
+          "Seller Withdrew": "badge-withdrew",
+          "Expired": "badge-expired",
+          "Withdrawn by Agent": "badge-withdrawn",
+          "Duplicate": "badge-dup",
+          "Legal Hold": "badge-legal",
+        };
+        return `<span class="badge ${map[r]||'badge-new'}">${r}</span>`;
+      }
+
+      function renderList() {
+        const rows = TRANSACTIONS.slice(0, rowsPerPage);
+        document.getElementById("listBody").innerHTML = rows.map(t => `
+          <tr onclick="${t.type==='closed'?'showDetailClosed()':'showDetailSuspended()'}">
+            <td onclick="event.stopPropagation();this.querySelector('.circle-check').classList.toggle('checked')"><span class="circle-check"></span></td>
+            <td><div class="name-cell"><span class="prop-avatar">${t.property.slice(0,2).toUpperCase()}</span><div><div>${t.property}</div><div style="font-size:11px;color:var(--text-dim)">${t.ref}</div></div></div></td>
+            <td><span class="badge ${t.type==='closed'?'badge-closed':'badge-suspended'}">${t.type==='closed'?'Closed Deal':'Suspended'}</span></td>
+            <td>${t.client !== '—' ? `<div class="name-cell"><span class="ini-avatar">${t.client.split(' ').map(w=>w[0]).join('').slice(0,2)}</span>${t.client}</div>` : '<span style="color:var(--text-dim)">—</span>'}</td>
+            <td>${t.date}</td>
+            <td class="${t.price==='—'?'price-cell hidden-price':'price-cell'}">${t.price==='—'?'No sale':t.price}</td>
+            <td>${reasonBadge(t.reason)}</td>
+            <td>
+              <div class="toggle-wrap">
+                <label class="toggle" onclick="event.stopPropagation()"><input type="checkbox" ${t.pub?'checked':''} onchange="toast('Visibility updated')"><span class="toggle-slider"></span></label>
+                <span class="toggle-label">${t.pub?'Public':'Private'}</span>
+              </div>
+            </td>
+            <td><div class="name-cell"><span class="owner-avatar">${t.owner}</span>${OWNERS[t.owner]}</div></td>
+            <td onclick="event.stopPropagation()"><div class="act-icons">
+              <i class="fas fa-pen" onclick="${t.type==='closed'?'showEdit(\'closed\')':'showEdit(\'suspended\')'}" title="Edit"></i>
+              <i class="fas fa-arrow-up-right-from-square" onclick="toast('View property (demo)')" title="View property"></i>
+              <i class="fas fa-trash" onclick="if(confirm('Delete transaction?'))toast('Deleted (demo)')" title="Delete"></i>
+            </div></td>
+          </tr>`).join("");
+        const start = (page-1)*rowsPerPage+1, end = Math.min(page*rowsPerPage, TOTAL);
+        document.getElementById("entriesLabel").textContent = `Showing ${start} to ${end} of ${TOTAL} entries`;
+        renderPagination();
+      }
+
+      function renderPagination() {
+        const pages = Math.ceil(TOTAL / rowsPerPage);
+        let h = `<button class="pg-btn pg-arrow">‹</button>`;
+        for (let i = 1; i <= Math.min(5, pages); i++) h += `<button class="pg-btn ${i===page?'active':''}">${i}</button>`;
+        h += `<button class="pg-btn pg-arrow">›</button>`;
+        document.getElementById("pgRight").innerHTML = h;
+      }
+
+      function cycleRows() { rowsPerPage = rowsPerPage===10?25:rowsPerPage===25?50:10; document.getElementById("rowsLabel").textContent=rowsPerPage; document.getElementById("rowsLabel2").textContent=rowsPerPage; page=1; renderList(); }
+      window.cycleRows = cycleRows;
+
+      function setTypeFilter(f) {
+        typeFilter = f;
+        document.getElementById("pillAll").classList.toggle("active", f==="all");
+        document.getElementById("pillClosed").classList.toggle("active", f==="closed");
+        document.getElementById("pillSusp").classList.toggle("active", f==="suspended");
+      }
+      window.setTypeFilter = setTypeFilter;
+
+      /* Pipelines */
+      const CLOSED_STAGES = ["Lead", "Viewing", "Proposal", "Negotiation", "Closed Won", "Transaction Logged"];
+      const SUSP_STAGES = ["Active Listing", "Suspended", "Transaction Logged"];
+
+      function renderPipelineClosed() {
+        document.getElementById("pipelineClosed").innerHTML = CLOSED_STAGES.map((s,i) => {
+          const cls = i===5?"done":i<5?"past":"";
+          return `<span class="pipe-step ${cls}">${s}</span>${i<CLOSED_STAGES.length-1?'<span class="pipe-sep">→</span>':""}`;
+        }).join("");
+      }
+      function renderPipelineSuspended() {
+        document.getElementById("pipelineSuspended").innerHTML = SUSP_STAGES.map((s,i) => {
+          const cls = i===2?"done":i<2?"past":"";
+          return `<span class="pipe-step ${cls}">${s}</span>${i<SUSP_STAGES.length-1?'<span class="pipe-sep">→</span>':""}`;
+        }).join("");
+      }
+
+      /* Detail tabs */
+      function detailTab(t, btn) {
+        document.querySelectorAll("#screenDetailClosed .btab").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const body = document.getElementById("detailTabBodyClosed");
+        if (t==="offer") {
+          body.innerHTML = `<table class="data"><thead><tr><th>Property <span class="sort">↕</span></th><th>Offer Price <span class="sort">↕</span></th><th>Date Sent <span class="sort">↕</span></th><th>Counteroffer <span class="sort">↕</span></th><th>Counteroffer Date <span class="sort">↕</span></th><th>Status</th></tr></thead>
+            <tbody><tr><td>Minami Hills — Unit 4B</td><td>¥3,600,000</td><td>16 May 2025</td><td>¥3,800,000</td><td>18 May 2025</td><td><span class="badge badge-closed">Accepted</span></td></tr></tbody></table>
+            <div class="pagination"><div class="pg-left"><span>Showing 1 to 1 of 1 entries</span></div></div>`;
+        } else if (t==="timeline") {
+          body.innerHTML = `<div style="padding:8px 0">
+            <div class="activity done" style="margin-bottom:14px"><div class="a-title">Transaction Logged</div><div class="a-line">Deal recorded at ¥3,800,000</div><div class="a-time">22 May 2025, 19:31</div></div>
+            <div class="activity green"><div class="a-title">Agreement Signed</div><div class="a-line">Sales agreement executed by both parties</div><div class="a-time">20 May 2025, 14:00</div></div>
+            <div class="activity blue"><div class="a-title">Offer Accepted</div><div class="a-line">Counteroffer ¥3,800,000 accepted by seller</div><div class="a-time">18 May 2025, 11:22</div></div>
+            <div class="activity"><div class="a-title">Viewing Completed</div><div class="a-line">Second viewing with buyer Santi Argo</div><div class="a-time">12 May 2025, 10:00</div></div>
+          </div>`;
+        } else {
+          body.innerHTML = `<div class="kv-grid" style="margin:12px 0"><div><div class="kv-l">Lead Ref</div><div class="kv-v link">#100029</div></div><div><div class="kv-l">Client</div><div class="kv-v link">Santi Argo</div></div><div><div class="kv-l">Lead Status</div><div class="kv-v">Closed Won</div></div><div><div class="kv-l">Enquiry Date</div><div class="kv-v">22 May 2025</div></div></div>`;
+        }
+      }
+      window.detailTab = detailTab;
+
+      /* Reason cards */
+      function selectReason(el, key) {
+        document.querySelectorAll(".reason-card").forEach(c => c.classList.remove("selected"));
+        el.classList.add("selected");
+      }
+      window.selectReason = selectReason;
+
+      /* Price visibility toggle */
+      function togglePriceVis(cb) {
+        const lbl = document.getElementById("visLabel");
+        const ppPrice = document.getElementById("profilePrice");
+        if (cb.checked) { lbl.textContent="Public"; ppPrice.textContent="¥3,800,000"; ppPrice.className="pp-prop-price"; }
+        else { lbl.textContent="Private"; ppPrice.textContent="Price hidden"; ppPrice.className="pp-prop-price hidden"; }
+        toast(cb.checked ? "Price is now Public — visible on Agent Profile" : "Price is now Private — hidden from profile", cb.checked?"success":"");
+      }
+      window.togglePriceVis = togglePriceVis;
+
+      function togglePriceVisSusp(cb) {
+        const lbl = document.getElementById("visLabelSusp");
+        lbl.textContent = cb.checked ? "Public" : "Private";
+        toast(cb.checked ? "Suspension visible on Agent Profile" : "Set to Private");
+      }
+      window.togglePriceVisSusp = togglePriceVisSusp;
+
+      /* Comments */
+      function commentKey(e, listId) {
+        if (e.key==="Enter" && !e.shiftKey) {
+          e.preventDefault();
+          const v = e.target.value.trim(); if (!v) return;
+          const div = document.createElement("div"); div.className="comment";
+          div.innerHTML = `<div class="c-body">${v.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</div><div class="c-attr"><span class="who">Chris Sales</span> &nbsp; <span class="when">${new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}, ${new Date().toTimeString().slice(0,5)}</span></div>`;
+          document.getElementById(listId).prepend(div); e.target.value=""; toast("Comment added");
+        }
+      }
+      window.commentKey = commentKey;
+
+      /* Menu toggle */
+      function toggleMenu(id) {
+        const el = document.getElementById(id);
+        const wasOpen = el.classList.contains("open");
+        document.querySelectorAll(".menu-pop").forEach(m => m.classList.remove("open"));
+        if (!wasOpen) { el.classList.add("open"); document.addEventListener("click", ()=>el.classList.remove("open"), {once:true}); }
+      }
+      window.toggleMenu = toggleMenu;
+
+      /* Screen navigation */
+      const screens = ["screenList","screenDetailClosed","screenDetailSuspended","screenEditClosed","screenEditSuspended"];
+      function showOnly(id) {
+        screens.forEach(s => document.getElementById(s).classList.toggle("hidden", s!==id));
+        window.scrollTo(0,0);
+      }
+      function showList() { showOnly("screenList"); }
+      function showDetailClosed() { showOnly("screenDetailClosed"); renderPipelineClosed(); detailTab("offer", document.querySelector("#screenDetailClosed .btab")); }
+      function showDetailSuspended() { showOnly("screenDetailSuspended"); renderPipelineSuspended(); }
+      function showEdit(type) { showOnly(type==="closed"?"screenEditClosed":"screenEditSuspended"); }
+      function saveTransaction(type) { toast("Transaction saved successfully","success"); setTimeout(()=>{ type==="closed"?showDetailClosed():showDetailSuspended(); },400); }
+      window.showList=showList; window.showDetailClosed=showDetailClosed; window.showDetailSuspended=showDetailSuspended; window.showEdit=showEdit; window.saveTransaction=saveTransaction;
+
+      /* Toast */
+      function toast(msg, kind) { const el=document.createElement("div"); el.className="toast "+(kind||""); el.textContent=msg; document.getElementById("toastWrap").appendChild(el); setTimeout(()=>el.remove(),2600); }
+      window.toast=toast;
+
+      /* Init */
+      renderList();
+    </script>
+  </body>
+</html>
