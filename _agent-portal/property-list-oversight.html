@@ -708,6 +708,55 @@
         color: var(--status-success-text);
       }
 
+      /* ===== Suspension Transaction Modal ===== */
+      .susp-reason-card {
+        border: 2px solid var(--border-subtle);
+        border-radius: var(--r-md);
+        padding: 10px 8px;
+        background: var(--bg-card);
+        cursor: pointer;
+        font-family: inherit;
+        text-align: center;
+        transition: border-color 0.12s, background 0.12s, transform 0.1s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+      .susp-reason-card:hover {
+        border-color: var(--color-primary);
+        background: var(--bg-card-warm);
+      }
+      .susp-reason-card:active {
+        transform: translateY(1px);
+      }
+      .susp-reason-card.selected {
+        border-color: var(--color-primary);
+        background: var(--bg-card-warm);
+        box-shadow: 0 0 0 2px rgba(139, 115, 64, 0.18);
+      }
+      .susp-rc-icon {
+        font-size: 18px;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+      .susp-reason-card.selected .susp-rc-icon {
+        color: var(--color-primary);
+      }
+      .susp-rc-title {
+        font-size: 11.5px;
+        font-weight: 700;
+        color: var(--text-main);
+        line-height: 1.2;
+      }
+      .susp-rc-sub {
+        font-size: 10px;
+        color: var(--text-muted);
+      }
+      .susp-reason-card.selected .susp-rc-title {
+        color: var(--color-primary-hover);
+      }
+
       /* ===== ALERTS subsystem (banner / bell / rows / pill) ===== */
       .alert-banner {
         margin-bottom: 14px;
@@ -3145,6 +3194,139 @@
           </button>
           <button class="btn btn-primary" type="button" id="advSearch">
             <i class="fas fa-search"></i> Search
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SUSPENSION TRANSACTION MODAL ===== -->
+    <div class="modal-backdrop" id="suspTxModal">
+      <div
+        class="confirm-box"
+        style="width: 520px"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="suspTxTitle"
+      >
+        <div class="confirm-header">
+          <h3 class="confirm-title" id="suspTxTitle">
+            <i
+              class="fas fa-circle-pause"
+              style="color: var(--status-warning-text); margin-right: 8px"
+            ></i>
+            Suspend Listing
+          </h3>
+          <button class="confirm-close" type="button" id="suspTxClose">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div class="confirm-body" style="padding: 18px">
+          <div
+            style="background: var(--bg-card-warm); border: 1px solid var(--border-warm); border-radius: var(--r-md); padding: 10px 14px; margin-bottom: 16px; font-size: 12.5px"
+          >
+            <div style="font-weight: 700; color: var(--text-main)" id="suspTxPropName">—</div>
+            <div style="color: var(--text-muted); margin-top: 2px" id="suspTxPropMeta">—</div>
+          </div>
+
+          <div class="alert warn" style="margin-bottom: 16px">
+            <i class="fas fa-triangle-exclamation"></i>
+            <div>
+              This listing will be <strong>removed from public view</strong>.
+              You must provide a reason. This record will be saved to
+              <strong>Transaction Management</strong> as source of truth.
+            </div>
+          </div>
+
+          <div class="field-group" style="margin-bottom: 16px">
+            <label class="field-label">
+              Reason for Removal <span class="required">*</span>
+            </label>
+            <div
+              style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px"
+              id="suspTxReasonCards"
+            >
+              <button type="button" class="susp-reason-card" data-reason="sold" onclick="selectSuspReason(this,'sold')">
+                <i class="fas fa-handshake susp-rc-icon"></i>
+                <div class="susp-rc-title">Sold</div>
+                <div class="susp-rc-sub">Agent closed the deal</div>
+              </button>
+              <button type="button" class="susp-reason-card" data-reason="sold-others" onclick="selectSuspReason(this,'sold-others')">
+                <i class="fas fa-people-arrows susp-rc-icon"></i>
+                <div class="susp-rc-title">Sold by Others</div>
+                <div class="susp-rc-sub">Another party sold it</div>
+              </button>
+              <button type="button" class="susp-reason-card" data-reason="seller-withdrew" onclick="selectSuspReason(this,'seller-withdrew')">
+                <i class="fas fa-person-walking-arrow-right susp-rc-icon"></i>
+                <div class="susp-rc-title">Seller Withdrew</div>
+                <div class="susp-rc-sub">Did not want to sell</div>
+              </button>
+              <button type="button" class="susp-reason-card" data-reason="expired" onclick="selectSuspReason(this,'expired')">
+                <i class="fas fa-clock susp-rc-icon"></i>
+                <div class="susp-rc-title">Listing Expired</div>
+                <div class="susp-rc-sub">Contract period ended</div>
+              </button>
+              <button type="button" class="susp-reason-card" data-reason="legal" onclick="selectSuspReason(this,'legal')">
+                <i class="fas fa-gavel susp-rc-icon"></i>
+                <div class="susp-rc-title">Legal Hold</div>
+                <div class="susp-rc-sub">Dispute or freeze</div>
+              </button>
+              <button type="button" class="susp-reason-card" data-reason="other" onclick="selectSuspReason(this,'other')">
+                <i class="fas fa-ellipsis susp-rc-icon"></i>
+                <div class="susp-rc-title">Other</div>
+                <div class="susp-rc-sub">See notes below</div>
+              </button>
+            </div>
+            <span class="field-error hidden" id="suspTxReasonErr">Please select a reason.</span>
+          </div>
+
+          <div class="field-group" id="suspTxPriceWrap" style="margin-bottom: 12px; display: none">
+            <label class="field-label" id="suspTxPriceLabel">
+              Transaction Price (¥) <span class="required" id="suspTxPriceReq">*</span>
+            </label>
+            <input
+              class="edit-input"
+              type="number"
+              min="0"
+              id="suspTxPrice"
+              placeholder="Enter final transaction price"
+            />
+            <span class="field-error hidden" id="suspTxPriceErr">Transaction price is required when the property was Sold.</span>
+          </div>
+
+          <div class="field-group" style="margin-bottom: 12px">
+            <label class="field-label">Suspension Date <span class="required">*</span></label>
+            <input class="edit-input" type="date" id="suspTxDate" />
+          </div>
+
+          <div id="suspTxVisWrap" style="display: none; background: var(--bg-card-warm); border: 1px solid var(--border-warm); border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 12px">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+              <div>
+                <div style="font-size: 13px; font-weight: 700; color: var(--color-primary)">
+                  <i class="fas fa-eye" style="margin-right: 6px"></i>Make transaction price public
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px">
+                  Visible on Agent Profile and feeds Market Analysis
+                </div>
+              </div>
+              <label style="position: relative; width: 40px; height: 22px; cursor: pointer; flex-shrink: 0">
+                <input type="checkbox" id="suspTxPublicPrice" style="opacity: 0; width: 0; height: 0; position: absolute" />
+                <span id="suspTxToggleTrack" style="position: absolute; inset: 0; background: var(--border-default); border-radius: 11px; transition: 0.2s"></span>
+                <span id="suspTxToggleThumb" style="position: absolute; width: 18px; height: 18px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,.2)"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Notes <span style="font-weight: 400; text-transform: none; color: var(--text-muted)">(optional)</span></label>
+            <textarea class="edit-input" id="suspTxNotes" style="min-height: 60px" placeholder="Additional context for this suspension…"></textarea>
+          </div>
+        </div>
+
+        <div class="confirm-footer">
+          <button class="btn" type="button" id="suspTxCancel">Cancel</button>
+          <button class="btn btn-danger" type="button" id="suspTxConfirm">
+            <i class="fas fa-circle-pause"></i> Confirm Suspension
           </button>
         </div>
       </div>
@@ -6217,6 +6399,162 @@
         setTimeout(() => el.remove(), 2700);
       }
 
+      function syncPropertyPickerStore() {
+        try {
+          const snapshot = properties.map((p) => ({
+            id: p.id,
+            name: p.name,
+            propType: p.propType,
+            prefecture: p.prefecture,
+            city: p.city,
+            price: p.priceBuy || p.publishPrice || p.price || "",
+            agent: p.agent || "",
+          }));
+          localStorage.setItem("yuushi.ploPropertyPicker", JSON.stringify(snapshot));
+        } catch (e) {}
+      }
+
+      let _suspTxProp = null;
+      let _suspTxReason = null;
+
+      function syncSuspToggle() {
+        const cb = document.getElementById("suspTxPublicPrice");
+        const track = document.getElementById("suspTxToggleTrack");
+        const thumb = document.getElementById("suspTxToggleThumb");
+        if (!cb || !track || !thumb) return;
+        if (cb.checked) {
+          track.style.background = "var(--color-primary)";
+          thumb.style.transform = "translateX(18px)";
+        } else {
+          track.style.background = "var(--border-default)";
+          thumb.style.transform = "translateX(0)";
+        }
+      }
+
+      function openSuspensionTransactionModal(prop) {
+        _suspTxProp = prop;
+        _suspTxReason = null;
+        document.getElementById("suspTxPropName").textContent = prop.name || prop.id;
+        document.getElementById("suspTxPropMeta").textContent = [
+          prop.id,
+          prop.propType,
+          prop.prefecture,
+          prop.city,
+        ].filter(Boolean).join(" · ");
+        document.getElementById("suspTxDate").value = new Date().toISOString().slice(0, 10);
+        document.querySelectorAll(".susp-reason-card").forEach((c) => c.classList.remove("selected"));
+        document.getElementById("suspTxReasonErr").classList.add("hidden");
+        document.getElementById("suspTxPrice").value = "";
+        document.getElementById("suspTxPriceWrap").style.display = "none";
+        document.getElementById("suspTxPriceErr").classList.add("hidden");
+        document.getElementById("suspTxPrice").classList.remove("invalid");
+        document.getElementById("suspTxVisWrap").style.display = "none";
+        document.getElementById("suspTxPublicPrice").checked = false;
+        syncSuspToggle();
+        document.getElementById("suspTxNotes").value = "";
+        document.getElementById("suspTxModal").classList.add("open");
+      }
+
+      function closeSuspensionTransactionModal() {
+        document.getElementById("suspTxModal").classList.remove("open");
+        _suspTxProp = null;
+        _suspTxReason = null;
+      }
+
+      function selectSuspReason(el, reason) {
+        _suspTxReason = reason;
+        document.querySelectorAll(".susp-reason-card").forEach((c) => c.classList.remove("selected"));
+        el.classList.add("selected");
+        document.getElementById("suspTxReasonErr").classList.add("hidden");
+
+        const needsPrice = reason === "sold" || reason === "sold-others";
+        const priceWrap = document.getElementById("suspTxPriceWrap");
+        priceWrap.style.display = needsPrice ? "" : "none";
+
+        if (reason === "sold") {
+          document.getElementById("suspTxPriceLabel").innerHTML = 'Transaction Price (¥) <span class="required">*</span>';
+          document.getElementById("suspTxPriceReq").style.display = "";
+        } else if (reason === "sold-others") {
+          document.getElementById("suspTxPriceLabel").innerHTML = 'Transaction Price (¥) <span style="font-weight:400;color:var(--text-muted)">(optional — if known)</span>';
+          document.getElementById("suspTxPriceReq").style.display = "none";
+        }
+
+        document.getElementById("suspTxVisWrap").style.display = needsPrice ? "" : "none";
+      }
+
+      function confirmSuspensionTransaction() {
+        if (!_suspTxReason) {
+          document.getElementById("suspTxReasonErr").classList.remove("hidden");
+          return;
+        }
+
+        const priceInput = document.getElementById("suspTxPrice");
+        const price = priceInput.value.trim();
+        if (_suspTxReason === "sold" && !price) {
+          document.getElementById("suspTxPriceErr").classList.remove("hidden");
+          priceInput.classList.add("invalid");
+          priceInput.focus();
+          return;
+        }
+        document.getElementById("suspTxPriceErr").classList.add("hidden");
+        priceInput.classList.remove("invalid");
+
+        const payload = {
+          propertyId: _suspTxProp.id,
+          propertyName: _suspTxProp.name,
+          reason: _suspTxReason,
+          transactionPrice: price ? Number(price) : null,
+          publicPrice: document.getElementById("suspTxPublicPrice").checked,
+          suspensionDate: document.getElementById("suspTxDate").value,
+          notes: document.getElementById("suspTxNotes").value.trim(),
+          agent: _suspTxProp.agent,
+          ref: "TXN-" + Date.now().toString().slice(-6),
+          createdAt: new Date().toISOString(),
+        };
+
+        _suspTxProp.publishStatus = "Suspended";
+        _suspTxProp.dateUpdated = new Date().toISOString().slice(0, 10);
+        pushHistory(_suspTxProp, "publishStatus", "Published", "Suspended");
+
+        try {
+          const existing = JSON.parse(localStorage.getItem("yuushi.suspensionTx") || "[]");
+          existing.unshift(payload);
+          localStorage.setItem("yuushi.suspensionTx", JSON.stringify(existing));
+        } catch (e) {}
+
+        closeSuspensionTransactionModal();
+        renderDetail();
+        renderList();
+        if (typeof refreshAlertsUI === "function") refreshAlertsUI();
+
+        const reasonLabels = {
+          sold: "Sold",
+          "sold-others": "Sold by Others",
+          "seller-withdrew": "Seller Withdrew",
+          expired: "Listing Expired",
+          "withdrawn-agent": "Withdrawn by Agent",
+          duplicate: "Duplicate Listing",
+          legal: "Legal Hold",
+          "price-renegotiation": "Price Renegotiation",
+          other: "Other",
+        };
+        toast(`Listing suspended (${reasonLabels[_suspTxReason]}). Transaction logged.`);
+      }
+
+      (function wireSuspTxModal() {
+        const modal = document.getElementById("suspTxModal");
+        document.getElementById("suspTxClose").addEventListener("click", closeSuspensionTransactionModal);
+        document.getElementById("suspTxCancel").addEventListener("click", closeSuspensionTransactionModal);
+        document.getElementById("suspTxConfirm").addEventListener("click", confirmSuspensionTransaction);
+        modal.addEventListener("click", function (e) {
+          if (e.target === this) closeSuspensionTransactionModal();
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && modal.classList.contains("open")) closeSuspensionTransactionModal();
+        });
+        document.getElementById("suspTxPublicPrice").addEventListener("change", syncSuspToggle);
+      })();
+
       // ------------------------------------------------------------------------
       // Reusable styled confirm modal — callback-style.
       // openConfirm({ title, body, actionLabel, actionKind, onConfirm })
@@ -8474,19 +8812,8 @@
         if (!currentProp) return;
         // Only Published <-> Suspended toggling is allowed from this button.
         if (currentProp.publishStatus === "Published") {
-          openConfirm({
-            title: "Suspend listing?",
-            body: `Suspend ${currentProp.id} (${currentProp.name})? The listing will be hidden from public view until re-activated.`,
-            actionLabel: "Suspend",
-            actionKind: "danger",
-            onConfirm: () => {
-              currentProp.publishStatus = "Suspended";
-              originalProp.publishStatus = "Suspended";
-              renderDetail();
-              renderList();
-              toast("Listing suspended.");
-            },
-          });
+          openSuspensionTransactionModal(currentProp);
+          return;
         } else if (currentProp.publishStatus === "Suspended") {
           if (currentProp.saleStatus === "Sold Out") {
             // Sold-Out re-activation clears the sale record and resets to On Sale.

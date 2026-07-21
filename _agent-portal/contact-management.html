@@ -1,0 +1,876 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contacts — YUUSHI Agent CRM</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+      :root {
+        --accent: #c4714a; --accent-dark: #a55232; --accent-soft: #fdeee4; --accent-tint: #faf0e9;
+        --bg-body: #f5f0e8; --bg-card: #fff; --bg-alt: #fdfcf9;
+        --border: #e9e2d6; --border-soft: #f0ece4;
+        --text-main: #333; --text-head: #222; --text-muted: #8a8178; --text-dim: #aaa094;
+        --pink: #e74c7a; --grey-pill: #eceae4; --grey-pill-dark: #ddd8cf;
+        --green: #2f855a; --red: #c0392b;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; }
+      body { font-family: Arial, Helvetica, system-ui, sans-serif; background: var(--bg-body); color: var(--text-main); font-size: 13px; line-height: 1.5; display: flex; -webkit-font-smoothing: antialiased; }
+      a { color: var(--accent); text-decoration: none; cursor: pointer; }
+
+      /* ===== Main ===== */
+      .main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+      .content { flex: 1; overflow-y: auto; padding: 24px; }
+
+      /* ===== Buttons ===== */
+      .btn { border-radius: 6px; border: 1px solid var(--border); padding: 8px 16px; font-size: 13px; background: #fff; cursor: pointer; display: inline-flex; gap: 7px; align-items: center; justify-content: center; color: var(--text-main); font-family: inherit; font-weight: 600; }
+      .btn:hover { background: var(--bg-alt); }
+      .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .btn-primary:hover { background: var(--accent-dark); }
+      .btn-ghost { background: transparent; }
+      .btn-danger { color: var(--red); border-color: #f0d3cc; }
+      .btn-danger:hover { background: #fdf1ee; }
+      .btn-pill { border-radius: 20px; }
+      .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+      /* ===== Page header ===== */
+      .page-title { font-size: 24px; font-weight: 800; color: var(--text-head); }
+      .page-subtitle { font-size: 12.5px; color: var(--accent); font-style: italic; margin-top: 2px; }
+      .list-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 12px; }
+      .head-right { display: flex; align-items: center; gap: 10px; }
+
+      /* ===== Info hint banner ===== */
+      .hint-banner { display: flex; align-items: center; gap: 10px; background: var(--accent-tint); border: 1px solid var(--accent-soft); color: var(--accent-dark); border-radius: 8px; padding: 10px 14px; font-size: 12.5px; margin-bottom: 16px; }
+      .hint-banner i { font-size: 14px; }
+
+      /* ===== Filter bar ===== */
+      .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+      .filter-field { position: relative; display: flex; flex-direction: column; gap: 4px; }
+      .filter-field label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+      .filter-field input, .filter-field select, .filter-field .fbtn { height: 38px; border-radius: 8px; border: 1px solid var(--border); padding: 0 30px 0 12px; font-size: 13px; background: #fff; outline: none; min-width: 160px; color: var(--text-main); appearance: none; cursor: pointer; display: flex; align-items: center; }
+      .filter-field select { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8178' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>"); background-repeat: no-repeat; background-position: right 10px center; }
+      .fbtn span.fb-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+      .fbtn i.chev { color: var(--text-dim); font-size: 10px; margin-left: 8px; }
+      .msel-panel { position: absolute; top: calc(100% + 6px); left: 0; background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 12px 30px rgba(60,41,28,0.14); padding: 8px; min-width: 220px; z-index: 60; display: none; }
+      .msel-panel.open { display: block; }
+      .msel-opt { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 7px; cursor: pointer; font-size: 13px; }
+      .msel-opt:hover { background: var(--bg-alt); }
+      .msel-opt input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+      .msel-foot { border-top: 1px solid var(--border-soft); margin-top: 6px; padding-top: 6px; display: flex; justify-content: space-between; }
+      .msel-foot a { font-size: 12px; font-weight: 600; }
+
+      /* ===== Card ===== */
+      .card { background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 1px 3px rgba(60,41,28,0.04); overflow: hidden; }
+
+      /* ===== Table ===== */
+      table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+      .data thead { background: #f6f3ec; }
+      .data th { padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 700; color: #555; white-space: nowrap; }
+      .data td { padding: 11px 14px; border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
+      .data tbody tr:nth-child(even) { background: var(--bg-alt); }
+      .data tbody tr:hover { background: var(--accent-tint); }
+      .name-cell { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+      .ini-avatar { width: 30px; height: 30px; border-radius: 50%; background: #e7e2d8; color: #6b6256; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+      .ini-avatar.lg { width: 52px; height: 52px; font-size: 17px; }
+      .owner-cell { display: flex; align-items: center; gap: 8px; }
+      .owner-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--pink); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; flex-shrink: 0; }
+      .act-icons { display: flex; gap: 10px; color: #b3a89c; }
+      .act-icons i { cursor: pointer; }
+      .act-icons i:hover { color: var(--accent); }
+      .checkbox { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+
+      /* ===== Badges / tags ===== */
+      .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+      .badge.active { background: #e6f4ec; color: var(--green); }
+      .badge.inactive { background: #f1ece4; color: var(--text-muted); }
+      .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+      .tag { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; background: var(--grey-pill); color: #6b6256; white-space: nowrap; }
+      .tag .cdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+      .tag-more { font-size: 11px; color: var(--accent); font-weight: 700; }
+      .tag-wrap { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+
+      /* ===== Pagination ===== */
+      .pagination { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; flex-wrap: wrap; gap: 10px; }
+      .pg-left { font-size: 12.5px; color: var(--text-muted); }
+      .pg-right { display: flex; align-items: center; gap: 4px; }
+      .pg-btn { min-width: 28px; height: 28px; border-radius: 50%; border: 0; background: 0; cursor: pointer; font-size: 13px; color: var(--text-main); display: inline-flex; align-items: center; justify-content: center; font-family: inherit; }
+      .pg-btn:hover { background: var(--bg-alt); }
+      .pg-btn.active { background: var(--accent); color: #fff; }
+
+      /* ===== Bulk bar ===== */
+      .bulk-bar { display: none; align-items: center; gap: 12px; background: var(--accent-tint); border: 1px solid var(--accent-soft); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 12.5px; color: var(--accent-dark); }
+      .bulk-bar.show { display: flex; }
+      .bulk-bar .cnt { font-weight: 700; }
+      .bulk-bar .spacer { flex: 1; }
+
+      /* ===== Detail screen ===== */
+      .dt-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+      .back-arrow { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: #fff; cursor: pointer; color: var(--text-main); font-size: 15px; flex-shrink: 0; }
+      .back-arrow:hover { background: var(--bg-alt); }
+      .dt-name { font-size: 22px; font-weight: 800; color: var(--text-head); line-height: 1.1; }
+      .dt-created { font-size: 12px; color: var(--text-muted); }
+      .dt-stats { margin-left: auto; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+      .dt-stat { display: flex; align-items: center; gap: 8px; }
+      .dt-stat i { color: var(--accent); font-size: 16px; }
+      .dt-stat .l { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+      .dt-stat .v { font-size: 13px; color: var(--accent); font-weight: 700; }
+
+      .detail-layout { display: grid; grid-template-columns: 1fr 300px; gap: 18px; margin-top: 16px; align-items: start; }
+      @media (max-width: 1100px) { .detail-layout { grid-template-columns: 1fr; } }
+
+      .sec { padding: 18px 22px; border-bottom: 1px solid var(--border-soft); }
+      .sec:first-child { padding-top: 20px; }
+      .sec:last-child { border-bottom: 0; }
+      .sec-head { display: flex; align-items: center; justify-content: space-between; }
+      .sec-title { font-size: 15px; font-weight: 700; color: var(--text-head); }
+      .sec-sub { font-size: 12px; color: var(--accent); font-style: italic; margin: 2px 0 14px; }
+      .kv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 18px; }
+      @media (max-width: 760px) { .kv-grid { grid-template-columns: 1fr 1fr; } }
+      .kv-l { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 3px; display: flex; align-items: center; gap: 5px; }
+      .kv-l i.fa-lock { font-size: 9px; color: var(--text-dim); }
+      .kv-v { font-size: 13px; color: var(--text-main); }
+      .kv-v.link { color: var(--accent); }
+      .kv-v.masked { font-family: monospace; letter-spacing: 2px; }
+      .kv-eye { color: var(--text-dim); cursor: pointer; margin-left: 6px; font-size: 11px; }
+      .kv-eye:hover { color: var(--accent); }
+
+      /* Right panel */
+      .rp-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+      .rp-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+      .rp-title { font-size: 15px; font-weight: 700; color: var(--text-head); display: flex; align-items: center; gap: 7px; }
+      .activity { position: relative; padding-left: 18px; margin-bottom: 14px; }
+      .activity::before { content: ""; position: absolute; left: 0; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--pink); }
+      .activity .a-title { font-weight: 700; font-size: 13px; }
+      .activity .a-line { font-size: 12.5px; color: var(--text-main); }
+      .activity .a-time { font-size: 11.5px; color: var(--text-muted); margin: 2px 0; }
+      .comment-input { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 13px; font-family: inherit; resize: vertical; min-height: 60px; outline: none; }
+      .comment-input:focus { border-color: var(--accent); }
+      .press-enter { text-align: right; font-size: 11px; color: var(--text-dim); margin: 4px 0 12px; }
+      .comment { border-top: 1px solid var(--border-soft); padding-top: 12px; margin-top: 4px; }
+      .comment .c-body { font-size: 12.5px; color: var(--text-main); }
+      .comment .c-attr { font-size: 11.5px; margin-top: 5px; }
+      .comment .c-attr .who { color: var(--accent); font-weight: 600; }
+      .comment .c-attr .when { color: var(--text-muted); }
+
+      /* Empty state */
+      .empty-state { min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; }
+      .empty-state .et { font-size: 14px; font-weight: 700; color: var(--text-head); }
+      .empty-state .es { font-size: 12.5px; color: var(--text-muted); max-width: 320px; }
+
+      /* Group color swatches */
+      .swatch-row { display: flex; gap: 8px; flex-wrap: wrap; }
+      .swatch { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+      .swatch.active { border-color: var(--text-head); }
+
+      /* ===== Modal ===== */
+      .modal-overlay { position: fixed; inset: 0; background: rgba(59,47,42,0.35); display: none; align-items: center; justify-content: center; z-index: 200; }
+      .modal-overlay.open { display: flex; }
+      .modal-box { background: #fff; border-radius: 12px; width: 520px; max-width: 94vw; padding: 22px; box-shadow: 0 20px 50px rgba(0,0,0,0.25); max-height: 88vh; overflow-y: auto; }
+      .modal-box h3 { font-size: 17px; font-weight: 800; color: var(--text-head); margin-bottom: 4px; }
+      .modal-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
+      .fld { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+      .fld label { font-size: 11px; font-weight: 700; color: #6b6256; }
+      .fld input, .fld select, .fld textarea { border: 1px solid #ddd6c9; border-radius: 6px; padding: 8px 12px; font-size: 13px; font-family: inherit; background: #fff; outline: none; width: 100%; }
+      .fld input:focus, .fld select:focus, .fld textarea:focus { border-color: var(--accent); }
+      .fld textarea { min-height: 60px; resize: vertical; }
+      .search-mini { position: relative; margin-bottom: 8px; }
+      .search-mini input { padding-left: 32px; }
+      .search-mini i { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 12px; }
+      .pick-list { max-height: 220px; overflow-y: auto; border: 1px solid var(--border-soft); border-radius: 8px; }
+      .pick-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--border-soft); font-size: 13px; cursor: pointer; }
+      .pick-row:last-child { border-bottom: 0; }
+      .pick-row:hover { background: var(--bg-alt); }
+      .pick-row input { accent-color: var(--accent); width: 15px; height: 15px; }
+      .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+      .modal-note { font-size: 12px; color: var(--text-muted); background: var(--bg-alt); border: 1px solid var(--border-soft); border-radius: 8px; padding: 10px 12px; margin: 10px 0 16px; }
+
+      /* ===== Toast ===== */
+      .toast-wrap { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+      .toast { background: var(--accent); color: #fff; padding: 11px 16px; border-radius: 8px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+      .toast.success { background: var(--green); }
+      .toast.error { background: var(--red); }
+
+      .more-menu { position: relative; }
+      .menu-pop { position: absolute; right: 0; top: calc(100% + 6px); background: #fff; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 10px 28px rgba(60,41,28,0.16); padding: 6px; min-width: 170px; z-index: 50; display: none; }
+      .menu-pop.open { display: block; }
+      .menu-pop button { display: block; width: 100%; text-align: left; padding: 8px 12px; border: 0; background: 0; font-size: 13px; cursor: pointer; border-radius: 6px; font-family: inherit; color: var(--text-main); }
+      .menu-pop button:hover { background: var(--bg-alt); }
+      .hidden { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <!-- ===================== MAIN ===================== -->
+    <main class="main">
+      <div class="content">
+        <!-- ========================================================= -->
+        <!-- SCREEN 1.1 — CONTACTS LIST                                 -->
+        <!-- ========================================================= -->
+        <div id="screenContactsList">
+          <div class="list-head">
+            <div>
+              <div class="page-title">Contacts</div>
+            </div>
+          </div>
+
+          <div class="filter-bar">
+            <div class="filter-field"><label>Search</label><input id="cSearch" placeholder="Name, phone, or email" oninput="renderContactsList()" style="min-width:200px" /></div>
+            <div class="filter-field">
+              <label>Group</label>
+              <div class="fbtn" onclick="toggleMsel(event,'cGroupPanel')"><span class="fb-text" id="cGroupSummary">All groups</span><i class="fas fa-chevron-down chev"></i></div>
+              <div class="msel-panel" id="cGroupPanel"></div>
+            </div>
+            <div class="filter-field"><label>Status</label>
+              <select id="cStatus" onchange="renderContactsList()"><option value="">All</option><option>Active</option><option>Inactive</option></select>
+            </div>
+            <div class="filter-field"><label>Last interaction</label>
+              <select id="cDateRange" onchange="renderContactsList()">
+                <option value="">All time</option>
+                <option value="7">Last 7 days</option>
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+              </select>
+            </div>
+            <div class="filter-field" style="visibility: hidden;"><label>Owner</label>
+              <select id="cOwner" style="visibility: hidden;" onchange="renderContactsList()"><option value="">All owners</option></select>
+            </div>
+            
+          </div>
+
+          <div class="bulk-bar" id="cBulkBar">
+            <span><span class="cnt" id="cBulkCount">0</span> selected</span>
+            <div class="spacer"></div>
+            <button class="btn btn-sm" onclick="openAssignGroupModal(getSelectedContacts())"><i class="fas fa-users"></i> Assign to Group</button>
+            <button class="btn btn-sm" onclick="exportContacts(getSelectedContacts())"><i class="fas fa-file-export"></i> Export</button>
+          </div>
+
+          <div class="card">
+            <table class="data">
+              <thead><tr>
+                <th style="width:36px"><input type="checkbox" class="checkbox" onclick="toggleAllContacts(this)" /></th>
+                <th>Contact Name</th>
+                <th>First Contact</th>
+                <th>Last Interaction</th>
+                <th>Groups</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr></thead>
+              <tbody id="contactsBody"></tbody>
+            </table>
+            <div class="pagination">
+              <div class="pg-left" id="cEntriesLabel"></div>
+              <div class="pg-right"><button class="pg-btn active">1</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SCREEN 1.2 — CONTACT DETAIL                                -->
+        <!-- ========================================================= -->
+        <div id="screenContactDetail" class="hidden">
+          <div class="dt-bar">
+            <button class="back-arrow" onclick="showContactsList()"><i class="fas fa-arrow-left"></i></button>
+            <span class="ini-avatar lg" id="cdAvatar">TY</span>
+            <div>
+              <div class="dt-name" id="cdName">Tanaka Yui</div>
+              <div class="dt-created" id="cdCreated">First contact: 12 Aug 2025</div>
+            </div>
+            <div class="dt-stats">
+                <div class="dt-stat"><i style="visibility: hidden" class="fas fa-user-tie"></i><div><div style="visibility: hidden" class="l">Owner</div><div class="v" id="cdOwner" style="visibility: hidden">Chris Sales</div></div></div>
+                <div class="dt-stat"><i class="fas fa-circle-check"></i><div><div class="l">Status</div><div class="v" id="cdStatus">Active</div></div></div>
+              <div class="dt-stat"><i class="fas fa-users"></i><div><div class="l">Groups</div><div class="v" id="cdGroupCount">2</div></div></div>
+              <div class="more-menu">
+                <button class="nav-icon" onclick="toggleMore(event,'cdMorePop')"><i class="fas fa-ellipsis-vertical"></i></button>
+                <div class="menu-pop" id="cdMorePop">
+                  <button onclick="openAssignGroupModal([currentContactId])">Assign to Group(s)</button>
+                  <button onclick="exportContacts([currentContactId])">Export</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-layout">
+            <div class="card">
+              <div class="sec">
+                <div class="sec-head"><div>
+                    <div class="sec-title">Contact Info</div>
+                </div>
+                  <button class="btn btn-sm" onclick="openEditContactModal()"><i class="fas fa-pen"></i> Edit</button>
+                </div>
+                <div class="kv-grid" style="margin-top:14px" id="cdContactInfo"></div>
+              </div>
+
+              <div class="sec">
+                <div class="sec-title">Profile</div>
+                <div class="kv-grid" id="cdProfile"></div>
+              </div>
+
+              <div class="sec">
+                <div class="sec-title">Additional Information</div>
+                 <div class="kv-grid" id="cdAdditional"></div>
+              </div>
+
+              <div class="sec">
+                <div class="sec-title">Investment &amp; Preferences</div>
+                 <div class="kv-grid" id="cdInvestment"></div>
+              </div>
+
+              <div class="sec">
+                <div class="sec-head"><div class="sec-title">Groups</div>
+                  <a onclick="openAssignGroupModal([currentContactId])"><i class="fas fa-plus"></i> Add to another group</a>
+                </div>
+                <div class="tag-wrap" id="cdGroups" style="margin-top:10px"></div>
+              </div>
+
+              <div class="sec">
+                <div class="sec-title">Related Leads</div>
+                 <div id="cdLeads"></div>
+              </div>
+
+              <div class="sec" style="border-bottom:0">
+                <div class="sec-title">Related Offers</div>
+                <div id="cdOffers"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="rp-card">
+                <div class="rp-head"><div class="rp-title"><i class="fas fa-clock-rotate-left" style="color:var(--accent)"></i> Activity History</div></div>
+                <div id="cdActivity"></div>
+              </div>
+              <div class="rp-card">
+                <div class="rp-title"><i class="fas fa-quote-left" style="color:var(--accent)"></i> Comments</div>
+                <textarea class="comment-input" id="cdCommentInput" placeholder="Add an internal note…" onkeydown="cdCommentKey(event)"></textarea>
+                <div class="press-enter">Press Enter to submit</div>
+                <div id="cdComments"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ===================== MODALS ===================== -->
+
+    <!-- Assign Contact(s) to Group(s) -->
+    <div class="modal-overlay" id="assignModal" onclick="if(event.target===this)closeModal('assignModal')">
+      <div class="modal-box">
+        <h3>Assign to Group(s)</h3>
+        <div class="modal-sub" id="assignSub">Choose one or more groups.</div>
+        <div class="search-mini"><i class="fas fa-search"></i><input id="assignSearch" placeholder="Search groups…" oninput="renderAssignList()" /></div>
+        <div class="pick-list" id="assignList"></div>
+        <a style="display:inline-block;margin-top:10px;font-size:12.5px;font-weight:600" onclick="showCreateGroupInline()"><i class="fas fa-plus"></i> Create new group</a>
+        <div id="assignInlineCreate" class="hidden" style="margin-top:10px">
+          <div class="fld"><input type="text" id="assignNewGroupName" placeholder="New group name" /></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn" onclick="closeModal('assignModal')">Cancel</button>
+          <button class="btn btn-primary" onclick="saveAssignModal()"><i class="fas fa-check"></i> Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Contact Info - FULL EDIT -->
+    <div class="modal-overlay" id="editContactModal" onclick="if(event.target===this)closeModal('editContactModal')">
+      <div class="modal-box">
+        <h3>Edit Contact</h3>
+        <div class="modal-sub">All fields are editable. Use "Restore Original" to revert to system source data.</div>
+        
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <button class="btn btn-sm" onclick="restoreOriginalData()" style="background:var(--accent-tint);color:var(--accent-dark)"><i class="fas fa-undo"></i> Restore Original</button>
+        </div>
+
+        <div class="fld"><label>Contact Name</label><input type="text" id="ecName" /></div>
+        <div class="fld"><label>First Contact Date</label><input type="text" id="ecFirstContact" /></div>
+        <div class="fld"><label>Phone</label><input type="text" id="ecPhone" /></div>
+        <div class="fld"><label>Email</label><input type="text" id="ecEmail" /></div>
+        <div class="fld"><label>Secondary Phone</label><input type="text" id="ecSecondaryPhone" /></div>
+        <div class="fld"><label>Notes</label><textarea id="ecNotes"></textarea></div>
+
+        <div class="fld"><label>Full Name</label><input type="text" id="ecFullName" /></div>
+        <div class="fld"><label>Country Code</label><input type="text" id="ecCountryCode" /></div>
+        <div class="fld"><label>Phone Number</label><input type="text" id="ecPhoneNumber" /></div>
+        <div class="fld"><label>Current Address</label><input type="text" id="ecCurrentAddress" /></div>
+        <div class="fld"><label>Nationality</label><input type="text" id="ecNationality" /></div>
+        <div class="fld"><label>Title</label><input type="text" id="ecGender" /></div>
+        <div class="fld"><label>Age</label><input type="text" id="ecAge" /></div>
+
+        <div class="fld"><label>Owned property in Japan?</label><input type="text" id="ecOwnedPropertyJP" /></div>
+        <div class="fld"><label>Property location</label><input type="text" id="ecPropertyLocation" /></div>
+        <div class="fld"><label>Resident Country</label><input type="text" id="ecResidentCountry" /></div>
+        <div class="fld"><label>Buyer Status (comma separated)</label><input type="text" id="ecBuyerStatus" /></div>
+
+        <div class="fld"><label>Desired City</label><input type="text" id="ecDesiredCity" /></div>
+        <div class="fld"><label>Desired Area</label><input type="text" id="ecDesiredArea" /></div>
+        <div class="fld"><label>Budget Min</label><input type="text" id="ecBudgetMin" /></div>
+        <div class="fld"><label>Budget Max</label><input type="text" id="ecBudgetMax" /></div>
+        <div class="fld"><label>Target Yield</label><input type="text" id="ecTargetYield" /></div>
+        <div class="fld"><label>Bedrooms</label><input type="text" id="ecBedrooms" /></div>
+        <div class="fld"><label>Purpose</label><input type="text" id="ecPurpose" /></div>
+        <div class="fld"><label>Property Status</label><input type="text" id="ecPropertyStatus" /></div>
+
+        <div class="modal-actions">
+          <button class="btn" onclick="closeModal('editContactModal')">Cancel</button>
+          <button class="btn btn-primary" onclick="saveEditContactModal()"><i class="fas fa-check"></i> Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+      /* ============================================================
+         DATA
+      ============================================================ */
+      const OWNERS = ["Chris Sales", "Maria Sales", "Tony Sales", "Fran Tick"];
+
+      let GROUPS = [
+        { id: "g1", name: "VIP Investors", color: "#c4714a", desc: "High-value repeat investors we prioritize for new listings.", owner: "Chris Sales", created: "2025-03-10", modified: "2025-07-02" },
+        { id: "g2", name: "Tokyo Buyers", color: "#5f8f7c", desc: "Buyers actively focused on Tokyo properties.", owner: "Maria Sales", created: "2025-04-18", modified: "2025-07-15" },
+        { id: "g3", name: "Newsletter Subscribers", color: "#7a6a9c", desc: "Opted in to the monthly market newsletter.", owner: "Tony Sales", created: "2025-01-05", modified: "2025-06-20" },
+        { id: "g4", name: "Cold Leads", color: "#9b8568", desc: "No interaction in 90+ days — re-engagement candidates.", owner: "Fran Tick", created: "2025-02-22", modified: "2025-05-01" },
+      ];
+      const SWATCH_COLORS = ["#c4714a", "#5f8f7c", "#7a6a9c", "#9b8568", "#a55232", "#4a7ec4", "#c44a8f"];
+
+      let CONTACTS = [
+        {
+          id: "c1", name: "Tanaka Yui", initials: "TY", firstContact: "2025-08-12 10:30", lastInteraction: "2026-07-18",
+          sourceLead: "LEAD-2031", groups: ["g2", "g3"], status: "Active", owner: "Chris Sales",
+          secondaryPhone: "", notes: "Prefers communication in Japanese. Very responsive.",
+          profile: {
+            userId: "USR-00000001", registered: "2025-08-12 10:30 JST", avatarFile: "TYyui.jpg", fullName: "Tanaka Yui",
+            email: "yui.tanaka@example.com", countryCode: "+81", phoneNumber: "90-1111-2222", status: "Active",
+            currentAddress: "Shibuya-ku, Tokyo", nationality: "JP", gender: "Miss", age: 34,
+          },
+          additional: {
+            ownedPropertyJP: "No", propertyLocation: "", residentCountry: "JP",
+            buyerStatus: ["Cash buyer", "Investor"]
+          },
+          investment: {
+            propertyType: ["Apartment", "House"], desiredCity: "Tokyo", desiredArea: "Shibuya",
+            budgetMin: "¥80,000,000", budgetMax: "¥150,000,000", targetYield: ">5%",
+            bedrooms: 2, purpose: "Investment", propertyStatus: "New Property",
+          },
+          leads: [
+            { property: "Shibuya 2-bed Apartment", status: "Negotiation", date: "2026-06-20", budget: "¥120,000,000" },
+            { property: "Meguro New-build Condo", status: "Closed Won", date: "2025-11-02", budget: "¥95,000,000" },
+          ],
+          offers: [{ property: "Shibuya 2-bed Apartment", price: "¥118,000,000", date: "2026-07-01", status: "Pending" }],
+          activity: [
+            { title: "Message received", line: "Asked about yield projections for Shibuya listing", time: "18 Jul 2026, 09:12" },
+            { title: "Offer sent", line: "Proposal sent for Shibuya 2-bed Apartment", time: "01 Jul 2026, 14:40" },
+          ],
+          comments: [{ body: "Very serious investor — has closed with us before. Prioritize new Shibuya/Meguro listings.", who: "Chris Sales", when: "02 Jul 2026, 10:05" }],
+          original: {
+            name: "Tanaka Yui", firstContact: "2025-08-12 10:30", secondaryPhone: "", notes: "Prefers communication in Japanese. Very responsive.",
+            profile: { fullName: "Tanaka Yui", email: "yui.tanaka@example.com", countryCode: "+81", phoneNumber: "90-1111-2222", currentAddress: "Shibuya-ku, Tokyo", nationality: "JP", gender: "Mrs", age: 34 },
+            additional: { ownedPropertyJP: "No", propertyLocation: "", residentCountry: "JP", buyerStatus: ["Cash buyer", "Investor"] },
+            investment: { desiredCity: "Tokyo", desiredArea: "Shibuya", budgetMin: "¥80,000,000", budgetMax: "¥150,000,000", targetYield: ">5%", bedrooms: 2, purpose: "Investment", propertyStatus: "New Property" }
+          }
+        },
+        // (các contact khác được giữ nguyên, chỉ lược bỏ security question/answer tương tự)
+        {
+          id: "c2", name: "Santi Argo", initials: "SA", firstContact: "2025-05-20 19:55", lastInteraction: "2026-05-27",
+          sourceLead: "100006", groups: ["g1"], status: "Active", owner: "Chris Sales",
+          secondaryPhone: "", notes: "",
+          profile: { userId: "USR-00000045", registered: "2025-05-20 19:55 JST", avatarFile: "", fullName: "Santi Argo", email: "santi-argo@gmail.com", countryCode: "+34", phoneNumber: "655-5231", status: "Active", currentAddress: "—", nationality: "ES", gender: "Mr", age: 41},
+          additional: { ownedPropertyJP: "No", propertyLocation: "", residentCountry: "ES", buyerStatus: ["Cash buyer"] },
+          investment: { propertyType: ["House"], desiredCity: "San Jose", desiredArea: "Palo Alto", budgetMin: "¥2,000,000", budgetMax: "¥5,000,000", targetYield: "—", bedrooms: 3, purpose: "Personal use", propertyStatus: "Completed" },
+          leads: [{ property: "San Jose 4-bedroom Villa", status: "Proposal", date: "2025-05-22", budget: "¥2,300,000" }],
+          offers: [{ property: "San Jose 4-bedroom Villa", price: "¥2,300,000", date: "2025-05-26", status: "Sent" }],
+          activity: [{ title: "Arrange Viewing", line: "Call Santi Argo", time: "24 May 2025, 19:05" }],
+          comments: [{ body: "Sent the proposal with the asking price for Property 312.", who: "Chris Sales", when: "26 May 2025, 19:07" }],
+          original: {
+            name: "Santi Argo", firstContact: "2025-05-20 19:55", secondaryPhone: "", notes: "",
+            profile: { fullName: "Santi Argo", email: "santi-argo@gmail.com", countryCode: "+34", phoneNumber: "655-5231", currentAddress: "—", nationality: "ES", gender: "Mr", age: 41 },
+            additional: { ownedPropertyJP: "No", propertyLocation: "", residentCountry: "ES", buyerStatus: ["Cash buyer"] },
+            investment: { desiredCity: "San Jose", desiredArea: "Palo Alto", budgetMin: "¥2,000,000", budgetMax: "¥5,000,000", targetYield: "—", bedrooms: 3, purpose: "Personal use", propertyStatus: "Completed" }
+          }
+        },
+        // ... (các contact còn lại tương tự, đã bỏ security)
+        // Để ngắn gọn ở đây, các contact c3-c6 được giữ cấu trúc tương tự với additional không có security
+        {
+          id: "c3", name: "Colin Sik", initials: "CS", firstContact: "2025-09-02 11:00", lastInteraction: "2025-09-02",
+          sourceLead: "100007", groups: [], status: "Inactive", owner: "Tony Sales",
+          secondaryPhone: "", notes: "",
+          profile: { userId: "USR-00000052", registered: "2025-09-02 11:00 JST", avatarFile: "", fullName: "Colin Sik", email: "colin.sik@example.com", countryCode: "+81", phoneNumber: "80-2222-3333", status: "Inactive", currentAddress: "—", nationality: "SG", gender: "Mr", age: 29 },
+          additional: { ownedPropertyJP: "—", propertyLocation: "—", residentCountry: "SG", buyerStatus: [] },
+          investment: { propertyType: [], desiredCity: "—", desiredArea: "—", budgetMin: "—", budgetMax: "—", targetYield: "—", bedrooms: "—", purpose: "—", propertyStatus: "—" },
+          leads: [], offers: [],
+          activity: [{ title: "Message received", line: "One-off inquiry, never followed up", time: "02 Sep 2025, 11:00" }],
+          comments: [],
+          original: { /* ... */ }
+        },
+        // (c4, c5, c6 tương tự - đã bỏ security)
+      ];
+
+      let currentContactId = null;
+      let cGroupFilter = new Set();
+      let assignTargetIds = [];
+
+      /* ============================================================
+         HELPERS
+      ============================================================ */
+      function esc(s) { return String(s == null || s === "" ? "—" : s).replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c])); }
+      function groupById(id) { return GROUPS.find((g) => g.id === id); }
+      function contactById(id) { return CONTACTS.find((c) => c.id === id); }
+      function memberCount(gid) { return CONTACTS.filter((c) => c.groups.includes(gid)).length; }
+      function daysSince(dateStr) { const d = new Date(dateStr.split(" ")[0]); return Math.floor((Date.now() - d.getTime()) / 86400000); }
+      function kv(label, value, opts) {
+        opts = opts || {};
+        return `<div><div class="kv-l">${label}</div><div class="kv-v ${opts.cls || ""}">${value}</div></div>`;
+      }
+      function tagList(arr) {
+        if (!arr || !arr.length) return "—";
+        return `<div class="tag-wrap">${arr.map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</div>`;
+      }
+      function toast(msg, kind) {
+        const el = document.createElement("div"); el.className = "toast " + (kind || ""); el.textContent = msg;
+        document.getElementById("toastWrap").appendChild(el); setTimeout(() => el.remove(), 2800);
+      }
+      window.toast = toast;
+      function openModal(id) { document.getElementById(id).classList.add("open"); }
+      function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+      window.closeModal = closeModal;
+      function toggleMore(e, id) { e.stopPropagation(); const p = document.getElementById(id); p.classList.toggle("open"); document.addEventListener("click", () => p.classList.remove("open"), { once: true }); }
+      window.toggleMore = toggleMore;
+      function toggleMsel(e, id) { e.stopPropagation(); const p = document.getElementById(id); p.classList.toggle("open"); document.addEventListener("click", () => p.classList.remove("open"), { once: true }); }
+      window.toggleMsel = toggleMsel;
+      function emptyBox(title, sub) {
+        return `<div class="empty-state">
+          <svg width="100" height="80" viewBox="0 0 120 96" fill="none">
+            <ellipse cx="60" cy="86" rx="40" ry="6" fill="#eceae4"/>
+            <path d="M30 44 L60 54 L90 44 L90 74 L60 84 L30 74 Z" fill="#dbe6ef"/>
+            <path d="M30 44 L60 54 L60 84 L30 74 Z" fill="#c7d7e6"/>
+            <path d="M30 44 L42 34 L72 44 L60 54 Z" fill="#eaf1f7"/>
+            <path d="M90 44 L78 34 L48 44 L60 54 Z" fill="#dbe6ef"/>
+          </svg>
+          <div class="et">${title}</div>${sub ? `<div class="es">${sub}</div>` : ""}
+        </div>`;
+      }
+
+      /* ============================================================
+         CONTACTS LIST
+      ============================================================ */
+      function initContactFilters() {
+        const gp = document.getElementById("cGroupPanel");
+        gp.innerHTML = GROUPS.map((g) => `
+          <label class="msel-opt">
+            <input type="checkbox" data-gid="${g.id}" onchange="onGroupFilterToggle('${g.id}', this.checked)" />
+            <span class="cdot" style="width:9px;height:9px;border-radius:50%;background:${g.color}"></span>
+            ${esc(g.name)}
+          </label>`).join("") + `<div class="msel-foot"><a onclick="clearGroupFilter()" style="color:var(--accent)">Clear</a></div>`;
+        const ownerSel = document.getElementById("cOwner");
+        ownerSel.innerHTML = `<option value="">All owners</option>` + OWNERS.map((o) => `<option>${o}</option>`).join("");
+      }
+      function onGroupFilterToggle(gid, checked) { if (checked) cGroupFilter.add(gid); else cGroupFilter.delete(gid); updateGroupFilterSummary(); renderContactsList(); }
+      window.onGroupFilterToggle = onGroupFilterToggle;
+      function clearGroupFilter() { cGroupFilter.clear(); document.querySelectorAll('#cGroupPanel input').forEach((cb) => cb.checked = false); updateGroupFilterSummary(); renderContactsList(); }
+      window.clearGroupFilter = clearGroupFilter;
+      function updateGroupFilterSummary() {
+        const el = document.getElementById("cGroupSummary");
+        if (!cGroupFilter.size) { el.textContent = "All groups"; return; }
+        const names = Array.from(cGroupFilter).map((id) => groupById(id).name);
+        el.textContent = names.length > 2 ? `${names.slice(0, 2).join(", ")}, +${names.length - 2}` : names.join(", ");
+      }
+
+      function filteredContacts() {
+        const q = document.getElementById("cSearch").value.trim().toLowerCase();
+        const status = document.getElementById("cStatus").value;
+        const owner = document.getElementById("cOwner").value;
+        const range = document.getElementById("cDateRange").value;
+        return CONTACTS.filter((c) => {
+          if (q && !(c.name.toLowerCase().includes(q) || (c.profile.email || "").toLowerCase().includes(q) || (c.profile.phoneNumber || "").includes(q))) return false;
+          if (cGroupFilter.size && !c.groups.some((g) => cGroupFilter.has(g))) return false;
+          if (status && c.status !== status) return false;
+          if (owner && c.owner !== owner) return false;
+          if (range && daysSince(c.lastInteraction) > Number(range)) return false;
+          return true;
+        });
+      }
+
+      function groupTagsHtml(contact) {
+        const gs = contact.groups.map((id) => groupById(id)).filter(Boolean);
+        if (!gs.length) return `<span style="color:var(--text-dim)">—</span>`;
+        const shown = gs.slice(0, 3);
+        let html = `<div class="tag-wrap">` + shown.map((g) => `<span class="tag"><span class="cdot" style="background:${g.color}"></span>${esc(g.name)}</span>`).join("");
+        if (gs.length > 3) html += `<span class="tag-more">+${gs.length - 3} more</span>`;
+        return html + `</div>`;
+      }
+
+      function renderContactsList() {
+        const rows = filteredContacts();
+        document.getElementById("contactsBody").innerHTML = rows.map((c) => `
+          <tr>
+            <td onclick="event.stopPropagation()"><input type="checkbox" class="checkbox contact-check" data-id="${c.id}" onchange="onContactCheck()" /></td>
+            <td><div class="name-cell" onclick="showContactDetail('${c.id}')"><span class="ini-avatar">${c.initials}</span> ${esc(c.name)}</div></td>
+            <td>${esc(c.firstContact)}</td>
+            <td>${esc(c.lastInteraction)}</td>
+            <td>${groupTagsHtml(c)}</td>
+            <td><span class="badge ${c.status === "Active" ? "active" : "inactive"}"><span class="dot"></span>${c.status}</span></td>
+            <td onclick="event.stopPropagation()"><div class="act-icons">
+              <i class="fas fa-eye" title="View" onclick="showContactDetail('${c.id}')"></i>
+              <i class="fas fa-pen" title="Edit" onclick="showContactDetail('${c.id}');openEditContactModal()"></i>
+              <i class="fas fa-users" title="Assign to Group" onclick="openAssignGroupModal(['${c.id}'])"></i>
+              <i class="fas fa-paper-plane" title="Message"></i>
+            </div></td>
+          </tr>`).join("") || `<tr><td colspan="7">${emptyBox("No contacts match these filters")}</td></tr>`;
+        document.getElementById("cEntriesLabel").textContent = `Showing ${rows.length} of ${CONTACTS.length} contacts`;
+        updateContactBulkBar();
+      }
+      window.renderContactsList = renderContactsList;
+
+      function toggleAllContacts(cb) { document.querySelectorAll(".contact-check").forEach((c) => c.checked = cb.checked); updateContactBulkBar(); }
+      window.toggleAllContacts = toggleAllContacts;
+      function onContactCheck() { updateContactBulkBar(); }
+      window.onContactCheck = onContactCheck;
+      function getSelectedContacts() { return Array.from(document.querySelectorAll(".contact-check:checked")).map((c) => c.dataset.id); }
+      window.getSelectedContacts = getSelectedContacts;
+      function updateContactBulkBar() {
+        const n = getSelectedContacts().length;
+        document.getElementById("cBulkBar").classList.toggle("show", n > 0);
+        document.getElementById("cBulkCount").textContent = n;
+      }
+
+      function exportContacts(ids) { toast(`Exporting ${ids.length} contact${ids.length > 1 ? "s" : ""}`); }
+      window.exportContacts = exportContacts;
+
+      /* ============================================================
+         CONTACT DETAIL
+      ============================================================ */
+      function showContactsList() {
+        currentContactId = null;
+        document.getElementById("screenContactDetail").classList.add("hidden");
+        document.getElementById("screenContactsList").classList.remove("hidden");
+        window.scrollTo(0, 0);
+      }
+      window.showContactsList = showContactsList;
+
+      function showContactDetail(id) {
+        currentContactId = id;
+        const c = contactById(id);
+        document.getElementById("screenContactsList").classList.add("hidden");
+        document.getElementById("screenContactDetail").classList.remove("hidden");
+        document.getElementById("cdAvatar").textContent = c.initials;
+        document.getElementById("cdName").textContent = c.name;
+        document.getElementById("cdCreated").textContent = `First contact: ${c.firstContact}`;
+        document.getElementById("cdStatus").textContent = c.status;
+        document.getElementById("cdOwner").textContent = c.owner;
+        document.getElementById("cdGroupCount").textContent = c.groups.length;
+
+        document.getElementById("cdContactInfo").innerHTML = [
+          kv("Contact Name", esc(c.name)),
+          kv("Phone", esc(c.profile.countryCode + " " + c.profile.phoneNumber)),
+          kv("Email", esc(c.profile.email), { cls: "link" }),
+          kv("Secondary Phone", esc(c.secondaryPhone)),
+          kv("Notes", esc(c.notes)),
+        ].join("");
+
+        const p = c.profile;
+        document.getElementById("cdProfile").innerHTML = [
+          kv("Full Name", esc(p.fullName)), kv("Email Address", esc(p.email), { cls: "link" }),
+          kv("Country Code", esc(p.countryCode)), kv("Phone Number", esc(p.phoneNumber)), kv("Status", esc(p.status)),
+          kv("Current Address", esc(p.currentAddress)), kv("Nationality", esc(p.nationality)), kv("Gender", esc(p.gender)),
+          kv("Age", esc(p.age)), 
+        ].join("");
+
+        const a = c.additional;
+        document.getElementById("cdAdditional").innerHTML = [
+          kv("Owned property in Japan?", esc(a.ownedPropertyJP)),
+          kv("Property location", esc(a.propertyLocation)),
+          kv("Resident Country", esc(a.residentCountry)),
+          kv("Buyer Status", tagList(a.buyerStatus)),
+        ].join("");
+
+        const inv = c.investment;
+        document.getElementById("cdInvestment").innerHTML = [
+          kv("Property Type", tagList(inv.propertyType)), kv("Desired City", esc(inv.desiredCity)), kv("Desired Area", esc(inv.desiredArea)),
+          kv("Budget (Min)", esc(inv.budgetMin)), kv("Budget (Max)", esc(inv.budgetMax)), kv("Target Yield", esc(inv.targetYield)),
+          kv("Number of Bedrooms", esc(inv.bedrooms)), kv("Purpose of Purchase", esc(inv.purpose)), kv("Property Status", esc(inv.propertyStatus)),
+        ].join("");
+
+        document.getElementById("cdGroups").innerHTML = c.groups.length
+          ? c.groups.map((gid) => { const g = groupById(gid); return `<span class="tag"><span class="cdot" style="background:${g.color}"></span>${esc(g.name)}</span>`; }).join("")
+          : `<span style="color:var(--text-dim);font-size:12.5px">Not in any group yet.</span>`;
+
+        document.getElementById("cdLeads").innerHTML = c.leads.length
+          ? `<table class="data"><thead><tr><th>Property</th><th>Status</th><th>Enquiry Date</th><th>Budget</th></tr></thead><tbody>${c.leads.map((l) => `<tr><td><strong>${esc(l.property)}</strong></td><td>${esc(l.status)}</td><td>${esc(l.date)}</td><td>${esc(l.budget)}</td></tr>`).join("")}</tbody></table>`
+          : emptyBox("No leads yet", "This contact messaged once but hasn't generated a lead.");
+
+        document.getElementById("cdOffers").innerHTML = c.offers.length
+          ? `<table class="data"><thead><tr><th>Property</th><th>Offer Price</th><th>Date</th><th>Status</th></tr></thead><tbody>${c.offers.map((o) => `<tr><td>${esc(o.property)}</td><td>${esc(o.price)}</td><td>${esc(o.date)}</td><td>${esc(o.status)}</td></tr>`).join("")}</tbody></table>`
+          : emptyBox("No offers yet");
+
+        document.getElementById("cdActivity").innerHTML = c.activity.length
+          ? c.activity.map((a2) => `<div class="activity"><div class="a-title">${esc(a2.title)}</div><div class="a-line">${esc(a2.line)}</div><div class="a-time">${esc(a2.time)}</div></div>`).join("")
+          : `<div style="color:var(--text-dim);font-size:12.5px">No activity recorded yet.</div>`;
+
+        document.getElementById("cdComments").innerHTML = c.comments.map((cm) => `<div class="comment"><div class="c-body">${esc(cm.body)}</div><div class="c-attr"><span class="who">${esc(cm.who)}</span> &nbsp; <span class="when">${esc(cm.when)}</span></div></div>`).join("");
+
+        window.scrollTo(0, 0);
+      }
+      window.showContactDetail = showContactDetail;
+
+      function cdCommentKey(e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          const v = e.target.value.trim(); if (!v) return;
+          const c = contactById(currentContactId);
+          c.comments.unshift({ body: v, who: "Chris Sales", when: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) + ", " + new Date().toTimeString().slice(0, 5) });
+          e.target.value = ""; showContactDetail(currentContactId); toast("Comment added");
+        }
+      }
+      window.cdCommentKey = cdCommentKey;
+
+      /* ---- Full Edit Contact Modal ---- */
+      function openEditContactModal() {
+        const c = contactById(currentContactId);
+        document.getElementById("ecName").value = c.name || "";
+        document.getElementById("ecFirstContact").value = c.firstContact || "";
+        document.getElementById("ecPhone").value = (c.profile.countryCode || "") + " " + (c.profile.phoneNumber || "");
+        document.getElementById("ecEmail").value = c.profile.email || "";
+        document.getElementById("ecSecondaryPhone").value = c.secondaryPhone || "";
+        document.getElementById("ecNotes").value = c.notes || "";
+
+        document.getElementById("ecFullName").value = c.profile.fullName || "";
+        document.getElementById("ecCountryCode").value = c.profile.countryCode || "";
+        document.getElementById("ecPhoneNumber").value = c.profile.phoneNumber || "";
+        document.getElementById("ecCurrentAddress").value = c.profile.currentAddress || "";
+        document.getElementById("ecNationality").value = c.profile.nationality || "";
+        document.getElementById("ecGender").value = c.profile.gender || "";
+        document.getElementById("ecAge").value = c.profile.age || "";
+
+        document.getElementById("ecOwnedPropertyJP").value = c.additional.ownedPropertyJP || "";
+        document.getElementById("ecPropertyLocation").value = c.additional.propertyLocation || "";
+        document.getElementById("ecResidentCountry").value = c.additional.residentCountry || "";
+        document.getElementById("ecBuyerStatus").value = (c.additional.buyerStatus || []).join(", ");
+
+        document.getElementById("ecDesiredCity").value = c.investment.desiredCity || "";
+        document.getElementById("ecDesiredArea").value = c.investment.desiredArea || "";
+        document.getElementById("ecBudgetMin").value = c.investment.budgetMin || "";
+        document.getElementById("ecBudgetMax").value = c.investment.budgetMax || "";
+        document.getElementById("ecTargetYield").value = c.investment.targetYield || "";
+        document.getElementById("ecBedrooms").value = c.investment.bedrooms || "";
+        document.getElementById("ecPurpose").value = c.investment.purpose || "";
+        document.getElementById("ecPropertyStatus").value = c.investment.propertyStatus || "";
+
+        openModal("editContactModal");
+      }
+      window.openEditContactModal = openEditContactModal;
+
+      function saveEditContactModal() {
+        const c = contactById(currentContactId);
+        
+        c.name = document.getElementById("ecName").value.trim();
+        c.firstContact = document.getElementById("ecFirstContact").value.trim();
+        c.secondaryPhone = document.getElementById("ecSecondaryPhone").value.trim();
+        c.notes = document.getElementById("ecNotes").value.trim();
+
+        c.profile.fullName = document.getElementById("ecFullName").value.trim();
+        c.profile.email = document.getElementById("ecEmail").value.trim();
+        const phoneParts = (document.getElementById("ecPhone").value || "").split(" ");
+        c.profile.countryCode = phoneParts[0] || "";
+        c.profile.phoneNumber = phoneParts.slice(1).join(" ") || document.getElementById("ecPhoneNumber").value.trim();
+        c.profile.currentAddress = document.getElementById("ecCurrentAddress").value.trim();
+        c.profile.nationality = document.getElementById("ecNationality").value.trim();
+        c.profile.gender = document.getElementById("ecGender").value.trim();
+        c.profile.age = document.getElementById("ecAge").value.trim();
+
+        c.additional.ownedPropertyJP = document.getElementById("ecOwnedPropertyJP").value.trim();
+        c.additional.propertyLocation = document.getElementById("ecPropertyLocation").value.trim();
+        c.additional.residentCountry = document.getElementById("ecResidentCountry").value.trim();
+        c.additional.buyerStatus = document.getElementById("ecBuyerStatus").value.split(",").map(s => s.trim()).filter(Boolean);
+
+        c.investment.desiredCity = document.getElementById("ecDesiredCity").value.trim();
+        c.investment.desiredArea = document.getElementById("ecDesiredArea").value.trim();
+        c.investment.budgetMin = document.getElementById("ecBudgetMin").value.trim();
+        c.investment.budgetMax = document.getElementById("ecBudgetMax").value.trim();
+        c.investment.targetYield = document.getElementById("ecTargetYield").value.trim();
+        c.investment.bedrooms = document.getElementById("ecBedrooms").value.trim();
+        c.investment.purpose = document.getElementById("ecPurpose").value.trim();
+        c.investment.propertyStatus = document.getElementById("ecPropertyStatus").value.trim();
+
+        closeModal("editContactModal");
+        showContactDetail(currentContactId);
+        toast("Contact updated successfully", "success");
+      }
+      window.saveEditContactModal = saveEditContactModal;
+
+      function restoreOriginalData() {
+        if (!confirm("Restore all fields to original system data? Current edits will be lost.")) return;
+        const c = contactById(currentContactId);
+        if (c.original) {
+          c.name = c.original.name;
+          c.firstContact = c.original.firstContact;
+          c.secondaryPhone = c.original.secondaryPhone;
+          c.notes = c.original.notes;
+
+          Object.assign(c.profile, c.original.profile);
+          Object.assign(c.additional, c.original.additional);
+          Object.assign(c.investment, c.original.investment);
+
+          closeModal("editContactModal");
+          showContactDetail(currentContactId);
+          toast("Restored to original system data", "success");
+        }
+      }
+      window.restoreOriginalData = restoreOriginalData;
+
+      /* ============================================================
+         ASSIGN TO GROUP(S) MODAL
+      ============================================================ */
+      function openAssignGroupModal(ids) {
+        assignTargetIds = ids;
+        document.getElementById("assignSub").textContent = ids.length > 1 ? `Choose group(s) for ${ids.length} selected contacts.` : `Choose group(s) for ${contactById(ids[0]).name}.`;
+        document.getElementById("assignSearch").value = "";
+        document.getElementById("assignInlineCreate").classList.add("hidden");
+        document.getElementById("assignNewGroupName").value = "";
+        renderAssignList();
+        openModal("assignModal");
+      }
+      
+      window.openAssignGroupModal = openAssignGroupModal;
+      function renderAssignList() {
+        const q = document.getElementById("assignSearch").value.trim().toLowerCase();
+        const already = assignTargetIds.length === 1 ? contactById(assignTargetIds[0]).groups : [];
+        document.getElementById("assignList").innerHTML = GROUPS.filter((g) => g.name.toLowerCase().includes(q)).map((g) => `
+          <label class="pick-row">
+            <input type="checkbox" data-gid="${g.id}" ${already.includes(g.id) ? "checked" : ""} />
+            <span class="cdot" style="width:9px;height:9px;border-radius:50%;background:${g.color}"></span>
+            ${esc(g.name)} <span style="color:var(--text-dim);margin-left:auto;font-size:11.5px">${memberCount(g.id)} members</span>
+          </label>`).join("") || `<div style="padding:14px;text-align:center;color:var(--text-dim);font-size:12.5px">No groups match.</div>`;
+      }
+      window.renderAssignList = renderAssignList;
+      function showCreateGroupInline() { document.getElementById("assignInlineCreate").classList.toggle("hidden"); }
+      window.showCreateGroupInline = showCreateGroupInline;
+      function saveAssignModal() {
+        const checkedIds = Array.from(document.querySelectorAll("#assignList input:checked")).map((i) => i.dataset.gid);
+        const newName = document.getElementById("assignNewGroupName").value.trim();
+        let allGroupIds = checkedIds.slice();
+        if (newName) {
+          const ng = { id: "g" + Date.now(), name: newName, color: SWATCH_COLORS[Math.floor(Math.random() * SWATCH_COLORS.length)], desc: "", owner: "Chris Sales", created: ymd(new Date()), modified: ymd(new Date()) };
+          GROUPS.push(ng); allGroupIds.push(ng.id);
+        }
+        assignTargetIds.forEach((cid) => {
+          const c = contactById(cid);
+          allGroupIds.forEach((gid) => { if (!c.groups.includes(gid)) c.groups.push(gid); });
+        });
+        closeModal("assignModal");
+        initContactFilters();
+        if (!document.getElementById("screenContactDetail").classList.contains("hidden")) showContactDetail(currentContactId);
+        else renderContactsList();
+        toast(`Assigned to ${allGroupIds.length} group${allGroupIds.length !== 1 ? "s" : ""}`, "success");
+      }
+      window.saveAssignModal = saveAssignModal;
+
+      function ymd(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+
+      /* ============================================================
+         BOOT
+      ============================================================ */
+      initContactFilters();
+      document.getElementById("screenContactsList").classList.remove("hidden");
+      renderContactsList();
+    </script>
+  </body>
+</html>

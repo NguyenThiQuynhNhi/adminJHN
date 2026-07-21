@@ -178,6 +178,55 @@
       .reason-box { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 14px 16px; margin-top: 14px; }
       .reason-box .rb-title { font-size: 11px; font-weight: 700; color: #92400e; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
       .reason-box .rb-reason { font-size: 15px; font-weight: 800; color: #78350f; }
+
+      /* Property picker / persisted suspension rows */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(59, 47, 42, 0.35);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 200;
+      }
+      .modal-backdrop.open { display: flex; }
+      .modal-box {
+        background: var(--bg-card);
+        border-radius: 10px;
+        box-shadow: 0 18px 50px rgba(60, 41, 28, 0.28);
+        display: flex;
+        flex-direction: column;
+        max-height: 85vh;
+      }
+      .prop-pick-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 18px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border-soft);
+        transition: background 0.12s;
+      }
+      .prop-pick-row:hover { background: var(--accent-tint); }
+      .prop-pick-row:last-child { border-bottom: 0; }
+      .prop-pick-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: var(--grey-pill);
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+      .prop-pick-body { flex: 1; min-width: 0; }
+      .prop-pick-name { font-size: 13px; font-weight: 700; color: var(--text-head); }
+      .prop-pick-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+      .prop-pick-price { font-size: 13px; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+      .prop-pick-empty { padding: 32px; text-align: center; color: var(--text-muted); font-size: 13px; }
       .reason-box .rb-sub { font-size: 12px; color: #92400e; margin-top: 3px; }
 
       /* Tabs */
@@ -305,15 +354,14 @@
           <div class="list-head">
             <div>
               <div class="page-title">Transactions</div>
-              <div class="page-subtitle">Closed deals &amp; suspended listings — source of truth for pricing and agent profile</div>
-            </div>
+         </div>
             <div class="head-right">
               <div class="rows-sel" onclick="cycleRows()"><span id="rowsLabel">10</span> <i class="fas fa-chevron-down" style="font-size:10px;color:var(--text-dim)"></i></div>
               <div class="more-menu">
                 <button class="btn btn-pill" onclick="toggleMenu('addMenu')"><i class="fas fa-plus"></i> Log Transaction <i class="fas fa-chevron-down" style="font-size:10px"></i></button>
                 <div class="menu-pop" id="addMenu">
                   <button onclick="showEdit('closed')"><i class="fas fa-handshake" style="width:16px;color:var(--green-text)"></i> Log Closed Deal</button>
-                  <button onclick="showEdit('suspended')"><i class="fas fa-circle-pause" style="width:16px;color:var(--orange-text)"></i> Suspend Listing</button>
+                  <button onclick="openPropPicker()"><i class="fas fa-circle-pause" style="width:16px;color:var(--orange-text)"></i> Suspend Listing</button>
                 </div>
               </div>
             </div>
@@ -351,7 +399,7 @@
               <button id="pillSusp" onclick="setTypeFilter('suspended')">Suspended</button>
             </div>
             <div class="filter-field has-icon"><i class="fas fa-search fi-left"></i><input placeholder="Search property…" /></div>
-            <div class="filter-field"><select><option value="">Reason</option><option>Sold</option><option>Sold by others</option><option>Seller withdrew</option><option>Expired</option><option>Withdrawn by agent</option><option>Duplicate</option><option>Legal hold</option></select><i class="fas fa-chevron-down fi-right"></i></div>
+            <div class="filter-field"><select><option value="">Reason</option><option>Sold</option><option>Sold by others</option><option>Seller withdrew</option><option>Expired</option><option>Legal hold</option></select><i class="fas fa-chevron-down fi-right"></i></div>
             <div class="filter-field"><select><option value="">Visibility</option><option>Public</option><option>Private</option></select><i class="fas fa-chevron-down fi-right"></i></div>
             <div class="filter-field"><select><option value="">Agent</option><option>Chris Sales</option><option>Maria Sales</option><option>Tony Sales</option></select><i class="fas fa-chevron-down fi-right"></i></div>
             <div class="filter-field has-icon"><i class="fas fa-calendar fi-left"></i><input placeholder="Date range" /></div>
@@ -793,9 +841,9 @@
               <div class="sec-title">Property</div>
               <div class="sec-sub">Select the listing to suspend</div>
               <div class="form-grid">
-                <div class="fld half"><label>Property <span class="req">*</span></label><div class="fld-combo"><select><option>Sakura Villa — Block C (PROP-2041)</option><option>Riverside Tower 12F</option><option>Koenji Terrace House</option></select><button class="mini-add"><i class="fas fa-plus"></i></button></div></div>
-                <div class="fld"><label>Suspension Date <span class="req">*</span></label><input type="date" value="2025-04-15" /></div>
-                <div class="fld"><label>Listing Agent</label><select><option>Maria Sales</option><option>Chris Sales</option></select></div>
+                <div class="fld half"><label>Property <span class="req">*</span></label><div class="fld-combo"><select id="suspPropertySelect"></select><button class="mini-add"><i class="fas fa-plus"></i></button></div></div>
+                <div class="fld"><label>Suspension Date <span class="req">*</span></label><input id="suspDateInput" type="date" value="2025-04-15" /></div>
+                <div class="fld"><label>Listing Agent</label><select id="suspAgentSelect"><option>Maria Sales</option><option>Chris Sales</option></select></div>
               </div>
             </div>
 
@@ -811,7 +859,7 @@
                   <div class="rc-sub">Agent closed the deal</div>
                   <div class="rc-price">
                     <label>Transaction Price <span style="color:var(--accent)">*</span></label>
-                    <input placeholder="¥0" onclick="event.stopPropagation()" />
+                    <input data-reason-price="sold" placeholder="¥0" onclick="event.stopPropagation()" />
                   </div>
                 </div>
                 <div class="reason-card" onclick="selectReason(this,'sold-others')">
@@ -820,7 +868,7 @@
                   <div class="rc-sub">Another agent/agency sold it</div>
                   <div class="rc-price">
                     <label>Transaction Price (optional)</label>
-                    <input placeholder="¥0 (if known)" onclick="event.stopPropagation()" />
+                    <input data-reason-price="sold-others" placeholder="¥0 (if known)" onclick="event.stopPropagation()" />
                   </div>
                 </div>
                 <div class="reason-card" onclick="selectReason(this,'seller-withdrew')">
@@ -833,25 +881,10 @@
                   <div class="rc-title">Listing Expired</div>
                   <div class="rc-sub">Contract period ended</div>
                 </div>
-                <div class="reason-card" onclick="selectReason(this,'withdrawn-agent')">
-                  <div class="rc-icon"><i class="fas fa-user-minus"></i></div>
-                  <div class="rc-title">Withdrawn by Agent</div>
-                  <div class="rc-sub">Agency chose to delist</div>
-                </div>
-                <div class="reason-card" onclick="selectReason(this,'duplicate')">
-                  <div class="rc-icon"><i class="fas fa-copy"></i></div>
-                  <div class="rc-title">Duplicate Listing</div>
-                  <div class="rc-sub">Entry was duplicated</div>
-                </div>
                 <div class="reason-card" onclick="selectReason(this,'legal')">
                   <div class="rc-icon"><i class="fas fa-gavel"></i></div>
                   <div class="rc-title">Legal Hold</div>
                   <div class="rc-sub">Legal dispute or freeze</div>
-                </div>
-                <div class="reason-card" onclick="selectReason(this,'price-change')">
-                  <div class="rc-icon"><i class="fas fa-arrow-trend-up"></i></div>
-                  <div class="rc-title">Price Renegotiation</div>
-                  <div class="rc-sub">Temp removal to reprice</div>
                 </div>
                 <div class="reason-card" onclick="selectReason(this,'other')">
                   <div class="rc-icon"><i class="fas fa-ellipsis"></i></div>
@@ -887,6 +920,32 @@
 
     <div class="toast-wrap" id="toastWrap"></div>
 
+    <!-- ===== PROPERTY PICKER MODAL (Suspend Listing) ===== -->
+    <div class="modal-backdrop" id="propPickerModal">
+      <div style="width:580px;max-width:100%;background:var(--bg-card);border-radius:10px;box-shadow:0 18px 50px rgba(60,41,28,.28);display:flex;flex-direction:column;max-height:85vh">
+        <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:16px;font-weight:800;color:var(--text-head)">Select Property to Suspend</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Choose an active listing to remove from market</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="closePropPicker()"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div style="padding:14px 18px;border-bottom:1px solid var(--border-soft);background:var(--bg-alt)">
+          <div style="position:relative">
+            <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:12px"></i>
+            <input id="propPickerSearch" placeholder="Search by name, ID, address…" style="width:100%;height:38px;border-radius:8px;border:1px solid var(--border);padding:0 14px 0 36px;font-size:13px;outline:none;font-family:inherit" oninput="renderPropPickerResults(this.value)" />
+          </div>
+        </div>
+
+        <div id="propPickerResults" style="flex:1;overflow-y:auto;padding:8px 0"></div>
+
+        <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">
+          <button class="btn btn-pill" onclick="closePropPicker()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
     <script>
       const OWNERS = { CS: "Chris Sales", MS: "Maria Sales", TS: "Tony Sales", JS: "Jenny Sales" };
 
@@ -903,6 +962,80 @@
         { ref:"TXN-100003", property:"Nakameguro River View", type:"closed", client:"Mark Ateer", date:"2025-03-15", price:"¥4,100,000", reason:"Sold", pub:true, owner:"JS" },
       ];
 
+      const SUSP_REASON_LABELS = {
+        sold: "Sold",
+        "sold-others": "Sold by Others",
+        "seller-withdrew": "Seller Withdrew",
+        expired: "Expired",
+        "withdrawn-agent": "Withdrawn by Agent",
+        duplicate: "Duplicate",
+        legal: "Legal Hold",
+        "price-change": "Price Renegotiation",
+        "price-renegotiation": "Price Renegotiation",
+        other: "Other",
+      };
+      let selectedSuspensionProperty = null;
+      let selectedSuspReason = null;
+
+      function formatYenValue(value) {
+        if (value == null || value === "" || value === "—") return "—";
+        const num = Number(value);
+        return Number.isFinite(num) ? `¥${num.toLocaleString("en-US")}` : String(value);
+      }
+
+      function ownerLabel(owner) {
+        return OWNERS[owner] || owner || "—";
+      }
+
+      function ownerInitials(owner) {
+        if (!owner) return "—";
+        if (OWNERS[owner]) return owner;
+        return owner.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+      }
+
+      function getAvailableProperties() {
+        try {
+          const raw = JSON.parse(localStorage.getItem("yuushi.ploPropertyPicker") || "[]");
+          if (Array.isArray(raw) && raw.length) return raw;
+        } catch (e) {}
+        return [
+          { id: "PROP-58102", name: "Minami-Aoyama Penthouse", propType: "Apartment", prefecture: "Tokyo", city: "Minato", price: "¥98,000,000", agent: "Maria Sales" },
+          { id: "PROP-58110", name: "Shibuya Mixed-Use Building", propType: "Whole Bldg", prefecture: "Tokyo", city: "Shibuya", price: "¥2,400,000,000", agent: "Chris Sales" },
+          { id: "PROP-58120", name: "Setagaya Residential Land", propType: "Land", prefecture: "Tokyo", city: "Setagaya", price: "¥45,000,000", agent: "Tony Sales" },
+          { id: "PROP-58145", name: "Shinjuku Studio Apartment", propType: "Apartment", prefecture: "Tokyo", city: "Shinjuku", price: "¥120,000/mo", agent: "Maria Sales" },
+          { id: "PROP-58210", name: "Toyosu Bayside Tower", propType: "Tower Mansion", prefecture: "Tokyo", city: "Koto", price: "¥86,000,000", agent: "Chris Sales" },
+          { id: "PROP-58222", name: "Namba Apartment Block", propType: "Multi-Family", prefecture: "Osaka", city: "Osaka", price: "¥320,000,000", agent: "Tony Sales" },
+          { id: "PROP-58231", name: "Yokohama Commercial Lot", propType: "Land", prefecture: "Kanagawa", city: "Yokohama", price: "¥210,000,000", agent: "Maria Sales" },
+        ];
+      }
+
+      function loadSuspensionTransactions() {
+        try {
+          const raw = JSON.parse(localStorage.getItem("yuushi.suspensionTx") || "[]");
+          if (!Array.isArray(raw)) return [];
+          return raw.map((tx) => ({
+            ref: tx.ref || `TXN-${Date.now().toString().slice(-6)}`,
+            property: tx.propertyName && tx.propertyId ? `${tx.propertyName} (${tx.propertyId})` : tx.propertyName || tx.property || "—",
+            type: "suspended",
+            client: "—",
+            date: tx.suspensionDate || tx.date || new Date().toISOString().slice(0, 10),
+            price: tx.transactionPrice == null ? "—" : formatYenValue(tx.transactionPrice),
+            reason: SUSP_REASON_LABELS[tx.reason] || tx.reason || "—",
+            pub: !!tx.publicPrice,
+            owner: tx.agent || "—",
+            sortDate: tx.createdAt || tx.suspensionDate || tx.date || new Date().toISOString(),
+          }));
+        } catch (e) {
+          return [];
+        }
+      }
+
+      function getTransactionRows() {
+        return TRANSACTIONS.map((t) => ({ ...t, sortDate: t.date }))
+          .concat(loadSuspensionTransactions())
+          .sort((a, b) => new Date(b.sortDate).getTime() - new Date(a.sortDate).getTime());
+      }
+
       let rowsPerPage = 10, page = 1, typeFilter = "all";
       const TOTAL = 47;
 
@@ -912,15 +1045,16 @@
           "Sold by Others": "badge-others",
           "Seller Withdrew": "badge-withdrew",
           "Expired": "badge-expired",
-          "Withdrawn by Agent": "badge-withdrawn",
-          "Duplicate": "badge-dup",
           "Legal Hold": "badge-legal",
+          Other: "badge-new",
         };
         return `<span class="badge ${map[r]||'badge-new'}">${r}</span>`;
       }
 
       function renderList() {
-        const rows = TRANSACTIONS.slice(0, rowsPerPage);
+        const allRows = getTransactionRows();
+        const rows = allRows.slice(0, rowsPerPage);
+        const total = allRows.length;
         document.getElementById("listBody").innerHTML = rows.map(t => `
           <tr onclick="${t.type==='closed'?'showDetailClosed()':'showDetailSuspended()'}">
             <td onclick="event.stopPropagation();this.querySelector('.circle-check').classList.toggle('checked')"><span class="circle-check"></span></td>
@@ -936,20 +1070,21 @@
                 <span class="toggle-label">${t.pub?'Public':'Private'}</span>
               </div>
             </td>
-            <td><div class="name-cell"><span class="owner-avatar">${t.owner}</span>${OWNERS[t.owner]}</div></td>
+            <td><div class="name-cell"><span class="owner-avatar">${ownerInitials(t.owner)}</span>${ownerLabel(t.owner)}</div></td>
             <td onclick="event.stopPropagation()"><div class="act-icons">
               <i class="fas fa-pen" onclick="${t.type==='closed'?'showEdit(\'closed\')':'showEdit(\'suspended\')'}" title="Edit"></i>
               <i class="fas fa-arrow-up-right-from-square" onclick="toast('View property (demo)')" title="View property"></i>
               <i class="fas fa-trash" onclick="if(confirm('Delete transaction?'))toast('Deleted (demo)')" title="Delete"></i>
             </div></td>
           </tr>`).join("");
-        const start = (page-1)*rowsPerPage+1, end = Math.min(page*rowsPerPage, TOTAL);
-        document.getElementById("entriesLabel").textContent = `Showing ${start} to ${end} of ${TOTAL} entries`;
-        renderPagination();
+        const start = total ? (page - 1) * rowsPerPage + 1 : 0;
+        const end = Math.min(page * rowsPerPage, total);
+        document.getElementById("entriesLabel").textContent = `Showing ${start} to ${end} of ${total} entries`;
+        renderPagination(total);
       }
 
-      function renderPagination() {
-        const pages = Math.ceil(TOTAL / rowsPerPage);
+      function renderPagination(total) {
+        const pages = Math.ceil(total / rowsPerPage) || 1;
         let h = `<button class="pg-btn pg-arrow">‹</button>`;
         for (let i = 1; i <= Math.min(5, pages); i++) h += `<button class="pg-btn ${i===page?'active':''}">${i}</button>`;
         h += `<button class="pg-btn pg-arrow">›</button>`;
@@ -1010,8 +1145,96 @@
       function selectReason(el, key) {
         document.querySelectorAll(".reason-card").forEach(c => c.classList.remove("selected"));
         el.classList.add("selected");
+        selectedSuspReason = key;
       }
       window.selectReason = selectReason;
+
+      function populateSuspendedForm(prop) {
+        const select = document.getElementById("suspPropertySelect");
+        const dateInput = document.getElementById("suspDateInput");
+        const agentSelect = document.getElementById("suspAgentSelect");
+        if (!select) return;
+
+        const props = getAvailableProperties();
+        select.innerHTML = "";
+        props.forEach((p) => {
+          const opt = document.createElement("option");
+          opt.value = p.id;
+          opt.textContent = `${p.name} (${p.id})`;
+          select.appendChild(opt);
+        });
+
+        const chosen = prop || selectedSuspensionProperty || props[0] || null;
+        if (chosen) {
+          if (!Array.from(select.options).some((opt) => opt.value === chosen.id)) {
+            const opt = document.createElement("option");
+            opt.value = chosen.id;
+            opt.textContent = `${chosen.name} (${chosen.id})`;
+            select.appendChild(opt);
+          }
+          select.value = chosen.id;
+          selectedSuspensionProperty = chosen;
+          if (agentSelect && chosen.agent) {
+            if (!Array.from(agentSelect.options).some((opt) => opt.value === chosen.agent)) {
+              const opt = document.createElement("option");
+              opt.value = chosen.agent;
+              opt.textContent = chosen.agent;
+              agentSelect.appendChild(opt);
+            }
+            agentSelect.value = chosen.agent;
+          }
+        }
+        if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+        selectedSuspReason = null;
+        document.querySelectorAll(".reason-card").forEach((c) => c.classList.remove("selected"));
+      }
+
+      function openPropPicker() {
+        document.getElementById("propPickerSearch").value = "";
+        renderPropPickerResults("");
+        document.getElementById("propPickerModal").classList.add("open");
+        setTimeout(() => document.getElementById("propPickerSearch").focus(), 30);
+      }
+      window.openPropPicker = openPropPicker;
+
+      function closePropPicker() {
+        document.getElementById("propPickerModal").classList.remove("open");
+      }
+      window.closePropPicker = closePropPicker;
+
+      function renderPropPickerResults(q) {
+        const term = (q || "").toLowerCase().trim();
+        const props = getAvailableProperties().filter((p) => {
+          if (!term) return true;
+          return [p.id, p.name, p.propType, p.city, p.prefecture].join(" ").toLowerCase().includes(term);
+        });
+
+        const box = document.getElementById("propPickerResults");
+        if (!props.length) {
+          box.innerHTML = '<div class="prop-pick-empty"><i class="fas fa-building" style="font-size:24px;display:block;margin-bottom:8px;color:var(--text-dim)"></i>No properties found.</div>';
+          return;
+        }
+        box.innerHTML = props.map((p) => `
+          <div class="prop-pick-row" onclick='pickPropertyForSuspension(${JSON.stringify(p.id)}, ${JSON.stringify(p.name)}, ${JSON.stringify(p.propType || "")}, ${JSON.stringify(p.city || p.prefecture || "")}, ${JSON.stringify(p.price || "")}, ${JSON.stringify(p.agent || "")})'>
+            <div class="prop-pick-avatar">${p.id.slice(-2)}</div>
+            <div class="prop-pick-body">
+              <div class="prop-pick-name">${p.name}</div>
+              <div class="prop-pick-meta">${p.id} · ${p.propType || "—"} · ${p.prefecture || p.city || "—"}</div>
+            </div>
+            <div class="prop-pick-price">${p.price || "—"}</div>
+          </div>
+        `).join("");
+      }
+      window.renderPropPickerResults = renderPropPickerResults;
+
+      function pickPropertyForSuspension(id, name, type, city, price, agent) {
+        closePropPicker();
+        selectedSuspensionProperty = { id, name, propType: type, city, price, agent, pickedFromPicker: true };
+        populateSuspendedForm(selectedSuspensionProperty);
+        showEdit("suspended");
+        toast(`Property selected: ${name}`);
+      }
+      window.pickPropertyForSuspension = pickPropertyForSuspension;
 
       /* Price visibility toggle */
       function togglePriceVis(cb) {
@@ -1060,8 +1283,63 @@
       function showList() { showOnly("screenList"); }
       function showDetailClosed() { showOnly("screenDetailClosed"); renderPipelineClosed(); detailTab("offer", document.querySelector("#screenDetailClosed .btab")); }
       function showDetailSuspended() { showOnly("screenDetailSuspended"); renderPipelineSuspended(); }
-      function showEdit(type) { showOnly(type==="closed"?"screenEditClosed":"screenEditSuspended"); }
-      function saveTransaction(type) { toast("Transaction saved successfully","success"); setTimeout(()=>{ type==="closed"?showDetailClosed():showDetailSuspended(); },400); }
+      function showEdit(type) {
+        showOnly(type==="closed"?"screenEditClosed":"screenEditSuspended");
+        if (type === "suspended") populateSuspendedForm(selectedSuspensionProperty);
+      }
+      function saveTransaction(type) {
+        if (type === "suspended") {
+          if (!selectedSuspensionProperty) {
+            toast("Select a property first", "error");
+            return;
+          }
+          if (!selectedSuspReason) {
+            toast("Select a removal reason first", "error");
+            return;
+          }
+          const selectedCard = document.querySelector(".reason-card.selected");
+          const priceInput = selectedCard ? selectedCard.querySelector("input[data-reason-price]") : null;
+          const priceValue = priceInput ? priceInput.value.trim() : "";
+          if (selectedSuspReason === "sold" && !priceValue) {
+            toast("Transaction price is required for Sold", "error");
+            priceInput?.focus?.();
+            return;
+          }
+          const dateValue = document.getElementById("suspDateInput")?.value || new Date().toISOString().slice(0, 10);
+          const agentValue = document.getElementById("suspAgentSelect")?.value || selectedSuspensionProperty.agent || "—";
+          const record = {
+            ref: "TXN-" + Date.now().toString().slice(-6),
+            propertyId: selectedSuspensionProperty.id,
+            propertyName: selectedSuspensionProperty.name,
+            property: `${selectedSuspensionProperty.name} (${selectedSuspensionProperty.id})`,
+            type: "suspended",
+            client: "—",
+            date: dateValue,
+            price: priceValue ? formatYenValue(priceValue) : "—",
+            reason: SUSP_REASON_LABELS[selectedSuspReason] || selectedSuspReason,
+            pub: !!document.getElementById("suspTxPublicPrice")?.checked,
+            owner: agentValue,
+            createdAt: new Date().toISOString(),
+          };
+          try {
+            const existing = JSON.parse(localStorage.getItem("yuushi.suspensionTx") || "[]");
+            existing.unshift(record);
+            localStorage.setItem("yuushi.suspensionTx", JSON.stringify(existing));
+          } catch (e) {}
+          toast("Transaction saved successfully", "success");
+          renderList();
+          setTimeout(() => {
+            if (selectedSuspensionProperty && selectedSuspensionProperty.pickedFromPicker) {
+              showList();
+            } else {
+              showDetailSuspended();
+            }
+          }, 400);
+          return;
+        }
+        toast("Transaction saved successfully","success");
+        setTimeout(()=>{ type==="closed"?showDetailClosed():showDetailSuspended(); },400);
+      }
       window.showList=showList; window.showDetailClosed=showDetailClosed; window.showDetailSuspended=showDetailSuspended; window.showEdit=showEdit; window.saveTransaction=saveTransaction;
 
       /* Toast */

@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Groups — YUUSHI Agent CRM</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+      :root {
+        --accent: #c4714a; --accent-dark: #a55232; --accent-soft: #fdeee4; --accent-tint: #faf0e9;
+        --bg-body: #f5f0e8; --bg-card: #fff; --bg-alt: #fdfcf9;
+        --border: #e9e2d6; --border-soft: #f0ece4;
+        --text-main: #333; --text-head: #222; --text-muted: #8a8178; --text-dim: #aaa094;
+        --pink: #e74c7a; --grey-pill: #eceae4; --grey-pill-dark: #ddd8cf;
+        --green: #2f855a; --red: #c0392b;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; }
+      body { font-family: Arial, Helvetica, system-ui, sans-serif; background: var(--bg-body); color: var(--text-main); font-size: 13px; line-height: 1.5; display: flex; -webkit-font-smoothing: antialiased; }
+      a { color: var(--accent); text-decoration: none; cursor: pointer; }
+      /* ===== Main ===== */
+      .main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+      .content { flex: 1; overflow-y: auto; padding: 24px; }
+      /* ===== Buttons ===== */
+      .btn { border-radius: 6px; border: 1px solid var(--border); padding: 8px 16px; font-size: 13px; background: #fff; cursor: pointer; display: inline-flex; gap: 7px; align-items: center; justify-content: center; color: var(--text-main); font-family: inherit; font-weight: 600; }
+      .btn:hover { background: var(--bg-alt); }
+      .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .btn-primary:hover { background: var(--accent-dark); }
+      .btn-ghost { background: transparent; }
+      .btn-danger { color: var(--red); border-color: #f0d3cc; }
+      .btn-danger:hover { background: #fdf1ee; }
+      .btn-pill { border-radius: 20px; }
+      .btn-sm { padding: 6px 12px; font-size: 12px; }
+      /* ===== Page header ===== */
+      .page-title { font-size: 24px; font-weight: 800; color: var(--text-head); }
+      .page-subtitle { font-size: 12.5px; color: var(--accent); font-style: italic; margin-top: 2px; }
+      .list-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 12px; }
+      .head-right { display: flex; align-items: center; gap: 10px; }
+      /* ===== Card ===== */
+      .card { background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 1px 3px rgba(60,41,28,0.04); overflow: hidden; }
+      /* ===== Table ===== */
+      table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+      .data thead { background: #f6f3ec; }
+      .data th { padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 700; color: #555; white-space: nowrap; }
+      .data td { padding: 11px 14px; border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
+      .data tbody tr:nth-child(even) { background: var(--bg-alt); }
+      .data tbody tr:hover { background: var(--accent-tint); }
+      .name-cell { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+      .ini-avatar { width: 30px; height: 30px; border-radius: 50%; background: #e7e2d8; color: #6b6256; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+      .ini-avatar.lg { width: 52px; height: 52px; font-size: 17px; }
+      .owner-cell { display: flex; align-items: center; gap: 8px; }
+      .owner-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--pink); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; flex-shrink: 0; }
+      .act-icons { display: flex; gap: 10px; color: #b3a89c; }
+      .act-icons i { cursor: pointer; }
+      .act-icons i:hover { color: var(--accent); }
+      .checkbox { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+      /* ===== Badges / tags ===== */
+      .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+      .badge.active { background: #e6f4ec; color: var(--green); }
+      .badge.inactive { background: #f1ece4; color: var(--text-muted); }
+      .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+      .tag { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; background: var(--grey-pill); color: #6b6256; white-space: nowrap; }
+      .tag .cdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+      .tag-more { font-size: 11px; color: var(--accent); font-weight: 700; }
+      .tag-wrap { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+      /* ===== Pagination ===== */
+      .pagination { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; flex-wrap: wrap; gap: 10px; }
+      .pg-left { font-size: 12.5px; color: var(--text-muted); }
+      .pg-right { display: flex; align-items: center; gap: 4px; }
+      .pg-btn { min-width: 28px; height: 28px; border-radius: 50%; border: 0; background: 0; cursor: pointer; font-size: 13px; color: var(--text-main); display: inline-flex; align-items: center; justify-content: center; font-family: inherit; }
+      .pg-btn:hover { background: var(--bg-alt); }
+      .pg-btn.active { background: var(--accent); color: #fff; }
+      /* ===== Bulk bar ===== */
+      .bulk-bar { display: none; align-items: center; gap: 12px; background: var(--accent-tint); border: 1px solid var(--accent-soft); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 12.5px; color: var(--accent-dark); }
+      .bulk-bar.show { display: flex; }
+      .bulk-bar .cnt { font-weight: 700; }
+      .bulk-bar .spacer { flex: 1; }
+      /* ===== Detail screen ===== */
+      .dt-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+      .back-arrow { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: #fff; cursor: pointer; color: var(--text-main); font-size: 15px; flex-shrink: 0; }
+      .back-arrow:hover { background: var(--bg-alt); }
+      .dt-name { font-size: 22px; font-weight: 800; color: var(--text-head); line-height: 1.1; }
+      .dt-created { font-size: 12px; color: var(--text-muted); }
+      .dt-stats { margin-left: auto; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+      .dt-stat { display: flex; align-items: center; gap: 8px; }
+      .dt-stat i { color: var(--accent); font-size: 16px; }
+      .dt-stat .l { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+      .dt-stat .v { font-size: 13px; color: var(--accent); font-weight: 700; }
+      .sec { padding: 18px 22px; border-bottom: 1px solid var(--border-soft); }
+      .sec:first-child { padding-top: 20px; }
+      .sec:last-child { border-bottom: 0; }
+      .sec-head { display: flex; align-items: center; justify-content: space-between; }
+      .sec-title { font-size: 15px; font-weight: 700; color: var(--text-head); }
+      .sec-sub { font-size: 12px; color: var(--accent); font-style: italic; margin: 2px 0 14px; }
+      /* Empty state */
+      .empty-state { min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; }
+      .empty-state .et { font-size: 14px; font-weight: 700; color: var(--text-head); }
+      .empty-state .es { font-size: 12.5px; color: var(--text-muted); max-width: 320px; }
+      /* Group color swatches */
+      .swatch-row { display: flex; gap: 8px; flex-wrap: wrap; }
+      .swatch { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+      .swatch.active { border-color: var(--text-head); }
+      /* ===== Modal ===== */
+      .modal-overlay { position: fixed; inset: 0; background: rgba(59,47,42,0.35); display: none; align-items: center; justify-content: center; z-index: 200; }
+      .modal-overlay.open { display: flex; }
+      .modal-box { background: #fff; border-radius: 12px; width: 440px; max-width: 92vw; padding: 22px; box-shadow: 0 20px 50px rgba(0,0,0,0.25); max-height: 86vh; overflow-y: auto; }
+      .modal-box h3 { font-size: 17px; font-weight: 800; color: var(--text-head); margin-bottom: 4px; }
+      .modal-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
+      .fld { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+      .fld label { font-size: 11px; font-weight: 700; color: #6b6256; }
+      .fld input, .fld select, .fld textarea { border: 1px solid #ddd6c9; border-radius: 6px; padding: 8px 12px; font-size: 13px; font-family: inherit; background: #fff; outline: none; width: 100%; }
+      .fld input:focus, .fld select:focus, .fld textarea:focus { border-color: var(--accent); }
+      .fld textarea { min-height: 60px; resize: vertical; }
+      .search-mini { position: relative; margin-bottom: 8px; }
+      .search-mini input { padding-left: 32px; }
+      .search-mini i { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 12px; }
+      .pick-list { max-height: 220px; overflow-y: auto; border: 1px solid var(--border-soft); border-radius: 8px; }
+      .pick-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--border-soft); font-size: 13px; cursor: pointer; }
+      .pick-row:last-child { border-bottom: 0; }
+      .pick-row:hover { background: var(--bg-alt); }
+      .pick-row input { accent-color: var(--accent); width: 15px; height: 15px; }
+      .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+      .modal-note { font-size: 12px; color: var(--text-muted); background: var(--bg-alt); border: 1px solid var(--border-soft); border-radius: 8px; padding: 10px 12px; margin: 10px 0 16px; }
+      /* ===== Toast ===== */
+      .toast-wrap { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+      .toast { background: var(--accent); color: #fff; padding: 11px 16px; border-radius: 8px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+      .toast.success { background: var(--green); }
+      .toast.error { background: var(--red); }
+      .more-menu { position: relative; }
+      .menu-pop { position: absolute; right: 0; top: calc(100% + 6px); background: #fff; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 10px 28px rgba(60,41,28,0.16); padding: 6px; min-width: 170px; z-index: 50; display: none; }
+      .menu-pop.open { display: block; }
+      .menu-pop button { display: block; width: 100%; text-align: left; padding: 8px 12px; border: 0; background: 0; font-size: 13px; cursor: pointer; border-radius: 6px; font-family: inherit; color: var(--text-main); }
+      .menu-pop button:hover { background: var(--bg-alt); }
+      .hidden { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <!-- ===================== MAIN ===================== -->
+    <main class="main">
+      <div class="content">
+        <!-- ========================================================= -->
+        <!-- SCREEN 2.1 — GROUPS LIST -->
+        <!-- ========================================================= -->
+        <div id="screenGroupsList">
+          <div class="list-head">
+            <div>
+              <div class="page-title">Groups</div>
+            </div>
+            <div class="head-right">
+              <button class="btn btn-primary btn-pill" onclick="openCreateGroupModal()"><i class="fas fa-plus"></i> Create Group</button>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <div class="filter-field"><label>Search</label><input id="gSearch" placeholder="Group name" oninput="renderGroupsList()" style="min-width:200px" /></div>
+            <div class="filter-field" style="visibility: hidden;"><label>Owner</label>
+              <select id="gOwner" onchange="renderGroupsList()" style="visibility: hidden;"><option value="">All owners</option></select>
+            </div>
+          </div>
+          <div class="card">
+            <table class="data">
+              <thead><tr>
+                <th>Group Name</th><th>Members</th><th>Created</th><th>Last Modified</th><th>Actions</th>
+              </tr></thead>
+              <tbody id="groupsBody"></tbody>
+            </table>
+            <div class="pagination"><div class="pg-left" id="gEntriesLabel"></div></div>
+          </div>
+        </div>
+        <!-- ========================================================= -->
+        <!-- SCREEN 2.2 — GROUP DETAIL -->
+        <!-- ========================================================= -->
+        <div id="screenGroupDetail" class="hidden">
+          <div class="dt-bar">
+            <button class="back-arrow" onclick="showGroupsList()"><i class="fas fa-arrow-left"></i></button>
+            <span class="ini-avatar lg" id="gdColorDot" style="background:var(--accent)"><i class="fas fa-users" style="color:#fff"></i></span>
+            <div>
+              <div class="dt-name" id="gdName">VIP Investors</div>
+              <div class="dt-created" id="gdCreated">Created 10 Mar 2025</div>
+            </div>
+            <div class="dt-stats">
+                <div class="dt-stat" style="visibility: hidden"><i class="fas fa-user-tie"></i><div><div class="l">Owner</div><div class="v" id="gdOwner">—</div></div></div>
+                <div class="dt-stat"><i class="fas fa-user-group"></i><div><div class="l">Members</div><div class="v" id="gdMemberCount">0</div></div></div>
+              <button class="btn btn-sm" onclick="openEditGroupModal()"><i class="fas fa-pen"></i> Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="confirmDeleteGroup(currentGroupId)"><i class="fas fa-trash"></i> Delete</button>
+            </div>
+          </div>
+          <div class="sec-sub" style="margin:10px 0 0" id="gdDesc"></div>
+          <div class="card" style="margin-top:16px">
+            <div class="sec" style="border-bottom:1px solid var(--border-soft)">
+              <div class="sec-head">
+                <div class="sec-title">Members</div>
+                <button class="btn btn-sm btn-primary" onclick="openAddContactModal()"><i class="fas fa-plus"></i> Add Contact</button>
+              </div>
+            </div>
+            <div class="bulk-bar" id="gBulkBar" style="margin:14px 22px 0">
+              <span><span class="cnt" id="gBulkCount">0</span> selected</span>
+              <div class="spacer"></div>
+              <button class="btn btn-sm" onclick="toast('Broadcast queued to selected members')"><i class="fas fa-bullhorn"></i> Send Broadcast</button>
+              <button class="btn btn-sm" onclick="exportContacts(getSelectedMembers())"><i class="fas fa-file-export"></i> Export</button>
+              <button class="btn btn-sm btn-danger" onclick="removeSelectedFromGroup()"><i class="fas fa-link-slash"></i> Remove from Group</button>
+            </div>
+            <table class="data" style="margin-top:8px">
+              <thead><tr>
+                <th style="width:36px"><input type="checkbox" class="checkbox" onclick="toggleAllMembers(this)" /></th>
+                <th>Contact Name</th><th>Last Interaction</th><th>Buyer Status</th><th>Nation</th><th>Status</th><th>Actions</th>
+              </tr></thead>
+              <tbody id="membersBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- ===================== MODALS ===================== -->
+    <!-- Create / Edit Group -->
+    <div class="modal-overlay" id="groupModal" onclick="if(event.target===this)closeModal('groupModal')">
+      <div class="modal-box">
+        <h3 id="groupModalTitle">Create Group</h3>
+        <div class="modal-sub">Give it a name your team will recognize.</div>
+        <div class="fld"><label>Group Name <span style="color:var(--accent)">*</span></label><input type="text" id="gmName" placeholder="e.g. VIP Investors" /></div>
+        <div class="fld"><label>Description</label><textarea id="gmDesc" placeholder="Optional description…"></textarea></div>
+        <div class="fld"><label>Color Tag</label>
+          <div class="swatch-row" id="gmSwatches"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn" onclick="closeModal('groupModal')">Cancel</button>
+          <button class="btn btn-primary" onclick="saveGroupModal()"><i class="fas fa-check"></i> Save</button>
+        </div>
+      </div>
+    </div>
+    <!-- Add existing Contact to Group -->
+    <div class="modal-overlay" id="addContactModal" onclick="if(event.target===this)closeModal('addContactModal')">
+      <div class="modal-box">
+        <h3>Add Contact to Group</h3>
+        <div class="modal-sub">Only existing contacts can be added — contacts can't be created here.</div>
+        <div class="search-mini"><i class="fas fa-search"></i><input id="addContactSearch" placeholder="Search contacts…" oninput="renderAddContactList()" /></div>
+        <div class="pick-list" id="addContactList"></div>
+        <div class="modal-actions">
+          <button class="btn" onclick="closeModal('addContactModal')">Cancel</button>
+          <button class="btn btn-primary" onclick="saveAddContactModal()"><i class="fas fa-check"></i> Add Selected</button>
+        </div>
+      </div>
+    </div>
+    <!-- Delete Group confirm -->
+    <div class="modal-overlay" id="deleteGroupModal" onclick="if(event.target===this)closeModal('deleteGroupModal')">
+      <div class="modal-box" style="width:380px">
+        <h3>Delete this group?</h3>
+        <div class="modal-note"><i class="fas fa-circle-info"></i> Contacts will not be deleted — only removed from this group.</div>
+        <div class="modal-actions">
+          <button class="btn" onclick="closeModal('deleteGroupModal')">Cancel</button>
+          <button class="btn btn-danger" style="background:var(--red);color:#fff;border-color:var(--red)" onclick="doDeleteGroup()"><i class="fas fa-trash"></i> Delete Group</button>
+        </div>
+      </div>
+    </div>
+    <div class="toast-wrap" id="toastWrap"></div>
+    <script>
+      /* ============================================================
+         DATA
+      ============================================================ */
+      const OWNERS = ["Chris Sales", "Maria Sales", "Tony Sales", "Fran Tick"];
+      let GROUPS = [
+        { id: "g1", name: "VIP Investors", color: "#c4714a", desc: "High-value repeat investors we prioritize for new listings.", owner: "Chris Sales", created: "2025-03-10", modified: "2025-07-02" },
+        { id: "g2", name: "Tokyo Buyers", color: "#5f8f7c", desc: "Buyers actively focused on Tokyo properties.", owner: "Maria Sales", created: "2025-04-18", modified: "2025-07-15" },
+        { id: "g3", name: "Newsletter Subscribers", color: "#7a6a9c", desc: "Opted in to the monthly market newsletter.", owner: "Tony Sales", created: "2025-01-05", modified: "2025-06-20" },
+        { id: "g4", name: "Cold Leads", color: "#9b8568", desc: "No interaction in 90+ days — re-engagement candidates.", owner: "Fran Tick", created: "2025-02-22", modified: "2025-05-01" },
+      ];
+      const SWATCH_COLORS = ["#c4714a", "#5f8f7c", "#7a6a9c", "#9b8568", "#a55232", "#4a7ec4", "#c44a8f"];
+      let CONTACTS = [
+        {
+          id: "c1", name: "Tanaka Yui", initials: "TY", firstContact: "2025-08-12 10:30", lastInteraction: "2026-07-18",
+          sourceLead: "LEAD-2031", groups: ["g2", "g3"], status: "Active", owner: "Chris Sales",
+          secondaryPhone: "", notes: "Prefers communication in Japanese. Very responsive.",
+          profile: { userId: "USR-00000001", registered: "2025-08-12 10:30 JST", avatarFile: "TYyui.jpg", fullName: "Tanaka Yui", email: "yui.tanaka@example.com", countryCode: "+81", phoneNumber: "90-1111-2222", status: "Active", currentAddress: "Shibuya-ku, Tokyo", nationality: "JP", gender: "Female", age: 34, authProvider: "Email", withdrawalDate: "", withdrawalReason: "" },
+          additional: { ownedPropertyJP: "No", propertyLocation: "", residentCountry: "JP", buyerStatus: ["Cash buyer", "Investor"], securityQuestion: "What city were you born in?", securityAnswer: "Yokohama" },
+          investment: { propertyType: ["Apartment", "House"], desiredCity: "Tokyo", desiredArea: "Shibuya", budgetMin: "¥80,000,000", budgetMax: "¥150,000,000", targetYield: ">5%", bedrooms: 2, purpose: "Investment", propertyStatus: "New Property" },
+          leads: [{ property: "Shibuya 2-bed Apartment", status: "Negotiation", date: "2026-06-20", budget: "¥120,000,000" }, { property: "Meguro New-build Condo", status: "Closed Won", date: "2025-11-02", budget: "¥95,000,000" }],
+          offers: [{ property: "Shibuya 2-bed Apartment", price: "¥118,000,000", date: "2026-07-01", status: "Pending" }],
+          activity: [{ title: "Message received", line: "Asked about yield projections for Shibuya listing", time: "18 Jul 2026, 09:12" }],
+          comments: [{ body: "Very serious investor — has closed with us before. Prioritize new Shibuya/Meguro listings.", who: "Chris Sales", when: "02 Jul 2026, 10:05" }],
+        },
+        {
+          id: "c2", name: "Santi Argo", initials: "SA", firstContact: "2025-05-20 19:55", lastInteraction: "2026-05-27",
+          sourceLead: "100006", groups: ["g1"], status: "Active", owner: "Chris Sales",
+          secondaryPhone: "", notes: "",
+          profile: { userId: "USR-00000045", registered: "2025-05-20 19:55 JST", avatarFile: "", fullName: "Santi Argo", email: "santi-argo@gmail.com", countryCode: "+34", phoneNumber: "655-5231", status: "Active", currentAddress: "—", nationality: "ES", gender: "Male", age: 41, authProvider: "Google", withdrawalDate: "", withdrawalReason: "" },
+          additional: { ownedPropertyJP: "No", propertyLocation: "", residentCountry: "ES", buyerStatus: ["Cash buyer"], securityQuestion: "—", securityAnswer: "" },
+          investment: { propertyType: ["House"], desiredCity: "San Jose", desiredArea: "Palo Alto", budgetMin: "¥2,000,000", budgetMax: "¥5,000,000", targetYield: "—", bedrooms: 3, purpose: "Personal use", propertyStatus: "Completed" },
+          leads: [{ property: "San Jose 4-bedroom Villa", status: "Proposal", date: "2025-05-22", budget: "¥2,300,000" }],
+          offers: [{ property: "San Jose 4-bedroom Villa", price: "¥2,300,000", date: "2025-05-26", status: "Sent" }],
+          activity: [{ title: "Arrange Viewing", line: "Call Santi Argo", time: "24 May 2025, 19:05" }],
+          comments: [{ body: "Sent the proposal with the asking price for Property 312.", who: "Chris Sales", when: "26 May 2025, 19:07" }],
+        },
+        {
+          id: "c3", name: "Colin Sik", initials: "CS", firstContact: "2025-09-02 11:00", lastInteraction: "2025-09-02",
+          sourceLead: "100007", groups: [], status: "Inactive", owner: "Tony Sales",
+          secondaryPhone: "", notes: "",
+          profile: { userId: "USR-00000052", registered: "2025-09-02 11:00 JST", avatarFile: "", fullName: "Colin Sik", email: "colin.sik@example.com", countryCode: "+81", phoneNumber: "80-2222-3333", status: "Inactive", currentAddress: "—", nationality: "SG", gender: "Male", age: 29, authProvider: "Email", withdrawalDate: "", withdrawalReason: "" },
+          additional: { ownedPropertyJP: "—", propertyLocation: "—", residentCountry: "SG", buyerStatus: [], securityQuestion: "—", securityAnswer: "" },
+          investment: { propertyType: [], desiredCity: "—", desiredArea: "—", budgetMin: "—", budgetMax: "—", targetYield: "—", bedrooms: "—", purpose: "—", propertyStatus: "—" },
+          leads: [], offers: [],
+          activity: [{ title: "Message received", line: "One-off inquiry, never followed up", time: "02 Sep 2025, 11:00" }],
+          comments: [],
+        },
+        {
+          id: "c4", name: "Abby Kermal", initials: "AK", firstContact: "2026-04-10 08:30", lastInteraction: "2026-07-15",
+          sourceLead: "LEAD-2050", groups: ["g1", "g2", "g3", "g4"], status: "Active", owner: "Maria Sales",
+          secondaryPhone: "090-4444-5555", notes: "Also interested in commercial units.",
+          profile: { userId: "USR-00000078", registered: "2026-04-10 08:30 JST", avatarFile: "", fullName: "Abby Kermal", email: "abby.kermal@example.com", countryCode: "+81", phoneNumber: "70-9988-1122", status: "Active", currentAddress: "Minato-ku, Tokyo", nationality: "US", gender: "Female", age: 38, authProvider: "Facebook", withdrawalDate: "", withdrawalReason: "" },
+          additional: { ownedPropertyJP: "Yes", propertyLocation: "Minato-ku", residentCountry: "JP", buyerStatus: ["Investor"], securityQuestion: "What was your first pet's name?", securityAnswer: "Momo" },
+          investment: { propertyType: ["Apartment"], desiredCity: "Tokyo", desiredArea: "Minato", budgetMin: "¥100,000,000", budgetMax: "¥200,000,000", targetYield: ">6%", bedrooms: 1, purpose: "Investment", propertyStatus: "Under construction" },
+          leads: [{ property: "Apartment under construction portfolio project", status: "Assigned", date: "2026-05-20", budget: "¥150,000,000" }],
+          offers: [],
+          activity: [{ title: "Viewing scheduled", line: "Viewing with Abby Kermal", time: "20 May 2026, 19:05" }],
+          comments: [],
+        },
+        {
+          id: "c5", name: "Neil Down", initials: "ND", firstContact: "2025-05-27 09:00", lastInteraction: "2026-06-03",
+          sourceLead: "100001", groups: ["g2"], status: "Active", owner: "Maria Sales",
+          secondaryPhone: "", notes: "",
+          profile: { userId: "USR-00000012", registered: "2025-05-27 09:00 JST", avatarFile: "", fullName: "Neil Down", email: "neil.down@example.com", countryCode: "+81", phoneNumber: "80-1234-5678", status: "Active", currentAddress: "Setagaya-ku, Tokyo", nationality: "GB", gender: "Male", age: 45, authProvider: "Email", withdrawalDate: "", withdrawalReason: "" },
+          additional: { ownedPropertyJP: "No", propertyLocation: "", residentCountry: "GB", buyerStatus: ["Cash buyer"], securityQuestion: "—", securityAnswer: "" },
+          investment: { propertyType: ["House"], desiredCity: "Tokyo", desiredArea: "Setagaya", budgetMin: "¥60,000,000", budgetMax: "¥90,000,000", targetYield: "—", bedrooms: 3, purpose: "Personal use", propertyStatus: "Completed" },
+          leads: [{ property: "Setagaya Family House", status: "New", date: "2025-05-27", budget: "¥75,000,000" }],
+          offers: [],
+          activity: [],
+          comments: [],
+        },
+        {
+          id: "c6", name: "Margarett Romanovich", initials: "MR", firstContact: "2025-05-27 09:00", lastInteraction: "2025-08-01",
+          sourceLead: "100008", groups: ["g1", "g3"], status: "Inactive", owner: "Maria Sales",
+          secondaryPhone: "", notes: "",
+          profile: { userId: "USR-00000019", registered: "2025-05-27 09:00 JST", avatarFile: "", fullName: "Margarett Romanovich", email: "m.romanovich@example.com", countryCode: "+7", phoneNumber: "916-555-2233", status: "Inactive", currentAddress: "—", nationality: "RU", gender: "Female", age: 52, authProvider: "Email", withdrawalDate: "", withdrawalReason: "" },
+          additional: { ownedPropertyJP: "No", propertyLocation: "", residentCountry: "RU", buyerStatus: ["Cash buyer", "Investor"], securityQuestion: "What is your mother's maiden name?", securityAnswer: "Volkova" },
+          investment: { propertyType: ["Apartment"], desiredCity: "Tokyo", desiredArea: "Roppongi", budgetMin: "¥200,000,000", budgetMax: "¥350,000,000", targetYield: ">4%", bedrooms: 2, purpose: "Investment", propertyStatus: "New Property" },
+          leads: [{ property: "Roppongi Luxury Apartment", status: "Converted", date: "2025-05-27", budget: "¥280,000,000" }],
+          offers: [{ property: "Roppongi Luxury Apartment", price: "¥275,000,000", date: "2025-06-15", status: "Accepted" }],
+          activity: [],
+          comments: [],
+        },
+      ];
+      let currentGroupId = null;
+      let addContactSelected = new Set();
+      /* ============================================================
+         HELPERS
+      ============================================================ */
+      function esc(s) { return String(s == null || s === "" ? "—" : s).replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c])); }
+      function groupById(id) { return GROUPS.find((g) => g.id === id); }
+      function contactById(id) { return CONTACTS.find((c) => c.id === id); }
+      function memberCount(gid) { return CONTACTS.filter((c) => c.groups.includes(gid)).length; }
+      function toast(msg, kind) {
+        const el = document.createElement("div"); el.className = "toast " + (kind || ""); el.textContent = msg;
+        document.getElementById("toastWrap").appendChild(el); setTimeout(() => el.remove(), 2800);
+      }
+      window.toast = toast;
+      function openModal(id) { document.getElementById(id).classList.add("open"); }
+      function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+      window.closeModal = closeModal;
+      function emptyBox(title, sub) {
+        return `<div class="empty-state">
+          <svg width="100" height="80" viewBox="0 0 120 96" fill="none">
+            <ellipse cx="60" cy="86" rx="40" ry="6" fill="#eceae4"/>
+            <path d="M30 44 L60 54 L90 44 L90 74 L60 84 L30 74 Z" fill="#dbe6ef"/>
+            <path d="M30 44 L60 54 L60 84 L30 74 Z" fill="#c7d7e6"/>
+            <path d="M30 44 L42 34 L72 44 L60 54 Z" fill="#eaf1f7"/>
+            <path d="M90 44 L78 34 L48 44 L60 54 Z" fill="#dbe6ef"/>
+          </svg>
+          <div class="et">${title}</div>${sub ? `<div class="es">${sub}</div>` : ""}
+        </div>`;
+      }
+      /* ============================================================
+         GROUPS LIST
+      ============================================================ */
+      function filteredGroups() {
+        const q = document.getElementById("gSearch").value.trim().toLowerCase();
+        const owner = document.getElementById("gOwner").value;
+        return GROUPS.filter((g) => (!q || g.name.toLowerCase().includes(q)) && (!owner || g.owner === owner));
+      }
+      function renderGroupsList() {
+        const rows = filteredGroups();
+        document.getElementById("groupsBody").innerHTML = rows.map((g) => `
+          <tr>
+            <td><div class="name-cell" onclick="showGroupDetail('${g.id}')"><span class="cdot" style="width:12px;height:12px;border-radius:50%;background:${g.color}"></span> <strong>${esc(g.name)}</strong></div></td>
+            <td>${memberCount(g.id)}</td>
+            <td>${esc(g.created)}</td>
+            <td>${esc(g.modified)}</td>
+            <td onclick="event.stopPropagation()"><div class="act-icons">
+              <i class="fas fa-eye" title="View" onclick="showGroupDetail('${g.id}')"></i>
+              <i class="fas fa-pen" title="Rename" onclick="showGroupDetail('${g.id}');openEditGroupModal()"></i>
+              <i class="fas fa-trash" title="Delete" onclick="confirmDeleteGroup('${g.id}')"></i>
+            </div></td>
+          </tr>`).join("") || `<tr><td colspan="5">${emptyBox("No groups yet", "Create your first group to start organizing contacts.")}</td></tr>`;
+        document.getElementById("gEntriesLabel").textContent = `Showing ${rows.length} of ${GROUPS.length} groups`;
+      }
+      window.renderGroupsList = renderGroupsList;
+      /* ---- Create / Edit Group modal ---- */
+      let gmSelectedColor = SWATCH_COLORS[0];
+      function renderSwatches() {
+        document.getElementById("gmSwatches").innerHTML = SWATCH_COLORS.map((c) => `<span class="swatch ${c === gmSelectedColor ? "active" : ""}" style="background:${c}" onclick="pickSwatch('${c}')"></span>`).join("");
+      }
+      function pickSwatch(c) { gmSelectedColor = c; renderSwatches(); }
+      window.pickSwatch = pickSwatch;
+      function openCreateGroupModal() {
+        editingGroupId = null;
+        document.getElementById("groupModalTitle").textContent = "Create Group";
+        document.getElementById("gmName").value = "";
+        document.getElementById("gmDesc").value = "";
+        gmSelectedColor = SWATCH_COLORS[Math.floor(Math.random() * SWATCH_COLORS.length)];
+        renderSwatches();
+        openModal("groupModal");
+      }
+      window.openCreateGroupModal = openCreateGroupModal;
+      function openEditGroupModal() {
+        const g = groupById(currentGroupId);
+        editingGroupId = g.id;
+        document.getElementById("groupModalTitle").textContent = "Edit Group";
+        document.getElementById("gmName").value = g.name;
+        document.getElementById("gmDesc").value = g.desc;
+        gmSelectedColor = g.color;
+        renderSwatches();
+        openModal("groupModal");
+      }
+      window.openEditGroupModal = openEditGroupModal;
+      let editingGroupId = null;
+      function ymd(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+      function saveGroupModal() {
+        const name = document.getElementById("gmName").value.trim();
+        if (!name) { toast("Please enter a group name"); return; }
+        const desc = document.getElementById("gmDesc").value.trim();
+        if (editingGroupId) {
+          const g = groupById(editingGroupId);
+          g.name = name; g.desc = desc; g.color = gmSelectedColor; g.modified = ymd(new Date());
+          closeModal("groupModal"); renderGroupsList();
+          if (!document.getElementById("screenGroupDetail").classList.contains("hidden")) showGroupDetail(editingGroupId);
+          toast("Group updated", "success");
+        } else {
+          const g = { id: "g" + Date.now(), name, desc, color: gmSelectedColor, owner: "Chris Sales", created: ymd(new Date()), modified: ymd(new Date()) };
+          GROUPS.push(g);
+          closeModal("groupModal"); renderGroupsList();
+          toast("Group created", "success");
+        }
+      }
+      window.saveGroupModal = saveGroupModal;
+      function confirmDeleteGroup(id) { currentGroupId = id; openModal("deleteGroupModal"); }
+      window.confirmDeleteGroup = confirmDeleteGroup;
+      function doDeleteGroup() {
+        GROUPS = GROUPS.filter((g) => g.id !== currentGroupId);
+        CONTACTS.forEach((c) => { c.groups = c.groups.filter((gid) => gid !== currentGroupId); });
+        closeModal("deleteGroupModal");
+        showGroupsList();
+        toast("Group deleted — contacts were kept", "success");
+      }
+      window.doDeleteGroup = doDeleteGroup;
+      /* ============================================================
+         GROUP DETAIL
+      ============================================================ */
+      function showGroupDetail(id) {
+        currentGroupId = id;
+        const g = groupById(id);
+        document.getElementById("screenGroupsList").classList.add("hidden");
+        document.getElementById("screenGroupDetail").classList.remove("hidden");
+        document.getElementById("gdColorDot").style.background = g.color;
+        document.getElementById("gdName").textContent = g.name;
+        document.getElementById("gdCreated").textContent = `Created ${g.created}`;
+        document.getElementById("gdMemberCount").textContent = memberCount(g.id);
+        document.getElementById("gdOwner").textContent = g.owner;
+        document.getElementById("gdDesc").textContent = g.desc || "No description yet.";
+        renderMembers();
+        window.scrollTo(0, 0);
+      }
+      window.showGroupDetail = showGroupDetail;
+      function renderMembers() {
+        const members = CONTACTS.filter((c) => c.groups.includes(currentGroupId));
+        document.getElementById("membersBody").innerHTML = members.map((c) => `
+          <tr>
+            <td onclick="event.stopPropagation()"><input type="checkbox" class="checkbox member-check" data-id="${c.id}" onchange="updateMemberBulkBar()" /></td>
+            <td><div class="name-cell" onclick="showContactDetail('${c.id}')"><span class="ini-avatar">${c.initials}</span> ${esc(c.name)}</div></td>
+            <td>${esc(c.lastInteraction)}</td>
+            <td>${tagList(c.additional.buyerStatus)}</td>
+            <td>${esc(c.profile.nationality)}</td>
+            <td><span class="badge ${c.status === "Active" ? "active" : "inactive"}"><span class="dot"></span>${c.status}</span></td>
+            <td onclick="event.stopPropagation()"><div class="act-icons">
+              <i class="fas fa-eye" title="View" onclick="showContactDetail('${c.id}')"></i>
+              <i class="fas fa-link-slash" title="Remove from group" onclick="removeFromGroup('${c.id}')"></i>
+            </div></td>
+          </tr>`).join("") || `<tr><td colspan="7">${emptyBox("No members yet", "Add existing contacts to this group.")}</td></tr>`;
+        updateMemberBulkBar();
+      }
+      function tagList(arr) {
+        if (!arr || !arr.length) return "—";
+        return `<div class="tag-wrap">${arr.map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</div>`;
+      }
+      function toggleAllMembers(cb) { document.querySelectorAll(".member-check").forEach((c) => c.checked = cb.checked); updateMemberBulkBar(); }
+      window.toggleAllMembers = toggleAllMembers;
+      function getSelectedMembers() { return Array.from(document.querySelectorAll(".member-check:checked")).map((c) => c.dataset.id); }
+      window.getSelectedMembers = getSelectedMembers;
+      function updateMemberBulkBar() {
+        const n = getSelectedMembers().length;
+        document.getElementById("gBulkBar").classList.toggle("show", n > 0);
+        document.getElementById("gBulkCount").textContent = n;
+      }
+      window.updateMemberBulkBar = updateMemberBulkBar;
+      function removeFromGroup(cid) {
+        const c = contactById(cid);
+        c.groups = c.groups.filter((g) => g !== currentGroupId);
+        renderMembers(); document.getElementById("gdMemberCount").textContent = memberCount(currentGroupId);
+        toast(`${c.name} removed from group — contact was kept`, "success");
+      }
+      window.removeFromGroup = removeFromGroup;
+      function removeSelectedFromGroup() {
+        const ids = getSelectedMembers();
+        ids.forEach((cid) => { contactById(cid).groups = contactById(cid).groups.filter((g) => g !== currentGroupId); });
+        renderMembers(); document.getElementById("gdMemberCount").textContent = memberCount(currentGroupId);
+        toast(`${ids.length} contact(s) removed from group — not deleted`, "success");
+      }
+      window.removeSelectedFromGroup = removeSelectedFromGroup;
+      /* ---- Add existing Contact to group ---- */
+      function openAddContactModal() {
+        addContactSelected = new Set();
+        document.getElementById("addContactSearch").value = "";
+        renderAddContactList();
+        openModal("addContactModal");
+      }
+      window.openAddContactModal = openAddContactModal;
+      function renderAddContactList() {
+        const q = document.getElementById("addContactSearch").value.trim().toLowerCase();
+        const candidates = CONTACTS.filter((c) => !c.groups.includes(currentGroupId) && c.name.toLowerCase().includes(q));
+        document.getElementById("addContactList").innerHTML = candidates.map((c) => `
+          <label class="pick-row">
+            <input type="checkbox" data-id="${c.id}" onchange="onAddContactCheck('${c.id}', this.checked)" ${addContactSelected.has(c.id) ? "checked" : ""} />
+            <span class="ini-avatar">${c.initials}</span> ${esc(c.name)}
+            <span style="color:var(--text-dim);margin-left:auto;font-size:11.5px">${c.status}</span>
+          </label>`).join("") || `<div style="padding:14px;text-align:center;color:var(--text-dim);font-size:12.5px">No matching contacts outside this group.</div>`;
+      }
+      window.renderAddContactList = renderAddContactList;
+      function onAddContactCheck(id, checked) { if (checked) addContactSelected.add(id); else addContactSelected.delete(id); }
+      window.onAddContactCheck = onAddContactCheck;
+      function saveAddContactModal() {
+        if (!addContactSelected.size) { toast("Select at least one contact"); return; }
+        addContactSelected.forEach((cid) => { const c = contactById(cid); if (!c.groups.includes(currentGroupId)) c.groups.push(currentGroupId); });
+        closeModal("addContactModal");
+        renderMembers(); document.getElementById("gdMemberCount").textContent = memberCount(currentGroupId);
+        toast(`${addContactSelected.size} contact(s) added to group`, "success");
+      }
+      window.saveAddContactModal = saveAddContactModal;
+      function showContactDetail(id) {
+        alert("View contact detail: " + id + " (open contact-management.html to see full detail)");
+      }
+      window.showContactDetail = showContactDetail;
+      function exportContacts(ids) { toast(`Exporting ${ids.length} contact${ids.length > 1 ? "s" : ""}`); }
+      window.exportContacts = exportContacts;
+      /* ============================================================
+         BOOT
+      ============================================================ */
+      const gOwnerSel = document.getElementById("gOwner");
+     
+      document.getElementById("screenGroupsList").classList.remove("hidden");
+      renderGroupsList();
+    </script>
+  </body>
+</html>
