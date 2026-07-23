@@ -2544,30 +2544,6 @@
             Showing 0 of 0 listings
           </div>
           <div style="display: flex; align-items: center; gap: 10px">
-            <!-- Alerts bell -->
-            <div
-              class="alert-bell"
-              id="alertBellWrap"
-              style="position: relative"
-            >
-              <button
-                class="btn alert-bell"
-                type="button"
-                id="alertBellBtn"
-                aria-label="Alerts"
-                title="Alerts"
-                onclick="toggleBell(event)"
-              >
-                <i class="fas fa-bell"></i>
-                <span class="bell-cnt zero" id="bellCnt">0</span>
-                <span class="bell-dot hidden" id="bellDot"></span>
-              </button>
-              <div
-                class="pop-panel right"
-                id="bellPanel"
-                style="min-width: 340px"
-              ></div>
-            </div>
             <div class="view-toggle" role="group" aria-label="View mode">
               <button
                 id="viewTableBtn"
@@ -3222,22 +3198,6 @@
         </div>
 
         <div class="confirm-body" style="padding: 18px">
-          <div
-            style="background: var(--bg-card-warm); border: 1px solid var(--border-warm); border-radius: var(--r-md); padding: 10px 14px; margin-bottom: 16px; font-size: 12.5px"
-          >
-            <div style="font-weight: 700; color: var(--text-main)" id="suspTxPropName">—</div>
-            <div style="color: var(--text-muted); margin-top: 2px" id="suspTxPropMeta">—</div>
-          </div>
-
-          <div class="alert warn" style="margin-bottom: 16px">
-            <i class="fas fa-triangle-exclamation"></i>
-            <div>
-              This listing will be <strong>removed from public view</strong>.
-              You must provide a reason. This record will be saved to
-              <strong>Transaction Management</strong> as source of truth.
-            </div>
-          </div>
-
           <div class="field-group" style="margin-bottom: 16px">
             <label class="field-label">
               Reason for Removal <span class="required">*</span>
@@ -3270,11 +3230,6 @@
                 <i class="fas fa-gavel susp-rc-icon"></i>
                 <div class="susp-rc-title">Legal Hold</div>
                 <div class="susp-rc-sub">Dispute or freeze</div>
-              </button>
-              <button type="button" class="susp-reason-card" data-reason="other" onclick="selectSuspReason(this,'other')">
-                <i class="fas fa-ellipsis susp-rc-icon"></i>
-                <div class="susp-rc-title">Other</div>
-                <div class="susp-rc-sub">See notes below</div>
               </button>
             </div>
             <span class="field-error hidden" id="suspTxReasonErr">Please select a reason.</span>
@@ -3318,7 +3273,7 @@
           </div>
 
           <div class="field-group">
-            <label class="field-label">Notes <span style="font-weight: 400; text-transform: none; color: var(--text-muted)">(optional)</span></label>
+            <label class="field-label">Notes</label>
             <textarea class="edit-input" id="suspTxNotes" style="min-height: 60px" placeholder="Additional context for this suspension…"></textarea>
           </div>
         </div>
@@ -6314,17 +6269,18 @@
       function renderBell() {
         const all = computeAllAlerts();
         _alertCache = all;
-        const count = all.length;
-        const crit = all.some((a) => a.severity === "critical");
-        const cntEl = $("bellCnt");
-        cntEl.textContent = count > 99 ? "99+" : String(count);
-        cntEl.className = "bell-cnt" + (count ? "" : " zero");
-        $("bellDot").className = "bell-dot" + (crit ? "" : " hidden");
-        // refresh open panel
-        const panel = $("bellPanel");
-        if ($("alertBellWrap").classList.contains("open")) {
-          panel.innerHTML = bellPanelHtml(all);
-        }
+        // Bell UI moved to the shell header (index.html) — publish a snapshot
+        // there so it can render Property + Project alerts in one place.
+        try {
+          const snapshot = all.map((a) => ({
+            key: a.key,
+            title: a.title,
+            desc: a.desc,
+            severity: a.severity,
+            entityId: a.entityId,
+          }));
+          localStorage.setItem("yuushi.notif.property", JSON.stringify(snapshot));
+        } catch (e) {}
       }
       function bellPanelHtml(all) {
         const groups = [
@@ -6434,13 +6390,6 @@
       function openSuspensionTransactionModal(prop) {
         _suspTxProp = prop;
         _suspTxReason = null;
-        document.getElementById("suspTxPropName").textContent = prop.name || prop.id;
-        document.getElementById("suspTxPropMeta").textContent = [
-          prop.id,
-          prop.propType,
-          prop.prefecture,
-          prop.city,
-        ].filter(Boolean).join(" · ");
         document.getElementById("suspTxDate").value = new Date().toISOString().slice(0, 10);
         document.querySelectorAll(".susp-reason-card").forEach((c) => c.classList.remove("selected"));
         document.getElementById("suspTxReasonErr").classList.add("hidden");
@@ -6466,19 +6415,13 @@
         document.querySelectorAll(".susp-reason-card").forEach((c) => c.classList.remove("selected"));
         el.classList.add("selected");
         document.getElementById("suspTxReasonErr").classList.add("hidden");
-
-        const needsPrice = reason === "sold" || reason === "sold-others";
+        const needsPrice = reason === "sold";
         const priceWrap = document.getElementById("suspTxPriceWrap");
         priceWrap.style.display = needsPrice ? "" : "none";
-
-        if (reason === "sold") {
+        if (needsPrice) {
           document.getElementById("suspTxPriceLabel").innerHTML = 'Transaction Price (¥) <span class="required">*</span>';
           document.getElementById("suspTxPriceReq").style.display = "";
-        } else if (reason === "sold-others") {
-          document.getElementById("suspTxPriceLabel").innerHTML = 'Transaction Price (¥) <span style="font-weight:400;color:var(--text-muted)">(optional — if known)</span>';
-          document.getElementById("suspTxPriceReq").style.display = "none";
         }
-
         document.getElementById("suspTxVisWrap").style.display = needsPrice ? "" : "none";
       }
 
@@ -6532,11 +6475,7 @@
           "sold-others": "Sold by Others",
           "seller-withdrew": "Seller Withdrew",
           expired: "Listing Expired",
-          "withdrawn-agent": "Withdrawn by Agent",
-          duplicate: "Duplicate Listing",
           legal: "Legal Hold",
-          "price-renegotiation": "Price Renegotiation",
-          other: "Other",
         };
         toast(`Listing suspended (${reasonLabels[_suspTxReason]}). Transaction logged.`);
       }
@@ -9526,15 +9465,6 @@
         // ESC → close (apply)
         document.addEventListener("keydown", (e) => {
           if (e.key === "Escape") closeAllPops(true);
-        });
-      })();
-
-      // Alerts bell — outside-click + ESC close; keep clicks inside the panel.
-      (function wireBell() {
-        $("bellPanel").addEventListener("click", (e) => e.stopPropagation());
-        document.addEventListener("click", closeBell);
-        document.addEventListener("keydown", (e) => {
-          if (e.key === "Escape") closeBell();
         });
       })();
 

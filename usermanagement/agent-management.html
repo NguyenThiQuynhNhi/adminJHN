@@ -837,6 +837,19 @@
         box-shadow: 0 0 0 2px rgba(197, 48, 48, 0.16);
       }
 
+      .bulk-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        background: var(--bg-card-warm);
+        border: 1px solid var(--border-warm);
+        border-radius: var(--r-md);
+        margin-bottom: 10px;
+        font-size: 13px;
+      }
+      .bulk-bar strong { color: var(--text-main); }
+
       @media (max-width: 768px) {
         .page-header {
           flex-direction: column;
@@ -846,6 +859,28 @@
           align-items: stretch;
         }
       }
+      /* Multi-select với search */
+      .multi-select-wrap { position: relative; }
+      .ms-search { width: 100%; padding: 6px 10px; border: 1px solid var(--border-default); border-bottom: none; border-radius: var(--r-sm) var(--r-sm) 0 0; font-size: var(--fs-small); font-family: inherit; outline: none; background: var(--bg-card-warm); }
+      .ms-search:focus { border-color: var(--accent); }
+      .ms-list { border: 1px solid var(--border-default); border-radius: 0 0 var(--r-sm) var(--r-sm); max-height: 160px; overflow-y: auto; background: var(--bg-card); }
+      .ms-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; cursor: pointer; font-size: var(--fs-body); }
+      .ms-item:hover { background: var(--bg-row-hover); }
+      .ms-item.selected { background: var(--bg-card-warm); font-weight: 600; color: var(--accent); }
+      .ms-item input[type=checkbox] { width: 14px; height: 14px; min-height: 0; accent-color: var(--accent); flex-shrink: 0; cursor: pointer; }
+      .ms-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; min-height: 22px; }
+      .ms-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; background: var(--bg-card-warm); border: 1px solid var(--border-warm); border-radius: 999px; font-size: 11px; color: var(--text-main); }
+      .ms-chip button { border: none; background: none; cursor: pointer; color: var(--text-muted); padding: 0; font-size: 11px; line-height: 1; }
+      .ms-chip button:hover { color: var(--badge-red); }
+
+      /* Confirm modal (dùng chung như end-user) */
+      .modal-title i.title-danger { color: var(--status-danger-text); }
+      .modal-title i.title-warning { color: var(--status-warning-text); }
+      .modal-title i.title-success { color: var(--status-success-text); }
+      .modal-title i.title-info { color: var(--color-primary); }
+      .btn-primary-success { background: linear-gradient(135deg, var(--status-success-text), var(--status-success-text)); border-color: var(--status-success-text); color: #fff; }
+      .btn-primary-success:hover { filter: brightness(0.94); }
+      .modal-message { font-size: 13px; color: var(--text-main); line-height: 1.5; margin: 0; }
     </style>
   </head>
   <body>
@@ -1032,6 +1067,19 @@
       </section>
 
       <section class="card">
+        <div class="bulk-bar hidden" id="bulkBar">
+          <span><strong id="bulkCount">0</strong> selected</span>
+          <div style="flex:1"></div>
+          <button class="btn btn-warning btn-sm" type="button" onclick="bulkSuspend()">
+            <i class="fas fa-ban"></i> Suspend
+          </button>
+          <button class="btn btn-danger btn-sm" type="button" onclick="bulkDelete()">
+            <i class="fas fa-trash"></i> Delete account
+          </button>
+          <button class="btn btn-star btn-sm" type="button" onclick="bulkSaveAsLead()">
+            <i class="fas fa-star"></i> Save as lead
+          </button>
+        </div>
         <div class="results-header">
           <div class="results-count">
             <strong id="resultCount">Showing 0 of 0 agents</strong>
@@ -1041,6 +1089,9 @@
           <table class="data-table">
             <thead>
               <tr>
+                <th style="width:36px">
+                  <input type="checkbox" id="selectAllChk" onchange="toggleSelectAll(this)">
+                </th>
                 <th>Agency</th>
                 <th>Established date</th>
                 <th>Head office address</th>
@@ -1081,6 +1132,13 @@
             onclick="suspendAccount()"
           >
             <i class="fas fa-ban"></i> Suspend
+          </button>
+          <button
+            class="btn btn-danger"
+            type="button"
+            onclick="deleteAccount()"
+          >
+            <i class="fas fa-trash"></i> Delete account
           </button>
           <button class="btn btn-star" type="button" onclick="saveAsLead()">
             <i class="fas fa-star"></i> Save as lead
@@ -2537,6 +2595,61 @@
       let originalAgent = null;
       let editMode = false;
       const $ = (id) => document.getElementById(id);
+      let selectedIds = new Set();
+      function getSelectedAgents() { return agents.filter((a) => selectedIds.has(a.id)); }
+      function updateBulkBar() {
+        const n = selectedIds.size;
+        $("bulkBar").classList.toggle("hidden", n === 0);
+        $("bulkCount").textContent = n;
+      }
+      function onRowCheck(id, checked) {
+        if (checked) selectedIds.add(id); else selectedIds.delete(id);
+        updateBulkBar();
+      }
+      function toggleSelectAll(cb) {
+        document.querySelectorAll(".rowChk").forEach((el) => {
+          el.checked = cb.checked;
+          if (cb.checked) selectedIds.add(el.dataset.id); else selectedIds.delete(el.dataset.id);
+        });
+        updateBulkBar();
+      }
+      function bulkSuspend() {
+        const sel = getSelectedAgents();
+        if (!sel.length) return;
+        const next = sel.every((a) => a.status === "Suspended") ? "Active" : "Suspended";
+        const isSuspend = next === "Suspended";
+        openConfirm({
+          title: isSuspend ? "Suspend accounts?" : "Re-activate accounts?",
+          icon: isSuspend ? "fa-ban title-warning" : "fa-circle-check title-success",
+          body: `${isSuspend ? "Suspend" : "Re-activate"} ${sel.length} selected agency(ies)?`,
+          confirmLabel: isSuspend ? '<i class="fas fa-ban"></i> Suspend' : '<i class="fas fa-circle-check"></i> Re-activate',
+          confirmClass: isSuspend ? "btn-primary-danger" : "btn-primary-success",
+          onConfirm: () => { sel.forEach(a => { a.status = next; }); selectedIds.clear(); renderList(); toast(`${sel.length} agency(ies) ${isSuspend ? "suspended" : "re-activated"}.`); },
+        });
+      }
+      function bulkDelete() {
+        const sel = getSelectedAgents();
+        if (!sel.length) return;
+        openConfirm({
+          title: "Permanently delete accounts?",
+          icon: "fa-trash title-danger",
+          body: `Permanently delete ${sel.length} selected agency(ies)? This action cannot be undone.`,
+          confirmLabel: '<i class="fas fa-trash"></i> Delete all',
+          confirmClass: "btn-primary-danger",
+          onConfirm: () => {
+            const ids = new Set(sel.map(a => a.id));
+            for (let i = agents.length - 1; i >= 0; i--) if (ids.has(agents[i].id)) agents.splice(i, 1);
+            filtered = filtered.filter(a => !ids.has(a.id));
+            selectedIds.clear(); renderList();
+            toast(`${sel.length} agency(ies) deleted.`, true);
+          },
+        });
+      }
+      function bulkSaveAsLead() {
+        const sel = getSelectedAgents();
+        if (!sel.length) return;
+        openLeadModal(sel);
+      }
       const esc = (s) =>
         String(s ?? "")
           .replace(/&/g, "&amp;")
@@ -2616,14 +2729,18 @@
           : "Showing 0 of 0 agents";
         if (!total) {
           tbody.innerHTML =
-            '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted)">No agents match the filters.</td></tr>';
+            '<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted)">No agents match the filters.</td></tr>';
           renderPager(total, $("agentPager"), "gotoAgentPage");
+          updateBulkBar();
           return;
         }
         tbody.innerHTML = pageRows
           .map(
             (a) => `
           <tr onclick="showDetail('${a.id}')">
+            <td onclick="event.stopPropagation()">
+              <input type="checkbox" class="rowChk" data-id="${a.id}" ${selectedIds.has(a.id) ? "checked" : ""} onchange="onRowCheck('${a.id}', this.checked)">
+            </td>
             <td><div style="display:flex;align-items:center;gap:10px">${avatarImg(a.company, 36, 8)}<div><strong>${esc(a.company)}</strong><br><span style="font-size:11px;color:var(--text-muted)">${a.id}</span></div></div></td>
             <td>${esc(a.establishment) || "—"}</td>
             <td style="white-space:normal;max-width:240px">${esc(a.hqAddress) || "—"}</td>
@@ -2640,6 +2757,7 @@
           )
           .join("");
         renderPager(total, $("agentPager"), "gotoAgentPage");
+        updateBulkBar();
       }
 
       function applyFilters() {
@@ -2781,12 +2899,23 @@
 
       function renderEditableSections(a) {
         $("dBasicGrid").innerHTML = [
-          kv("User ID (Auto-generated)", esc(a.id)),
-          kv("Registration / First Login", esc(a.regDate)),
+           kv("Agency ID", vField(a.id, "id")),
+          kv("Registration", esc(a.regDate)),
           kv(
             "Logo Image",
             editMode
-              ? vField(a.logo, "logo")
+              ? `<div style="display:flex;align-items:center;gap:12px">
+                  <div id="avatarPreview">${a.logo
+                    ? `<img src="${escAttr(a.logo)}" style="width:48px;height:48px;border-radius:10px;object-fit:cover;box-shadow:0 2px 6px rgba(139,115,64,0.25)">`
+                    : avatarImg(a.company, 48, 10)}</div>
+                  <div style="display:flex;flex-direction:column;gap:6px">
+                    <label class="btn btn-sm" style="cursor:pointer;margin:0">
+                      <i class="fas fa-upload"></i> Upload logo
+                      <input type="file" data-field="logo" accept=".jpg,.jpeg,.png,.webp" style="display:none" onchange="previewAvatar(this)">
+                    </label>
+                    <span id="avatarFileName" style="font-size:11px;color:var(--text-muted)">${a.logo ? esc(a.logo) : "No file chosen"}</span>
+                  </div>
+                </div>`
               : avatarImg(a.company, 48, 10) +
                   (a.logo
                     ? `<span style="margin-left:10px;color:var(--text-muted);font-size:11px">${esc(a.logo)}</span>`
@@ -2795,10 +2924,10 @@
           kv("Company Name / Trade Name", vField(a.company, "company")),
           kv("Company Name (Katakana)", vField(a.companyKata, "companyKata")),
           kv("Invoice Registration Number", vField(a.invoiceNo, "invoiceNo")),
-          kv("Establishment Date", vField(a.establishment, "establishment")),
+          kv("Establishment Date", editMode ? `<input class="edit-input" type="date" value="${escAttr(a.establishment||'')}" data-field="establishment" style="max-width:200px">` : esc(a.establishment)||"—"),
           kv("Representative Name", vField(a.repName, "repName")),
           kvFull(
-            "Business Description / Profile / Strengths",
+            "Business Description",
             vField(a.bizDesc, "bizDesc", editMode ? "textarea" : "text"),
           ),
           kvFull(
@@ -2818,29 +2947,48 @@
           kv("Inquiry Email — CC", vField(a.inqEmailCc, "inqEmailCc")),
           kv("Representative Phone Number", vField(a.repPhone, "repPhone")),
           kv("Public Phone Number", vField(a.pubPhone, "pubPhone")),
-          kv("Registration / First Login", esc(a.regDate)),
+          kv("Registration", esc(a.regDate)),
         ].join("");
 
         $("dOpsGrid").innerHTML = [
           kv("Business Hours", vField(a.bizHours, "bizHours")),
           kv("Regular Holidays", vField(a.holidays, "holidays")),
-          kv(
-            "Average Response Time (min)",
-            vField(a.declaredResp, "declaredResp", "number"),
-          ),
+          kv("Average Response Time (min)", esc(a.declaredResp) || "—"),
           kvFull("Specialized Services", specServicesField(a.specServices)),
         ].join("");
 
-        $("dServiceArea").innerHTML =
-          `<span class="kv-label">Target Cities</span><span class="kv-value">${vField(a.targetCities, "targetCities", "array")}</span>`;
-        $("dLanguagesBox").innerHTML =
-          `<span class="kv-label">Supported Languages</span><span class="kv-value">${vField(a.languages, "languages", "array")}</span>`;
+       $("dServiceArea").innerHTML = editMode
+          ? `<span class="kv-label">Target Cities</span><div class="kv-value">${renderMultiSelect("targetCities", a.targetCities, "dServiceArea")}</div>`
+          : `<span class="kv-label">Target Cities</span><span class="kv-value">${a.targetCities.map(v => `<span class="chip">${esc(v)}</span>`).join(" ") || "—"}</span>`;
+        $("dLanguagesBox").innerHTML = editMode
+          ? `<span class="kv-label">Supported Languages</span><div class="kv-value">${renderMultiSelect("languages", a.languages, "dLanguagesBox")}</div>`
+          : `<span class="kv-label">Supported Languages</span><span class="kv-value">${a.languages.map(v => `<span class="chip">${esc(v)}</span>`).join(" ") || "—"}</span>`;
 
         $("dNotifGrid").innerHTML = [
           kv("Quiet Hours — Start", vField(a.quietStart, "quietStart")),
           kv("Quiet Hours — End", vField(a.quietEnd, "quietEnd")),
           kv("Quiet Hours — Timezone", vField(a.quietTz, "quietTz")),
         ].join("");
+
+        // Section 10 — editable fields (trừ License Renewal History)
+        if (editMode) {
+          const s10fields = [
+            { id: "dLicRep",    field: "licRep",    label: "Representative Name" },
+            { id: "dLicNo",     field: "licNo",     label: "Real Estate License Number" },
+            { id: "dLicExpiry", field: "licExpiry", label: "License Expiry Date" },
+            { id: "dReAssoc",   field: "reAssoc",   label: "Real Estate Association" },
+            { id: "dGuarAssoc", field: "guarAssoc", label: "Guarantee Association" },
+            { id: "dHqAddress", field: "hqAddress", label: "Headquarters Address" },
+          ];
+          s10fields.forEach(({id, field, label}) => {
+            const el = $(id);
+            if (!el) return;
+            const isDate = field === "licExpiry";
+            el.innerHTML = isDate
+              ? `<input class="edit-input" type="date" value="${escAttr(a[field] || '')}" data-field="${field}" style="max-width:200px">`
+              : `<input class="edit-input" type="text" value="${escAttr(a[field] || '')}" data-field="${field}">`;
+          });
+        }
       }
 
       function showDetail(id) {
@@ -2927,12 +3075,14 @@
               .join("")
           : '<tr><td colspan="8" style="color:var(--text-muted)"><em>No staff registered.</em></td></tr>';
 
-        $("dLicRep").textContent = a.licRep;
-        $("dLicNo").textContent = a.licNo;
-        $("dLicExpiry").innerHTML = licExpiryBadge(a.licExpiry);
-        $("dReAssoc").textContent = a.reAssoc || "—";
-        $("dGuarAssoc").textContent = a.guarAssoc || "—";
-        $("dHqAddress").textContent = a.hqAddress;
+        if (!editMode) {
+          $("dLicRep").textContent = a.licRep;
+          $("dLicNo").textContent = a.licNo;
+          $("dLicExpiry").innerHTML = licExpiryBadge(a.licExpiry);
+          $("dReAssoc").textContent = a.reAssoc || "—";
+          $("dGuarAssoc").textContent = a.guarAssoc || "—";
+          $("dHqAddress").textContent = a.hqAddress;
+        }
         $("dLicHistory").innerHTML = a.licHistory.length
           ? a.licHistory
               .map(
@@ -3156,7 +3306,17 @@
       }
 
       function showList() {
-        if (editMode && !confirm("Discard unsaved changes?")) return;
+        if (editMode) {
+          openConfirm({
+            title: "Discard unsaved changes?",
+            icon: "fa-triangle-exclamation title-danger",
+            body: "Your edits will be lost if you leave this page.",
+            confirmLabel: "Discard",
+            confirmClass: "btn-primary-danger",
+            onConfirm: () => { editMode = false; $("detailView").classList.add("hidden"); $("listView").classList.remove("hidden"); },
+          });
+          return;
+        }
         editMode = false;
         $("detailView").classList.add("hidden");
         $("listView").classList.remove("hidden");
@@ -3166,10 +3326,18 @@
         renderDetail();
       }
       function cancelEdit() {
-        if (!confirm("Discard changes and return to view mode?")) return;
-        Object.assign(currentAgent, JSON.parse(JSON.stringify(originalAgent)));
-        editMode = false;
-        renderDetail();
+        openConfirm({
+          title: "Discard changes?",
+          icon: "fa-triangle-exclamation title-danger",
+          body: "Your edits in this session will be lost.",
+          confirmLabel: "Discard",
+          confirmClass: "btn-primary-danger",
+          onConfirm: () => {
+            Object.assign(currentAgent, JSON.parse(JSON.stringify(originalAgent)));
+            editMode = false;
+            renderDetail();
+          },
+        });
       }
       function saveChanges() {
         clearDetailErrors();
@@ -3210,21 +3378,24 @@
           toast("Please fix the highlighted fields.", true);
           return;
         }
+        // Multi-select components
+        ["targetCities","languages"].forEach(field => {
+          currentAgent[field] = getMS(field);
+        });
         document.querySelectorAll("#detailView [data-field]").forEach((el) => {
           const f = el.dataset.field;
           const t = el.dataset.type;
-          if (t === "num")
+          if (el.type === "file") {
+            if (currentAgent._pendingLogoFile) { currentAgent[f] = currentAgent._pendingLogoFile; delete currentAgent._pendingLogoFile; }
+          } else if (t === "num") {
             currentAgent[f] = el.value === "" ? 0 : Number(el.value);
-          else if (t === "array")
-            currentAgent[f] = el.value
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
-          else if (t === "multi")
-            currentAgent[f] = Array.from(el.selectedOptions).map(
-              (o) => o.value,
-            );
-          else currentAgent[f] = el.value;
+          } else if (t === "array") {
+            currentAgent[f] = el.value.split(",").map(s => s.trim()).filter(Boolean);
+          } else if (t === "multi") {
+            currentAgent[f] = Array.from(el.selectedOptions).map(o => o.value);
+          } else {
+            currentAgent[f] = el.value;
+          }
         });
         originalAgent = JSON.parse(JSON.stringify(currentAgent));
         editMode = false;
@@ -3235,34 +3406,130 @@
       }
       function suspendAccount() {
         if (!currentAgent) return;
-        const next =
-          currentAgent.status === "Suspended" ? "Active" : "Suspended";
-        if (
-          !confirm(
-            `${next === "Suspended" ? "Suspend" : "Re-activate"} ${currentAgent.id} (${currentAgent.company})?`,
-          )
-        )
-          return;
-        currentAgent.status = next;
-        originalAgent.status = next;
-        renderDetail();
-        renderList();
-        toast(
-          next === "Suspended"
-            ? "Agent suspended successfully."
-            : "Agent reactivated successfully.",
-        );
+        const next = currentAgent.status === "Suspended" ? "Active" : "Suspended";
+        const isSuspend = next === "Suspended";
+        openConfirm({
+          title: isSuspend ? "Suspend account?" : "Re-activate account?",
+          icon: isSuspend ? "fa-ban title-warning" : "fa-circle-check title-success",
+          body: `${isSuspend ? "Suspend" : "Re-activate"} ${esc(currentAgent.id)} (${esc(currentAgent.company)})?<br><span style="color:var(--text-muted)">${isSuspend ? "The agent will be unable to log in." : "The agent will regain access."}</span>`,
+          confirmLabel: isSuspend ? '<i class="fas fa-ban"></i> Suspend' : '<i class="fas fa-circle-check"></i> Re-activate',
+          confirmClass: isSuspend ? "btn-primary-danger" : "btn-primary-success",
+          onConfirm: () => {
+            currentAgent.status = next;
+            originalAgent.status = next;
+            renderDetail();
+            renderList();
+            toast(isSuspend ? "Agent suspended successfully." : "Agent reactivated successfully.");
+          },
+        });
       }
+      function deleteAccount() {
+        if (!currentAgent) return;
+        openConfirm({
+          title: "Permanently delete account?",
+          icon: "fa-trash title-danger",
+          body: `Permanently delete ${esc(currentAgent.id)} (${esc(currentAgent.company)})?<br><span style="color:var(--text-muted)">This action cannot be undone.</span>`,
+          confirmLabel: '<i class="fas fa-trash"></i> Delete',
+          confirmClass: "btn-primary-danger",
+          onConfirm: () => {
+            const idx = agents.findIndex((x) => x.id === currentAgent.id);
+            if (idx >= 0) agents.splice(idx, 1);
+            filtered = filtered.filter((x) => x.id !== currentAgent.id);
+            showList();
+            renderList();
+            toast("Agent account deleted.", true);
+          },
+        });
+      }
+
+      let leadTargets = null;
+      const LEAD_GROUPS_KEY = "yuushi.leadGroups";
+      const DEFAULT_GROUPS = [
+        { id: "g1", name: "High-Net-Worth Investors", entityType: "end_user", leadIds: ["U-1001", "U-1003", "U-1004"], createdDate: "2026-04-10" },
+        { id: "g2", name: "First-time Buyers Vietnam", entityType: "end_user", leadIds: ["U-1002", "U-1005"], createdDate: "2026-04-09" },
+        { id: "g3", name: "International Buyers", entityType: "end_user", leadIds: ["U-1006"], createdDate: "2026-04-08" },
+        { id: "ga1", name: "Top Performing Agencies", entityType: "agent", leadIds: ["AG-00000001"], createdDate: "2026-04-10" },
+        { id: "ga2", name: "At-Risk Accounts", entityType: "agent", leadIds: ["AG-00000003"], createdDate: "2026-04-09" },
+      ];
+      function getAllLeadGroups() {
+        try {
+          const raw = localStorage.getItem(LEAD_GROUPS_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed;
+          }
+        } catch (e) {}
+        return JSON.parse(JSON.stringify(DEFAULT_GROUPS));
+      }
+      function saveLeadGroups(groups) {
+        try { localStorage.setItem(LEAD_GROUPS_KEY, JSON.stringify(groups)); } catch (e) {}
+      }
+      function leadGroupsForAgent() {
+        return getAllLeadGroups().filter((g) => g.entityType === "agent");
+      }
+
+      function openLeadModal(targets) {
+        leadTargets = targets || (currentAgent ? [currentAgent] : []);
+        if (!leadTargets.length) return;
+        const groups = leadGroupsForAgent();
+        const sel = $("leadGroupSelect");
+        sel.innerHTML = groups.map((g) => `<option value="${g.id}">${esc(g.name || "Unnamed group")}</option>`).join("");
+        const hasGroups = groups.length > 0;
+        sel.style.display = hasGroups ? "block" : "none";
+        $("leadModalEmpty").style.display = hasGroups ? "none" : "flex";
+        $("leadNewWrap").style.display = hasGroups ? "none" : "flex";
+        $("leadNewName").value = "";
+        $("leadError").classList.remove("show");
+        $("leadModal").classList.add("open");
+        setTimeout(() => sel.focus(), 30);
+      }
+      function closeLeadModal() { $("leadModal").classList.remove("open"); }
+      function toggleNewLeadGroup(e) {
+        if (e) e.preventDefault();
+        const wrap = $("leadNewWrap");
+        const show = wrap.style.display === "none";
+        wrap.style.display = show ? "flex" : "none";
+        $("leadError").classList.remove("show");
+        if (show) setTimeout(() => $("leadNewName").focus(), 30);
+      }
+      function confirmSaveAsLead() {
+        if (!leadTargets || !leadTargets.length) return;
+        const groups = getAllLeadGroups();
+        const newName = $("leadNewName").value.trim();
+        let group;
+        if ($("leadNewWrap").style.display !== "none" && newName) {
+          group = { id: "ga" + Date.now(), name: newName, entityType: "agent", leadIds: [], createdDate: new Date().toISOString().slice(0, 10) };
+          groups.push(group);
+        } else {
+          if (!groups.length) { $("leadError").classList.add("show"); return; }
+          const gid = $("leadGroupSelect").value;
+          group = groups.find((g) => g.id === gid);
+          if (!group) { $("leadError").classList.add("show"); return; }
+        }
+        if (!Array.isArray(group.leadIds)) group.leadIds = [];
+        leadTargets.forEach((a) => { if (!group.leadIds.includes(a.id)) group.leadIds.push(a.id); });
+        saveLeadGroups(groups);
+        closeLeadModal();
+        const label = leadTargets.length > 1 ? `${leadTargets.length} agencies` : leadTargets[0].company;
+        toast(`${label} saved as lead in group "${group.name}".`);
+      }
+
       function saveAsLead() {
         if (!currentAgent) return;
-        toast(`Saved as lead: ${currentAgent.company}.`);
+        openLeadModal([currentAgent]);
       }
       function openChat(id) {
         const a = agents.find((x) => x.id === id);
         if (!a) return;
-        alert(
-          `Open chat with ${a.company} (${id}) — would navigate to Messages module.`,
-        );
+        openConfirm({
+          title: "Open conversation",
+          icon: "fa-comment-dots title-info",
+          body: `This would open the conversation with <strong>${esc(a.company)}</strong> in the Messages module.`,
+          confirmLabel: "OK",
+          confirmClass: "btn-primary",
+          cancelLabel: "Close",
+          onConfirm: () => {},
+        });
       }
       function resetPwd() {
         if (!currentAgent) return;
@@ -3319,28 +3586,37 @@
       function grantBadge() {
         if (!currentAgent) return;
         const b = $("grantBadgeSel").value;
-        if (currentAgent.badges.includes(b)) {
-          toast(`${b} already granted.`, true);
-          return;
-        }
-        if (confirm(`Grant "${b}" to ${currentAgent.company}?`)) {
-          currentAgent.badges.push(b);
-          originalAgent.badges = [...currentAgent.badges];
-          renderDetail();
-          renderList();
-          toast("Badge granted successfully.");
-        }
+        if (currentAgent.badges.includes(b)) { toast(`${b} already granted.`, true); return; }
+        openConfirm({
+          title: "Grant badge?",
+          icon: "fa-award title-info",
+          body: `Grant "<strong>${esc(b)}</strong>" to ${esc(currentAgent.company)}?`,
+          confirmLabel: '<i class="fas fa-award"></i> Grant',
+          confirmClass: "btn-primary",
+          onConfirm: () => {
+            currentAgent.badges.push(b);
+            originalAgent.badges = [...currentAgent.badges];
+            renderDetail(); renderList();
+            toast("Badge granted successfully.");
+          },
+        });
       }
       function removeBadge(idx) {
         if (!currentAgent) return;
         const b = currentAgent.badges[idx];
-        if (confirm(`Remove "${b}" from ${currentAgent.company}?`)) {
-          currentAgent.badges.splice(idx, 1);
-          originalAgent.badges = [...currentAgent.badges];
-          renderDetail();
-          renderList();
-          toast("Badge removed successfully.");
-        }
+        openConfirm({
+          title: "Remove badge?",
+          icon: "fa-trash title-danger",
+          body: `Remove "<strong>${esc(b)}</strong>" from ${esc(currentAgent.company)}?`,
+          confirmLabel: '<i class="fas fa-trash"></i> Remove',
+          confirmClass: "btn-primary-danger",
+          onConfirm: () => {
+            currentAgent.badges.splice(idx, 1);
+            originalAgent.badges = [...currentAgent.badges];
+            renderDetail(); renderList();
+            toast("Badge removed successfully.");
+          },
+        });
       }
 
       const SPECIALTY_OPTIONS = [
@@ -3550,8 +3826,224 @@
         if (months < 24) return "25%";
         return "0%";
       }
+      // ===== Confirm modal =====
+      let _confirmCb = null;
+      function openConfirm(opts) {
+        const titleEl = $("confirmTitle");
+        titleEl.querySelector("span").textContent = opts.title || "Confirm";
+        const iconEl = titleEl.querySelector("i");
+        iconEl.className = "fas " + (opts.icon || "fa-circle-question");
+        $("confirmBody").innerHTML = opts.body || "";
+        $("confirmCancelLabel").textContent = opts.cancelLabel || "Cancel";
+        const ok = $("confirmOkBtn");
+        ok.className = "btn " + (opts.confirmClass || "btn-primary");
+        ok.innerHTML = opts.confirmLabel || "Confirm";
+        _confirmCb = opts.onConfirm || null;
+        ok.onclick = function() { const cb = _confirmCb; closeConfirmModal(); if (cb) cb(); };
+        $("confirmModal").classList.add("open");
+        setTimeout(() => ok.focus(), 50);
+      }
+      function closeConfirmModal() {
+        $("confirmModal").classList.remove("open");
+        _confirmCb = null;
+      }
+
+      // ===== Avatar upload =====
+      function previewAvatar(input) {
+        if (!input.files || !input.files[0]) return;
+        const f = input.files[0];
+        if (!/\.(jpg|jpeg|png|webp)$/i.test(f.name)) { toast("Only JPG, PNG, JPEG, WEBP files are allowed.", true); input.value = ""; return; }
+        if (f.size > 5 * 1024 * 1024) { toast("Maximum file size is 5MB.", true); input.value = ""; return; }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const src = e.target.result;
+          const prev = $("avatarPreview");
+          if (prev) prev.innerHTML = `<img src="${src}" style="width:48px;height:48px;border-radius:10px;object-fit:cover;box-shadow:0 2px 6px rgba(139,115,64,0.25)">`;
+          const hero = $("dAvatar");
+          if (hero) { hero.style.backgroundImage = `url(${src})`; hero.style.backgroundSize = "cover"; hero.style.backgroundPosition = "center"; hero.style.fontSize = "0"; }
+          const lbl = $("avatarFileName");
+          if (lbl) lbl.textContent = f.name;
+          if (currentAgent) currentAgent._pendingLogoFile = f.name;
+        };
+        reader.readAsDataURL(f);
+      }
+
+      // ===== Multi-select with search =====
+      const MS_OPTIONS = {
+        targetCities: ["Tokyo","Kanagawa","Osaka","Saitama","Chiba","Kyoto","Aichi","Fukuoka","Hokkaido","Hyogo","Miyagi","Hiroshima","Nara","Okinawa"],
+        languages: ["Japanese","English","Spanish","Italian","Traditional Chinese","Arabic","Simplified Chinese","Portuguese","Korean","Indonesian","Thai","Vietnamese","German","Hindi","French"],
+      };
+      function renderMultiSelect(field, selected, containerId) {
+        const opts = MS_OPTIONS[field] || [];
+        return `
+          <div class="multi-select-wrap" id="mswrap-${field}">
+            <input class="ms-search" type="text" placeholder="Search…" oninput="filterMS('${field}', this.value)">
+            <div class="ms-list" id="mslist-${field}">
+              ${opts.map(o => `
+                <label class="ms-item ${selected.includes(o) ? 'selected' : ''}">
+                  <input type="checkbox" data-ms="${field}" value="${escAttr(o)}" ${selected.includes(o) ? 'checked' : ''}
+                    onchange="toggleMS('${field}', this)"> ${esc(o)}
+                </label>`).join('')}
+            </div>
+            <div class="ms-chips" id="mschips-${field}">
+              ${selected.map(o => `<span class="ms-chip">${esc(o)}<button type="button" onclick="removeMS('${field}','${escAttr(o)}')" title="Remove">×</button></span>`).join('')}
+            </div>
+          </div>`;
+      }
+      function filterMS(field, q) {
+        const list = $("mslist-" + field);
+        if (!list) return;
+        list.querySelectorAll(".ms-item").forEach(el => {
+          const txt = el.textContent.trim().toLowerCase();
+          el.style.display = txt.includes(q.toLowerCase()) ? "" : "none";
+        });
+      }
+      function toggleMS(field, cb) {
+        const val = cb.value;
+        const chips = $("mschips-" + field);
+        if (cb.checked) {
+          cb.closest(".ms-item").classList.add("selected");
+          const chip = document.createElement("span");
+          chip.className = "ms-chip";
+          chip.dataset.val = val;
+          chip.innerHTML = `${esc(val)}<button type="button" onclick="removeMS('${field}','${escAttr(val)}')" title="Remove">×</button>`;
+          chips.appendChild(chip);
+        } else {
+          cb.closest(".ms-item").classList.remove("selected");
+          chips.querySelectorAll(".ms-chip").forEach(c => { if (c.dataset.val === val) c.remove(); });
+        }
+      }
+      function removeMS(field, val) {
+        const list = $("mslist-" + field);
+        if (list) {
+          const cb = list.querySelector(`input[data-ms="${field}"][value="${val}"]`);
+          if (cb) { cb.checked = false; cb.closest(".ms-item").classList.remove("selected"); }
+        }
+        const chips = $("mschips-" + field);
+        if (chips) chips.querySelectorAll(".ms-chip").forEach(c => { if (c.dataset.val === val) c.remove(); });
+      }
+      function getMS(field) {
+        const list = $("mslist-" + field);
+        if (!list) return [];
+        return Array.from(list.querySelectorAll(`input[data-ms="${field}"]:checked`)).map(cb => cb.value);
+      }
+
+      // Wire modal close (backdrop + ESC)
+      (function wireModals() {
+        ["confirmModal","pwdResetModal","leadModal"].forEach(id => {
+          const el = $(id);
+          if (!el) return;
+          el.addEventListener("mousedown", e => { if (e.target === el) el.classList.remove("open"); });
+        });
+        document.addEventListener("keydown", e => {
+          if (e.key !== "Escape") return;
+          ["confirmModal","pwdResetModal","leadModal"].forEach(id => {
+            const el = $(id); if (el && el.classList.contains("open")) el.classList.remove("open");
+          });
+        });
+      })();
 
       renderList();
     </script>
+    <div id="leadModal" class="modal-backdrop">
+      <div class="modal-box" style="width: 460px">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <i class="fas fa-star" style="color:var(--color-primary)"></i>
+            <span>Save as lead — Select group</span>
+          </h3>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="closeLeadModal()" aria-label="Close">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="leadModalEmpty" class="warning-banner" style="display: none">
+            <i class="fas fa-circle-info"></i>
+            <div>No lead groups yet — create one below.</div>
+          </div>
+          <div class="modal-field">
+            <label class="field-label" for="leadGroupSelect">Lead group</label>
+            <select class="edit-input" id="leadGroupSelect"></select>
+          </div>
+          <div style="margin-top: 10px">
+            <a href="#" id="leadNewToggle" style="font-size: 12px; color: var(--text-link)" onclick="toggleNewLeadGroup(event)">+ Create new group</a>
+          </div>
+          <div class="modal-field" id="leadNewWrap" style="display: none; margin-top: 8px">
+            <label class="field-label" for="leadNewName">New group name</label>
+            <input class="edit-input" type="text" id="leadNewName" placeholder="e.g. Top Performing Agencies" />
+          </div>
+          <div class="modal-error" id="leadError">Please choose a group, or create a new one.</div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" type="button" onclick="closeLeadModal()">Cancel</button>
+          <button class="btn btn-primary" type="button" id="leadSaveBtn" onclick="confirmSaveAsLead()">
+            <i class="fas fa-star"></i> Save
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Reusable confirm modal -->
+    <div id="confirmModal" class="modal-backdrop">
+      <div class="modal-box" style="width:440px">
+        <div class="modal-header">
+          <h3 class="modal-title" id="confirmTitle">
+            <i class="fas fa-circle-question"></i> <span>Confirm</span>
+          </h3>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="closeConfirmModal()" aria-label="Close">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-message" id="confirmBody">Are you sure?</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" type="button" onclick="closeConfirmModal()">
+            <span id="confirmCancelLabel">Cancel</span>
+          </button>
+          <button class="btn" type="button" id="confirmOkBtn">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Password reset modal -->
+    <div id="pwdResetModal" class="modal-backdrop">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 class="modal-title"><i class="fas fa-key"></i> Reset password</h3>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="closePwdResetModal()" aria-label="Close">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="warning-banner">
+            <i class="fas fa-triangle-exclamation"></i>
+            <div><strong>Force-reset password without email verification.</strong><br>The account owner must use the new password to log in next time. This action is recorded in Audit Logs.</div>
+          </div>
+          <div class="kv" style="margin-top:14px">
+            <span class="kv-label">Subject account</span>
+            <span class="kv-value" id="pwdSubject">—</span>
+          </div>
+          <div class="modal-field">
+            <label class="field-label" for="pwdNew">New password</label>
+            <input id="pwdNew" type="password" autocomplete="new-password" placeholder="Min 8 characters"
+              oninput="updatePwChecklist(this.value, document.getElementById('pwdChecklist'))">
+            <ul class="pw-checklist" id="pwdChecklist"></ul>
+          </div>
+          <div class="modal-field">
+            <label class="field-label" for="pwdConfirm">Confirm new password</label>
+            <input id="pwdConfirm" type="password" autocomplete="new-password">
+          </div>
+          <div class="modal-error" id="pwdError"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" type="button" onclick="closePwdResetModal()">Cancel</button>
+          <button class="btn btn-primary-danger" type="button" onclick="submitPwdReset()">
+            <i class="fas fa-key"></i> Reset password
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toastWrap" class="toast-wrap"></div>
   </body>
 </html>

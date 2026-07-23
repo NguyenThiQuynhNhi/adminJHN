@@ -666,6 +666,19 @@
         border-color: var(--status-danger-text);
         box-shadow: 0 0 0 2px rgba(178, 59, 59, 0.16);
       }
+
+      .bulk-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        background: var(--bg-card-warm);
+        border: 1px solid var(--border-warm);
+        border-radius: var(--r-md);
+        margin-bottom: 10px;
+        font-size: 13px;
+      }
+      .bulk-bar strong { color: var(--text-main); }
     </style>
   </head>
   <body>
@@ -717,7 +730,7 @@
             ><input id="fLoginTo" type="date" />
           </div>
           <div class="field-group">
-            <label class="field-label" for="fDept">Department / Location</label
+            <label class="field-label" for="fDept">Department</label
             ><select id="fDept" multiple size="3">
               <option value="All">All</option>
               <option value="Headquarters">Headquarters</option>
@@ -726,12 +739,22 @@
               <option value="Branch Osaka">Branch Osaka</option>
             </select>
           </div>
-          <div class="field-group">
-            <label class="field-label" for="f2FA">2FA Status</label
-            ><select id="f2FA">
+          <div class="field-group" style="max-width:140px">
+            <label class="field-label" for="f2FA">2FA Status</label>
+            <select id="f2FA">
               <option value="all">All</option>
               <option value="enabled">Enabled</option>
               <option value="disabled">Disabled</option>
+            </select>
+          </div>
+          <div class="field-group" style="max-width:160px">
+            <label class="field-label" for="fSimLimit">Simultaneous Login Limit</label>
+            <select id="fSimLimit">
+              <option value="all">All</option>
+              <option value="1">1 device</option>
+              <option value="2">2 devices</option>
+              <option value="3">3 devices</option>
+              <option value="5">4+ devices</option>
             </select>
           </div>
         </div>
@@ -750,6 +773,16 @@
       </section>
 
       <section class="card">
+        <div class="bulk-bar hidden" id="bulkBar">
+          <span><strong id="bulkCount">0</strong> selected</span>
+          <div style="flex:1"></div>
+          <button class="btn btn-warning btn-sm" type="button" onclick="bulkSuspend()">
+            <i class="fas fa-ban"></i> Suspend
+          </button>
+          <button class="btn btn-danger btn-sm" type="button" onclick="bulkDelete()">
+            <i class="fas fa-trash"></i> Delete account
+          </button>
+        </div>
         <div class="results-header">
           <div class="results-count">
             <strong id="resultCount">Showing 0 of 0 admins</strong>
@@ -759,6 +792,9 @@
           <table class="data-table">
             <thead>
               <tr>
+                <th style="width:36px">
+                  <input type="checkbox" id="selectAllChk" onchange="toggleSelectAll(this)">
+                </th>
                 <th>Full Name</th>
                 <th>Email</th>
                 <th>Role</th>
@@ -1058,6 +1094,11 @@
                 class="edit-input"
                 placeholder="+81.90.0000.0000"
               />
+              <div class="field-error"></div>
+            </div>
+            <div class="kv">
+              <label class="kv-label" for="cvDob">Date of Birth</label>
+              <input id="cvDob" type="date" class="edit-input" />
               <div class="field-error"></div>
             </div>
             <div class="kv">
@@ -1364,6 +1405,7 @@
           email: "tanaka@yuushi.jp",
           phone: "+81 90 1234 5678",
           employeeId: "EMP-001",
+          dob: "1985-06-12",
           avatarFile: "tanaka.png",
           dept: "Headquarters",
           createdDate: "2024-01-15 09:30 JST",
@@ -1399,34 +1441,148 @@
       ];
 
       (function seedFillerAdmins() {
-        const depts = [
-          "Headquarters",
-          "Branch Tokyo",
-          "Branch Saitama",
-          "Branch Osaka",
+        const depts = ["Headquarters","Branch Tokyo","Branch Saitama","Branch Osaka"];
+        const roles = ["Super Admin","Admin","Operator","Viewer"];
+        const firstNames = ["Tanaka","Yamamoto","Suzuki","Watanabe","Ito","Nakamura","Kobayashi","Kato","Yoshida","Yamada","Sasaki","Yamaguchi","Matsumoto","Inoue","Kimura","Hayashi","Shimizu","Yamazaki","Mori","Abe"];
+        const lastNames = ["Kenji","Yuki","Haruto","Sora","Aoi","Ren","Hina","Sota","Nana","Ryo","Mei","Kaito","Sakura","Daiki","Mia","Shun","Rin","Takumi","Yuna","Kento"];
+        const memos = [
+          "Handles overseas compliance reporting.",
+          "Primary contact for Branch Tokyo operations.",
+          "Manages monthly data export schedules.",
+          "On extended leave until Q3 2026.",
+          "Handles VIP agent account escalations.",
+          "Oversees Osaka market data integrity.",
+          "Restricted to read-only access pending review.",
+          "Coordinates with legal on data retention policy.",
+          "",""
         ];
-        const roles = ["Super Admin", "Admin", "Operator", "Viewer"];
+
+        const CRITICAL_TYPES = [
+          { type:"Permission Change", targets:["ADM-002","AGT-031","USR-198"], ips:["203.0.113.10","198.51.100.4","10.0.0.5"] },
+          { type:"Account Suspension", targets:["AGT-055","USR-204","ADM-008"], ips:["203.0.113.42","192.168.1.1","172.16.0.3"] },
+          { type:"Bulk Deletion", targets:["USR-batch-2026-06","AGT-batch-052"], ips:["203.0.113.42","10.0.1.22"] },
+          { type:"Data Export (CSV)", targets:["leads-report-June.csv","agents-full-export.csv"], ips:["203.0.113.10","10.0.0.5"] },
+          { type:"Password Reset", targets:["ADM-003","ADM-017","AGT-089"], ips:["192.168.1.1","10.0.0.5"] },
+          { type:"2FA Setting Change", targets:["ADM-005","USR-301"], ips:["203.0.113.10","172.16.0.3"] },
+          { type:"Role Escalation", targets:["ADM-011 → Super Admin","AGT-044 → Admin"], ips:["10.0.1.22","203.0.113.42"] },
+          { type:"Audit Log Access", targets:["Section 5 — ADM-002","Section 5 — ADM-019"], ips:["192.168.1.1","10.0.0.5"] },
+          { type:"Price Plan Change", targets:["Plan: Pro → Enterprise","Plan: Basic → Pro"], ips:["203.0.113.10","172.16.0.3"] },
+          { type:"IP Restriction Update", targets:["ADM-007: added 10.0.0.0/24","ADM-013: removed all restrictions"], ips:["10.0.1.22","192.168.1.1"] },
+        ];
+
+        const AUDIT_ACTIONS = [
+          { action:"Login",              targets:["—","—","—"] },
+          { action:"View Agent Profile", targets:["AGT-031","AGT-055","AGT-012"] },
+          { action:"Edit User Record",   targets:["USR-198","USR-204","USR-301"] },
+          { action:"Export CSV",         targets:["leads-report.csv","agents-export.csv","users-full.csv"] },
+          { action:"Change Role",        targets:["ADM-008","ADM-017","ADM-011"] },
+          { action:"Reset Password",     targets:["ADM-003","USR-204","AGT-089"] },
+          { action:"Bulk Suspend",       targets:["3 accounts","7 accounts","12 accounts"] },
+          { action:"View Audit Log",     targets:["ADM-002","ADM-007","ADM-013"] },
+          { action:"Delete Property",    targets:["PROP-2041","PROP-1832","PROP-3305"] },
+          { action:"Toggle 2FA",         targets:["ADM-005","USR-301","AGT-044"] },
+        ];
+
+        const PDA_RECORD_TYPES = ["Customer","Agent","Staff","Lead","Property","Transaction"];
+        const PDA_ACTIONS = ["Viewed detail","Exported record","Edited record","Downloaded attachment","Searched by name"];
+
+        function rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+        function rndInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+        function rndDate(daysAgo) {
+          const d = new Date("2026-06-20T00:00:00");
+          d.setDate(d.getDate() - rndInt(0, daysAgo));
+          d.setHours(rndInt(8,21), rndInt(0,59));
+          return d.toISOString().slice(0,16).replace("T"," ");
+        }
+        function rndIp() { return `${rndInt(10,203)}.${rndInt(0,255)}.${rndInt(0,255)}.${rndInt(1,254)}`; }
+        function rndLastLogin() {
+          const d = new Date("2026-06-20T00:00:00");
+          d.setDate(d.getDate() - rndInt(0, 60));
+          d.setHours(rndInt(8,21), rndInt(0,59));
+          return d.toISOString().slice(0,16).replace("T"," ") + " JST";
+        }
+
+        function genAuditLogs(n) {
+          return Array.from({length: n}, () => {
+            const a = rnd(AUDIT_ACTIONS);
+            return { at: rndDate(90), action: a.action, target: rnd(a.targets), ip: rndIp() };
+          }).sort((a,b) => b.at.localeCompare(a.at));
+        }
+        function genCriticalLogs(n) {
+          return Array.from({length: n}, () => {
+            const c = rnd(CRITICAL_TYPES);
+            return { at: rndDate(90), type: c.type, target: rnd(c.targets), by: "ADM-" + String(rndInt(1,10)).padStart(3,"0"), ip: rnd(c.ips) };
+          }).sort((a,b) => b.at.localeCompare(a.at));
+        }
+        function genPdaLogs(n) {
+          return Array.from({length: n}, () => ({
+            at: rndDate(90),
+            recordType: rnd(PDA_RECORD_TYPES),
+            recordId: rnd(PDA_RECORD_TYPES).slice(0,3).toUpperCase() + "-" + rndInt(100,999),
+            action: rnd(PDA_ACTIONS),
+          })).sort((a,b) => b.at.localeCompare(a.at));
+        }
+        function genRoleHistory(role, createdDate) {
+          const editors = ["ADM-001","ADM-002","ADM-003"];
+          const allRoles = ["Viewer","Operator","Admin","Super Admin"];
+          const n = rndInt(0,2);
+          const hist = [{ at: createdDate, editor: rnd(editors), change: allRoles[rndInt(0,1)] }];
+          for (let k = 0; k < n; k++) hist.push({ at: rndDate(180), editor: rnd(editors), change: role });
+          return hist.sort((a,b) => a.at.localeCompare(b.at));
+        }
+        function genLoginHistory() {
+          const countries = ["JP","VN","US","SG","KR","AU"];
+          const devices = ["Desktop","Mobile","Tablet"];
+          return Array.from({length: rndInt(3,8)}, () => ({
+            at: rndDate(30),
+            ip: rndIp(),
+            country: rnd(countries),
+            device: rnd(devices),
+            vpn: Math.random() < 0.2,
+            concurrent: Math.random() < 0.1,
+          })).sort((a,b) => b.at.localeCompare(a.at));
+        }
+
         for (let i = 2; i <= 60; i++) {
           const id = "ADM-" + String(i).padStart(3, "0");
+          const fn = rnd(firstNames);
+          const ln = rnd(lastNames);
+          const fullName = fn + " " + ln;
+          const role = roles[rndInt(0, 3)];
+          const status = Math.random() < 0.15 ? "Suspended" : "Active";
+          const twoFa = Math.random() > 0.4;
+          const dept = rnd(depts);
+          const createdDate = rndDate(500) + " JST";
+          const hasLogin = Math.random() > 0.1;
+          const lastLogin = hasLogin ? rndLastLogin() : "";
+          const lastPwd = rndDate(180) + " JST";
+          const permExpiry = Math.random() > 0.6 ? `202${rndInt(6,7)}-${String(rndInt(1,12)).padStart(2,"0")}-${String(rndInt(1,28)).padStart(2,"0")}` : "";
           admins.push({
             id,
-            fullName: "User " + i,
-            email: "user" + i + "@yuushi.jp",
-            phone: "+81 90 0000 " + String(i).padStart(4, "0"),
-            dept: depts[i % 4],
-            createdDate: "2025-01-01 09:00 JST",
-            status: i % 7 === 0 ? "Suspended" : "Active",
-            role: roles[i % 4],
-            permExpiry: "",
-            roleHistory: [],
-            twoFa: false,
-            lastPwd: "",
-            lastLogin: "",
-            auditLogs: [],
-            criticalLogs: [],
-            pdaLogs: [],
-            loginHistory: LOGIN_HISTORY_SEED,
-            memo: "",
+            fullName,
+            email: fn.toLowerCase() + "." + ln.toLowerCase() + rndInt(10,99) + "@yuushi.jp",
+            phone: "+81 90 " + String(rndInt(1000,9999)) + " " + String(rndInt(1000,9999)),
+            employeeId: "EMP-" + String(i).padStart(3,"0"),
+            dob: `${rndInt(1970,2000)}-${String(rndInt(1,12)).padStart(2,"0")}-${String(rndInt(1,28)).padStart(2,"0")}`,
+            avatarFile: "",
+            dept,
+            createdDate,
+            status,
+            role,
+            permExpiry,
+            roleHistory: genRoleHistory(role, createdDate),
+            twoFa,
+            lastPwd,
+            lastLogin,
+            ipRestrict: rnd(["No restriction","Office IP only","VPN required"]),
+            concurrent: Math.random() < 0.15,
+            vpn: Math.random() < 0.2,
+            simLimit: rndInt(1,3),
+            auditLogs: genAuditLogs(rndInt(2,8)),
+            criticalLogs: genCriticalLogs(rndInt(0,4)),
+            pdaLogs: genPdaLogs(rndInt(1,6)),
+            loginHistory: genLoginHistory(),
+            memo: rnd(memos),
           });
         }
       })();
@@ -1439,6 +1595,45 @@
       let editMode = false;
 
       const $ = (id) => document.getElementById(id);
+      let selectedIds = new Set();
+      function getSelectedAdmins() { return admins.filter((a) => selectedIds.has(a.id)); }
+      function updateBulkBar() {
+        const n = selectedIds.size;
+        $("bulkBar").classList.toggle("hidden", n === 0);
+        $("bulkCount").textContent = n;
+      }
+      function onRowCheck(id, checked) {
+        if (checked) selectedIds.add(id); else selectedIds.delete(id);
+        updateBulkBar();
+      }
+      function toggleSelectAll(cb) {
+        document.querySelectorAll(".rowChk").forEach((el) => {
+          el.checked = cb.checked;
+          if (cb.checked) selectedIds.add(el.dataset.id); else selectedIds.delete(el.dataset.id);
+        });
+        updateBulkBar();
+      }
+      function bulkSuspend() {
+        const sel = getSelectedAdmins();
+        if (!sel.length) return;
+        const next = sel.every((a) => a.status === "Suspended") ? "Active" : "Suspended";
+        if (!confirm(`${next === "Suspended" ? "Suspend" : "Reactivate"} ${sel.length} selected admin(s)?`)) return;
+        sel.forEach((a) => { a.status = next; });
+        selectedIds.clear();
+        renderList();
+        toast(`${sel.length} admin(s) ${next === "Suspended" ? "suspended" : "reactivated"} successfully.`);
+      }
+      function bulkDelete() {
+        const sel = getSelectedAdmins();
+        if (!sel.length) return;
+        if (!confirm(`Permanently delete ${sel.length} selected admin(s)? This action cannot be undone.`)) return;
+        const ids = new Set(sel.map((a) => a.id));
+        for (let i = admins.length - 1; i >= 0; i--) if (ids.has(admins[i].id)) admins.splice(i, 1);
+        filtered = filtered.filter((a) => !ids.has(a.id));
+        selectedIds.clear();
+        renderList();
+        toast(`${sel.length} admin(s) deleted successfully.`);
+      }
       const esc = (s) =>
         String(s ?? "")
           .replace(/&/g, "&amp;")
@@ -1535,8 +1730,9 @@
         if (!total) {
           $("resultCount").textContent = "Showing 0 of 0 admins";
           tbody.innerHTML =
-            '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted)">No admins match the filters.</td></tr>';
+            '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted)">No admins match the filters.</td></tr>';
           renderPager(total, $("adminPager"), "gotoPage");
+          updateBulkBar();
           return;
         }
         const startIdx = (pageNum - 1) * PAGE_SIZE;
@@ -1547,6 +1743,9 @@
           .map(
             (a) => `
           <tr onclick="showDetail('${a.id}')">
+            <td onclick="event.stopPropagation()">
+              <input type="checkbox" class="rowChk" data-id="${a.id}" ${selectedIds.has(a.id) ? "checked" : ""} onchange="onRowCheck('${a.id}', this.checked)">
+            </td>
             <td><div style="display:flex;align-items:center;gap:10px">${avatarImg(a.fullName, 36, 8)}<div><strong>${esc(a.fullName)}</strong><br><span style="font-size:11px;color:var(--text-muted)">${a.id}</span></div></div></td>
             <td>${esc(a.email)}</td>
             <td>${esc(a.role)}</td>
@@ -1559,6 +1758,7 @@
           )
           .join("");
         renderPager(total, $("adminPager"), "gotoPage");
+        updateBulkBar();
       }
 
       function applyFilters() {
@@ -1615,6 +1815,8 @@
             .join("");
           return `<select class="edit-input" data-field="${field}">${opts}</select>`;
         }
+        if (type === "date")
+          return `<input class="edit-input" type="date" value="${escAttr(value)}" data-field="${field}">`;
         return `<input class="edit-input" type="text" value="${escAttr(value)}" data-field="${field}">`;
       }
       function kv(label, valHtml) {
@@ -1626,21 +1828,31 @@
 
       function renderEditableSections(a) {
         $("dProfileGrid").innerHTML = [
-          kv("Full Name", vField(a.fullName, "fullName")),
-          kv("Email Address", vField(a.email, "email")),
-          kv("Phone Number", vField(a.phone, "phone")),
           kv("Employee ID", vField(a.employeeId, "employeeId")),
           kv(
             "Avatar Image",
             editMode
-              ? vField(a.avatarFile, "avatarFile")
+              ? `<div style="display:flex;align-items:center;gap:12px">
+                  <div id="avatarPreview">${avatarImg(a.fullName, 44, 10)}</div>
+                  <div style="display:flex;flex-direction:column;gap:6px">
+                    <label class="btn btn-sm" style="cursor:pointer;margin:0">
+                      <i class="fas fa-upload"></i> Upload photo
+                      <input type="file" data-field="avatarFile" accept=".jpg,.jpeg,.png,.webp" style="display:none" onchange="previewAvatar(this)">
+                    </label>
+                    ${a.avatarFile ? `<span style="font-size:11px;color:var(--text-muted)">${esc(a.avatarFile)}</span>` : '<span style="font-size:11px;color:var(--text-muted)">No file chosen</span>'}
+                  </div>
+                </div>`
               : avatarImg(a.fullName, 44, 10) +
                   (a.avatarFile
                     ? `<span style="margin-left:10px;color:var(--text-muted);font-size:11px">${esc(a.avatarFile)}</span>`
                     : ""),
           ),
+          kv("Full Name", vField(a.fullName, "fullName")),
+          kv("Email Address", vField(a.email, "email")),
+          kv("Phone Number", vField(a.phone, "phone")),
+          kv("Date of Birth", vField(a.dob, "dob", "date")),
           kv(
-            "Department / Location",
+            "Department",
             vField(a.dept, "dept", "select", [
               "Headquarters",
               "Branch Tokyo",
@@ -1673,10 +1885,7 @@
         ].join("");
         $("dOpLogsGrid").innerHTML = [
           kv("Last Login", esc(a.lastLogin) || "Never"),
-          kv(
-            'IP Access Restriction <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--text-muted)">(TBD)</span>',
-            "—",
-          ),
+          kv("Simultaneous Login Limit", vField(a.simLimit, "simLimit", "select", ["1","2","3","5","10","Unlimited"])),
         ].join("");
         $("dMemoBox").innerHTML = editMode
           ? `<textarea class="edit-input" data-field="memo" style="min-height:80px">${esc(a.memo)}</textarea>`
@@ -1721,7 +1930,12 @@
               )
               .join("")
           : '<tr><td colspan="3" style="color:var(--text-muted)"><em>No role changes.</em></td></tr>';
-        $("d2FA").innerHTML = badge2FA(a.twoFa);
+        $("d2FA").innerHTML = editMode
+          ? `<select class="edit-input" data-field="twoFa" style="max-width:160px">
+              <option value="true" ${a.twoFa ? "selected" : ""}>ON</option>
+              <option value="false" ${!a.twoFa ? "selected" : ""}>OFF</option>
+             </select>`
+          : badge2FA(a.twoFa);
         $("dLastPwd").textContent = a.lastPwd || "—";
         $("dLoginHistory").innerHTML = LOGIN_HISTORY_SEED.map(
           (l) =>
@@ -1818,7 +2032,13 @@
         }
 
         document.querySelectorAll("#detailView [data-field]").forEach((el) => {
-          currentAdmin[el.dataset.field] = el.value;
+          if (el.dataset.field === "twoFa") {
+            currentAdmin.twoFa = el.value === "true";
+          } else if (el.dataset.field === "avatarFile") {
+            if (el.files && el.files[0]) currentAdmin.avatarFile = el.files[0].name;
+          } else {
+            currentAdmin[el.dataset.field] = el.value;
+          }
         });
         originalAdmin = JSON.parse(JSON.stringify(currentAdmin));
         editMode = false;
@@ -2120,6 +2340,7 @@
           "cvFullName",
           "cvEmail",
           "cvPhone",
+          "cvDob",
           "cvAddress",
           "cvPermExpiry",
           "cvPwd",
@@ -2143,7 +2364,7 @@
         window.scrollTo(0, 0);
       }
       function cancelCreateView() {
-        let hasData = ["cvFullName", "cvEmail", "cvPhone", "cvPwd"].some(
+        let hasData = ["cvFullName", "cvEmail", "cvPhone", "cvDob", "cvPwd"].some(
           (id) => $(id).value.trim() !== "",
         );
         if (
@@ -2249,6 +2470,7 @@
           email,
           phone,
           employeeId: "",
+          dob: $("cvDob").value,
           address: $("cvAddress").value.trim(),
           avatarFile: avEl.files && avEl.files[0] ? avEl.files[0].name : "",
           dept: $("cvDept").value,
@@ -2281,6 +2503,36 @@
       }
       function exportCsv() {
         alert(`Export ${filtered.length} filtered admin records as CSV (demo)`);
+      }
+      function previewAvatar(input) {
+        if (!input.files || !input.files[0]) return;
+        const f = input.files[0];
+        if (!/\.(jpg|jpeg|png|webp)$/i.test(f.name)) {
+          toast("Only JPG, PNG, JPEG, WEBP files are allowed.", true);
+          input.value = "";
+          return;
+        }
+        if (f.size > 5 * 1024 * 1024) {
+          toast("Maximum file size is 5MB.", true);
+          input.value = "";
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const src = e.target.result;
+          // Update inline preview next to button
+          const prev = $("avatarPreview");
+          if (prev) prev.innerHTML = `<img src="${src}" style="width:44px;height:44px;border-radius:10px;object-fit:cover;box-shadow:0 2px 6px rgba(139,115,64,0.25)">`;
+          // Update hero avatar too
+          const hero = $("dAvatar");
+          if (hero) {
+            hero.style.cssText += ";background-image:url(" + src + ");background-size:cover;background-position:center;font-size:0";
+          }
+          // Update filename label
+          const label = input.closest("div[style]")?.querySelector("span");
+          if (label) label.textContent = f.name;
+        };
+        reader.readAsDataURL(f);
       }
       renderList();
     </script>

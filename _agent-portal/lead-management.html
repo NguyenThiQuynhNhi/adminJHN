@@ -206,6 +206,37 @@
       .menu-pop button { display: block; width: 100%; text-align: left; padding: 8px 12px; border: 0; background: 0; font-size: 13px; cursor: pointer; border-radius: 6px; font-family: inherit; color: var(--text-main); }
       .menu-pop button:hover { background: var(--bg-alt); }
       .hidden { display: none !important; }
+
+      /* ===== Send to Chat confirm modal ===== */
+      .modal-backdrop { position: fixed; inset: 0; background: rgba(34,24,18,0.48); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 200; }
+      .modal-backdrop.open { display: flex; }
+      .modal-box { width: 420px; max-width: 100%; background: #fff; border-radius: 10px; box-shadow: 0 18px 50px rgba(60,41,28,0.22); display: flex; flex-direction: column; }
+      .modal-header { padding: 14px 18px; border-bottom: 1px solid var(--border-soft); display: flex; justify-content: space-between; align-items: center; }
+      .modal-title { font-size: 15px; font-weight: 700; color: var(--text-head); display: flex; align-items: center; gap: 8px; }
+      .modal-body { padding: 16px 18px; }
+      .modal-prop-card { background: var(--accent-soft); border: 1px solid #f0c9b0; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; }
+      .modal-prop-name { font-weight: 700; font-size: 14px; color: var(--text-head); }
+      .modal-prop-meta { font-size: 12px; color: var(--text-muted); margin-top: 4px; display: flex; flex-wrap: wrap; gap: 10px; }
+      .modal-prop-meta span { display: flex; align-items: center; gap: 4px; }
+      .modal-msg { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+      .modal-footer { padding: 12px 18px; border-top: 1px solid var(--border-soft); display: flex; justify-content: flex-end; gap: 8px; }
+      /* Match score badge */
+      .match-score { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+      .match-100 { background: #d4f0d4; color: #2a7a2a; }
+      .match-high { background: var(--accent-soft); color: var(--accent-dark); }
+      .match-mid { background: var(--grey-pill); color: #6b6256; }
+      /* Match criteria pills */
+      .match-criteria { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+      .mc-pill { padding: 2px 8px; border-radius: 20px; font-size: 10.5px; font-weight: 600; }
+      .mc-ok { background: #d4f0d4; color: #2a7a2a; }
+      .mc-miss { background: #fbe9e9; color: #c53030; }
+      /* Send to Chat button */
+      .btn-chat-send { background: #fff; border: 1px solid var(--accent); color: var(--accent); border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 5px; }
+      .btn-chat-send:hover { background: var(--accent); color: #fff; }
+      /* Property row in matching table */
+      .match-row td { vertical-align: top; padding: 12px 14px; }
+      .match-prop-name { font-weight: 700; font-size: 13px; color: var(--text-head); }
+      .match-prop-sub { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
     </style>
   </head>
   <body>
@@ -590,9 +621,107 @@
         document.querySelectorAll(".btab").forEach(b => b.classList.remove("active")); btn.classList.add("active");
         const body = document.getElementById("detailTabBody");
         if (t === "matching") {
-          body.innerHTML = `<div class="tab-filters">
-            <select><option>Projects</option></select><select><option>Price</option></select><select><option>Locations</option></select><select><option>Bedrooms</option></select><select><option>Group By</option></select>
-          </div>` + emptyBox("No entries were found");
+          // Mock lead criteria (trong thực tế đọc từ currentLead)
+          const lead = {
+            prefecture: "Tokyo",
+            city: "Shibuya",
+            propType: "House",
+            floorAreaMin: 250, floorAreaMax: 300,
+            landAreaMin: 80,  landAreaMax: 120,
+            priceMin: 2000000, priceMax: 5000000,
+            txnType: "To Buy",
+            client: "Santi Argo",
+            clientPhone: "+34-655-5231",
+          };
+
+          // Mock property pool để match
+          const PROPS = [
+            { id:"PROP-1001", name:"Shibuya Sky Residence #1203", prefecture:"Tokyo", city:"Shibuya", propType:"House", floorArea:270, landArea:95, price:3800000, txnType:"To Buy", br:3, agent:"Yamada Estates" },
+            { id:"PROP-1002", name:"Aoyama Garden House",         prefecture:"Tokyo", city:"Minato",  propType:"House", floorArea:290, landArea:110, price:4800000, txnType:"To Buy", br:4, agent:"Yamada Estates" },
+            { id:"PROP-1003", name:"Harajuku Terrace Villa",      prefecture:"Tokyo", city:"Shibuya", propType:"House", floorArea:255, landArea:88,  price:5200000, txnType:"To Buy", br:3, agent:"Prime Realty" },
+            { id:"PROP-1004", name:"Osaka Bay House",             prefecture:"Osaka", city:"Namba",   propType:"House", floorArea:260, landArea:92,  price:2900000, txnType:"To Buy", br:3, agent:"Osaka Realty" },
+            { id:"PROP-1005", name:"Shinjuku Studio Apt",         prefecture:"Tokyo", city:"Shinjuku",propType:"Apartment", floorArea:45, landArea:0, price:1800000, txnType:"To Buy", br:1, agent:"City Homes" },
+          ];
+
+          function inRange(val, min, max, tol=0.05) {
+            const lo = min * (1 - tol), hi = max * (1 + tol);
+            return val >= lo && val <= hi;
+          }
+
+          function scoreProperty(p) {
+            const criteria = [
+              { label: "Prefecture", ok: p.prefecture === lead.prefecture },
+              { label: "City/Ward",  ok: p.city === lead.city },
+              { label: "Type",       ok: p.propType === lead.propType },
+              { label: "Floor area", ok: inRange(p.floorArea, lead.floorAreaMin, lead.floorAreaMax) },
+              { label: "Land area",  ok: lead.landAreaMin === 0 || inRange(p.landArea, lead.landAreaMin, lead.landAreaMax) },
+              { label: "Price",      ok: inRange(p.price, lead.priceMin, lead.priceMax) },
+              { label: "Txn type",   ok: p.txnType === lead.txnType },
+            ];
+            const passed = criteria.filter(c => c.ok).length;
+            return { score: passed, total: criteria.length, criteria };
+          }
+
+          // Weighted sort: tiêu chí đầu quan trọng hơn, dùng lũy thừa 2
+          // criteria index: 0=Prefecture, 1=City, 2=Type, 3=Floor, 4=Land, 5=Price, 6=Txn
+          const WEIGHTS = [64, 32, 16, 8, 4, 2, 1]; // tiêu chí 1 nặng nhất
+          const scored = PROPS.map(p => {
+            const res = scoreProperty(p);
+            const weightedScore = res.criteria.reduce((sum, c, i) => sum + (c.ok ? WEIGHTS[i] : 0), 0);
+            return { ...p, ...res, weightedScore };
+          })
+            .sort((a, b) => b.weightedScore - a.weightedScore)
+            .slice(0, 5);
+
+          function scoreBadge(s, t) {
+            const pct = Math.round(s / t * 100);
+            const cls = pct === 100 ? "match-100" : pct >= 70 ? "match-high" : "match-mid";
+            return `<span class="match-score ${cls}"><i class="fas fa-circle-check"></i> ${s}/${t} matched</span>`;
+          }
+
+          const fmtArea = v => v ? v + " m²" : "—";
+          const fmtPrice = v => v ? "¥" + v.toLocaleString() : "—";
+          const cellCls = ok => ok ? "style='color:#2a7a2a;font-weight:600'" : "style='color:#c53030'";
+
+          const rows = scored.map(p => {
+            const c = p.criteria;
+            // c indices: 0=Prefecture,1=City,2=Type,3=FloorArea,4=LandArea,5=Price,6=TxnType
+            return `
+            <tr class="match-row">
+              <td>
+                <div class="match-prop-name">${p.name}</div>
+                <div class="match-prop-sub">${p.br}BR · ${p.agent}</div>
+              </td>
+              <td ${cellCls(c[0].ok)}>${p.prefecture}</td>
+              <td ${cellCls(c[1].ok)}>${p.city}</td>
+              <td ${cellCls(c[2].ok)}>${p.propType}</td>
+              <td ${cellCls(c[3].ok)}>${fmtArea(p.floorArea)}</td>
+              <td ${cellCls(c[4].ok)}>${fmtArea(p.landArea)}</td>
+              <td ${cellCls(c[5].ok)}>${fmtPrice(p.price)}</td>
+              <td ${cellCls(c[6].ok)}>${p.txnType}</td>
+              <td style="white-space:nowrap">
+                <button class="btn-chat-send" onclick="openSendConfirm('${p.id}','${p.name.replace(/'/g,"\\'")}','${p.prefecture}','${p.city}','${p.propType}',${p.price},'${p.br}BR')">
+                  <i class="fas fa-paper-plane"></i> Send to Client Chat
+                </button>
+              </td>
+            </tr>`;
+          }).join("");
+
+          body.innerHTML = `
+            <table class="data" style="table-layout:auto">
+              <thead><tr>
+                <th>Property</th>
+                <th>Prefecture</th>
+                <th>City/Ward</th>
+                <th>Type</th>
+                <th>Floor Area (m²)</th>
+                <th>Land Area (m²)</th>
+                <th>Price (¥)</th>
+                <th>Txn Type</th>
+                <th>Action</th>
+              </tr></thead>
+              <tbody>${rows}</tbody>
+            </table>`;
         } else if (t === "offers") {
           body.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-weight:700;font-size:14px">List</div><button class="btn btn-primary btn-pill" onclick="toast('Add offer')"><i class="fas fa-plus-circle"></i> ADD</button></div>
             <table class="data"><thead><tr><th>Property <span class="sort">↕</span></th><th>Offer Price <span class="sort">↕</span></th><th>Offer Date Sent <span class="sort">↕</span></th><th>Counteroffer Price <span class="sort">↕</span></th><th>Counteroffer Date Sent <span class="sort">↕</span></th><th>Actions</th></tr></thead>
@@ -762,7 +891,64 @@
       function toast(msg, kind) { const el = document.createElement("div"); el.className = "toast " + (kind || ""); el.textContent = msg; document.getElementById("toastWrap").appendChild(el); setTimeout(() => el.remove(), 2600); }
       window.toast = toast;
 
+      // ===== Send to Client Chat =====
+      let _pendingSend = null;
+
+      function openSendConfirm(id, name, prefecture, city, propType, price, br) {
+        _pendingSend = { id, name, prefecture, city, propType, price, br };
+        document.getElementById("scPropName").textContent = name;
+        document.getElementById("scPropMeta").innerHTML =
+          `<span><i class="fas fa-map-marker-alt"></i> ${prefecture} · ${city}</span>
+           <span><i class="fas fa-house"></i> ${propType} · ${br}</span>
+           <span><i class="fas fa-yen-sign"></i> ¥${Number(price).toLocaleString()}</span>`;
+        document.getElementById("scClientName").textContent = "Santi Argo";
+        document.getElementById("sendConfirmModal").classList.add("open");
+      }
+      window.openSendConfirm = openSendConfirm;
+
+      function closeSendConfirm() {
+        document.getElementById("sendConfirmModal").classList.remove("open");
+        _pendingSend = null;
+      }
+      window.closeSendConfirm = closeSendConfirm;
+
+      function confirmSendToChat() {
+        if (!_pendingSend) return;
+        closeSendConfirm();
+        toast(`✅ ${_pendingSend.name} sent to Santi Argo's chat`, "success");
+        // Trong production: gọi API chat + tạo lead mới từ property này
+      }
+      window.confirmSendToChat = confirmSendToChat;
+
+      // Close on backdrop click
+      document.addEventListener("click", e => {
+        if (e.target.id === "sendConfirmModal") closeSendConfirm();
+      });
+
       renderList();
     </script>
+    <!-- Send to Client Chat — Confirm Modal -->
+    <div class="modal-backdrop" id="sendConfirmModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <div class="modal-title"><i class="fas fa-paper-plane" style="color:var(--accent)"></i> Send to Client Chat</div>
+          <button style="border:0;background:0;cursor:pointer;font-size:16px;color:var(--text-muted)" onclick="closeSendConfirm()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-prop-card">
+            <div class="modal-prop-name" id="scPropName">—</div>
+            <div class="modal-prop-meta" id="scPropMeta"></div>
+          </div>
+          <div class="modal-msg">
+            Send this property to <strong id="scClientName">—</strong>'s chat?<br>
+            <span style="color:var(--text-dim);font-size:12px;margin-top:6px;display:block">The client will receive a property card in their chat. A new lead will also be created from this property automatically.</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-pill" onclick="closeSendConfirm()">Cancel</button>
+          <button class="btn btn-primary btn-pill" onclick="confirmSendToChat()"><i class="fas fa-paper-plane"></i> Send</button>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

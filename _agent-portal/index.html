@@ -251,6 +251,63 @@
         background: var(--bg);
       }
 
+      /* ===== GLOBAL NOTIFICATION BELL (merged Property + Project) ===== */
+      .notif-menu { position: relative; }
+      .notif-dropdown {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        width: 360px;
+        max-width: 90vw;
+        max-height: 460px;
+        overflow-y: auto;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: 0 16px 40px rgba(60, 41, 28, 0.18);
+        z-index: 250;
+        display: none;
+      }
+      .notif-menu.open .notif-dropdown { display: block; }
+      .notif-tabs {
+        display: flex;
+        gap: 4px;
+        padding: 8px;
+        border-bottom: 1px solid #f0ece4;
+        background: var(--warm);
+        position: sticky;
+        top: 0;
+      }
+      .notif-tab {
+        flex: 1;
+        border: 0;
+        background: transparent;
+        padding: 7px 10px;
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--muted);
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .notif-tab.active { background: var(--accent); color: #fff; }
+      .notif-list { padding: 6px; }
+      .notif-row {
+        display: flex;
+        gap: 10px;
+        padding: 10px 8px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .notif-row:hover { background: var(--warm); }
+      .notif-row i { margin-top: 2px; font-size: 13px; }
+      .notif-row.critical i { color: var(--danger); }
+      .notif-row.warning i { color: #c87a2a; }
+      .notif-row.info i { color: var(--accent); }
+      .notif-row-title { font-size: 12.5px; font-weight: 700; color: var(--text); }
+      .notif-row-desc { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+      .notif-empty { padding: 24px; text-align: center; color: var(--muted); font-size: 12.5px; }
+
       /* ===== CHAT BUTTON ===== */
       .chat-btn {
         position: relative;
@@ -553,9 +610,6 @@
           <a class="menu-item" data-content="message-center.html"
             ><i class="fas fa-paper-plane"></i><span>Message Center</span></a
           >
-          <a class="menu-item" data-content="email-center.html"
-            ><i class="fa-solid fa-at"></i><span>Email Center</span></a
-          >
         </div>
 
         <div class="menu-section">
@@ -600,6 +654,28 @@
               <i class="fa-solid fa-comment-dots"></i>
               <span class="chat-badge" id="chatBadge">5</span>
             </button>
+
+            <!-- Global notification bell (merged Property + Project alerts) -->
+            <div class="notif-menu" id="notifMenu">
+              <button
+                class="chat-btn"
+                type="button"
+                id="notifBtn"
+                onclick="toggleNotifMenu(event)"
+                aria-label="Notifications"
+                title="Notifications"
+              >
+                <i class="fa-solid fa-bell"></i>
+                <span class="chat-badge" id="notifBadge" style="display: none">0</span>
+              </button>
+              <div class="notif-dropdown" id="notifDropdown">
+                <div class="notif-tabs">
+                  <button class="notif-tab active" type="button" data-notif-tab="property" onclick="setNotifTab('property')">Property</button>
+                  <button class="notif-tab" type="button" data-notif-tab="project" onclick="setNotifTab('project')">Project</button>
+                </div>
+                <div class="notif-list" id="notifList"></div>
+              </div>
+            </div>
 
             <!-- Global account menu -->
             <div class="acct-menu" id="acctMenu">
@@ -759,6 +835,76 @@
           return;
         window.location.href = "agent_signin.html";
       }
+
+      // ===== Global notification bell (merged Property + Project) =====
+      let notifTab = "property";
+      function loadNotif(module) {
+        try {
+          const raw = localStorage.getItem("yuushi.notif." + module);
+          return raw ? JSON.parse(raw) || [] : [];
+        } catch (e) {
+          return [];
+        }
+      }
+      function notifIcon(sev) {
+        return sev === "critical" ? "fa-circle-exclamation" : sev === "warning" ? "fa-triangle-exclamation" : "fa-circle-info";
+      }
+      function renderNotifBadge() {
+        const total = loadNotif("property").length + loadNotif("project").length;
+        const badge = document.getElementById("notifBadge");
+        if (!badge) return;
+        badge.textContent = total > 99 ? "99+" : String(total);
+        badge.style.display = total ? "flex" : "none";
+      }
+      function renderNotifList() {
+        const list = loadNotif(notifTab);
+        const el = document.getElementById("notifList");
+        if (!el) return;
+        if (!list.length) {
+          el.innerHTML = '<div class="notif-empty">No active alerts.</div>';
+          return;
+        }
+        el.innerHTML = list
+          .map(
+            (a) => `<div class="notif-row ${a.severity}" onclick="openNotifTarget('${notifTab}')">
+                <i class="fas ${notifIcon(a.severity)}"></i>
+                <div>
+                  <div class="notif-row-title">${a.title}</div>
+                  <div class="notif-row-desc">${a.desc}</div>
+                </div>
+              </div>`,
+          )
+          .join("");
+      }
+      function setNotifTab(tab) {
+        notifTab = tab;
+        document.querySelectorAll(".notif-tab").forEach((b) => b.classList.toggle("active", b.dataset.notifTab === tab));
+        renderNotifList();
+      }
+      function toggleNotifMenu(e) {
+        if (e) e.stopPropagation();
+        const menu = document.getElementById("notifMenu");
+        if (!menu) return;
+        const open = menu.classList.toggle("open");
+        if (open) {
+          renderNotifBadge();
+          renderNotifList();
+        }
+      }
+      function closeNotifMenu() {
+        const menu = document.getElementById("notifMenu");
+        if (menu) menu.classList.remove("open");
+      }
+      function openNotifTarget(module) {
+        closeNotifMenu();
+        const target = module === "project" ? "project-management.html" : "property-list-oversight.html";
+        const frame = document.getElementById("contentFrame");
+        if (frame) frame.src = target;
+        setActiveMenu(target);
+      }
+      setInterval(renderNotifBadge, 4000);
+      renderNotifBadge();
+
       function openInbox() {
         const frame = document.getElementById("contentFrame");
         if (frame) frame.src = "admin-messages.html";
@@ -783,6 +929,9 @@
         const menu = document.getElementById("acctMenu");
         if (menu && menu.classList.contains("open") && !e.target.closest("#acctMenu"))
           closeAcctMenu();
+        const notifMenu = document.getElementById("notifMenu");
+        if (notifMenu && notifMenu.classList.contains("open") && !e.target.closest("#notifMenu"))
+          closeNotifMenu();
         const crmGroup = document.getElementById("crmActivitiesGroup");
         if (crmGroup && !e.target.closest("#crmActivitiesGroup")) {
           const submenu = document.getElementById("crmActivitiesSubmenu");
