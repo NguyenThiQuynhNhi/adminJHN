@@ -397,9 +397,7 @@
         background: #f6f1e8;
       }
       .act-menu {
-        position: absolute;
-        right: 0;
-        top: 34px;
+        position: fixed;
         background: #fff;
         border: 1px solid var(--border);
         border-radius: 10px;
@@ -1326,13 +1324,6 @@
         >
           <i class="fas fa-bolt"></i> Automations
         </div>
-        <div
-          class="mc-nav-item"
-          data-screen="analytics"
-          onclick="navTo('analytics')"
-        >
-          <i class="fas fa-chart-line"></i> Delivery Analytics
-        </div>
       </aside>
 
       <!-- ===== CONTENT ===== -->
@@ -1360,24 +1351,22 @@
                 <option>Scheduled</option>
                 <option>Draft</option>
               </select>
-              <select id="campAud" onchange="renderCampaigns(true)">
-                <option value="">All Audiences</option>
-                <option value="End User">End User</option>
-                <option value="Agent">Agent</option>
-                <option value="Custom">Custom Group</option>
+              <select id="anTime" onchange="renderCampaigns(true)">
+                <option value="desc">Newest first</option>
+                <option value="asc">Oldest first</option>
               </select>
             </div>
             <div class="result-count" id="campCount"></div>
-            <div class="tbl-wrap">
-              <table>
+            <div class="tbl-wrap an-wrap">
+              <table class="an-table">
                 <thead>
                   <tr>
                     <th>Campaign Name</th>
                     <th>Audience</th>
                     <th>Status</th>
-                    <th>Scheduled</th>
-                    <th>Sent</th>
-                    <th>Delivered</th>
+                    <th>Sent Date</th>
+                    <th>Recipients</th>
+                    <th>Read</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -1385,6 +1374,10 @@
               </table>
             </div>
             <div class="pager" id="campPager"></div>
+            <div class="analytics-card" style="margin-top: 20px">
+              <h3>Delivery Trend (Last 30 Days)</h3>
+              <canvas id="trendChart" height="110"></canvas>
+            </div>
           </div>
 
           <!-- builder view -->
@@ -1427,38 +1420,29 @@
                   ><input
                     type="radio"
                     name="aud"
-                    value="all_users"
+                    value="all_leads"
                     checked
                     onchange="onAudChange()"
                   />
-                  All End Users</label
+                  All (End Users + Agencies)</label
                 >
                 <label class="radio-row"
                   ><input
                     type="radio"
                     name="aud"
-                    value="all_agents"
+                    value="group_user"
                     onchange="onAudChange()"
                   />
-                  All Agents</label
+                  End User Group</label
                 >
                 <label class="radio-row"
                   ><input
                     type="radio"
                     name="aud"
-                    value="all_leads"
+                    value="group_agent"
                     onchange="onAudChange()"
                   />
-                  All Leads (End Users + Agents)</label
-                >
-                <label class="radio-row"
-                  ><input
-                    type="radio"
-                    name="aud"
-                    value="custom"
-                    onchange="onAudChange()"
-                  />
-                  Custom Group</label
+                  Agency Group</label
                 >
               </div>
               <div class="group-picker" id="groupPicker" style="display: none">
@@ -1483,16 +1467,6 @@
               <h3 style="font-size: 17px; margin-bottom: 6px">
                 Compose your message
               </h3>
-              <p
-                style="
-                  font-size: 12.5px;
-                  color: var(--text-sec);
-                  margin-bottom: 14px;
-                "
-              >
-                <i class="fas fa-comment-dots"></i> Delivered as an in-app chat
-                message.
-              </p>
               <div id="bEditorMount"></div>
               <div class="tpl-lib">
                 <div class="tpl-lib-head">Use a template</div>
@@ -1513,7 +1487,7 @@
                   checked
                   onchange="onSchedChange()"
                 />
-                Send immediately (after review)</label
+                Send immediately</label
               >
               <label class="radio-row"
                 ><input
@@ -1522,7 +1496,7 @@
                   value="schedule"
                   onchange="onSchedChange()"
                 />
-                Schedule for specific date &amp; time</label
+                Schedule date &amp; time</label
               >
               <div
                 id="schedFields"
@@ -1563,7 +1537,7 @@
                     <label>Time</label><input type="time" id="bRecurTime" />
                   </div>
                   <div class="field" style="flex: 1; min-width: 140px">
-                    <label>End date (optional)</label
+                    <label>End date</label
                     ><input type="date" id="bEndDate" />
                   </div>
                 </div>
@@ -1616,26 +1590,9 @@
                   placeholder="e.g. New Property Alert"
                 /><span class="err">Template name is required.</span>
               </div>
-              <div style="display: flex; gap: 14px; flex-wrap: wrap">
-                <div class="field" style="flex: 1; min-width: 200px">
-                  <label class="req">Category</label
-                  ><select id="tCat">
-                    <option>Automation</option>
-                    <option>Campaign</option>
-                  </select>
-                </div>
-              </div>
               <div class="field" id="t-body">
                 <label class="req">Message Body</label>
                 <div id="tEditorMount"></div>
-              </div>
-              <div class="field">
-                <label>Tags</label
-                ><input
-                  type="text"
-                  id="tTags"
-                  placeholder="comma, separated, tags"
-                />
               </div>
               <div class="form-actions">
                 <button class="btn btn-outline" onclick="closeTplEditor()">
@@ -1948,115 +1905,103 @@
               border-top: 1px solid var(--border);
               background: #faf7f1;
             }
-            .ad-restore {
-              margin-left: auto;
+
+            /* Form inputs for Timing */
+            .ad-select, .ad-input {
+              padding: 6px 10px;
+              border: 1px solid var(--border);
+              border-radius: 8px;
               font-size: 12.5px;
-              color: var(--accent);
-              cursor: pointer;
-              font-weight: 600;
+              font-family: inherit;
+              outline: none;
+              background: #fff;
+              color: var(--navy);
             }
-            .ad-restore:hover {
-              text-decoration: underline;
+            .ad-select:focus, .ad-input:focus {
+              border-color: var(--gold);
+            }
+            .ad-input[type="number"] {
+              width: 60px;
             }
           </style>
-          <div class="page-head">
-            <div class="page-title">Automated Messages</div>
-          </div>
-          <div class="auto-filter">
-            <div class="srch">
-              <i class="fas fa-magnifying-glass"></i
-              ><input
-                id="autoSearch"
-                type="text"
-                placeholder="Search by trigger name"
-                oninput="renderAutomations()"
-              />
+          <div id="auto-list">
+            <div class="page-head">
+              <div class="page-title">Automated Messages</div>
             </div>
-            <select id="autoStatusFilter" onchange="renderAutomations()">
-              <option value="all">All status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-            <span class="auto-count" id="autoCount"></span>
-          </div>
-          <div class="auto-table-wrap">
-            <table class="auto-table">
-              <thead>
-                <tr>
-                  <th style="width: 64px">Active</th>
-                  <th>Trigger</th>
-                  <th style="width: 200px">Timing</th>
-                  <th style="width: 150px">Admin Can Disable</th>
-                  <th style="width: 48px"></th>
-                </tr>
-              </thead>
-              <tbody id="autoTbody"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- ===================== SCREEN 4: ANALYTICS ===================== -->
-        <section class="screen" id="screen-analytics">
-          <div class="page-head">
-            <div class="page-title">Message Delivery Analytics</div>
-          </div>
-          <div class="analytics-card">
-            <h3>Campaign Delivery Detail</h3>
-            <p
-              style="
-                font-size: 12.5px;
-                color: var(--text-sec);
-                margin: -8px 0 14px;
-              "
-            >
-              Showing sent message campaigns only.
-            </p>
-            <div class="filter-bar">
-              <input
-                type="text"
-                id="anSearch"
-                placeholder="Search campaigns..."
-                oninput="renderDelivery()"
-              />
-              <select id="anRange" onchange="onAnRangeChange()">
-                <option value="all">All time</option>
-                <option value="30">Last 30 days</option>
-                <option value="90">Last 90 days</option>
-                <option value="custom">Custom</option>
+            <div class="auto-filter">
+              <div class="srch">
+                <i class="fas fa-magnifying-glass"></i
+                ><input
+                  id="autoSearch"
+                  type="text"
+                  placeholder="Search by trigger name"
+                  oninput="renderAutomations()"
+                />
+              </div>
+              <select id="autoStatusFilter" onchange="renderAutomations()">
+                <option value="all">All status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
               </select>
-              <input
-                type="date"
-                id="anFrom"
-                style="display: none; flex: 0 0 auto; min-width: 0"
-                onchange="renderDelivery()"
-              />
-              <input
-                type="date"
-                id="anTo"
-                style="display: none; flex: 0 0 auto; min-width: 0"
-                onchange="renderDelivery()"
-              />
-              <select id="anAud" onchange="renderDelivery()">
-                <option value="">All Audiences</option>
-                <option value="End User">End User</option>
-                <option value="Agent">Agent</option>
-                <option value="Custom">Custom Group</option>
-              </select>
+              <span class="auto-count" id="autoCount"></span>
             </div>
-            <div class="tbl-wrap an-wrap">
-              <table class="an-table">
+            <div class="auto-table-wrap">
+              <table class="auto-table">
                 <thead>
-                  <tr id="anHeadRow"></tr>
+                  <tr>
+                    <th style="width: 64px">Active</th>
+                    <th>Trigger</th>
+                    <th style="width: 200px">Timing</th>
+                    <th style="width: 150px">Admin Can Disable</th>
+                    <th style="width: 48px"></th>
+                  </tr>
                 </thead>
-                <tbody id="deliveryBody"></tbody>
+                <tbody id="autoTbody"></tbody>
               </table>
             </div>
           </div>
-          <div class="analytics-card">
-            <h3>Delivery Trend (Last 30 Days)</h3>
-            <canvas id="trendChart" height="110"></canvas>
+          <div id="auto-detail" style="display: none">
+            <div class="back-link" onclick="closeAutoDetail()">
+              <i class="fas fa-arrow-left"></i> Back to Automated Messages
+            </div>
+            <div class="page-head" style="margin-bottom: 8px">
+              <div>
+                <div class="ad-id" id="adId" style="margin-bottom: 4px">—</div>
+                <div class="page-title sm" id="adName">—</div>
+              </div>
+            </div>
+            <div style="max-width: 720px">
+              <div class="ad-meta">
+                <div class="ad-meta-row" style="align-items: center;">
+                  <span class="ad-meta-k">Timing</span>
+                  <div style="display: flex; gap: 8px; flex: 1; align-items: center; flex-wrap: wrap;">
+                    <select id="adTimingType" class="ad-select" onchange="updateTimingUI()">
+                      <option value="immediate">Immediate / On system detection</option>
+                      <option value="before">Before event</option>
+                      <option value="after">After event / Overdue</option>
+                      <option value="periodic">Periodic / Scheduled</option>
+                    </select>
+                    <div id="adTimingSub" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"></div>
+                  </div>
+                </div>
+                <div class="ad-meta-row">
+                  <span class="ad-meta-k">Message Pattern</span><span id="adPattern">—</span>
+                </div>
+              </div>
+
+              <div class="field" id="f-body">
+                <label class="req">Chat Body</label>
+                <div id="adEditorMount"></div>
+              </div>
+              <div class="form-actions">
+                <div style="flex: 1"></div>
+                <button class="btn btn-outline" type="button" onclick="closeAutoDetail()">Cancel</button>
+                <button class="btn btn-navy" type="button" onclick="saveAutoDrawer()">Save</button>
+              </div>
+            </div>
           </div>
         </section>
+
       </main>
     </div>
 
@@ -2080,28 +2025,8 @@
               User</label
             >
             <label class="radio-row" style="padding: 4px 0"
-              ><input type="radio" name="cgBase" value="Agent" /> Agent</label
+              ><input type="radio" name="cgBase" value="Agent" /> Agency</label
             >
-            <label class="radio-row" style="padding: 4px 0"
-              ><input type="radio" name="cgBase" value="Both" /> Both</label
-            >
-          </div>
-        </div>
-        <div class="field">
-          <label>Filter (optional)</label>
-          <div style="display: flex; gap: 10px">
-            <select id="cgFilter" style="flex: 1">
-              <option value="">— None —</option>
-              <option>Plan type</option>
-              <option>Registration date</option>
-              <option>Activity level</option>
-            </select>
-            <input
-              type="text"
-              id="cgFilterVal"
-              placeholder="value"
-              style="flex: 1"
-            />
           </div>
         </div>
         <div class="form-actions" style="border: none; padding-top: 6px">
@@ -2226,168 +2151,118 @@
       </div>
     </div>
 
-    <!-- ===== AGENCY PICKER MODAL ===== -->
+    <!-- ===== AGENCY PICKER MODAL (STANDARDIZED TABLE-ONLY) ===== -->
     <div class="modal-ov" id="agentPickerOv">
-      <div class="picker-modal">
+      <div class="picker-modal" style="width: 1050px; max-width: calc(100% - 32px);">
         <div class="picker-head">
           <h3>Insert agency</h3>
-          <button class="picker-x" type="button" onclick="closeAgentPicker()">
-            &times;
-          </button>
+          <button class="picker-x" type="button" onclick="closeAgentPicker()">&times;</button>
         </div>
-        <div class="picker-filters">
-          <div class="pf" style="grid-column: span 2">
-            <label>Search</label>
-            <input
-              type="text"
-              id="apSearch"
-              placeholder="Search by name or ID"
-              oninput="renderAgentPicker()"
-            />
+        <div class="picker-filters" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 12px; background: #fdfbf7; padding: 14px 22px; border-bottom: 1px solid var(--border);">
+          <div class="pf">
+            <label>License Expiry — From</label>
+            <input id="apLicFrom" type="date" />
           </div>
           <div class="pf">
-            <label>Status</label>
-            <select id="apStatus" onchange="renderAgentPicker()">
-              <option value="">All</option>
-              <option value="Active">Active</option>
-              <option value="Suspended">Suspended</option>
-              <option value="Withdrawn">Withdrawn</option>
+            <label>License Expiry — To</label>
+            <input id="apLicTo" type="date" />
+          </div>
+          <div class="pf">
+            <label>License Preset</label>
+            <select id="apLicPreset">
+              <option value="">— All —</option>
+              <option value="expired">Expired</option>
+              <option value="30d">Expiring in 30d</option>
+              <option value="60d">Expiring in 60d</option>
+              <option value="90d">Expiring in 90d</option>
             </select>
           </div>
           <div class="pf">
-            <label>Plan</label>
-            <select id="apPlan" onchange="renderAgentPicker()">
-              <option value="">All</option>
-              <option value="Free">Free</option>
-              <option value="Bronze">Bronze</option>
-              <option value="Silver">Silver</option>
-              <option value="Gold">Gold</option>
-            </select>
+            <label>Response Rate (%)</label>
+            <div style="display:flex; gap:4px; align-items:center;">
+              <input id="apRrMin" type="number" min="0" max="100" placeholder="Min %" />
+              <span>–</span>
+              <input id="apRrMax" type="number" min="0" max="100" placeholder="Max %" />
+            </div>
+          </div>
+          <div class="pf">
+            <label>Active Listings</label>
+            <div style="display:flex; gap:4px; align-items:center;">
+              <input id="apListMin" type="number" min="0" placeholder="Min" />
+              <span>–</span>
+              <input id="apListMax" type="number" min="0" placeholder="Max" />
+            </div>
           </div>
           <div class="pf">
             <label>Service Area</label>
-            <select id="apArea" onchange="renderAgentPicker()">
-              <option value="">All</option>
+            <select id="apServiceArea" multiple size="3" style="height: auto;">
+              <option value="All">All</option>
+              <option value="Tokyo">Tokyo</option>
+              <option value="Kanagawa">Kanagawa</option>
+              <option value="Osaka">Osaka</option>
+              <option value="Saitama">Saitama</option>
+              <option value="Chiba">Chiba</option>
+              <option value="Kyoto">Kyoto</option>
             </select>
           </div>
           <div class="pf">
             <label>Language</label>
-            <select id="apLang" onchange="renderAgentPicker()">
-              <option value="">All</option>
+            <select id="apLanguage" multiple size="3" style="height: auto;">
+              <option value="All">All</option>
+              <option value="English">English</option>
+              <option value="Spanish">Spanish</option>
+              <option value="Japanese">Japanese</option>
+              <option value="Italian">Italian</option>
+              <option value="Traditional Chinese">Traditional Chinese</option>
+              <option value="Simplified Chinese">Simplified Chinese</option>
+              <option value="Korean">Korean</option>
+              <option value="Vietnamese">Vietnamese</option>
             </select>
           </div>
           <div class="pf">
             <label>Specialism</label>
-            <select id="apSpec" onchange="renderAgentPicker()">
-              <option value="">All</option>
+            <select id="apSpecialism" multiple size="3" style="height: auto;">
+              <option value="All">All</option>
+              <option value="Real Estate Brokerage">Real Estate Brokerage</option>
+              <option value="Direct Property Acquisition">Direct Property Acquisition</option>
+              <option value="Rental Brokerage">Rental Brokerage</option>
+              <option value="Property Management">Property Management</option>
+              <option value="Short Sale">Short Sale</option>
+              <option value="Inheritance Consultation">Inheritance Consultation</option>
             </select>
           </div>
-        </div>
-        <div class="picker-toolbar">
-          <span class="picker-count" id="apCount"></span>
-          <div class="picker-view-toggle">
-            <button
-              type="button"
-              class="pvt-btn on"
-              id="apViewGrid"
-              onclick="setAgentPickerView('grid')"
-            >
-              <i class="fas fa-table-cells-large"></i> Grid
-            </button>
-            <button
-              type="button"
-              class="pvt-btn"
-              id="apViewTable"
-              onclick="setAgentPickerView('table')"
-            >
-              <i class="fas fa-table-list"></i> Table
-            </button>
+          <div class="pf">
+            <label>Appraisal Participation</label>
+            <select id="apAppraisal">
+              <option value="All">All</option>
+              <option value="Participating">Participating</option>
+              <option value="Not Participating">Not Participating</option>
+            </select>
+          </div>
+          <div class="pf" style="grid-column: span 2;">
+            <label>Search Keyword</label>
+            <input type="text" id="apSearch" placeholder="Search by name, ID, Katakana or Address..." oninput="renderAgentPicker()" />
           </div>
         </div>
-        <div class="picker-body" id="apBody"></div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; padding:10px 22px; background:#fdfbf7; border-bottom:1px solid var(--border);">
+          <button class="btn btn-outline btn-sm" type="button" onclick="resetAgentFilters()">Reset Filters</button>
+          <button class="btn btn-navy btn-sm" type="button" onclick="renderAgentPicker()"><i class="fas fa-search"></i> Apply Filters</button>
+        </div>
+
+        <div class="picker-toolbar" style="padding: 10px 22px;">
+          <span class="picker-count" id="apCount">Showing 0 agencies</span>
+        </div>
+        <div class="picker-body" id="apBody" style="padding: 0 22px 10px;"></div>
         <div class="picker-foot">
           <span class="picker-sel" id="apSel">No agency selected</span>
           <span class="spacer"></span>
-          <button
-            class="btn btn-outline"
-            type="button"
-            onclick="closeAgentPicker()"
-          >
-            Cancel
-          </button>
-          <button
-            class="btn btn-navy"
-            type="button"
-            id="apInsertBtn"
-            onclick="insertSelectedAgent()"
-          >
-            Insert agency
-          </button>
+          <button class="btn btn-outline" type="button" onclick="closeAgentPicker()">Cancel</button>
+          <button class="btn btn-navy" type="button" id="apInsertBtn" onclick="insertSelectedAgent()">Insert agency</button>
         </div>
       </div>
     </div>
 
-    <!-- Automation edit drawer -->
-    <div
-      class="auto-drawer-backdrop"
-      id="autoBackdrop"
-      onclick="if (event.target === this) closeAutoDrawer();"
-    ></div>
-    <aside class="auto-drawer" id="autoDrawer" aria-hidden="true">
-      <div class="ad-head">
-        <div>
-          <div class="ad-id" id="adId">—</div>
-          <div class="ad-name" id="adName">—</div>
-        </div>
-        <button
-          class="ad-x"
-          type="button"
-          onclick="closeAutoDrawer()"
-          aria-label="Close"
-        >
-          &times;
-        </button>
-      </div>
-      <div class="ad-body">
-        <div class="ad-meta">
-          <div class="ad-meta-row">
-            <span class="ad-meta-k">Timing</span><span id="adTiming">—</span>
-          </div>
-          <div class="ad-meta-row">
-            <span class="ad-meta-k">Channels</span
-            ><span id="adChannels">—</span>
-          </div>
-          <div class="ad-meta-row">
-            <span class="ad-meta-k">Email Pattern</span
-            ><span id="adPattern">—</span>
-          </div>
-        </div>
-        <label class="ad-label">Chat Body</label>
-        <textarea
-          id="adChatBody"
-          class="ad-textarea"
-          placeholder="Enter chat message…"
-          oninput="autoDirty = true"
-        ></textarea>
-        <div class="ad-vars" id="adChatVars"></div>
-      </div>
-      <div class="ad-foot">
-        <button class="btn btn-navy" type="button" onclick="saveAutoDrawer()">
-          Save
-        </button>
-        <button
-          class="btn btn-outline"
-          type="button"
-          onclick="closeAutoDrawer()"
-        >
-          Cancel
-        </button>
-        <span class="ad-restore" onclick="restoreAutoDrawer()"
-          >Restore default</span
-        >
-      </div>
-    </aside>
-
+    <div class="act-menu" id="globalActMenu"></div>
     <div class="toast" id="toast"></div>
 
     <script src="automation-catalog.js"></script>
@@ -2402,9 +2277,11 @@
           audience: "End User — Dormant Investors",
           audType: "End User",
           status: "Sent",
-          scheduled: "2026-04-05 14:00",
+          timing: "one-time",
+          sentDate: "2026-04-05",
           sent: 1240,
           delivered: 1180,
+          read: 742,
           desc: "Win back inactive investor accounts.",
           aud: "all_users",
           body: "Hi {full_name}, we've missed you! New investment opportunities are waiting on YUUSHI.",
@@ -2415,9 +2292,11 @@
           audience: "Agent — Premium Plan",
           audType: "Agent",
           status: "Scheduled",
-          scheduled: "2026-04-25 09:00",
+          timing: "one-time",
+          sentDate: "",
           sent: 0,
           delivered: 0,
+          read: 0,
           desc: "",
           aud: "all_agents",
           body: "Hi {agent_name}, your monthly performance summary is ready on {platform_name}.",
@@ -2428,9 +2307,11 @@
           audience: "End User — All Investors",
           audType: "End User",
           status: "Sent",
-          scheduled: "2026-04-10 10:30",
+          timing: "one-time",
+          sentDate: "2026-04-10",
           sent: 850,
           delivered: 820,
+          read: 503,
           desc: "",
           aud: "all_users",
           body: "A new property — {property_name} — just matched your saved search.",
@@ -2452,7 +2333,7 @@
 
       /* ---- deterministic filler so the campaigns list exceeds one page (>=60 rows) ---- */
       (function padCampaigns() {
-        const audiencePool = [
+       const audiencePool = [
           {
             audience: "End User — All Investors",
             audType: "End User",
@@ -2479,14 +2360,14 @@
             aud: "all_agents",
           },
           {
-            audience: "Custom Group — VIP Buyers Tokyo",
-            audType: "Custom",
-            aud: "custom",
+            audience: "End User — VIP Buyers Tokyo",
+            audType: "End User",
+            aud: "group_user",
           },
           {
-            audience: "Custom Group — High-Intent Leads Q2",
-            audType: "Custom",
-            aud: "custom",
+            audience: "Agent — High-Intent Partners Q2",
+            audType: "Agent",
+            aud: "group_agent",
           },
         ];
         const titlePool = [
@@ -2502,7 +2383,7 @@
           "Monthly Recap Message",
         ];
         const statusPool = ["Sent", "Sent", "Sent", "Scheduled", "Draft"];
-        const target = 60;
+        const target = 10;
         let n = 1;
         while (campaigns.length < target) {
           const a = audiencePool[n % audiencePool.length];
@@ -2516,18 +2397,22 @@
           const mo = ((n % 6) + 1).toString().padStart(2, "0");
           const da = ((n % 27) + 1).toString().padStart(2, "0");
           const hh = (8 + (n % 10)).toString().padStart(2, "0");
+          const readCount = isSent ? Math.floor(delivered * (0.35 + (n % 5) * 0.05)) : 0;
           campaigns.push({
             id: "cf" + n,
-            name: title + " #" + n,
+            name: title,
             audience: a.audience,
             audType: a.audType,
             status,
+            timing: "one-time",
+            sentDate: isSent ? "2026-" + mo + "-" + da : "",
             scheduled:
               status === "Draft"
                 ? "—"
                 : "2026-" + mo + "-" + da + " " + hh + ":00",
             sent,
             delivered,
+            read: readCount,
             desc: "Auto-seeded demo campaign " + n + ".",
             aud: a.aud,
             body:
@@ -2543,7 +2428,6 @@
         {
           id: "t1",
           name: "New Property Alert",
-          category: "Automation",
           channel: "both",
           subject: "A new property just matched your search",
           body: "Hi {full_name}, a new property — {property_name} — just hit the market and matches your saved search. Take a look before it's gone!",
@@ -2552,7 +2436,6 @@
         {
           id: "t2",
           name: "Re-engagement Message",
-          category: "Campaign",
           channel: "inapp",
           subject: "",
           body: "Hi {full_name}, we've missed you! New investment opportunities are waiting on YUUSHI. Come back and explore the latest listings.",
@@ -2561,7 +2444,6 @@
         {
           id: "t3",
           name: "Price Drop Notification",
-          category: "Automation",
           channel: "both",
           subject: "Price drop on {property_name}",
           body: "Good news {full_name}! The price for {property_name} has just dropped. Don't miss this opportunity.",
@@ -2570,7 +2452,6 @@
         {
           id: "t4",
           name: "Welcome Message",
-          category: "Campaign",
           channel: "email",
           subject: "Welcome to {platform_name}!",
           body: "Welcome aboard, {full_name}! We're thrilled to have you on {platform_name}. Let's find your perfect property together.",
@@ -2579,24 +2460,11 @@
         {
           id: "t5",
           name: "Monthly Portfolio Summary",
-          category: "Automation",
           channel: "email",
           subject: "Your monthly portfolio summary",
           body: "Hi {agent_name}, here is your performance summary for this month. Keep up the great work!",
           lastUsed: "1 month ago",
         },
-      ];
-
-      // Built-in synthetic audience segments (estimates only).
-      let audienceGroups = [
-        { id: "ag1", name: "End User — Dormant Investors", members: 342 },
-        { id: "ag2", name: "End User — All Investors", members: 1240 },
-        { id: "ag3", name: "End User — Premium Members", members: 89 },
-        { id: "ag4", name: "Agent — Premium Plan", members: 156 },
-        { id: "ag5", name: "Agent — All Agents", members: 430 },
-        { id: "ag6", name: "Agent — New Sign-ups", members: 67 },
-        { id: "ag7", name: "VIP Buyers — Tokyo", members: 25 },
-        { id: "ag8", name: "High-Intent Leads Q2", members: 58 },
       ];
 
       /* Shared Lead Management groups — same localStorage key Lead Management
@@ -2635,123 +2503,6 @@
          Each row: name, audience (audType), sentDate, recipients, delivered,
          read. Recurring campaigns carry a `sends[]` array (per-send rows) and
          `since` (first send date). One-time campaigns omit `sends`. */
-      const analyticsCampaigns = [
-        {
-          id: "a1",
-          name: "Dormant User Re-engagement",
-          audType: "End User",
-          audience: "End User — Dormant Investors",
-          sentDate: "2026-06-12",
-          recipients: 1240,
-          delivered: 1180,
-          read: 742,
-          template: "Re-engagement Message",
-          subject: "",
-          body: "Hi {full_name}, we've missed you! New investment opportunities are waiting on YUUSHI.",
-        },
-        {
-          id: "a2",
-          name: "New Listing Alert",
-          audType: "End User",
-          audience: "End User — All Investors",
-          sentDate: "2026-06-05",
-          recipients: 850,
-          delivered: 820,
-          read: 503,
-          template: "New Property Alert",
-          subject: "",
-          body: "A new property — {property_name} — just hit the market and matches your saved search.",
-        },
-        {
-          id: "a3",
-          name: "Premium Agent Briefing",
-          audType: "Agent",
-          audience: "Agent — Premium Plan",
-          sentDate: "2026-05-28",
-          recipients: 156,
-          delivered: 150,
-          read: 96,
-          template: "",
-          subject: "",
-          body: "Hi {agent_name}, here is your monthly premium briefing from {platform_name}.",
-        },
-        {
-          id: "a4",
-          name: "Spring Open House Invites",
-          audType: "Custom",
-          audience: "VIP Buyers — Tokyo",
-          sentDate: "2026-05-15",
-          recipients: 25,
-          delivered: 25,
-          read: 18,
-          template: "",
-          subject: "",
-          body: "You're invited to an exclusive open house for {property_name}.",
-        },
-        {
-          id: "a5",
-          name: "Price Drop Notice",
-          audType: "End User",
-          audience: "End User — All Investors",
-          sentDate: "2026-04-22",
-          recipients: 1240,
-          delivered: 1090,
-          read: 410,
-          template: "Price Drop Notification",
-          subject: "",
-          body: "Good news {full_name}! The price for {property_name} has just dropped.",
-        },
-        {
-          id: "a6",
-          name: "Agent Compliance Reminder",
-          audType: "Agent",
-          audience: "Agent — All Agents",
-          sentDate: "2026-04-08",
-          recipients: 430,
-          delivered: 180,
-          read: 40,
-          template: "",
-          subject: "",
-          body: "Hi {agent_name}, please complete your compliance review on {platform_name}.",
-        },
-        {
-          id: "a7",
-          name: "Weekly Market Digest",
-          audType: "End User",
-          audience: "End User — All Investors",
-          recurring: true,
-          since: "2026-04-13",
-          template: "",
-          subject: "",
-          body: "Hi {full_name}, here's your weekly market digest from {platform_name}.",
-          sends: [
-            {
-              sentDate: "2026-06-15",
-              recipients: 1240,
-              delivered: 1200,
-              read: 690,
-            },
-            {
-              sentDate: "2026-06-08",
-              recipients: 1220,
-              delivered: 1175,
-              read: 660,
-            },
-            {
-              sentDate: "2026-06-01",
-              recipients: 1180,
-              delivered: 1130,
-              read: 615,
-            },
-            {
-              sentDate: "2026-05-25",
-              recipients: 1150,
-              delivered: 1100,
-              read: 580,
-            },
-          ],
-        },
-      ];
 
       /* ===================== ENTITY PICKERS ===================== */
       /* Property Picker — mirrors the Property Management list (filters, grid/
@@ -3040,135 +2791,113 @@
         toast("Property inserted.");
       }
 
-      /* Agency Picker — mirrors Agent Management filters. */
-      const AGENT_AREAS = [
-        "Tokyo",
-        "Kanagawa",
-        "Osaka",
-        "Saitama",
-        "Chiba",
-        "Kyoto",
-      ];
-      const AGENT_LANGS = [
-        "Japanese",
-        "English",
-        "Chinese (Simplified)",
-        "Chinese (Traditional)",
-        "Vietnamese",
-        "Korean",
-      ];
-      const AGENT_SPECS = [
-        "Real Estate Brokerage",
-        "Direct Property Acquisition",
-        "Rental Brokerage",
-        "Property Management",
-        "Short Sale",
-        "Inheritance Consultation",
-      ];
-      const AGENT_STATUSES = ["Active", "Suspended", "Withdrawn"];
-      const AGENT_PLANS = ["Free", "Bronze", "Silver", "Gold"];
 
-      const pickerAgents = (function () {
-        const names = [
-          "Sakura Realty",
-          "Tokyo Estate Partners",
-          "Minato Property Group",
-          "Yokohama Homes",
-          "Osaka Living Co.",
-          "Kyoto Heritage Estates",
-          "Sapporo North Realty",
-          "Fukuoka Bay Agents",
-          "Nagoya Central Realty",
-          "Kobe Coastal Homes",
-          "Chiba Garden Realty",
-          "Saitama Family Estates",
-          "Setagaya Select Homes",
-          "Shibuya Urban Realty",
-          "Ginza Prime Partners",
-          "Roppongi Luxe Estates",
-          "Ebisu Boutique Realty",
-          "Shinjuku Skyline Agents",
-          "Harborview Realty",
-          "Greenfield Estates",
-        ];
-        return names.map((nm, i) => ({
-          id: "AG-" + String(2001 + i).padStart(4, "0"),
-          name: nm,
-          // mostly Active, with a couple Suspended / Withdrawn for variety
-          status: i === 5 ? "Suspended" : i === 12 ? "Withdrawn" : "Active",
-          plan: AGENT_PLANS[i % 4],
-          area: AGENT_AREAS[i % AGENT_AREAS.length],
-          lang: AGENT_LANGS[i % AGENT_LANGS.length],
-          spec: AGENT_SPECS[i % AGENT_SPECS.length],
-        }));
-      })();
-
-      let agentPickerView = "grid";
+      /* ===== STANDARDIZED AGENCY PICKER LOGIC ===== */
       let agentPickerPage = 1;
       let agentPickerSel = null;
       let agentPickerTarget = null;
 
-      function populateAgentFilterOpts() {
-        const fill = (sel, arr) => {
-          if (sel && sel.options.length <= 1)
-            arr.forEach((v) => {
-              const o = document.createElement("option");
-              o.value = v;
-              o.textContent = v;
-              sel.appendChild(o);
-            });
-        };
-        fill($("apArea"), AGENT_AREAS);
-        fill($("apLang"), AGENT_LANGS);
-        fill($("apSpec"), AGENT_SPECS);
-      }
+      // Mock dữ liệu nạp đầy đủ thuộc tính giống 100% Agency Management
+      const pickerAgents = (function () {
+        const names = [
+          "Yamada Estates Co., Ltd.", "Osaka Premier Realty", "Tokyo Bay Realty",
+          "Sakura Home Partners", "Kanagawa Coast Realty", "Kyoto Heritage Estates",
+          "Hokkaido Snow Realty", "Fukuoka Tenjin Realty", "Saitama Garden Homes",
+          "Chiba Seaside Realty", "Nagoya Central Estates", "Kobe Portside Realty"
+        ];
+        const statusPool = ["Active", "Active", "Active", "Suspended", "Withdrawn"];
+        const cityPool = ["Tokyo", "Kanagawa", "Osaka", "Saitama", "Chiba", "Kyoto"];
+        const langPool = ["Japanese", "English", "Simplified Chinese", "Vietnamese"];
+        const specPool = ["Real Estate Brokerage", "Rental Brokerage", "Property Management", "Short Sale"];
+        
+        return names.map((nm, i) => {
+          const n = i + 1;
+          const rating = 3.5 + (n % 15) / 10;
+          return {
+            id: "AG-" + String(n).padStart(8, "0"),
+            company: nm,
+            establishment: "201" + (n % 9) + "-0" + ((n % 9) + 1) + "-15",
+            hqAddress: (n % 9 + 1) + "-1-1 Shibuya, Shibuya-ku, Tokyo",
+            status: statusPool[i % statusPool.length],
+            rating: rating.toFixed(1),
+            reviewCount: 10 + n * 5,
+            activeListings: 12 + n * 3,
+            badges: n % 2 === 0 ? ["Top Agency"] : [],
+            licExpiry: "2027-03-31",
+            responseRate: 70 + (n % 30),
+            avgRespTime: (n % 5 + 1) + ".0h",
+            paymentStatus: n % 4 === 0 ? "Overdue" : "Paid",
+            outstanding: n % 4 === 0 ? 50000 : 0,
+            totalReports: n % 3,
+            appraisalBudget: n % 2 === 0 ? 100000 : 0,
+            targetCities: [cityPool[i % cityPool.length]],
+            languages: [langPool[i % langPool.length]],
+            specServices: [specPool[i % specPool.length]]
+          };
+        });
+      })();
+
       function openAgentPicker(prefix) {
         agentPickerTarget = prefix || "b";
         agentPickerSel = null;
         agentPickerPage = 1;
-        populateAgentFilterOpts();
-        $("apSearch").value = "";
-        $("apStatus").value = "";
-        $("apPlan").value = "";
-        $("apArea").value = "";
-        $("apLang").value = "";
-        $("apSpec").value = "";
+        resetAgentFilters();
         $("agentPickerOv").classList.add("open");
         renderAgentPicker();
         setTimeout(() => $("apSearch").focus(), 30);
       }
+
       function closeAgentPicker() {
         $("agentPickerOv").classList.remove("open");
       }
-      function setAgentPickerView(v) {
-        agentPickerView = v;
-        $("apViewGrid").classList.toggle("on", v === "grid");
-        $("apViewTable").classList.toggle("on", v === "table");
+
+      function resetAgentFilters() {
+        ["apServiceArea", "apLanguage", "apSpecialism"].forEach((id) => {
+          if ($(id)) Array.from($(id).options).forEach((o) => (o.selected = false));
+        });
+        ["apLicFrom", "apLicTo", "apRrMin", "apRrMax", "apListMin", "apListMax", "apSearch"].forEach((id) => {
+          if ($(id)) $(id).value = "";
+        });
+        if ($("apLicPreset")) $("apLicPreset").value = "";
+        if ($("apAppraisal")) $("apAppraisal").value = "All";
         renderAgentPicker();
       }
+
+      function getSelOpts(id) {
+        const el = $(id);
+        if (!el) return [];
+        return Array.from(el.selectedOptions).map((o) => o.value).filter(v => v !== "All");
+      }
+
       function filteredAgents() {
         const q = ($("apSearch").value || "").toLowerCase().trim();
-        const st = $("apStatus").value;
-        const pl = $("apPlan").value;
-        const ar = $("apArea").value;
-        const lg = $("apLang").value;
-        const sp = $("apSpec").value;
+        const sa = getSelOpts("apServiceArea");
+        const lg = getSelOpts("apLanguage");
+        const sp = getSelOpts("apSpecialism");
+        const lF = $("apLicFrom").value, lT = $("apLicTo").value, lP = $("apLicPreset").value;
+        const rrMin = $("apRrMin").value, rrMax = $("apRrMax").value;
+        const liMin = $("apListMin").value, liMax = $("apListMax").value;
+        const ap = $("apAppraisal").value;
+        const today = new Date();
+
         return pickerAgents.filter((a) => {
-          if (
-            q &&
-            !(
-              a.name.toLowerCase().includes(q) || a.id.toLowerCase().includes(q)
-            )
-          )
-            return false;
-          if (st && a.status !== st) return false;
-          if (pl && a.plan !== pl) return false;
-          if (ar && a.area !== ar) return false;
-          if (lg && a.lang !== lg) return false;
-          if (sp && a.spec !== sp) return false;
+          if (q && !(a.company.toLowerCase().includes(q) || a.id.toLowerCase().includes(q) || a.hqAddress.toLowerCase().includes(q))) return false;
+          if (sa.length && !sa.some((c) => a.targetCities.includes(c))) return false;
+          if (lg.length && !lg.some((l) => a.languages.includes(l))) return false;
+          if (sp.length && !sp.some((s) => a.specServices.includes(s))) return false;
+          if (lF && new Date(a.licExpiry) < new Date(lF)) return false;
+          if (lT && new Date(a.licExpiry) > new Date(lT)) return false;
+          if (lP === "expired" && new Date(a.licExpiry) >= today) return false;
+          if (rrMin !== "" && a.responseRate < +rrMin) return false;
+          if (rrMax !== "" && a.responseRate > +rrMax) return false;
+          if (liMin !== "" && a.activeListings < +liMin) return false;
+          if (liMax !== "" && a.activeListings > +liMax) return false;
+          if (ap === "Participating" && a.appraisalBudget <= 0) return false;
+          if (ap === "Not Participating" && a.appraisalBudget > 0) return false;
           return true;
         });
       }
+
       function renderAgentPicker() {
         const rows = filteredAgents();
         const per = 10;
@@ -3176,52 +2905,57 @@
         if (agentPickerPage > pages) agentPickerPage = pages;
         const start = (agentPickerPage - 1) * per;
         const pageRows = rows.slice(start, start + per);
-        $("apCount").textContent =
-          rows.length + (rows.length === 1 ? " agency" : " agencies");
+        
+        $("apCount").textContent = `Showing ${rows.length} agencies`;
         const body = $("apBody");
         if (!rows.length) {
-          body.innerHTML =
-            '<div class="picker-empty">No agencies match your filters.</div>';
+          body.innerHTML = '<div class="picker-empty">No agencies match your filters.</div>';
           updateAgentSelLabel();
           return;
         }
-        if (agentPickerView === "grid") {
-          body.innerHTML =
-            '<div class="picker-grid">' +
-            pageRows
-              .map((a) => {
-                const on = agentPickerSel === a.id ? "on" : "";
-                const chk = agentPickerSel === a.id ? "checked" : "";
-                return `<label class="pk-card ${on}">
-                  <input type="radio" name="apSel" ${chk} onclick="selectPickerAgent('${a.id}')">
-                  <div>
-                    <div class="pk-name">${escapeHtml(a.name)}</div>
-                    <div class="pk-sub">${a.id} · ${escapeHtml(a.status)} · ${escapeHtml(a.plan)}<br>${escapeHtml(a.area)} · ${escapeHtml(a.lang)}<br>${escapeHtml(a.spec)}</div>
-                  </div>
-                </label>`;
-              })
-              .join("") +
-            "</div>";
-        } else {
-          body.innerHTML =
-            '<div class="tbl-wrap" style="margin-top:8px"><table class="picker-table"><thead><tr><th style="width:36px"></th><th>Agency</th><th>Status</th><th>Plan</th><th>Service Area</th><th>Specialism</th></tr></thead><tbody>' +
-            pageRows
-              .map((a) => {
-                const chk = agentPickerSel === a.id ? "checked" : "";
-                return `<tr onclick="selectPickerAgent('${a.id}')">
-                  <td><input type="radio" name="apSelT" ${chk} onclick="event.stopPropagation();selectPickerAgent('${a.id}')"></td>
-                  <td class="cell-strong">${escapeHtml(a.name)}<div style="font-size:11px;color:var(--text-sec)">${a.id}</div></td>
-                  <td>${escapeHtml(a.status)}</td>
-                  <td>${escapeHtml(a.plan)}</td>
-                  <td>${escapeHtml(a.area)}</td>
-                  <td>${escapeHtml(a.spec)}</td>
-                </tr>`;
-              })
-              .join("") +
-            "</tbody></table></div>";
-        }
+
+        const starsStr = (r) => "★".repeat(Math.floor(r)) + "☆".repeat(5 - Math.floor(r));
+
+        body.innerHTML = `
+          <div class="tbl-wrap" style="margin-top:8px; overflow-x:auto;">
+            <table class="picker-table" style="width:100%; border-collapse:collapse; font-size:12.5px;">
+              <thead>
+                <tr style="background:var(--thead, #faf6ee); text-align:left;">
+                  <th style="width:36px; padding:10px;"></th>
+                  <th style="padding:10px;">Agency</th>
+                  <th style="padding:10px;">Established date</th>
+                  <th style="padding:10px;">Head office address</th>
+                  <th style="padding:10px;">Badge</th>
+                  <th style="padding:10px;">Rating</th>
+                  <th style="padding:10px; text-align:right;">Active Listings</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${pageRows.map((a) => {
+                  const chk = agentPickerSel === a.id ? "checked" : "";
+                  const selClass = agentPickerSel === a.id ? "background:#faf5ec;" : "";
+                  return `
+                    <tr onclick="selectPickerAgent('${a.id}')" style="cursor:pointer; border-top:1px solid #f1ebe1; ${selClass}">
+                      <td style="padding:10px;"><input type="radio" name="apSelT" ${chk} onclick="event.stopPropagation();selectPickerAgent('${a.id}')"></td>
+                      <td style="padding:10px;">
+                        <strong style="color:var(--navy, #1e3a5f);">${escapeHtml(a.company)}</strong>
+                        <div style="font-size:11px; color:var(--text-sec,#888);">${a.id}</div>
+                      </td>
+                      <td style="padding:10px;">${escapeHtml(a.establishment)}</td>
+                      <td style="padding:10px; white-space:normal; max-width:220px;">${escapeHtml(a.hqAddress)}</td>
+                      <td style="padding:10px;">${a.badges.length ? `<span class="badge" style="background:#fff3d4; color:#6d5a32; padding:2px 8px; border-radius:12px; font-size:11px;">${escapeHtml(a.badges[0])}</span>` : '—'}</td>
+                      <td style="padding:10px;">${a.rating ? `<span style="color:#f0a020;">${starsStr(a.rating)}</span> ${a.rating}` : '—'}</td>
+                      <td style="padding:10px; text-align:right;">${a.activeListings}</td>
+                    </tr>
+                  `;
+                }).join("")}
+              </tbody>
+            </table>
+          </div>
+        `;
+
         if (rows.length > per) {
-          let pg = '<div class="picker-pager">';
+          let pg = '<div class="picker-pager" style="display:flex; justify-content:center; gap:6px; margin-top:10px;">';
           pg += `<button type="button" ${agentPickerPage === 1 ? "disabled" : ""} onclick="agentPickerGo(${agentPickerPage - 1})">Prev</button>`;
           for (let i = 1; i <= pages; i++)
             pg += `<button type="button" class="${i === agentPickerPage ? "on" : ""}" onclick="agentPickerGo(${i})">${i}</button>`;
@@ -3231,61 +2965,54 @@
         }
         updateAgentSelLabel();
       }
+
       function agentPickerGo(p) {
         agentPickerPage = p;
         renderAgentPicker();
       }
+
       function selectPickerAgent(id) {
         agentPickerSel = id;
         renderAgentPicker();
       }
+
       function updateAgentSelLabel() {
         const a = pickerAgents.find((x) => x.id === agentPickerSel);
-        $("apSel").textContent = a
-          ? "Selected: " + a.name
-          : "No agency selected";
+        $("apSel").textContent = a ? "Selected: " + a.company : "No agency selected";
       }
+
       function insertSelectedAgent() {
         const a = pickerAgents.find((x) => x.id === agentPickerSel);
         if (!a) {
-          $("apSearch").focus();
+          toast("Please select an agency first");
           return;
         }
-        // insert the agency name but keep an internal data reference
-        insertAtCursorForTarget(agentPickerTarget, a.name, {
-          agentId: a.id,
-        });
+        insertAtCursorForTarget(agentPickerTarget, a.company, { agentId: a.id });
         closeAgentPicker();
-        toast("Agent inserted.");
+        toast("Agency inserted.");
       }
+
 
       // Insert text at the cursor of the RTE body identified by prefix.
       // Optional meta is recorded for an internal data reference (agency id).
       let insertedAgentRefs = [];
+      // Insert text at the cursor of the active RTE body
       function insertAtCursorForTarget(prefix, text, meta) {
-        const body = $((prefix || "b") + "_rteBody");
+        const targetId = (prefix === "ad" ? "ad_rteBody" : (prefix || "b") + "_rteBody");
+        const body = $(targetId);
         if (body) {
           body.focus();
           document.execCommand("insertText", false, text + " ");
           rtePreviewRender(prefix || "b");
         }
-        if (meta && meta.agentId)
-          insertedAgentRefs.push({ name: text, agentId: meta.agentId });
       }
 
       /* ===================== NAV ===================== */
       function navTo(screen) {
-        document
-          .querySelectorAll(".mc-nav-item")
-          .forEach((n) =>
-            n.classList.toggle("active", n.dataset.screen === screen),
-          );
-        document
-          .querySelectorAll(".screen")
-          .forEach((s) => s.classList.remove("active"));
+        document.querySelectorAll(".mc-nav-item").forEach((n) => n.classList.toggle("active", n.dataset.screen === screen));
+        document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
         $("screen-" + screen).classList.add("active");
-        if (screen === "campaigns") renderCampaigns(true);
-        if (screen === "analytics") setTimeout(initChart, 30);
+        if (screen === "campaigns") { renderCampaigns(true); setTimeout(initChart, 30); }
       }
 
       /* ===================== TOAST ===================== */
@@ -3364,18 +3091,80 @@
         });
       }
 
+      function campTotals(c) {
+        if (c.timing === "recurring" && c.sends && c.sends.length) {
+          const t = c.sends.reduce((a, s) => {
+            a.recipients += s.recipients; a.delivered += s.delivered; a.read += s.read;
+            return a;
+          }, { recipients: 0, delivered: 0, read: 0 });
+          t.firstSentDate = c.sends[0].sentDate;
+          return t;
+        }
+        return {
+          recipients: c.sent || 0,
+          delivered: c.delivered || 0,
+          read: c.read || 0,
+          firstSentDate: c.sentDate || "",
+        };
+      }
+      function readRatePill(read, recipients) {
+        const r = recipients ? Math.round((read / recipients) * 100) : 0;
+        const cls = r >= 50 ? "green" : r >= 30 ? "amber" : "red";
+        return `${read.toLocaleString()}<span class="pill ${cls} rate-pill">${recipients ? r + "%" : "0%"}</span>`;
+      }
+      const anExpanded = {};
+      function toggleAnExpand(id) { anExpanded[id] = !anExpanded[id]; renderCampaigns(); }
+      function campActionsHtml(c) {
+        if (c.status === "Sent") {
+          return `<div class="act-item" onclick="campAction('view','${c.id}')">View</div>` +
+                 `<div class="act-item" onclick="campAction('recreate','${c.id}')">Recreate</div>`;
+        }
+        return `<div class="act-item" onclick="campAction('edit','${c.id}')">Edit</div>` +
+               `<div class="act-item danger" onclick="campAction('delete','${c.id}')">Delete</div>`;
+      }
+      function campRowHtml(c) {
+        const t = campTotals(c);
+        const recurring = c.timing === "recurring";
+        const exp = !!anExpanded[c.id];
+        const arrow = recurring
+          ? `<button class="an-exp" onclick="event.stopPropagation();toggleAnExpand('${c.id}')">${exp ? "▼" : "▶"}</button>`
+          : "";
+        const sentCell = c.status !== "Sent" ? "—" : recurring ? "since " + t.firstSentDate : t.firstSentDate;
+        let html = `<tr>
+          <td class="cell-strong">${arrow}${escapeHtml(c.name)}</td>
+          <td>${escapeHtml(c.audience)}</td>
+          <td><span class="badge ${c.status.toLowerCase()}">${c.status}</span></td>
+          <td>${sentCell}</td>
+          <td>${t.recipients.toLocaleString()}</td>
+          <td>${readRatePill(t.read, t.recipients)}</td>
+          <td><div class="act-wrap"><button class="act-btn" onclick="toggleActMenu(event,'${c.id}')"><i class="fas fa-ellipsis"></i></button></div></td>
+        </tr>`;
+        if (recurring && exp && c.sends) {
+          c.sends.forEach((s) => {
+            html += `<tr class="an-sub">
+              <td>${s.sentDate}</td><td>${escapeHtml(c.audType)}</td><td>${s.sentDate}</td>
+              <td>${s.recipients.toLocaleString()}</td><td>${readRatePill(s.read, s.recipients)}</td><td></td>
+            </tr>`;
+          });
+        }
+        return html;
+      }
+
       function renderCampaigns(resetPage) {
         if (resetPage) campPage = 1;
         const q = ($("campSearch").value || "").toLowerCase();
         const st = $("campStatus").value;
-        const au = $("campAud").value;
-        const body = $("campBody");
-        const filtered = campaigns.filter((c) => {
+        const sortDir = $("anTime") ? $("anTime").value : "desc";
+        let filtered = campaigns.filter((c) => {
           if (q && !c.name.toLowerCase().includes(q)) return false;
           if (st && c.status !== st) return false;
-          if (au === "Custom" ? c.audType !== "Custom" : au && c.audType !== au)
-            return false;
           return true;
+        });
+        filtered = filtered.slice().sort((a, b) => {
+          const da = campTotals(a).firstSentDate || "";
+          const db = campTotals(b).firstSentDate || "";
+          const cmp = da < db ? -1 : da > db ? 1 : 0;
+          return sortDir === "asc" ? cmp : -cmp;
         });
         const total = filtered.length;
         const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -3383,68 +3172,37 @@
         if (campPage < 1) campPage = 1;
         const start = total === 0 ? 0 : (campPage - 1) * PAGE_SIZE + 1;
         const end = Math.min(campPage * PAGE_SIZE, total);
-        $("campCount").textContent =
-          total === 0
-            ? "Showing 0 of 0 campaigns"
-            : "Showing " + start + "–" + end + " of " + total + " campaigns";
-        const rows = filtered.slice(
-          (campPage - 1) * PAGE_SIZE,
-          campPage * PAGE_SIZE,
-        );
-        body.innerHTML = rows.length
-          ? rows
-              .map(
-                (c) => `
-            <tr>
-              <td class="cell-strong">${c.name}</td>
-              <td>${c.audience}</td>
-              <td><span class="badge ${c.status.toLowerCase()}">${c.status}</span></td>
-              <td>${c.scheduled}</td>
-              <td>${c.sent.toLocaleString()}</td>
-              <td>${c.delivered.toLocaleString()}</td>
-              <td>
-                <div class="act-wrap">
-                  <button class="act-btn" onclick="toggleActMenu(event,'${c.id}')"><i class="fas fa-ellipsis"></i></button>
-                  <div class="act-menu" id="act-${c.id}">
-                    <div class="act-item" onclick="campAction('view','${c.id}')">View</div>
-                    <div class="act-item" onclick="campAction('edit','${c.id}')">Edit</div>
-                    <div class="act-item" onclick="campAction('recreate','${c.id}')">Recreate</div>
-                    <div class="act-item danger" onclick="campAction('delete','${c.id}')">Delete</div>
-                  </div>
-                </div>
-              </td>
-            </tr>`,
-              )
-              .join("")
+        $("campCount").textContent = total === 0
+          ? "Showing 0 of 0 campaigns"
+          : "Showing " + start + "–" + end + " of " + total + " campaigns";
+        const rows = filtered.slice((campPage - 1) * PAGE_SIZE, campPage * PAGE_SIZE);
+        $("campBody").innerHTML = rows.length
+          ? rows.map((c) => campRowHtml(c)).join("")
           : `<tr><td colspan="7" style="text-align:center;color:#999;padding:30px">No campaigns found.</td></tr>`;
-        buildPager("campPager", total, campPage, (p) => {
-          campPage = p;
-          renderCampaigns();
-        });
+        buildPager("campPager", total, campPage, (p) => { campPage = p; renderCampaigns(); });
       }
 
       function toggleActMenu(e, id) {
         e.stopPropagation();
-        const m = $("act-" + id);
-        const open = m.classList.contains("open");
-        document
-          .querySelectorAll(".act-menu")
-          .forEach((x) => x.classList.remove("open"));
-        if (!open) m.classList.add("open");
+        const menu = $("globalActMenu");
+        const wasOpen = menu.classList.contains("open") && menu.dataset.forId === id;
+        menu.classList.remove("open");
+        if (wasOpen) return;
+        const c = campaigns.find((x) => x.id === id);
+        menu.innerHTML = campActionsHtml(c);
+        menu.dataset.forId = id;
+        const rect = e.currentTarget.getBoundingClientRect();
+        menu.style.top = rect.bottom + 4 + "px";
+        menu.style.right = window.innerWidth - rect.right + "px";
+        menu.style.left = "auto";
+        menu.classList.add("open");
       }
 
       function campAction(action, id) {
-        document
-          .querySelectorAll(".act-menu")
-          .forEach((x) => x.classList.remove("open"));
+        $("globalActMenu").classList.remove("open");
         const c = campaigns.find((x) => x.id === id);
-        if (action === "edit" || action === "view") {
-          openBuilder(c);
-          return;
-        }
-        if (action === "recreate") {
-          recreateCampaign(c);
-        }
+        if (action === "edit" || action === "view") { openBuilder(c); return; }
+        if (action === "recreate") { recreateCampaign(c); return; }
         if (action === "delete") {
           campaigns = campaigns.filter((x) => x.id !== id);
           renderCampaigns();
@@ -3511,21 +3269,10 @@
       }
       function audTypeToRadio(t) {
         if (t === "Agent") return "all_agents";
-        if (t === "Custom") return "custom";
+        if (t === "All") return "all_leads";
         return "all_users";
       }
-      function recreateFromAnalytics(id) {
-        const c = analyticsCampaigns.find((x) => x.id === id);
-        if (!c) return;
-        navTo("campaigns");
-        recreateCampaign({
-          name: c.name,
-          desc: "",
-          aud: audTypeToRadio(c.audType),
-          audType: c.audType,
-          body: c.body || "",
-        });
-      }
+      
       function closeBuilder() {
         $("camp-builder").style.display = "none";
         $("camp-list").style.display = "block";
@@ -3576,34 +3323,34 @@
 
       function onAudChange() {
         const v = document.querySelector('input[name="aud"]:checked').value;
-        $("groupPicker").style.display = v === "custom" ? "block" : "none";
+        $("groupPicker").style.display = (v === "group_user" || v === "group_agent") ? "block" : "none";
         updateReach();
       }
       function renderGroupPicker() {
+        const v = document.querySelector('input[name="aud"]:checked')?.value;
+        const wantType = v === "group_agent" ? "agent" : "end_user";
         const q = ($("groupSearch").value || "").toLowerCase();
-        $("groupOpts").innerHTML = allGroups()
-          .filter((g) => g.name.toLowerCase().includes(q))
+        $("groupOpts").innerHTML = readLeadGroups()
+          .filter((g) => g.entityType === wantType && g.name.toLowerCase().includes(q))
           .map(
             (g) => `
-          <label class="group-opt"><input type="checkbox" value="${g.id}" onchange="updateReach()"> ${escapeHtml(g.name)} <span class="gcount">${g.members.toLocaleString()} members</span></label>
+          <label class="group-opt"><input type="radio" name="pickedGroup" value="${g.id}" onchange="updateReach()"> ${escapeHtml(g.name)} <span class="gcount">${(g.leadIds || []).length.toLocaleString()} members</span></label>
         `,
           )
           .join("");
       }
-      function updateReach() {
+     function updateReach() {
         const v = document.querySelector('input[name="aud"]:checked').value;
         let n = 0;
         if (v === "all_users") n = 1240;
         else if (v === "all_agents") n = 430;
         else if (v === "all_leads") n = 1670;
         else {
-          const groups = allGroups();
-          document
-            .querySelectorAll("#groupOpts input:checked")
-            .forEach((cb) => {
-              const g = groups.find((x) => x.id === cb.value);
-              if (g) n += g.members;
-            });
+          const picked = document.querySelector('#groupOpts input[name="pickedGroup"]:checked');
+          if (picked) {
+            const g = readLeadGroups().find((x) => x.id === picked.value);
+            if (g) n = (g.leadIds || []).length;
+          }
         }
         $("reachNote").textContent =
           "Estimated recipients: ~" + n.toLocaleString();
@@ -3623,9 +3370,11 @@
         let audText =
           {
             all_users: "All End Users",
-            all_agents: "All Agents",
-            all_leads: "All Leads",
-          }[audV] || "Custom Group";
+            all_agents: "All Agencies",
+            all_leads: "All (End Users + Agency)",
+            group_user: "End User Group",
+            group_agent: "Agency Group",
+          }[audV] || audV;
         const reach = $("reachNote").textContent.replace(
           "Estimated recipients: ~",
           "",
@@ -3686,12 +3435,24 @@
           editingCampaign.name = name;
           editingCampaign.status = status;
         } else {
+          const audV = document.querySelector('input[name="aud"]:checked').value;
+          let audType, audience;
+          if (audV === "all_agents") { audType = "Agent"; audience = "Agency — All Agencies"; }
+          else if (audV === "all_leads") { audType = "All"; audience = "All (End Users + Agency)"; }
+          else if (audV === "group_user" || audV === "group_agent") {
+            const picked = document.querySelector('#groupOpts input[name="pickedGroup"]:checked');
+            const g = picked ? readLeadGroups().find((x) => x.id === picked.value) : null;
+            audType = audV === "group_agent" ? "Agent" : "End User";
+            audience = (audV === "group_agent" ? "Agency — " : "End User — ") + (g ? g.name : "Unnamed group");
+          }
+          else { audType = "End User"; audience = "End User — All Investors"; }
           campaigns.push({
             id: "c" + Date.now(),
             name,
-            audience: "Custom audience",
-            audType: "Custom",
+            audience,
+            audType,
             status,
+            timing: "one-time",
             scheduled:
               status === "Scheduled" || schedV !== "now"
                 ? sched
@@ -3700,6 +3461,7 @@
                   : sched,
             sent: 0,
             delivered: 0,
+            read: 0,
           });
         }
         renderCampaigns();
@@ -3714,7 +3476,6 @@
           <div class="list-row" onclick="openTplEditor(templates.find(x=>x.id==='${t.id}'))">
             <div class="lr-main">
               <div class="lr-name">${t.name}</div>
-              <div><span class="lr-cat">${t.category}</span></div>
             </div>
             <div class="lr-right">Last used: ${t.lastUsed}</div>
             <div class="lr-icons"><button class="lr-icon" title="Edit" onclick="event.stopPropagation();openTplEditor(templates.find(x=>x.id==='${t.id}'))"><i class="fas fa-pen"></i></button><button class="lr-icon" title="Delete" onclick="event.stopPropagation();deleteTemplate('${t.id}')"><i class="fas fa-trash"></i></button></div>
@@ -3740,8 +3501,6 @@
           ? "Edit Template"
           : "New Template";
         $("tName").value = tpl ? tpl.name : "";
-        $("tCat").value = tpl ? tpl.category : "Automation";
-        $("tTags").value = "";
         buildRTE("tEditorMount", "t");
         if (tpl)
           setTimeout(() => {
@@ -3763,14 +3522,12 @@
         if (editingTemplate) {
           Object.assign(editingTemplate, {
             name,
-            category: $("tCat").value,
             body,
           });
         } else {
           templates.push({
             id: "t" + Date.now(),
             name,
-            category: $("tCat").value,
             body,
             lastUsed: "Just now",
           });
@@ -3790,6 +3547,124 @@
         );
       let autoEditingId = null;
       let autoDirty = false;
+
+      function updateTimingUI() {
+        const type = $("adTimingType").value;
+        const sub = $("adTimingSub");
+        
+        if (type === "immediate") {
+          sub.innerHTML = '';
+        } else if (type === "before" || type === "after") {
+          sub.innerHTML = `
+            <input type="number" id="adTimingVal" class="ad-input" min="1" value="7" oninput="autoDirty = true">
+            <span style="font-size:12.5px; color:var(--text-sec)">days</span>
+          `;
+        } else if (type === "periodic") {
+          sub.innerHTML = `
+            <select id="adTimingFreq" class="ad-select" onchange="renderPeriodicDayUI(); autoDirty = true">
+              <option value="daily">Daily digest</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+            <span id="adTimingDayWrapper" style="display:none; align-items:center; gap:8px;">
+               <!-- Render day selector here -->
+            </span>
+            <span style="font-size:12.5px; color:var(--text-sec)">at</span>
+            <input type="time" id="adTimingTime" class="ad-input" value="09:00" oninput="autoDirty = true">
+          `;
+          renderPeriodicDayUI();
+        }
+        autoDirty = true;
+      }
+
+      function renderPeriodicDayUI() {
+        const freq = $("adTimingFreq") ? $("adTimingFreq").value : "daily";
+        const wrap = $("adTimingDayWrapper");
+        if (!wrap) return;
+        
+        if (freq === "daily") {
+          wrap.style.display = "none";
+          wrap.innerHTML = "";
+        } else if (freq === "weekly") {
+          wrap.style.display = "flex";
+          wrap.innerHTML = `
+            <span style="font-size:12.5px; color:var(--text-sec)">on</span>
+            <select id="adTimingDayW" class="ad-select" onchange="autoDirty = true">
+              <option value="Mon">Monday</option>
+              <option value="Tue">Tuesday</option>
+              <option value="Wed">Wednesday</option>
+              <option value="Thu">Thursday</option>
+              <option value="Fri">Friday</option>
+              <option value="Sat">Saturday</option>
+              <option value="Sun">Sunday</option>
+            </select>
+          `;
+        } else if (freq === "monthly") {
+          wrap.style.display = "flex";
+          wrap.innerHTML = `
+            <span style="font-size:12.5px; color:var(--text-sec)">on day</span>
+            <select id="adTimingDayM" class="ad-select" onchange="autoDirty = true">
+              ${Array.from({length:31}, (_,i) => `<option value="${i+1}">${i+1}</option>`).join('')}
+            </select>
+          `;
+        }
+      }
+
+      function parseAndSetTiming(timingStr) {
+        const str = (timingStr || "").toLowerCase();
+        const typeEl = $("adTimingType");
+        
+        // 1. Dựa theo tài liệu: Immediate
+        if (str.includes("immediate") || str.includes("on duplicate") || str.includes("on inquiry")) {
+          typeEl.value = "immediate";
+          updateTimingUI();
+        } 
+        // 2. Dựa theo tài liệu: x days before...
+        else if (str.includes("before") || str.includes("day before")) {
+          typeEl.value = "before";
+          updateTimingUI();
+          let match = str.match(/(\d+)\s*days/);
+          if (match) $("adTimingVal").value = match[1];
+          else if (str.includes("day before")) $("adTimingVal").value = "1";
+        } 
+        // 3. Dựa theo tài liệu: overdue, no login...
+        else if (str.includes("overdue") || str.includes("no login") || str.includes("after receipt")) {
+          typeEl.value = "after";
+          updateTimingUI();
+          let match = str.match(/(\d+)\s*(days|h|hours)/);
+          if (match) {
+            let val = match[1];
+            if (match[2] === "h" || match[2] === "hours") val = (parseInt(val)/24).toString(); // Chuyển 48h thành 2 day
+            $("adTimingVal").value = val;
+          }
+        } 
+        // 4. Dựa theo tài liệu: Periodic (Once daily digest, every monday 09:00, 1st of month...)
+        else if (str.includes("every") || str.includes("daily") || str.includes("monthly") || str.includes("1st of month")) {
+          typeEl.value = "periodic";
+          updateTimingUI();
+          
+          if (str.includes("daily")) {
+            $("adTimingFreq").value = "daily";
+          } else if (str.includes("weekly") || str.includes("every monday")) {
+            $("adTimingFreq").value = "weekly";
+            renderPeriodicDayUI();
+            if (str.includes("monday")) $("adTimingDayW").value = "Mon";
+          } else if (str.includes("monthly") || str.includes("1st of month")) {
+            $("adTimingFreq").value = "monthly";
+            renderPeriodicDayUI();
+            $("adTimingDayM").value = "1";
+          }
+          
+          let timeMatch = str.match(/(\d{2}:\d{2})/);
+          if (timeMatch) $("adTimingTime").value = timeMatch[1];
+          else $("adTimingTime").value = "09:00";
+        } 
+        // 5. Dựa theo tài liệu: On detection, on cap, on expiry...
+        else {
+          typeEl.value = "immediate";
+          updateTimingUI();
+        }
+      }
 
       function autoVisible() {
         return AUTOMATION_CATALOG.filter((e) => e.chat === "O");
@@ -3893,49 +3768,38 @@
         autoDirty = false;
         $("adId").textContent = e.id;
         $("adName").textContent = e.name;
-        $("adTiming").textContent = e.timing;
-        $("adChannels").innerHTML =
-          "Chat " + channelBadge(e.chat) + " · Email " + channelBadge(e.email);
-        $("adPattern").innerHTML =
-          "<b>" + e.pattern + "</b> — " + escAuto(AUTO_PATTERN_DESC[e.pattern]);
-        $("adChatBody").value = st.chatBody || "";
-        renderAutoVars("adChatVars", "adChatBody");
-        $("autoBackdrop").classList.add("open");
-        $("autoDrawer").classList.add("open");
-        $("autoDrawer").setAttribute("aria-hidden", "false");
+        parseAndSetTiming(e.timing);
+        $("adPattern").innerHTML = "<b>" + e.pattern + "</b> — " + escAuto(AUTO_PATTERN_DESC[e.pattern]);
+        
+        // Khởi tạo Rich Text Editor chuẩn nếu chưa mở lần nào
+        if (!$("ad_rteBody")) {
+          buildRTE("adEditorMount", "ad");
+        }
+
+        $("ad_rteBody").innerHTML = st.chatBody || "";
+        rtePreviewRender("ad");
+
+        $("auto-list").style.display = "none";
+        $("auto-detail").style.display = "block";
+        window.scrollTo(0, 0);
       }
-      function closeAutoDrawer() {
-        if (autoDirty && !confirm("You have unsaved changes. Discard them?"))
-          return;
-        $("autoBackdrop").classList.remove("open");
-        $("autoDrawer").classList.remove("open");
-        $("autoDrawer").setAttribute("aria-hidden", "true");
+      function closeAutoDetail() {
+        if (autoDirty && !confirm("You have unsaved changes. Discard them?")) return;
+        $("auto-detail").style.display = "none";
+        $("auto-list").style.display = "block";
         autoEditingId = null;
         autoDirty = false;
       }
+      
       function saveAutoDrawer() {
         if (!autoEditingId) return;
-        AutoStore.save(autoEditingId, { chatBody: $("adChatBody").value });
+        AutoStore.save(autoEditingId, { chatBody: $("ad_rteBody").innerHTML });
         autoDirty = false;
         renderAutomations();
         toast("Automation saved");
-        $("autoBackdrop").classList.remove("open");
-        $("autoDrawer").classList.remove("open");
+        $("auto-detail").style.display = "none";
+        $("auto-list").style.display = "block";
         autoEditingId = null;
-      }
-      function restoreAutoDrawer() {
-        if (!autoEditingId) return;
-        if (
-          !confirm(
-            "Restore this trigger's message to the catalog default? Your edits will be replaced.",
-          )
-        )
-          return;
-        const st = AutoStore.restore(autoEditingId);
-        $("adChatBody").value = st.chatBody || "";
-        autoDirty = false;
-        renderAutomations();
-        toast("Restored to default");
       }
       // kept (null-safe) for campaign / group / template flows on other tabs
       function renderAutoGroupPicker() {
@@ -3991,9 +3855,10 @@
             </div>
           </div>`;
         rtePreviewRender(prefix);
-        $(prefix + "_rteBody").addEventListener("input", () =>
-          rtePreviewRender(prefix),
-        );
+        $(prefix + "_rteBody").addEventListener("input", () => {
+          if (prefix === "ad") autoDirty = true;
+          rtePreviewRender(prefix);
+        });
       }
       function rteBody(el) {
         return el.closest(".rte").querySelector(".rte-body");
@@ -4119,198 +3984,9 @@
 
       /* ===================== ANALYTICS ===================== */
       // 3-state sort: column key + dir (1 asc, -1 desc). Default Sent Date desc.
-      let anSort = { key: "sentDate", dir: -1 };
-      const AN_COLS = [
-        { key: "name", label: "Campaign Name", sortable: true },
-        { key: "audType", label: "Audience", sortable: false },
-        { key: "sentDate", label: "Sent Date", sortable: true },
-        {
-          key: "recipients",
-          label: "Recipients",
-          sortable: true,
-          tip: "Actual number of recipients at send time. Users who joined later are not included.",
-        },
-        { key: "read", label: "Read", sortable: true },
-        { key: "readRate", label: "Read Rate", sortable: true },
-        { key: "actions", label: "Actions", sortable: false },
-      ];
-      let anExpanded = {}; // recurring campaign id -> expanded?
-
-      function onAnRangeChange() {
-        const v = $("anRange").value;
-        const show = v === "custom" ? "inline-block" : "none";
-        $("anFrom").style.display = show;
-        $("anTo").style.display = show;
-        renderDelivery();
-      }
-      function anSortClick(key) {
-        if (anSort.key !== key) {
-          anSort = { key, dir: 1 };
-        } else if (anSort.dir === 1) {
-          anSort.dir = -1;
-        } else if (anSort.dir === -1) {
-          anSort = { key: "sentDate", dir: -1 }; // unsorted -> default
-        } else {
-          anSort = { key, dir: 1 };
-        }
-        // if clicking the default column twice to "unsort", fall back to default
-        renderDelivery();
-      }
-      function rate(n, d) {
-        return d ? Math.round((n / d) * 100) : 0;
-      }
-      function deliveryPill(rt, sent) {
-        let cls = "grey";
-        if (!sent) cls = "grey";
-        else if (rt >= 90) cls = "green";
-        else if (rt >= 50) cls = "amber";
-        else cls = "red";
-        return `<span class="pill ${cls}">${rt}%</span>`;
-      }
-      function readPill(rt) {
-        let cls = rt >= 50 ? "green" : rt >= 30 ? "amber" : "red";
-        return `<span class="pill ${cls}">${rt}%</span>`;
-      }
-      // Build an aggregate view object for a campaign (one-time or recurring).
-      function anAgg(c) {
-        if (c.recurring && c.sends && c.sends.length) {
-          const recipients = c.sends.reduce((s, x) => s + x.recipients, 0);
-          const read = c.sends.reduce((s, x) => s + x.read, 0);
-          const firstSent = c.sends
-            .map((x) => x.sentDate)
-            .sort()
-            .slice(-1)[0]; // latest send date for sorting
-          return {
-            recurring: true,
-            recipients,
-            read,
-            readRate: rate(read, recipients),
-            sentDate: firstSent,
-            since: c.since,
-          };
-        }
-        return {
-          recurring: false,
-          recipients: c.recipients,
-          read: c.read,
-          readRate: rate(c.read, c.recipients),
-          sentDate: c.sentDate,
-        };
-      }
-      function anInRange(dateStr) {
-        const v = $("anRange").value;
-        if (v === "all") return true;
-        const d = new Date(dateStr + "T00:00:00");
-        if (v === "custom") {
-          const f = $("anFrom").value;
-          const t = $("anTo").value;
-          if (f && d < new Date(f + "T00:00:00")) return false;
-          if (t && d > new Date(t + "T23:59:59")) return false;
-          return true;
-        }
-        const days = parseInt(v, 10);
-        const today = new Date("2026-06-21T23:59:59");
-        const cutoff = new Date(today);
-        cutoff.setDate(cutoff.getDate() - days);
-        return d >= cutoff;
-      }
-      function renderDelivery() {
-        // head
-        $("anHeadRow").innerHTML = AN_COLS.map((c) => {
-          let arrow = "";
-          if (c.sortable) {
-            if (anSort.key === c.key) arrow = anSort.dir === 1 ? " ▲" : " ▼";
-          }
-          const tip = c.tip ? ` title="${c.tip}"` : "";
-          const click = c.sortable
-            ? ` style="cursor:pointer" onclick="anSortClick('${c.key}')"`
-            : "";
-          return `<th${tip}${click}>${c.label}${arrow}</th>`;
-        }).join("");
-
-        const q = ($("anSearch") ? $("anSearch").value : "")
-          .toLowerCase()
-          .trim();
-        const aud = $("anAud") ? $("anAud").value : "";
-        let rows = analyticsCampaigns
-          .map((c) => ({ c, agg: anAgg(c) }))
-          .filter(({ c, agg }) => {
-            if (q && !c.name.toLowerCase().includes(q)) return false;
-            if (aud && c.audType !== aud) return false;
-            if (!anInRange(agg.sentDate)) return false;
-            return true;
-          });
-        // sort
-        const k = anSort.key;
-        rows.sort((A, B) => {
-          let av, bv;
-          if (k === "name") {
-            av = A.c.name.toLowerCase();
-            bv = B.c.name.toLowerCase();
-          } else {
-            av = A.agg[k];
-            bv = B.agg[k];
-          }
-          if (av < bv) return -1 * anSort.dir;
-          if (av > bv) return 1 * anSort.dir;
-          return 0;
-        });
-
-        const audLabel = {
-          "End User": "End User",
-          Agent: "Agent",
-          Custom: "Custom Group",
-        };
-        const html = rows
-          .map(({ c, agg }) => {
-            const expanded = !!anExpanded[c.id];
-            const arrow = agg.recurring
-              ? `<span style="cursor:pointer;margin-right:6px" onclick="toggleAnExpand('${c.id}')">${expanded ? "▼" : "▶"}</span>`
-              : "";
-            const sentCell = agg.recurring
-              ? `since ${agg.since}`
-              : agg.sentDate;
-            let main = `<tr>
-              <td class="cell-strong" title="${escapeHtml(c.name)}">${arrow}${escapeHtml(c.name)}</td>
-              <td>${audLabel[c.audType] || c.audType}</td>
-              <td>${sentCell}</td>
-              <td>${agg.recipients.toLocaleString()}</td>
-              <td>${agg.read.toLocaleString()}</td>
-              <td>${readPill(agg.readRate)}</td>
-              <td><button class="btn btn-outline btn-sm" onclick="recreateFromAnalytics('${c.id}')"><i class="fas fa-rotate-left"></i> Recreate</button></td>
-            </tr>`;
-            if (agg.recurring && expanded) {
-              main += c.sends
-                .slice()
-                .sort((a, b) => (a.sentDate < b.sentDate ? 1 : -1))
-                .map((s) => {
-                  const rr = rate(s.read, s.recipients);
-                  return `<tr style="background:#fbf8f2">
-                    <td style="padding-left:34px;color:var(--text-sec)">${s.sentDate}</td>
-                    <td>${audLabel[c.audType] || c.audType}</td>
-                    <td>${s.sentDate}</td>
-                    <td>${s.recipients.toLocaleString()}</td>
-                    <td>${s.read.toLocaleString()}</td>
-                    <td>${readPill(rr)}</td>
-                    <td></td>
-                  </tr>`;
-                })
-                .join("");
-            }
-            return main;
-          })
-          .join("");
-        $("deliveryBody").innerHTML =
-          html ||
-          `<tr><td colspan="7" style="text-align:center;color:#999;padding:30px">No sent campaigns found.</td></tr>`;
-      }
-      function toggleAnExpand(id) {
-        anExpanded[id] = !anExpanded[id];
-        renderDelivery();
-      }
+      
       let chartInstance = null;
       function initChart() {
-        renderDelivery();
         if (chartInstance) return;
         const ctx = $("trendChart");
         if (!ctx || !window.Chart) return;
@@ -4397,10 +4073,8 @@
             closeAgentPicker();
             return;
           }
-          if ($("autoDrawer").classList.contains("open")) {
-            closeAutoDrawer();
-            return;
-          }
+          if ($("auto-detail").style.display === "block") { closeAutoDetail(); return; }
+
           closeCreateGroup();
           document
             .querySelectorAll(".act-menu,.var-dropdown")
@@ -4413,6 +4087,7 @@
       renderTemplates();
       renderAutomations();
       refreshAutoTplSelect();
+      setTimeout(initChart, 30);
     </script>
   </body>
 </html>

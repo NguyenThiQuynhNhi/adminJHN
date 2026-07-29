@@ -67,6 +67,17 @@
       .filter-field.has-icon input { padding-left: 34px; }
       .filter-field .fi-left { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; }
       .filter-field .fi-right { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; font-size: 11px; }
+      /* ===== Price popover (giữ style filter-field hiện có) ===== */
+      .pop-wrap { position: relative; }
+      .pop-btn { height: 38px; border-radius: 8px; border: 1px solid var(--border); padding: 0 14px; font-size: 13px; background: #fff; color: var(--text-main); display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-family: inherit; }
+      .pop-btn:hover { background: var(--bg-alt); }
+      .pop-btn .cnt { background: var(--accent); color: #fff; font-size: 10.5px; font-weight: 700; border-radius: 20px; padding: 1px 7px; }
+      .pop-panel { position: absolute; top: calc(100% + 6px); left: 0; background: #fff; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 10px 28px rgba(60,41,28,0.16); padding: 14px; min-width: 240px; z-index: 60; display: none; }
+      .pop-panel.open { display: block; }
+      .pop-range { display: flex; align-items: center; gap: 8px; }
+      .pop-range input { height: 34px; border-radius: 6px; border: 1px solid var(--border); padding: 0 10px; font-size: 13px; width: 100%; min-width: 0; outline: none; }
+      .pop-range input:focus { border-color: var(--accent); }
+      .pop-range span { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
 
       /* ===== Card ===== */
       .card { background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 1px 3px rgba(60,41,28,0.04); overflow: hidden; }
@@ -260,9 +271,37 @@
               <button id="pillRent" onclick="setIntent('rent')">To Rent</button>
             </div>
             <div class="filter-field has-icon"><i class="fas fa-globe fi-left"></i><input placeholder="Location" /></div>
-            <div class="filter-field"><select><option value="">Status</option><option>New</option><option>Assigned</option><option>Converted</option><option>In Progress</option></select><i class="fas fa-chevron-down fi-right"></i></div>
-            <div class="filter-field"><select><option value="">Price Range</option><option>¥0 – ¥2M</option><option>¥2M – ¥5M</option><option>¥5M+</option></select><i class="fas fa-chevron-down fi-right"></i></div>
-            <div class="filter-field"><select><option value="">Property</option><option>House</option><option>Apartment</option><option>Office</option></select><i class="fas fa-chevron-down fi-right"></i></div>
+            <div class="filter-field">
+              <select>
+                <option value="">Status</option>
+                <option value="new">New</option>
+                <option value="assigned">Assigned</option>
+                <option value="contact">Contact</option>
+                <option value="viewing">Viewing</option>
+                <option value="proposal">Proposal</option>
+                <option value="negotiation">Negotiation</option>
+                <option value="asleep">Asleep</option>
+                <option value="closed_won">Closed Won</option>
+                <option value="closed_lost">Closed Lost</option>
+              </select>
+              <i class="fas fa-chevron-down fi-right"></i>
+            </div>
+            <div class="pop-wrap" data-pop="price">
+              <button class="pop-btn" type="button" onclick="togglePricePop(event)">
+                <i class="fas fa-yen-sign"></i> Price
+                <span class="cnt hidden" id="priceCnt">0</span>
+                <i class="fas fa-chevron-down"></i>
+              </button>
+              <div class="pop-panel" id="pricePanel">
+                <div class="pop-range">
+                  <input type="number" min="0" placeholder="From" id="fPriceMin" />
+                  <span>to</span>
+                  <input type="number" min="0" placeholder="To" id="fPriceMax" />
+                  <span>¥M</span>
+                </div>
+              </div>
+            </div>
+            <div class="filter-field"><select><option value="">Property Type</option><option>House</option><option>Apartment</option><option>Office</option></select><i class="fas fa-chevron-down fi-right"></i></div>
           </div>
 
           <div class="card">
@@ -539,6 +578,10 @@
 
       function renderList() {
         let rows = LEADS.slice();
+        const pMin = parseFloat(document.getElementById("fPriceMin")?.value) || null;
+        const pMax = parseFloat(document.getElementById("fPriceMax")?.value) || null;
+        if (pMin != null) rows = rows.filter(l => (l.price ?? 0) >= pMin * 1e6);
+        if (pMax != null) rows = rows.filter(l => (l.price ?? 0) <= pMax * 1e6);
         rows.sort((a, b) => {
           const va = sortKey === "owner" ? OWNERS[a.owner] : a[sortKey], vb = sortKey === "owner" ? OWNERS[b.owner] : b[sortKey];
           return (va < vb ? -1 : va > vb ? 1 : 0) * (sortDir === "asc" ? 1 : -1);
@@ -576,6 +619,27 @@
       window.sortBy = sortBy;
       function cycleRows() { rowsPerPage = rowsPerPage === 10 ? 25 : rowsPerPage === 25 ? 50 : 10; document.getElementById("rowsLabel").textContent = rowsPerPage; document.getElementById("rowsLabel2").textContent = rowsPerPage; page = 1; renderList(); }
       window.cycleRows = cycleRows;
+      function togglePricePop(e) {
+        e.stopPropagation();
+        document.getElementById("pricePanel").classList.toggle("open");
+        document.addEventListener("click", closePricePop, { once: true });
+      }
+      window.togglePricePop = togglePricePop;
+      function closePricePop(e) {
+        if (e.target.closest && e.target.closest('[data-pop="price"]')) return;
+        document.getElementById("pricePanel").classList.remove("open");
+      }
+      document.getElementById("fPriceMin")?.addEventListener("input", updatePriceCnt);
+      document.getElementById("fPriceMax")?.addEventListener("input", updatePriceCnt);
+      function updatePriceCnt() {
+        const min = document.getElementById("fPriceMin").value;
+        const max = document.getElementById("fPriceMax").value;
+        const cnt = document.getElementById("priceCnt");
+        const active = !!(min || max);
+        cnt.classList.toggle("hidden", !active);
+        if (active) cnt.textContent = "1";
+        page = 1; renderList();
+      }
       function setIntent(i) { intent = i; document.getElementById("pillBuy").classList.toggle("active", i === "buy"); document.getElementById("pillRent").classList.toggle("active", i === "rent"); }
       window.setIntent = setIntent;
 

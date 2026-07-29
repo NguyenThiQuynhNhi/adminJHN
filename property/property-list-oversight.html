@@ -1681,7 +1681,7 @@
             <input
               id="fSearch"
               type="text"
-              placeholder="Search by name, ID, agent, address…"
+              placeholder="Search by name, ID, agency, address…"
             />
           </div>
 
@@ -2030,6 +2030,82 @@
           color: var(--text-muted);
           font-weight: 600;
         }
+        /* ============ Location Picker Modal (Shopee-style) ============ */
+      .locpick-box {
+        width: 720px;
+        max-width: 100%;
+        background: var(--bg-card);
+        border-radius: var(--r-lg);
+        box-shadow: var(--shadow-modal);
+        display: flex;
+        flex-direction: column;
+        max-height: 90vh;
+        overflow: hidden;
+      }
+      .locpick-body {
+        padding: 18px;
+        overflow: auto;
+      }
+      .locpick-selects {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .locpick-map {
+        position: relative;
+        width: 100%;
+        height: 320px;
+        border-radius: var(--r-md);
+        border: 1px solid var(--border-subtle);
+        background:
+          linear-gradient(0deg, rgba(139,115,64,0.08) 1px, transparent 1px) 0 0/28px 28px,
+          linear-gradient(90deg, rgba(139,115,64,0.08) 1px, transparent 1px) 0 0/28px 28px,
+          var(--bg-card-warm);
+        overflow: hidden;
+        cursor: grab;
+        touch-action: none;
+      }
+      .locpick-map:active { cursor: grabbing; }
+      .locpick-pin {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -100%);
+        font-size: 30px;
+        color: var(--status-danger-text);
+        pointer-events: none;
+        filter: drop-shadow(0 3px 4px rgba(0,0,0,0.3));
+      }
+      .locpick-center-dot {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--status-danger-text);
+        pointer-events: none;
+      }
+      .locpick-hint {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        background: rgba(255,255,255,0.92);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--r-sm);
+        padding: 6px 10px;
+        font-size: 11.5px;
+        color: var(--text-muted);
+        pointer-events: none;
+      }
+      .locpick-coords {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--text-muted);
+        font-family: ui-monospace, monospace;
+      }
       </style>
       <section class="card">
         <div class="results-header">
@@ -2065,9 +2141,9 @@
                 <th>Sale Status</th>
                 <th>Price</th>
                 <th>Address</th>
-                <th>Agent</th>
+                <th>Agency</th>
                 <th>Status</th>
-                <th>Updated</th>
+                <th>Last Updated Date</th>
               </tr>
             </thead>
             <tbody id="listBody"></tbody>
@@ -2104,6 +2180,41 @@
             <i class="fas fa-edit"></i> Edit
           </button>
           <button
+            class="btn btn-success hidden"
+            id="approveBtn"
+            type="button"
+            onclick="approveListing()"
+          >
+            <i class="fas fa-check"></i> Approve
+          </button>
+          <button
+            class="btn hidden"
+            id="toggleStatusBtn"
+            type="button"
+            onclick="toggleSuspend()"
+          >
+            <i class="fas fa-ban"></i> Suspend
+          </button>
+          <button
+            class="btn btn-danger"
+            type="button"
+            onclick="deleteListing()"
+          >
+            <i class="fas fa-trash"></i> Delete
+          </button>
+        </div><div class="detail-toolbar-right" id="toolbarView">
+          <button class="btn" type="button" onclick="enterEditMode()">
+            <i class="fas fa-edit"></i> Edit
+          </button>
+          <button
+            class="btn btn-success hidden"
+            id="approveBtn"
+            type="button"
+            onclick="approveListing()"
+          >
+            <i class="fas fa-check"></i> Approve
+          </button>
+          <button
             class="btn hidden"
             id="toggleStatusBtn"
             type="button"
@@ -2137,15 +2248,6 @@
           <h2 class="detail-name" id="dName">—</h2>
           <div class="detail-meta">
             <span class="detail-id-pill" id="dId">PROP-—</span>
-            <span id="dMetaAddress">—</span>
-            <span>·</span>
-            <span id="dMetaPublish">—</span>
-            <span>·</span>
-            <span id="dMetaSale">—</span>
-            <span>·</span>
-            <span id="dMetaMembers">—</span>
-            <span>·</span>
-            <span id="dMetaTx">—</span>
           </div>
         </div>
       </div>
@@ -2413,6 +2515,46 @@
           <div id="histPager" style="display: flex; gap: 6px"></div>
           <button class="btn btn-sm" type="button" id="histExport">
             <i class="fas fa-file-csv"></i> Export change log to CSV
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Location Picker Modal (map-style pin placement) -->
+    <div class="modal-backdrop" id="locPickModal">
+      <div class="locpick-box" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <h3 class="modal-title">Set property location</h3>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="closeLocPicker()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="locpick-body">
+          <div class="locpick-selects">
+            <div class="field-group">
+              <label class="field-label">Prefecture</label>
+              <select id="lpPref" onchange="onLpPrefChange()"></select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">City / Ward</label>
+              <select id="lpCity"></select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Chome</label>
+              <input type="text" id="lpChome" placeholder="e.g. 3-7-1" />
+            </div>
+          </div>
+          <div class="locpick-map" id="lpMap">
+            <div class="locpick-center-dot"></div>
+            <i class="fas fa-location-dot locpick-pin"></i>
+            <div class="locpick-hint">Drag the map to move the pin — pin always stays centered</div>
+          </div>
+          <div class="locpick-coords" id="lpCoords">Pin offset: 0, 0 (relative — for demo positioning only)</div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" type="button" onclick="closeLocPicker()">Cancel</button>
+          <button class="btn btn-primary" type="button" onclick="confirmLocPicker()">
+            <i class="fas fa-check"></i> Confirm location &amp; locate POIs
           </button>
         </div>
       </div>
@@ -3492,7 +3634,7 @@
               t: "text",
               full: true,
             },
-            { k: "buildingArea", l: "Building Area (m²)", t: "num" },
+            { k: "buildingArea", l: "Total Floor Area (m²)", t: "num" },
             {
               k: "areaMethod",
               l: "Area Measurement Method",
@@ -3539,7 +3681,7 @@
               t: "select",
               opts: OPT.buildingStructure,
             },
-            { k: "buildingArea", l: "Building Area (m²)", t: "num" },
+            { k: "buildingArea", l: "Total Floor Area (m²)", t: "num" },
             {
               k: "areaMethodBldg",
               l: "Building Area Measurement",
@@ -3980,7 +4122,7 @@
         {
           id: "PROP-58210",
           group: 1,
-          agent: "Suzuki Aya (Bay Realty)",
+          agent: "Bay Realty",
           propType: "Tower Mansion",
           name: "Toyosu Bayside Tower",
           nameRomaji: "Toyosu Bayside Tower",
@@ -4004,14 +4146,14 @@
           exclusiveArea: 64.5,
           areaMethod: "Wall-to-Wall",
           layout: "2LDK",
-          media: { tour3d: "", videoCount: 0, photoCount: 5 },
+          media: { tour3d: "", photoCount: 5 },
           poi: { access: [], surround: [] },
           description: "High-floor bayside tower unit with open city views.",
         },
         {
           id: "PROP-58222",
           group: 2,
-          agent: "Mori Takeshi (Kansai Estates)",
+          agent: "Kansai Estates",
           propType: "Residential Multi-Family Building",
           name: "Namba Apartment Block",
           nameRomaji: "Namba Apartment Block",
@@ -4034,14 +4176,14 @@
           tax: "Tax included",
           unitsOcc: 14,
           totalUnits: 16,
-          media: { tour3d: "", videoCount: 0, photoCount: 4 },
+          media: { tour3d: "", photoCount: 4 },
           poi: { access: [], surround: [] },
           description: "Stable income multi-family asset near Namba.",
         },
         {
           id: "PROP-58231",
           group: 3,
-          agent: "Tanaka Kenji (Land Pros)",
+          agent: "Land Pros",
           propType: "Commercial Land",
           name: "Yokohama Commercial Lot",
           postCode: "220-0011",
@@ -4064,14 +4206,14 @@
           landUse: "Commercial",
           landArea: 420,
           areaMethodLand: "Registered Area",
-          media: { tour3d: "", videoCount: 0, photoCount: 3 },
+          media: { tour3d: "", photoCount: 3 },
           poi: { access: [], surround: [] },
           description: "Corner commercial parcel close to Yokohama Station.",
         },
         {
           id: "PROP-58244",
           group: 1,
-          agent: "Kobayashi Rin (Sakura Homes)",
+          agent: "Sakura Homes",
           propType: "House",
           name: "Sapporo Family House",
           nameRomaji: "Sapporo Family House",
@@ -4095,14 +4237,14 @@
           exclusiveArea: 110.0,
           areaMethod: "Registered",
           layout: "4LDK",
-          media: { tour3d: "", videoCount: 0, photoCount: 2 },
+          media: { tour3d: "", photoCount: 2 },
           poi: { access: [], surround: [] },
           description: "Detached family home awaiting moderation review.",
         },
         {
           id: "PROP-58255",
           group: 2,
-          agent: "Watanabe Sho (Fukuoka Realty)",
+          agent: "Fukuoka Realty",
           propType: "Retail Building",
           name: "Hakata Retail Building",
           nameRomaji: "Hakata Retail Building",
@@ -4125,7 +4267,7 @@
           tax: "Tax included",
           unitsOcc: 6,
           totalUnits: 8,
-          media: { tour3d: "", videoCount: 0, photoCount: 3 },
+          media: { tour3d: "", photoCount: 3 },
           poi: { access: [], surround: [] },
           description:
             "Prime retail building near Hakata Station, under review.",
@@ -4133,7 +4275,7 @@
         {
           id: "PROP-58102",
           group: 1,
-          agent: "Yamada Hiroshi (ABC Realty)",
+          agent: "ABC Realty",
           propType: "Apartment",
           name: "Minami-Aoyama Penthouse",
           nameRomaji: "Minami-Aoyama Penthouse",
@@ -4284,7 +4426,6 @@
           },
           media: {
             tour3d: "https://my.matterport.com/show/?m=demo",
-            videoCount: 1,
             photoCount: 12,
           },
           description:
@@ -4293,7 +4434,7 @@
         {
           id: "PROP-58110",
           group: 2,
-          agent: "Sato Mei (Tokyo Bay Realty)",
+          agent: "Tokyo Bay Realty",
           propType: "Mixed-Use Building",
           name: "Shibuya Mixed-Use Building",
           nameRomaji: "Shibuya Mixed-Use Building",
@@ -4398,14 +4539,14 @@
               },
             ],
           },
-          media: { tour3d: "", videoCount: 2, photoCount: 24 },
+          media: { tour3d: "", photoCount: 24 },
           description:
             "Prime Shibuya mixed-use investment opportunity. Long-standing tenants, stable cashflow.",
         },
         {
           id: "PROP-58120",
           group: 3,
-          agent: "Tanaka Kenji (Land Pros)",
+          agent: "Land Pros",
           propType: "Residential Land",
           name: "Setagaya Residential Land",
           postCode: "158-0094",
@@ -4459,14 +4600,14 @@
               { cat: "Schools", name: "Setagaya Elementary", dist: "500m" },
             ],
           },
-          media: { tour3d: "", videoCount: 0, photoCount: 6 },
+          media: { tour3d: "", photoCount: 6 },
           description:
             "Flat residential parcel in popular Setagaya neighbourhood. Ready to build.",
         },
         {
           id: "PROP-58145",
           group: 1,
-          agent: "Lee Min-jun (Rental Hub)",
+          agent: "Rental Hub",
           propType: "Apartment",
           name: "Shinjuku Studio Apartment",
           nameRomaji: "Shinjuku Studio",
@@ -4562,7 +4703,7 @@
               },
             ],
           },
-          media: { tour3d: "", videoCount: 0, photoCount: 8 },
+          media: { tour3d: "", photoCount: 8 },
           description:
             "Compact studio close to Shinjuku Station. Pet-friendly building, fibre internet included.",
         },
@@ -4583,12 +4724,12 @@
           3: OPT.propType3,
         };
         const AGENTS = [
-          "Suzuki Aya (Bay Realty)",
-          "Mori Takeshi (Kansai Estates)",
-          "Tanaka Ken (Tokyo Homes)",
-          "Ito Mei (Sakura Property)",
-          "Yamamoto Rui (Northgate Realty)",
-          "Kobayashi Sora (Harbour Estates)",
+          "Bay Realty",
+          "Kansai Estates",
+          "Tokyo Homes",
+          "Sakura Property",
+          "Northgate Realty",
+          "Harbour Estates",
         ];
         const STATUS_CYCLE = [
           "Published",
@@ -4598,9 +4739,9 @@
           "Suspended",
           "Rejected",
         ];
-        const TX_CYCLE = ["Buy", "Rent"];
+        const TX_CYCLE = ["Buy", "Rent","Buy & Rent"];
         const LAYOUTS = ["1K", "1LDK", "2LDK", "3LDK", "4LDK"];
-        const TARGET = 61; // ≥ 60 total listings
+        const TARGET = 10; // ≥ 60 total listings
         let n = TARGET - properties.length;
         for (let i = 0; i < n; i++) {
           const group = (i % 3) + 1; // 1,2,3 round-robin
@@ -4661,7 +4802,7 @@
               status === "Rejected"
                 ? "Missing floor plan and ownership records."
                 : undefined,
-            media: { tour3d: "", videoCount: 0, photoCount: (i % 8) + 1 },
+            media: { tour3d: "", photoCount: (i % 8) + 1 },
             poi: { access: [], surround: [] },
             description:
               "Demo listing in " +
@@ -5421,6 +5562,94 @@
           );
           return;
         }
+        /* ============ Location Picker (Shopee-style drag map) ============ */
+      let lpPinOffset = { x: 0, y: 0 };
+      let lpDragging = false;
+      let lpDragStart = null;
+
+      function openLocPicker() {
+        const prop = currentProp;
+        if (!prop) return;
+        const prefSel = $("lpPref");
+        prefSel.innerHTML = OPT.prefectures
+          .map((p) => `<option value="${escAttr(p)}" ${p === prop.prefecture ? "selected" : ""}>${esc(p)}</option>`)
+          .join("");
+        onLpPrefChange();
+        if (prop.city) $("lpCity").value = prop.city;
+        $("lpChome").value = prop.chome || "";
+        lpPinOffset = { x: 0, y: 0 };
+        updateLpCoords();
+        $("locPickModal").classList.add("open");
+        wireLpMapDrag();
+      }
+      window.openLocPicker = openLocPicker;
+
+      function closeLocPicker() {
+        $("locPickModal").classList.remove("open");
+      }
+      window.closeLocPicker = closeLocPicker;
+
+      function onLpPrefChange() {
+        const pref = $("lpPref").value;
+        const cities = OPT.cityByPref[pref] || [];
+        $("lpCity").innerHTML = cities
+          .map((c) => `<option value="${escAttr(c)}">${esc(c)}</option>`)
+          .join("");
+      }
+      window.onLpPrefChange = onLpPrefChange;
+
+      function updateLpCoords() {
+        $("lpCoords").textContent =
+          `Pin offset: ${lpPinOffset.x}, ${lpPinOffset.y} (relative — for demo positioning only)`;
+      }
+
+      // Drag-to-pan map, like a Shopee/Grab address picker: the pin stays fixed
+      // at the map's center, the underlying map (represented by the grid
+      // background) shifts, and we track the pin's accumulated offset.
+      function wireLpMapDrag() {
+        const map = $("lpMap");
+        if (map.dataset.wired) return;
+        map.dataset.wired = "1";
+        const start = (x, y) => {
+          lpDragging = true;
+          lpDragStart = { x, y, ox: lpPinOffset.x, oy: lpPinOffset.y };
+        };
+        const move = (x, y) => {
+          if (!lpDragging) return;
+          const dx = x - lpDragStart.x;
+          const dy = y - lpDragStart.y;
+          lpPinOffset = { x: lpDragStart.ox - dx, y: lpDragStart.oy - dy };
+          map.style.backgroundPosition = `${-lpPinOffset.x}px ${-lpPinOffset.y}px, ${-lpPinOffset.x}px ${-lpPinOffset.y}px`;
+          updateLpCoords();
+        };
+        const end = () => { lpDragging = false; };
+        map.addEventListener("mousedown", (e) => start(e.clientX, e.clientY));
+        window.addEventListener("mousemove", (e) => move(e.clientX, e.clientY));
+        window.addEventListener("mouseup", end);
+        map.addEventListener("touchstart", (e) => {
+          const t = e.touches[0];
+          start(t.clientX, t.clientY);
+        });
+        map.addEventListener("touchmove", (e) => {
+          const t = e.touches[0];
+          move(t.clientX, t.clientY);
+        });
+        map.addEventListener("touchend", end);
+      }
+
+      function confirmLocPicker() {
+        const prop = currentProp;
+        if (!prop) return;
+        prop.prefecture = $("lpPref").value;
+        prop.city = $("lpCity").value;
+        prop.chome = $("lpChome").value.trim();
+        prop.pinOffset = { ...lpPinOffset };
+        if (!editMode) originalProp = JSON.parse(JSON.stringify(prop));
+        closeLocPicker();
+        renderDetail();
+        locatePOIs();
+      }
+      window.confirmLocPicker = confirmLocPicker;
         const lib = POI_LIBRARY[prop.prefecture] || DEFAULT_POI_LIB;
         const seedBase =
           (prop.id || "") +
@@ -5481,7 +5710,7 @@
         });
 
         const locateBtn = `
-          <button type="button" class="btn btn-primary btn-sm" onclick="locatePOIs()">
+          <button type="button" class="btn btn-primary btn-sm" onclick="openLocPicker()">
             <i class="fas fa-location-crosshairs"></i> ${nearby.length ? "Re-locate POIs" : "Locate POIs"}
           </button>`;
 
@@ -5545,7 +5774,6 @@
       function renderMedia(prop) {
         const m = prop.media || {};
         const photos = m.photoCount || 0;
-        const videos = m.videoCount || 0;
         const tour = m.tour3d || "";
         const photoTiles = Array.from(
           { length: Math.min(photos, 8) },
@@ -5569,12 +5797,8 @@
               }</div>
             </div>
             <div class="kv">
-              <span class="kv-label">Videos</span>
-              <div class="kv-value">${videos} file${videos !== 1 ? "s" : ""}</div>
-            </div>
-            <div class="kv">
               <span class="kv-label">Photos</span>
-              <div class="kv-value">${photos} photo${photos !== 1 ? "s" : ""} ${photos > 0 ? '<span class="badge badge-amber" style="margin-left:6px">Cover: photo-1.jpg</span>' : ""}</div>
+              <div class="kv-value">${photos} photo${photos !== 1 ? "s" : ""} ${photos > 0 ? '' : ""}</div>
             </div>
           </div>
           ${photos ? `<div class="gallery-grid">${photoTiles}${photos > 8 ? `<div class="gallery-item"><span style="font-size:12px;color:var(--text-muted)">+${photos - 8} more</span></div>` : ""}</div>` : ""}
@@ -5582,7 +5806,6 @@
             editMode
               ? `<div style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap">
             <button type="button" class="btn btn-sm" onclick="toast('Photo uploader will be available in production.')"><i class="fas fa-upload"></i> Upload photos</button>
-            <button type="button" class="btn btn-sm" onclick="toast('Video uploader will be available in production.')"><i class="fas fa-video"></i> Upload videos</button>
           </div>`
               : ""
           }
@@ -6070,14 +6293,6 @@
         $("dThumb").innerHTML = `<i class="fas ${thumbIcon(p.group)}"></i>`;
         $("dName").textContent = p.name || "(Unnamed)";
         $("dId").textContent = p.id;
-        $("dMetaAddress").textContent =
-          [p.prefecture, p.city, p.chome].filter(Boolean).join(" · ") || "—";
-        $("dMetaPublish").innerHTML = badgePublish(p.publishStatus);
-        $("dMetaSale").innerHTML = badgeSale(p.saleStatus);
-        $("dMetaMembers").innerHTML = badgeMembers(p.membersOnly);
-        $("dMetaTx").innerHTML = badgeTx(
-          p.txType || (p.group === 3 ? "Buy" : ""),
-        );
 
         // Suspend / Re-activate toggle button — only meaningful for
         // Published (→ Suspend) or Suspended (→ Re-activate); hidden otherwise.
@@ -6092,6 +6307,18 @@
           tBtn.innerHTML = '<i class="fas fa-rotate-right"></i> Re-activate';
         } else {
           tBtn.classList.add("hidden");
+        }
+        // Approve — shown for Pending Review (first approval) and Rejected
+        // (re-approve after fixing the issue). Not shown once Published/Suspended.
+        const apBtn = $("approveBtn");
+        if (p.publishStatus === "Pending Review" || p.publishStatus === "Rejected") {
+          apBtn.classList.remove("hidden");
+          apBtn.innerHTML =
+            p.publishStatus === "Rejected"
+              ? '<i class="fas fa-check"></i> Accept listing'
+              : '<i class="fas fa-check"></i> Approve';
+        } else {
+          apBtn.classList.add("hidden");
         }
 
         // Alerts
@@ -6302,6 +6529,40 @@
           });
         }
       }
+      function approveListing() {
+        if (!currentProp) return;
+        const wasRejected = currentProp.publishStatus === "Rejected";
+        openConfirm({
+          title: wasRejected ? "Accept this listing?" : "Approve this listing?",
+          body: wasRejected
+            ? `Accept ${currentProp.id} (${currentProp.name})? It will be published again and become visible publicly.`
+            : `Approve ${currentProp.id} (${currentProp.name})? It will become visible publicly.`,
+          actionLabel: wasRejected ? "Accept" : "Approve",
+          actionKind: "success",
+          onConfirm: () => {
+            const today = new Date().toISOString().slice(0, 10);
+            currentProp.publishStatus = "Published";
+            if (!currentProp.datePublished) currentProp.datePublished = today;
+            currentProp.dateUpdated = today;
+            currentProp.rejectCategory = undefined;
+            currentProp.rejectNotes = undefined;
+            currentProp.changeHistory = currentProp.changeHistory || [];
+            currentProp.changeHistory.unshift({
+              ts: today + "T00:00:00",
+              actorId: "ADM-002",
+              actorName: "Admin Operator",
+              role: "Admin",
+              field: "publishStatus",
+              oldVal: wasRejected ? "Rejected" : "Pending Review",
+              newVal: "Published",
+            });
+            originalProp = JSON.parse(JSON.stringify(currentProp));
+            renderDetail();
+            renderList();
+            toast(wasRejected ? "Listing accepted and published." : "Listing approved and published.");
+          },
+        });
+      }
       function deleteListing() {
         if (!currentProp) return;
         openConfirm({
@@ -6348,7 +6609,7 @@
           dateUpdated: today,
           txType: g === 3 ? "Buy" : g === 4 ? "Rent" : "Buy",
           specialUpdates: [],
-          media: { tour3d: "", videoCount: 0, photoCount: 0 },
+          media: { tour3d: "", photoCount: 0 },
           poi: { access: [], surround: [] },
           changeHistory: [],
         };

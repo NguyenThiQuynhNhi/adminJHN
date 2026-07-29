@@ -865,7 +865,7 @@
       <div class="section-grid">
         <section class="card">
           <div class="card-title">
-            <i class="fas fa-id-card"></i> Section 1 — Staff Profile
+            <i class="fas fa-id-card"></i> Section 1 — Admin Profile
           </div>
           <div class="kv-grid" id="dProfileGrid"></div>
         </section>
@@ -1053,7 +1053,7 @@
       <div class="section-grid" id="createFormContainer">
         <section class="card">
           <div class="card-title">
-            <i class="fas fa-id-card"></i> Section 1 — Staff Profile
+            <i class="fas fa-id-card"></i> Section 1 — Admin Profile
           </div>
           <div class="kv-grid">
             <div class="kv">
@@ -1483,7 +1483,7 @@
           { action:"Toggle 2FA",         targets:["ADM-005","USR-301","AGT-044"] },
         ];
 
-        const PDA_RECORD_TYPES = ["Customer","Agent","Staff","Lead","Property","Transaction"];
+        const PDA_RECORD_TYPES = ["End User","Agency","Admin","Lead","Property","Transaction"];
         const PDA_ACTIONS = ["Viewed detail","Exported record","Edited record","Downloaded attachment","Searched by name"];
 
         function rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -1753,7 +1753,7 @@
             <td>${badgeStatus(a.status)}</td>
             <td>${badge2FA(a.twoFa)}</td>
             <td>${a.lastLogin ? esc(a.lastLogin) : '<em style="color:var(--text-muted)">Never</em>'}</td>
-            <td>${a.status === "Suspended" ? `<button class="btn btn-sm btn-danger" type="button" onclick="event.stopPropagation();deleteFromList('${a.id}')"><i class="fas fa-trash"></i> Delete</button>` : '<span style="color:var(--text-muted)">—</span>'}</td>
+            <td>${a.status === "Suspended" ? `<button class="btn btn-sm btn-danger" type="button" onclick="event.stopPropagation();deleteFromList('${a.id}')"><i class="fas fa-trash"></i> Delete</button>` : `<button class="btn btn-sm btn-warning" type="button" onclick="event.stopPropagation();suspendFromList('${a.id}')"><i class="fas fa-ban"></i> Suspend</button>`}</td>
           </tr>`,
           )
           .join("");
@@ -1817,6 +1817,8 @@
         }
         if (type === "date")
           return `<input class="edit-input" type="date" value="${escAttr(value)}" data-field="${field}">`;
+        if (type === "number")
+          return `<input class="edit-input" type="number" min="1" value="${escAttr(value)}" data-field="${field}">`;
         return `<input class="edit-input" type="text" value="${escAttr(value)}" data-field="${field}">`;
       }
       function kv(label, valHtml) {
@@ -1881,11 +1883,11 @@
               "Viewer",
             ]),
           ),
-          kv("Permission Expiry Date", vField(a.permExpiry, "permExpiry")),
+          kv("Permission Expiry Date", vField(a.permExpiry, "permExpiry", "date")),
         ].join("");
         $("dOpLogsGrid").innerHTML = [
           kv("Last Login", esc(a.lastLogin) || "Never"),
-          kv("Simultaneous Login Limit", vField(a.simLimit, "simLimit", "select", ["1","2","3","5","10","Unlimited"])),
+          kv("Simultaneous Login Limit", vField(a.simLimit, "simLimit", "number")),
         ].join("");
         $("dMemoBox").innerHTML = editMode
           ? `<textarea class="edit-input" data-field="memo" style="min-height:80px">${esc(a.memo)}</textarea>`
@@ -2098,6 +2100,18 @@
         filtered = filtered.filter((x) => x.id !== id);
         renderList();
         toast("Admin deleted successfully.");
+      }
+      function suspendFromList(id) {
+        const a = admins.find((x) => x.id === id);
+        if (!a) return;
+        if (!confirm(`Suspend admin ${a.fullName}?`)) return;
+        a.status = "Suspended";
+        if (currentAdmin && currentAdmin.id === id) {
+          currentAdmin.status = "Suspended";
+          originalAdmin.status = "Suspended";
+        }
+        renderList();
+        toast("Admin suspended successfully.");
       }
 
       /* ---------- Shared Tools ---------- */

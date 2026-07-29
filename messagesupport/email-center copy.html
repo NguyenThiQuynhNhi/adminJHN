@@ -381,21 +381,6 @@
       .an-table thead th:last-child {
         background: var(--thead);
       }
-      .an-exp {
-        border: none;
-        background: transparent;
-        cursor: pointer;
-        color: var(--text-sec);
-        font-size: 11px;
-        width: 18px;
-      }
-      .an-sub td {
-        background: #fbf8f2;
-        font-size: 12.5px;
-      }
-      .an-sub td:first-child {
-        padding-left: 34px;
-      }
 
       .act-wrap {
         position: relative;
@@ -413,13 +398,15 @@
         background: #f6f1e8;
       }
       .act-menu {
-        position: fixed;
+        position: absolute;
+        right: 0;
+        top: 34px;
         background: #fff;
         border: 1px solid var(--border);
         border-radius: 10px;
         box-shadow: 0 10px 28px rgba(80, 50, 20, 0.16);
         padding: 5px;
-        z-index: 500;
+        z-index: 30;
         display: none;
         min-width: 140px;
       }
@@ -1077,7 +1064,13 @@
         >
           <i class="fas fa-bolt"></i> Automated Emails
         </div>
-        
+        <div
+          class="mc-nav-item"
+          data-screen="analytics"
+          onclick="navTo('analytics')"
+        >
+          <i class="fas fa-chart-line"></i> Delivery Analytics
+        </div>
       </aside>
 
       <!-- ===== CONTENT ===== -->
@@ -1104,24 +1097,25 @@
                 <option>Scheduled</option>
                 <option>Draft</option>
               </select>
-              <select id="anTime" onchange="renderCampaigns(true)">
-                <option value="desc">Newest first</option>
-                <option value="asc">Oldest first</option>
+              <select id="campAud" onchange="renderCampaigns(true)">
+                <option value="">All Audiences</option>
+                <option value="End User">End User</option>
+                <option value="Agent">Agent</option>
+                <option value="Custom">Custom Group</option>
               </select>
             </div>
             <div class="result-count" id="campCount"></div>
-            <div class="tbl-wrap an-wrap">
-              <table class="an-table">
+            <div class="tbl-wrap">
+              <table>
                 <thead>
                   <tr>
                     <th>Campaign Name</th>
                     <th>Audience</th>
                     <th>Status</th>
-                    <th>Sent Date</th>
-                    <th>Recipients</th>
-                    <th>Opened</th>
-                    <th>Clicked</th>
-                    <th>Converted</th>
+                    <th>Sent</th>
+                    <th>Open Rate</th>
+                    <th>Click Rate</th>
+                    <th>Conversion</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -1129,10 +1123,6 @@
               </table>
             </div>
             <div class="pager" id="campPager"></div>
-            <div class="analytics-card" style="margin-top: 20px">
-              <h3>Email Trend (Last 10 Days)</h3>
-              <canvas id="trendChart" height="110"></canvas>
-            </div>
           </div>
 
           <!-- builder -->
@@ -1175,29 +1165,38 @@
                   ><input
                     type="radio"
                     name="aud"
-                    value="all_leads"
+                    value="all_users"
                     checked
                     onchange="onAudChange()"
                   />
-                  All (End User + Agency)</label
+                  All End Users</label
                 >
                 <label class="radio-row"
                   ><input
                     type="radio"
                     name="aud"
-                    value="group_user"
+                    value="all_agents"
                     onchange="onAudChange()"
                   />
-                  End User Group</label
+                  All Agents</label
                 >
                 <label class="radio-row"
                   ><input
                     type="radio"
                     name="aud"
-                    value="group_agent"
+                    value="all_leads"
                     onchange="onAudChange()"
                   />
-                  Agency Group</label
+                  All Leads (End Users + Agents)</label
+                >
+                <label class="radio-row"
+                  ><input
+                    type="radio"
+                    name="aud"
+                    value="custom"
+                    onchange="onAudChange()"
+                  />
+                  Custom Group</label
                 >
               </div>
               <div class="group-picker" id="groupPicker" style="display: none">
@@ -1222,7 +1221,16 @@
               <h3 style="font-size: 17px; margin-bottom: 6px">
                 Compose your email
               </h3>
-              
+              <p
+                style="
+                  font-size: 12.5px;
+                  color: var(--text-sec);
+                  margin-bottom: 14px;
+                "
+              >
+                <i class="fas fa-envelope"></i> Delivered as an email to
+                recipients' inboxes.
+              </p>
               <div class="field" id="f-subject">
                 <label class="req">Subject line</label>
                 <input
@@ -1253,7 +1261,7 @@
                   checked
                   onchange="onSchedChange()"
                 />
-                Send immediately</label
+                Send immediately (after review)</label
               >
               <label class="radio-row"
                 ><input
@@ -1262,7 +1270,7 @@
                   value="schedule"
                   onchange="onSchedChange()"
                 />
-                Schedule date &amp; time</label
+                Schedule for specific date &amp; time</label
               >
               <div
                 id="schedFields"
@@ -1305,7 +1313,7 @@
                     ><input type="time" id="bRecurTime" value="09:00" />
                   </div>
                   <div class="field" style="flex: 1; min-width: 140px">
-                    <label>End date</label
+                    <label>End date (optional)</label
                     ><input type="date" id="bEndDate" />
                   </div>
                 </div>
@@ -1520,7 +1528,43 @@
             .switch.locked .slider {
               cursor: not-allowed;
             }
-            
+            .auto-drawer-backdrop {
+              position: fixed;
+              inset: 0;
+              background: rgba(30, 22, 12, 0.4);
+              z-index: 120;
+              display: none;
+            }
+            .auto-drawer-backdrop.open {
+              display: block;
+            }
+            .auto-drawer {
+              position: fixed;
+              top: 0;
+              right: 0;
+              height: 100vh;
+              width: 520px;
+              max-width: 96vw;
+              background: #fff;
+              box-shadow: -12px 0 36px rgba(40, 30, 20, 0.22);
+              z-index: 130;
+              display: flex;
+              flex-direction: column;
+              transform: translateX(100%);
+              transition: transform 0.22s ease;
+            }
+            .auto-drawer.open {
+              transform: none;
+            }
+            .ad-head {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              gap: 12px;
+              padding: 18px 20px;
+              border-bottom: 1px solid var(--border);
+              background: #faf7f1;
+            }
             .ad-id {
               font-size: 11px;
               font-weight: 700;
@@ -1699,130 +1743,145 @@
             .ad-restore:hover {
               text-decoration: underline;
             }
+          </style>
+          <div class="page-head">
+            <div class="page-title">Automated Emails</div>
+          </div>
+          <div class="auto-filter">
+            <div class="srch">
+              <i class="fas fa-magnifying-glass"></i
+              ><input
+                id="autoSearch"
+                type="text"
+                placeholder="Search by trigger name"
+                oninput="renderAutomations()"
+              />
+            </div>
+            <select id="autoStatusFilter" onchange="renderAutomations()">
+              <option value="all">All status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <span class="auto-count" id="autoCount"></span>
+          </div>
+          <div class="auto-table-wrap">
+            <table class="auto-table">
+              <thead>
+                <tr>
+                  <th style="width: 64px">Active</th>
+                  <th>Trigger</th>
+                  <th style="width: 200px">Timing</th>
+                  <th style="width: 150px">Admin Can Disable</th>
+                  <th style="width: 48px"></th>
+                </tr>
+              </thead>
+              <tbody id="autoTbody"></tbody>
+            </table>
+          </div>
+        </section>
 
-            /* Timing Dropdown Styles */
-            .ad-select, .ad-input {
-              padding: 6px 10px;
+        <!-- ===================== SCREEN 4: ANALYTICS ===================== -->
+        <section class="screen" id="screen-analytics">
+          <style>
+            .an-filter {
+              display: flex;
+              gap: 10px;
+              flex-wrap: wrap;
+              align-items: center;
+              margin-bottom: 14px;
+            }
+            .an-filter select,
+            .an-filter input {
+              height: 36px;
               border: 1px solid var(--border);
               border-radius: 8px;
-              font-size: 12.5px;
+              padding: 0 10px;
+              font-size: 13px;
               font-family: inherit;
-              outline: none;
               background: #fff;
               color: var(--navy);
+              outline: none;
             }
-            .ad-select:focus, .ad-input:focus {
-              border-color: var(--gold);
+            .an-filter input[type="text"] {
+              flex: 1;
+              min-width: 200px;
             }
-            .ad-input[type="number"] {
-              width: 60px;
+            .an-table th.sortable {
+              cursor: pointer;
+              user-select: none;
+              white-space: nowrap;
+            }
+            .an-table th.sortable:hover {
+              color: var(--accent);
+            }
+            .an-sort-ind {
+              font-size: 10px;
+              margin-left: 3px;
+            }
+            .an-exp {
+              border: none;
+              background: transparent;
+              cursor: pointer;
+              color: var(--text-sec);
+              font-size: 11px;
+              width: 18px;
+            }
+            .an-sub td {
+              background: #fbf8f2;
+              font-size: 12.5px;
+            }
+            .an-sub td:first-child {
+              padding-left: 34px;
+            }
+            #anCustomRange {
+              display: none;
+              gap: 8px;
+              align-items: center;
+            }
+            #anCustomRange.on {
+              display: flex;
             }
           </style>
-          <div id="auto-list">
-            <div class="page-head">
-              <div class="page-title">Automated Emails</div>
-            </div>
-            <div class="auto-filter">
-              <div class="srch">
-                <i class="fas fa-magnifying-glass"></i
-                ><input
-                  id="autoSearch"
-                  type="text"
-                  placeholder="Search by trigger name"
-                  oninput="renderAutomations()"
-                />
-              </div>
-              <select id="autoStatusFilter" onchange="renderAutomations()">
-                <option value="all">All status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+          <div class="page-head">
+            <div class="page-title">Email Delivery Analytics</div>
+          </div>
+          <div class="analytics-card">
+            <h3>Campaign Performance Detail</h3>
+            <div class="an-filter">
+              <select id="anTime" onchange="onAnTimeChange()">
+                <option value="all">All time</option>
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="custom">Custom</option>
               </select>
-              <span class="auto-count" id="autoCount"></span>
+              <span id="anCustomRange">
+                <input type="date" id="anFrom" onchange="renderPerf()" />
+                <span style="font-size: 12px; color: var(--text-sec)">to</span>
+                <input type="date" id="anTo" onchange="renderPerf()" />
+              </span>
+              <select id="anAud" onchange="renderPerf()">
+                <option value="">All Audiences</option>
+                <option value="End User">End User</option>
+                <option value="Agent">Agent</option>
+                <option value="Custom">Custom Group</option>
+              </select>
+              <input
+                type="text"
+                id="anSearch"
+                placeholder="Search campaign name..."
+                oninput="renderPerf()"
+              />
             </div>
-            <div class="auto-table-wrap">
-              <table class="auto-table">
-                <thead>
-                  <tr>
-                    <th style="width: 64px">Active</th>
-                    <th>Trigger</th>
-                    <th style="width: 200px">Timing</th>
-                    <th style="width: 150px">Admin Can Disable</th>
-                    <th style="width: 48px"></th>
-                  </tr>
-                </thead>
-                <tbody id="autoTbody"></tbody>
+            <div class="tbl-wrap an-wrap">
+              <table class="an-table">
+                <thead id="perfHead"></thead>
+                <tbody id="perfBody"></tbody>
               </table>
             </div>
           </div>
-
-          <!-- Automation detail — full screen, replaces the list -->
-          <div id="auto-detail" style="display: none">
-            <div class="back-link" onclick="closeAutoDetail()">
-              <i class="fas fa-arrow-left"></i> Back to Automated Emails
-            </div>
-            <div class="page-head" style="margin-bottom: 8px">
-              <div>
-                <div class="ad-id" id="adId" style="margin-bottom: 4px">—</div>
-                <div class="page-title sm" id="adName">—</div>
-              </div>
-            </div>
-            <div style="max-width: 780px">
-              <div class="ad-meta">
-                <div class="ad-meta-row" style="align-items: center;">
-                  <span class="ad-meta-k">Timing</span>
-                  <div style="display: flex; gap: 8px; flex: 1; align-items: center; flex-wrap: wrap;">
-                    <select id="adTimingType" class="ad-select" onchange="updateTimingUI()">
-                      <option value="immediate">Immediate / On action</option>
-                      <option value="before">Before event</option>
-                      <option value="after">After event / Overdue</option>
-                      <option value="periodic">Periodic / Scheduled</option>
-                      <option value="detection">On system detection</option>
-                    </select>
-                    <div id="adTimingSub" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                      <!-- Các trường chọn ngày/giờ sẽ tự sinh ra ở đây -->
-                    </div>
-                  </div>
-                </div>
-                <!-- Đã xóa dòng adChannels theo yêu cầu -->
-                <div class="ad-meta-row">
-                  <span class="ad-meta-k">Email Pattern</span><span id="adPattern">—</span>
-                </div>
-              </div>
-
-              <div class="field" id="f-subject">
-                <label class="req">Subject Line</label>
-                <input
-                  type="text"
-                  id="adSubject"
-                  class="ad-input"
-                  placeholder="Email subject line..."
-                  oninput="autoDirty = true; rtePreviewRender('ad')"
-                />
-              </div>
-
-              <div class="field" id="f-body">
-                <label class="req">Email Body</label>
-                <div id="adEditorMount"></div>
-              </div>
-
-              <div class="form-actions">                
-                <div style="flex: 1"></div>
-                <button
-                  class="btn btn-outline"
-                  type="button"
-                  onclick="closeAutoDetail()"
-                >
-                  Cancel
-                </button>
-                <button
-                  class="btn btn-navy"
-                  type="button"
-                  onclick="saveAutoDrawer()"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
+          <div class="analytics-card">
+            <h3>Email Trend (Last 10 Days)</h3>
+            <canvas id="trendChart" height="110"></canvas>
           </div>
         </section>
       </main>
@@ -1837,7 +1896,7 @@
           ><input
             type="text"
             id="cgName"
-            placeholder="Vip Client in Tokyo"
+            placeholder="e.g. VIP Buyers — Tokyo"
           />
         </div>
         <div class="field">
@@ -1848,8 +1907,28 @@
               User</label
             >
             <label class="radio-row" style="padding: 4px 0"
-              ><input type="radio" name="cgBase" value="Agent" /> Agency</label
+              ><input type="radio" name="cgBase" value="Agent" /> Agent</label
             >
+            <label class="radio-row" style="padding: 4px 0"
+              ><input type="radio" name="cgBase" value="Both" /> Both</label
+            >
+          </div>
+        </div>
+        <div class="field">
+          <label>Filter (optional)</label>
+          <div style="display: flex; gap: 10px">
+            <select id="cgFilter" style="flex: 1">
+              <option value="">— None —</option>
+              <option>Plan type</option>
+              <option>Registration date</option>
+              <option>Activity level</option>
+            </select>
+            <input
+              type="text"
+              id="cgFilterVal"
+              placeholder="value"
+              style="flex: 1"
+            />
           </div>
         </div>
         <div class="form-actions" style="border: none; padding-top: 6px">
@@ -2284,152 +2363,317 @@
       </div>
     </div>
 
-    <!-- ===== AGENCY PICKER MODAL (STANDARDIZED TABLE-ONLY) ===== -->
-    <div class="modal-ov" id="agModal" onclick="if (event.target === this) closeAgencyPicker();">
-      <div class="modal ep-modal" style="width: 1050px; max-width: calc(100% - 32px);">
+    <!-- Insert Agency picker modal (mirrors Agent Management list) -->
+    <div
+      class="modal-ov"
+      id="agModal"
+      onclick="if (event.target === this) closeAgencyPicker();"
+    >
+      <div class="modal ep-modal">
         <div class="ep-head">
-          <h3>Insert agency</h3>
-          <button class="ep-x" type="button" onclick="closeAgencyPicker()" aria-label="Close">&times;</button>
+          <div>
+            <h3>Insert agent</h3>
+          </div>
+          <button
+            class="ep-x"
+            type="button"
+            onclick="closeAgencyPicker()"
+            aria-label="Close"
+          >
+            &times;
+          </button>
         </div>
         <div class="ep-body">
-          <div class="ep-filters" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 12px; background: #fdfbf7; padding: 14px 18px; border-bottom: 1px solid var(--border);">
-            <div class="field-group">
-              <label class="field-label">Status</label>
-              <select id="agStatus" multiple size="3" style="height: auto;">
-                <option value="All">All</option>
-                <option value="Active">Active</option>
-                <option value="Suspended">Suspended</option>
-                <option value="Withdrawn">Withdrawn</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label class="field-label">License Expiry — From</label>
-              <input id="agLicFrom" type="date" />
-            </div>
-            <div class="field-group">
-              <label class="field-label">License Expiry — To</label>
-              <input id="agLicTo" type="date" />
-            </div>
-            <div class="field-group">
-              <label class="field-label">License Preset</label>
-              <select id="agLicPreset">
-                <option value="">— All —</option>
-                <option value="expired">Expired</option>
-                <option value="30d">Expiring in 30d</option>
-                <option value="60d">Expiring in 60d</option>
-                <option value="90d">Expiring in 90d</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label class="field-label">Response Rate (%)</label>
-              <div style="display:flex; gap:4px; align-items:center;">
-                <input id="agRrMin" type="number" min="0" max="100" placeholder="Min %" />
-                <span>–</span>
-                <input id="agRrMax" type="number" min="0" max="100" placeholder="Max %" />
-              </div>
-            </div>
-            <div class="field-group">
-              <label class="field-label">Average Response Time</label>
-              <select id="agRespTime">
-                <option value="All">All</option>
-                <option value="2">≤ 2h</option>
-                <option value="24">≤ 24h</option>
-                <option value="over">&gt; 24h</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label class="field-label">Unpaid / Overdue</label>
-              <select id="agUnpaid">
-                <option value="All">All</option>
-                <option value="Overdue">Overdue</option>
-                <option value="No issue">No issue</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label class="field-label">Violation Count</label>
-              <div style="display:flex; gap:4px; align-items:center;">
-                <input id="agVioMin" type="number" min="0" placeholder="Min" />
-                <span>–</span>
-                <input id="agVioMax" type="number" min="0" placeholder="Max" />
-              </div>
-            </div>
-            <div class="field-group">
-              <label class="field-label">Active Listings</label>
-              <div style="display:flex; gap:4px; align-items:center;">
-                <input id="agListMin" type="number" min="0" placeholder="Min" />
-                <span>–</span>
-                <input id="agListMax" type="number" min="0" placeholder="Max" />
-              </div>
-            </div>
-            <div class="field-group">
-              <label class="field-label">Service Area</label>
-              <select id="agArea" multiple size="3" style="height: auto;">
-                <option value="All">All</option>
-                <option value="Tokyo">Tokyo</option>
-                <option value="Kanagawa">Kanagawa</option>
-                <option value="Osaka">Osaka</option>
-                <option value="Saitama">Saitama</option>
-                <option value="Chiba">Chiba</option>
-                <option value="Kyoto">Kyoto</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label class="field-label">Language</label>
-              <select id="agLang" multiple size="3" style="height: auto;">
-                <option value="All">All</option>
-                <option value="English">English</option>
-                <option value="Spanish">Spanish</option>
-                <option value="Japanese">Japanese</option>
-                <option value="Italian">Italian</option>
-                <option value="Traditional Chinese">Traditional Chinese</option>
-                <option value="Simplified Chinese">Simplified Chinese</option>
-                <option value="Korean">Korean</option>
-                <option value="Vietnamese">Vietnamese</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label class="field-label">Specialism</label>
-              <select id="agSpec" multiple size="3" style="height: auto;">
-                <option value="All">All</option>
-                <option value="Real Estate Brokerage">Real Estate Brokerage</option>
-                <option value="Direct Property Acquisition">Direct Property Acquisition</option>
-                <option value="Rental Brokerage">Rental Brokerage</option>
-                <option value="Property Management">Property Management</option>
-                <option value="Short Sale">Short Sale</option>
-                <option value="Inheritance Consultation">Inheritance Consultation</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label class="field-label">Appraisal Participation</label>
-              <select id="agAppraisal">
-                <option value="All">All</option>
-                <option value="Participating">Participating</option>
-                <option value="Not Participating">Not Participating</option>
-              </select>
-            </div>
-            <div class="field-group" style="grid-column: span 2;">
-              <label class="field-label">Search Keyword</label>
-              <input id="agSearch" type="text" placeholder="Search by name, ID, Katakana or Address..." oninput="renderAGPicker()" />
+          <div class="ep-filters">
+            <select id="agStatus" onchange="renderAGPicker()">
+              <option value="">Status: All</option>
+              <option value="Active">Active</option>
+              <option value="Suspended">Suspended</option>
+              <option value="Withdrawn">Withdrawn</option>
+            </select>
+            <select id="agPlan" onchange="renderAGPicker()">
+              <option value="">Plan: All</option>
+              <option value="Free">Free</option>
+              <option value="Bronze">Bronze</option>
+              <option value="Silver">Silver</option>
+              <option value="Gold">Gold</option>
+            </select>
+            <select id="agArea" onchange="renderAGPicker()">
+              <option value="">Service Area: All</option>
+              <option value="Tokyo">Tokyo</option>
+              <option value="Kanagawa">Kanagawa</option>
+              <option value="Osaka">Osaka</option>
+              <option value="Saitama">Saitama</option>
+              <option value="Chiba">Chiba</option>
+              <option value="Kyoto">Kyoto</option>
+            </select>
+            <select id="agLang" onchange="renderAGPicker()">
+              <option value="">Language: All</option>
+              <option value="Japanese">Japanese</option>
+              <option value="English">English</option>
+              <option value="Chinese (Simplified)">Chinese (Simplified)</option>
+              <option value="Chinese (Traditional)">
+                Chinese (Traditional)
+              </option>
+              <option value="Vietnamese">Vietnamese</option>
+              <option value="Korean">Korean</option>
+              <option value="Other">Other</option>
+            </select>
+            <select id="agSpec" onchange="renderAGPicker()">
+              <option value="">Specialism: All</option>
+              <option value="Real Estate Brokerage">
+                Real Estate Brokerage
+              </option>
+              <option value="Direct Property Acquisition">
+                Direct Property Acquisition
+              </option>
+              <option value="Rental Brokerage">Rental Brokerage</option>
+              <option value="Property Management">Property Management</option>
+              <option value="Short Sale">Short Sale</option>
+              <option value="Inheritance Consultation">
+                Inheritance Consultation
+              </option>
+            </select>
+            <input
+              id="agSearch"
+              type="text"
+              placeholder="Search by name or ID"
+              oninput="renderAGPicker()"
+            />
+            <div class="ep-vt">
+              <button
+                type="button"
+                id="agVtGrid"
+                class="on"
+                onclick="setAGView('grid')"
+              >
+                <i class="fas fa-table-cells-large"></i> Grid
+              </button>
+              <button type="button" id="agVtTable" onclick="setAGView('table')">
+                <i class="fas fa-table-list"></i> Table
+              </button>
             </div>
           </div>
-          <div style="display:flex; justify-content:flex-end; gap:8px; padding:8px 0; border-bottom:1px solid var(--border);">
-            <button class="btn btn-sm" type="button" onclick="resetAGFilters()">Reset Filters</button>
-            <button class="btn btn-sm btn-primary" type="button" onclick="renderAGPicker()"><i class="fas fa-search"></i> Apply Filters</button>
-          </div>
-
-          <div id="agCount" style="font-size: 12px; color: var(--text-sec); margin: 10px 0 6px;">Showing 0 agencies</div>
+          <div
+            id="agCount"
+            style="font-size: 12px; color: var(--text-sec); margin-bottom: 10px"
+          ></div>
           <div id="agResult"></div>
-          <div id="agPager" style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px;"></div>
+          <div
+            id="agPager"
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+              margin-top: 14px;
+            "
+          ></div>
         </div>
         <div class="ep-foot">
           <span class="ep-selinfo" id="agSelInfo">No agency selected</span>
-          <button class="btn btn-outline" type="button" onclick="closeAgencyPicker()">Cancel</button>
-          <button class="btn btn-navy" type="button" onclick="confirmAGPicker()">Insert agency</button>
+          <button
+            class="btn btn-outline"
+            type="button"
+            onclick="closeAgencyPicker()"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-navy"
+            type="button"
+            onclick="confirmAGPicker()"
+          >
+            Insert agent
+          </button>
         </div>
       </div>
     </div>
 
-    <div class="act-menu" id="globalActMenu"></div>
+    <!-- Automation edit drawer -->
+    <div
+      class="auto-drawer-backdrop"
+      id="autoBackdrop"
+      onclick="if (event.target === this) closeAutoDrawer();"
+    ></div>
+    <aside class="auto-drawer" id="autoDrawer" aria-hidden="true">
+      <div class="ad-head">
+        <div>
+          <div class="ad-id" id="adId">—</div>
+          <div class="ad-name" id="adName">—</div>
+        </div>
+        <button
+          class="ad-x"
+          type="button"
+          onclick="closeAutoDrawer()"
+          aria-label="Close"
+        >
+          &times;
+        </button>
+      </div>
+      <div class="ad-body">
+        <div class="ad-meta">
+          <div class="ad-meta-row">
+            <span class="ad-meta-k">Timing</span><span id="adTiming">—</span>
+          </div>
+          <div class="ad-meta-row">
+            <span class="ad-meta-k">Channels</span
+            ><span id="adChannels">—</span>
+          </div>
+          <div class="ad-meta-row">
+            <span class="ad-meta-k">Email Pattern</span
+            ><span id="adPattern">—</span>
+          </div>
+        </div>
+
+        <label class="ad-label">Email Subject</label>
+        <input
+          id="adSubject"
+          class="ad-input"
+          type="text"
+          placeholder="Email subject…"
+          oninput="autoDirty = true"
+        />
+        <div class="ad-vars" id="adSubjectVars"></div>
+
+        <label class="ad-label" style="margin-top: 18px">Email Body</label>
+        <div class="ad-rte">
+          <div class="ad-rte-toolbar">
+            <button
+              type="button"
+              class="ad-tb"
+              title="Bold"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('bold')"
+            >
+              <b>B</b>
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Italic"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('italic')"
+            >
+              <i>I</i>
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Underline"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('underline')"
+            >
+              <u>U</u>
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Heading 1"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('formatBlock', '<h1>')"
+            >
+              H1
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Heading 2"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('formatBlock', '<h2>')"
+            >
+              H2
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Heading 3"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('formatBlock', '<h3>')"
+            >
+              H3
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Bullet list"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('insertUnorderedList')"
+            >
+              <i class="fas fa-list-ul"></i>
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Numbered list"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('insertOrderedList')"
+            >
+              <i class="fas fa-list-ol"></i>
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Link"
+              onmousedown="event.preventDefault()"
+              onclick="adLink()"
+            >
+              <i class="fas fa-link"></i>
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Align left"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('justifyLeft')"
+            >
+              <i class="fas fa-align-left"></i>
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Align center"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('justifyCenter')"
+            >
+              <i class="fas fa-align-center"></i>
+            </button>
+            <button
+              type="button"
+              class="ad-tb"
+              title="Align right"
+              onmousedown="event.preventDefault()"
+              onclick="adExec('justifyRight')"
+            >
+              <i class="fas fa-align-right"></i>
+            </button>
+          </div>
+          <div
+            id="adBody"
+            class="ad-rte-body"
+            contenteditable="true"
+            oninput="autoDirty = true"
+          ></div>
+        </div>
+        <div class="ad-vars" id="adBodyVars"></div>
+      </div>
+      <div class="ad-foot">
+        <button class="btn btn-navy" type="button" onclick="saveAutoDrawer()">
+          Save
+        </button>
+        <button
+          class="btn btn-outline"
+          type="button"
+          onclick="closeAutoDrawer()"
+        >
+          Cancel
+        </button>
+        <span class="ad-restore" onclick="restoreAutoDrawer()"
+          >Restore default</span
+        >
+      </div>
+    </aside>
+
     <div class="toast" id="toast"></div>
     <script src="automation-catalog.js"></script>
 
@@ -2499,8 +2743,8 @@
           id: "c6",
           name: "Re-engagement: Dormant Investors",
           desc: "Win-back for inactive investors.",
-          audience: "End User — Dormant Investors",
-          audType: "End User",
+          audience: "Custom Group — Dormant Investors",
+          audType: "Custom",
           status: "Sent",
           timing: "one-time",
           sentDate: "2026-04-28",
@@ -2618,8 +2862,8 @@
           { audience: "End User — Premium Members", audType: "End User" },
           { audience: "Agent — All Agents", audType: "Agent" },
           { audience: "Agent — Premium Plan", audType: "Agent" },
-          { audience: "End User — Dormant Investors", audType: "End User" },
-          { audience: "End User — VIP Buyers Tokyo", audType: "End User" },
+          { audience: "Custom Group — Dormant Investors", audType: "Custom" },
+          { audience: "Custom Group — VIP Buyers Tokyo", audType: "Custom" },
         ];
         const titlePool = [
           "Seasonal Property Digest",
@@ -2634,7 +2878,7 @@
           "Limited-Time Offer Blast",
         ];
         const statusPool = ["Sent", "Sent", "Sent", "Scheduled", "Draft"];
-        const target = 10;
+        const target = 60;
         let n = 1;
         while (campaigns.length < target) {
           const a = audiencePool[n % audiencePool.length];
@@ -2753,7 +2997,7 @@
 
       /* Shared custom lead groups — SAME localStorage key Lead Management uses.
          Shape per group: { id, name, entityType, leadIds[], createdDate }.
-         We surface them in the Audience step's End User picker; groups
+         We surface them in the Audience step's Custom Group picker; groups
          created here persist so they appear in Lead Management / Messages too. */
       const GROUP_KEY = "yuushiLeadGroups";
       const LEAD_GROUP_SEED = [
@@ -2794,7 +3038,7 @@
         },
         {
           id: "g6",
-          name: "End user - VIP Buyers in Tokyo",
+          name: "VIP Buyers — Tokyo",
           entityType: "end_user",
           leadIds: new Array(25).fill("U"),
           createdDate: "2026-05-01",
@@ -2841,10 +3085,8 @@
           .querySelectorAll(".screen")
           .forEach((s) => s.classList.remove("active"));
         $("screen-" + screen).classList.add("active");
-        if (screen === "campaigns") {
-          renderCampaigns(true);
-          setTimeout(initChart, 30);
-        }
+        if (screen === "campaigns") renderCampaigns(true);
+        if (screen === "analytics") setTimeout(initChart, 30);
       }
 
       function toast(msg) {
@@ -2922,21 +3164,17 @@
       }
 
       /* ===================== CAMPAIGNS LIST ===================== */
-     function renderCampaigns(resetPage) {
+      function renderCampaigns(resetPage) {
         if (resetPage) campPage = 1;
         const q = ($("campSearch").value || "").toLowerCase();
         const st = $("campStatus").value;
-        const sortDir = $("anTime") ? $("anTime").value : "desc";
-        let filtered = campaigns.filter((c) => {
+        const au = $("campAud").value;
+        const filtered = campaigns.filter((c) => {
           if (q && !c.name.toLowerCase().includes(q)) return false;
           if (st && c.status !== st) return false;
+          if (au === "Custom" ? c.audType !== "Custom" : au && c.audType !== au)
+            return false;
           return true;
-        });
-        filtered = filtered.slice().sort((a, b) => {
-          const da = campTotals(a).firstSentDate || a.sentDate || "";
-          const db = campTotals(b).firstSentDate || b.sentDate || "";
-          const cmp = da < db ? -1 : da > db ? 1 : 0;
-          return sortDir === "asc" ? cmp : -cmp;
         });
         const total = filtered.length;
         const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -2953,8 +3191,41 @@
           campPage * PAGE_SIZE,
         );
         $("campBody").innerHTML = rows.length
-          ? rows.map((c) => campRowHtml(c)).join("")
-          : `<tr><td colspan="9" style="text-align:center;color:#999;padding:30px">No campaigns found.</td></tr>`;
+          ? rows
+              .map((c) => {
+                const t = campTotals(c);
+                const openR = rateText(t.opened, t.recipients, c.body, false);
+                const clickR = rateText(t.clicked, t.recipients, c.body, true);
+                const convR = rateText(
+                  t.converted,
+                  t.recipients,
+                  c.body,
+                  false,
+                );
+                return `
+            <tr>
+              <td class="cell-strong">${escapeHtml(c.name)}</td>
+              <td>${escapeHtml(c.audience)}</td>
+              <td><span class="badge ${c.status.toLowerCase()}">${c.status}</span></td>
+              <td>${t.recipients.toLocaleString()}</td>
+              <td>${openR}</td>
+              <td>${clickR}</td>
+              <td>${convR}</td>
+              <td>
+                <div class="act-wrap">
+                  <button class="act-btn" onclick="toggleActMenu(event,'${c.id}')"><i class="fas fa-ellipsis"></i></button>
+                  <div class="act-menu" id="act-${c.id}">
+                    <div class="act-item" onclick="campAction('edit','${c.id}')">View</div>
+                    <div class="act-item" onclick="campAction('edit','${c.id}')">Edit</div>
+                    <div class="act-item" onclick="campAction('recreate','${c.id}')">Recreate</div>
+                    <div class="act-item danger" onclick="campAction('delete','${c.id}')">Delete</div>
+                  </div>
+                </div>
+              </td>
+            </tr>`;
+              })
+              .join("")
+          : `<tr><td colspan="8" style="text-align:center;color:#999;padding:30px">No campaigns found.</td></tr>`;
         buildPager("campPager", total, campPage, (p) => {
           campPage = p;
           renderCampaigns();
@@ -2962,29 +3233,20 @@
       }
       function toggleActMenu(e, id) {
         e.stopPropagation();
-        const menu = $("globalActMenu");
-        const wasOpenForThis =
-          menu.classList.contains("open") && menu.dataset.forId === id;
-        menu.classList.remove("open");
-        if (wasOpenForThis) return;
-        const c = campaigns.find((x) => x.id === id);
-        menu.innerHTML = campActionsHtml(c);
-        menu.dataset.forId = id;
-        const rect = e.currentTarget.getBoundingClientRect();
-        menu.style.top = rect.bottom + 4 + "px";
-        menu.style.left = "auto";
-        menu.style.right = window.innerWidth - rect.right + "px";
-        menu.classList.add("open");
+        const m = $("act-" + id);
+        const open = m.classList.contains("open");
+        document
+          .querySelectorAll(".act-menu")
+          .forEach((x) => x.classList.remove("open"));
+        if (!open) m.classList.add("open");
       }
       function campAction(action, id) {
-        $("globalActMenu").classList.remove("open");
+        document
+          .querySelectorAll(".act-menu")
+          .forEach((x) => x.classList.remove("open"));
         const c = campaigns.find((x) => x.id === id);
         if (action === "edit") {
           openBuilder(c);
-          return;
-        }
-        if (action === "view") {
-          openBuilder(c, { view: true });
           return;
         }
         if (action === "recreate") {
@@ -3002,29 +3264,27 @@
       let currentStep = 1;
       let editingCampaign = null;
       let recreateMode = false;
-      let viewMode = false;
 
       function audTypeToRadio(t) {
-        if (t === "Agent") return "all_agents";
-        if (t === "All") return "all_leads";
-        return "all_users";
+        return t === "Agent"
+          ? "all_agents"
+          : t === "Custom"
+            ? "custom"
+            : "all_users";
       }
       function openBuilder(camp, opts) {
         opts = opts || {};
         recreateMode = !!opts.recreate;
-        viewMode = !!opts.view;
         // in recreate mode we do NOT bind to the original campaign
         editingCampaign = recreateMode ? null : camp || null;
         currentStep = 1;
         $("camp-list").style.display = "none";
         $("camp-builder").style.display = "block";
-        $("builderTitle").textContent = viewMode
-          ? "View Campaign"
-          : recreateMode
-            ? "Recreate Campaign"
-            : camp
-              ? "Edit Campaign"
-              : "New Email Campaign";
+        $("builderTitle").textContent = recreateMode
+          ? "Recreate Campaign"
+          : camp
+            ? "Edit Campaign"
+            : "New Email Campaign";
         const src = camp || null;
         $("bName").value = src
           ? recreateMode
@@ -3042,7 +3302,7 @@
           if (r) r.checked = true;
         } else {
           const r = document.querySelector(
-            'input[name="aud"][value="all_leads"]',
+            'input[name="aud"][value="all_users"]',
           );
           if (r) r.checked = true;
         }
@@ -3063,15 +3323,6 @@
             }
           }, 10);
         }
-        // View mode: lock all inputs, no editing allowed
-        [$("bName"), $("bDesc"), $("bSubject")].forEach((el) => {
-          if (el) el.disabled = viewMode;
-        });
-        document
-          .querySelectorAll('input[name="aud"], input[name="sched"]')
-          .forEach((el) => (el.disabled = viewMode));
-        if ($("b_rteBody"))
-          $("b_rteBody").setAttribute("contenteditable", viewMode ? "false" : "true");
         renderStep();
       }
       function recreateCampaign(c) {
@@ -3103,9 +3354,7 @@
         if (currentStep < 5)
           html += `<button class="btn btn-navy" onclick="nextStep()">Next <i class="fas fa-arrow-right"></i></button>`;
         else
-          html += viewMode
-            ? `<button class="btn btn-outline" onclick="closeBuilder()">Close</button>`
-            : `<button class="btn btn-outline" onclick="saveDraft()">Save as Draft</button><button class="btn btn-navy" onclick="launchCampaign()">Launch Campaign</button>`;
+          html += `<button class="btn btn-outline" onclick="saveDraft()">Save as Draft</button><button class="btn btn-navy" onclick="launchCampaign()">Launch Campaign</button>`;
         $("builderActions").innerHTML = html;
         if (currentStep === 5) renderReview();
       }
@@ -3141,25 +3390,19 @@
       }
       function onAudChange() {
         const v = document.querySelector('input[name="aud"]:checked').value;
-        $("groupPicker").style.display = (v === "group_user" || v === "group_agent") ? "block" : "none";
+        $("groupPicker").style.display = v === "custom" ? "block" : "none";
         updateReach();
       }
       function renderGroupPicker() {
-        const v = document.querySelector('input[name="aud"]:checked')?.value;
-        const wantType = v === "group_agent" ? "agent" : "end_user";
         const q = ($("groupSearch").value || "").toLowerCase();
-        
-        // SỬA: Đổi readLeadGroups() thành getLeadGroups()
-        $("groupOpts").innerHTML = getLeadGroups()
-          .filter((g) => g.entityType === wantType && g.name.toLowerCase().includes(q))
+        $("groupOpts").innerHTML = audienceGroupsView()
+          .filter((g) => g.name.toLowerCase().includes(q))
           .map(
             (g) => `
-          <label class="group-opt"><input type="radio" name="pickedGroup" value="${g.id}" onchange="updateReach()"> ${escapeHtml(g.name)} <span class="gcount">${(g.leadIds || []).length.toLocaleString()} members</span></label>
-        `,
+          <label class="group-opt"><input type="checkbox" value="${g.id}" onchange="updateReach()"> ${g.name} <span class="gcount">${g.members.toLocaleString()} members</span></label>`,
           )
           .join("");
       }
-
       function updateReach() {
         const v = document.querySelector('input[name="aud"]:checked').value;
         let n = 0;
@@ -3167,12 +3410,13 @@
         else if (v === "all_agents") n = 430;
         else if (v === "all_leads") n = 1670;
         else {
-          const picked = document.querySelector('#groupOpts input[name="pickedGroup"]:checked');
-          if (picked) {
-            // SỬA: Đổi readLeadGroups() thành getLeadGroups()
-            const g = getLeadGroups().find((x) => x.id === picked.value);
-            if (g) n = (g.leadIds || []).length;
-          }
+          const view = audienceGroupsView();
+          document
+            .querySelectorAll("#groupOpts input:checked")
+            .forEach((cb) => {
+              const g = view.find((x) => x.id === cb.value);
+              if (g) n += g.members;
+            });
         }
         $("reachNote").textContent =
           "Estimated recipients: ~" + n.toLocaleString();
@@ -3191,11 +3435,9 @@
         let audText =
           {
             all_users: "All End Users",
-            all_agents: "All Agencies",
-            all_leads: "All (End Users + Agency)",
-            group_user: "End User Group",
-            group_agent: "Agency Group",
-          }[audV] || audV;
+            all_agents: "All Agents",
+            all_leads: "All Leads",
+          }[audV] || "Custom Group";
         const reach = $("reachNote").textContent.replace(
           "Estimated recipients: ~",
           "",
@@ -3247,16 +3489,20 @@
         const body = $("b_rteBody") ? $("b_rteBody").innerHTML : "";
         const desc = $("bDesc").value.trim();
         const audV = document.querySelector('input[name="aud"]:checked').value;
-        let audType, audience;
-        if (audV === "all_agents") { audType = "Agent"; audience = "Agency — All Agents"; }
-        else if (audV === "all_leads") { audType = "All"; audience = "All (End User + Agency)"; }
-        else if (audV === "group_user" || audV === "group_agent") {
-          const picked = document.querySelector('#groupOpts input[name="pickedGroup"]:checked');
-          const g = picked ? readLeadGroups().find((x) => x.id === picked.value) : null;
-          audType = audV === "group_agent" ? "Agent" : "End User";
-          audience = (audV === "group_agent" ? "Agency — " : "End User — ") + (g ? g.name : "Unnamed group");
-        }
-        else { audType = "End User"; audience = "End User — All Investors"; }
+        const audType =
+          audV === "all_agents"
+            ? "Agent"
+            : audV === "custom"
+              ? "Custom"
+              : audV === "all_leads"
+                ? "Lead"
+                : "End User";
+        const audience =
+          {
+            all_users: "End User — All Investors",
+            all_agents: "Agent — All Agents",
+            all_leads: "All Leads (End Users + Agents)",
+          }[audV] || "Custom Group";
         const schedV = document.querySelector(
           'input[name="sched"]:checked',
         ).value;
@@ -3432,123 +3678,6 @@
           ? '<span class="chbadge on">O</span>'
           : '<span class="chbadge off">X</span>';
       }
-      function updateTimingUI() {
-        const type = $("adTimingType").value;
-        const sub = $("adTimingSub");
-        
-        if (type === "immediate" || type === "detection") {
-          sub.innerHTML = '';
-        } else if (type === "before" || type === "after") {
-          sub.innerHTML = `
-            <input type="number" id="adTimingVal" class="ad-input" min="1" value="7" oninput="autoDirty = true">
-            <span style="font-size:12.5px; color:var(--text-sec)">days</span>
-          `;
-        } else if (type === "periodic") {
-          sub.innerHTML = `
-            <select id="adTimingFreq" class="ad-select" onchange="renderPeriodicDayUI(); autoDirty = true">
-              <option value="daily">Daily digest</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-            </select>
-            <span id="adTimingDayWrapper" style="display:none; align-items:center; gap:8px;">
-               <!-- Render day selector here -->
-            </span>
-            <span style="font-size:12.5px; color:var(--text-sec)">at</span>
-            <input type="time" id="adTimingTime" class="ad-input" value="09:00" oninput="autoDirty = true">
-          `;
-          renderPeriodicDayUI();
-        }
-        autoDirty = true;
-      }
-
-      function renderPeriodicDayUI() {
-        const freq = $("adTimingFreq") ? $("adTimingFreq").value : "daily";
-        const wrap = $("adTimingDayWrapper");
-        if (!wrap) return;
-        
-        if (freq === "daily") {
-          wrap.style.display = "none";
-          wrap.innerHTML = "";
-        } else if (freq === "weekly") {
-          wrap.style.display = "flex";
-          wrap.innerHTML = `
-            <span style="font-size:12.5px; color:var(--text-sec)">on</span>
-            <select id="adTimingDayW" class="ad-select" onchange="autoDirty = true">
-              <option value="Mon">Monday</option>
-              <option value="Tue">Tuesday</option>
-              <option value="Wed">Wednesday</option>
-              <option value="Thu">Thursday</option>
-              <option value="Fri">Friday</option>
-              <option value="Sat">Saturday</option>
-              <option value="Sun">Sunday</option>
-            </select>
-          `;
-        } else if (freq === "monthly") {
-          wrap.style.display = "flex";
-          wrap.innerHTML = `
-            <span style="font-size:12.5px; color:var(--text-sec)">on day</span>
-            <select id="adTimingDayM" class="ad-select" onchange="autoDirty = true">
-              ${Array.from({length:31}, (_,i) => `<option value="${i+1}">${i+1}</option>`).join('')}
-            </select>
-          `;
-        }
-      }
-
-      function parseAndSetTiming(timingStr) {
-        const str = (timingStr || "").toLowerCase();
-        const typeEl = $("adTimingType");
-        
-        // 1. Dựa theo tài liệu: Immediate
-        if (str.includes("immediate") || str.includes("on duplicate") || str.includes("on inquiry")) {
-          typeEl.value = "immediate";
-          updateTimingUI();
-        } 
-        // 2. Dựa theo tài liệu: x days before...
-        else if (str.includes("before") || str.includes("day before")) {
-          typeEl.value = "before";
-          updateTimingUI();
-          let match = str.match(/(\d+)\s*days/);
-          if (match) $("adTimingVal").value = match[1];
-          else if (str.includes("day before")) $("adTimingVal").value = "1";
-        } 
-        // 3. Dựa theo tài liệu: overdue, no login...
-        else if (str.includes("overdue") || str.includes("no login") || str.includes("after receipt")) {
-          typeEl.value = "after";
-          updateTimingUI();
-          let match = str.match(/(\d+)\s*(days|h|hours)/);
-          if (match) {
-            let val = match[1];
-            if (match[2] === "h" || match[2] === "hours") val = (parseInt(val)/24).toString(); // Chuyển 48h thành 2 day
-            $("adTimingVal").value = val;
-          }
-        } 
-        // 4. Dựa theo tài liệu: Periodic (Once daily digest, every monday 09:00, 1st of month...)
-        else if (str.includes("every") || str.includes("daily") || str.includes("monthly") || str.includes("1st of month")) {
-          typeEl.value = "periodic";
-          updateTimingUI();
-          
-          if (str.includes("daily")) {
-            $("adTimingFreq").value = "daily";
-          } else if (str.includes("weekly") || str.includes("every monday")) {
-            $("adTimingFreq").value = "weekly";
-            renderPeriodicDayUI();
-            if (str.includes("monday")) $("adTimingDayW").value = "Mon";
-          } else if (str.includes("monthly") || str.includes("1st of month")) {
-            $("adTimingFreq").value = "monthly";
-            renderPeriodicDayUI();
-            $("adTimingDayM").value = "1";
-          }
-          
-          let timeMatch = str.match(/(\d{2}:\d{2})/);
-          if (timeMatch) $("adTimingTime").value = timeMatch[1];
-          else $("adTimingTime").value = "09:00";
-        } 
-        // 5. Dựa theo tài liệu: On detection, on cap, on expiry...
-        else {
-          typeEl.value = "detection";
-          updateTimingUI();
-        }
-      }
       function renderAutoVars(mountId, kind) {
         const el = $(mountId);
         if (!el) return;
@@ -3619,31 +3748,28 @@
         autoDirty = false;
         $("adId").textContent = e.id;
         $("adName").textContent = e.name;
-        parseAndSetTiming(e.timing);
+        $("adTiming").textContent = e.timing;
+        $("adChannels").innerHTML =
+          "Chat " + channelBadge(e.chat) + " · Email " + channelBadge(e.email);
         $("adPattern").innerHTML =
           "<b>" +
           e.pattern +
           "</b> — " +
           escapeHtml(AUTO_PATTERN_DESC[e.pattern]);
-
-        // Tạo khung Rich Text Editor nếu chưa có
-        if (!$("ad_rteBody")) {
-          buildRTE("adEditorMount", "ad");
-        }
-
         $("adSubject").value = st.emailSubject || "";
-        $("ad_rteBody").innerHTML = st.emailBody || "";
-        rtePreviewRender("ad");
-
-        $("auto-list").style.display = "none";
-        $("auto-detail").style.display = "block";
-        window.scrollTo(0, 0);
+        $("adBody").innerHTML = st.emailBody || "";
+        renderAutoVars("adSubjectVars", "subject");
+        renderAutoVars("adBodyVars", "body");
+        $("autoBackdrop").classList.add("open");
+        $("autoDrawer").classList.add("open");
+        $("autoDrawer").setAttribute("aria-hidden", "false");
       }
-      function closeAutoDetail() {
+      function closeAutoDrawer() {
         if (autoDirty && !confirm("You have unsaved changes. Discard them?"))
           return;
-        $("auto-detail").style.display = "none";
-        $("auto-list").style.display = "block";
+        $("autoBackdrop").classList.remove("open");
+        $("autoDrawer").classList.remove("open");
+        $("autoDrawer").setAttribute("aria-hidden", "true");
         autoEditingId = null;
         autoDirty = false;
       }
@@ -3651,14 +3777,29 @@
         if (!autoEditingId) return;
         AutoStore.save(autoEditingId, {
           emailSubject: $("adSubject").value,
-          emailBody: $("ad_rteBody").innerHTML,
+          emailBody: $("adBody").innerHTML,
         });
         autoDirty = false;
         renderAutomations();
         toast("Automated email saved");
-        $("auto-detail").style.display = "none";
-        $("auto-list").style.display = "block";
+        $("autoBackdrop").classList.remove("open");
+        $("autoDrawer").classList.remove("open");
         autoEditingId = null;
+      }
+      function restoreAutoDrawer() {
+        if (!autoEditingId) return;
+        if (
+          !confirm(
+            "Restore this email to the catalog default? Your edits will be replaced.",
+          )
+        )
+          return;
+        const st = AutoStore.restore(autoEditingId);
+        $("adSubject").value = st.emailSubject || "";
+        $("adBody").innerHTML = st.emailBody || "";
+        autoDirty = false;
+        renderAutomations();
+        toast("Restored to default");
       }
       // kept (null-safe) for campaign / group / template flows on other tabs
       function renderAutoGroupPicker() {
@@ -3701,7 +3842,6 @@
                 <button type="button" class="rte-tb" title="Insert variable" onmousedown="event.preventDefault()" onclick="rteVarToggle(this)"><i class="fas fa-code"></i></button>
                 <div class="var-dropdown">${VARIABLES.map((v) => `<span class="var-chip" onmousedown="event.preventDefault()" onclick="rteInsertVar(this,'${v}')">${v}</span>`).join("")}</div>
                 <button type="button" class="rte-tb" title="Insert property" onmousedown="event.preventDefault()" onclick="openPropertyPicker(this)"><i class="fas fa-building"></i> Property</button>
-                <button type="button" class="rte-tb" title="Insert agency" onmousedown="event.preventDefault()" onclick="openAgencyPicker(this)"><i class="fas fa-user-tie"></i> Agent</button>
               </div>
               <div class="rte-body" id="${prefix}_rteBody" contenteditable="true" data-ph="Write your email content here..."></div>
               <div style="font-size:11.5px;color:var(--text-sec);margin:14px 0 6px;font-weight:700">Email preview</div>
@@ -3713,10 +3853,9 @@
             </div>
           </div>`;
         rtePreviewRender(prefix);
-        $(prefix + "_rteBody").addEventListener("input", () => {
-          if (prefix === "ad") autoDirty = true;
-          rtePreviewRender(prefix);
-        });
+        $(prefix + "_rteBody").addEventListener("input", () =>
+          rtePreviewRender(prefix),
+        );
       }
       function rteBody(el) {
         return el.closest(".rte").querySelector(".rte-body");
@@ -3781,7 +3920,7 @@
             ? $("bSubject")
             : prefix === "t"
               ? $("tSubject")
-              : $("adSubject");
+              : $("aSubject");
         const subj = subjEl && subjEl.value ? subjEl.value : "(no subject)";
         $(prefix + "_preview").innerHTML =
           `<div class="pv-email"><div class="pv-email-head">From: YUUSHI &lt;no-reply@yuushi.jp&gt;<div class="pe-subj">${escapeHtml(subj)}</div></div><div class="pv-email-body">${html}</div></div>`;
@@ -4212,7 +4351,7 @@
           toast("Select a property first");
           return;
         }
-        if (autoPickerKind === "subject" && epTargetBody === $("ad_rteBody")) {
+        if (autoPickerKind === "subject" && epTargetBody === $("adBody")) {
           insertAutoVarText("subject", p.name);
           autoPickerKind = null;
           closePropertyPicker();
@@ -4498,17 +4637,17 @@
           toast("Select an agency first");
           return;
         }
-        if (autoPickerKind === "subject" && agTargetBody === $("ad_rteBody")) {
+        if (autoPickerKind === "subject" && agTargetBody === $("adBody")) {
           insertAutoVarText("subject", a.company);
           autoPickerKind = null;
           closeAgencyPicker();
-          toast("Agency inserted.");
+          toast("Agent inserted.");
           return;
         }
         autoPickerKind = null;
         insertAgencyName(a);
         closeAgencyPicker();
-        toast("Agency inserted.");
+        toast("Agent inserted.");
       }
 
       function renderTplCards(mountId, prefix) {
@@ -4531,7 +4670,7 @@
             ? $("bSubject")
             : prefix === "t"
               ? $("tSubject")
-              : $("adSubject");
+              : $("aSubject");
         if (subjEl && t.subject) subjEl.value = t.subject;
         if ($(prefix + "_rteBody")) {
           $(prefix + "_rteBody").innerText = t.body;
@@ -4557,7 +4696,8 @@
         }
         const baseEl = document.querySelector('input[name="cgBase"]:checked');
         const base = baseEl ? baseEl.value : "End User";
-        const entityType = base === "Agent" ? "agent" : "end_user";
+        const entityType =
+          base === "Agent" ? "agent" : base === "Both" ? "both" : "end_user";
         // persist to the SHARED Lead Management key so it appears everywhere
         const groups = getLeadGroups();
         groups.push({
@@ -4574,9 +4714,87 @@
         toast('Group "' + name + '" created successfully.');
       }
 
-      /* ===================== ANALYTICS HELPERS (merged into campaigns) ===================== */
+      /* ===================== ANALYTICS ===================== */
+      // 3-state column sort: default Sent Date descending.
+      let anSortKey = "sentDate";
+      let anSortDir = "desc"; // "asc" | "desc" | null(unsorted)
       const anExpanded = {}; // recurring campaign id -> expanded?
+      const TODAY = new Date("2026-06-21");
 
+      const AN_COLS = [
+        { key: "name", label: "Campaign Name", sortable: true },
+        { key: "audience", label: "Audience", sortable: false },
+        { key: "sentDate", label: "Sent Date", sortable: true },
+        { key: "recipients", label: "Recipients", sortable: true },
+        { key: "opened", label: "Opened", sortable: true },
+        { key: "clicked", label: "Clicked", sortable: true },
+        { key: "converted", label: "Converted", sortable: true },
+        { key: "actions", label: "Actions", sortable: false },
+      ];
+
+      function onAnTimeChange() {
+        $("anCustomRange").classList.toggle(
+          "on",
+          $("anTime").value === "custom",
+        );
+        renderPerf();
+      }
+      function anSortBy(key) {
+        if (anSortKey === key) {
+          // asc -> desc -> unsorted
+          if (anSortDir === "asc") anSortDir = "desc";
+          else if (anSortDir === "desc") {
+            anSortDir = null;
+            anSortKey = null;
+          } else anSortDir = "asc";
+        } else {
+          anSortKey = key;
+          anSortDir = "asc";
+        }
+        renderPerf();
+      }
+      // numeric value of a metric (rate keys derived; N/A click rate -> -1)
+      function anMetric(c, key) {
+        const t = campTotals(c);
+        switch (key) {
+          case "recipients":
+            return t.recipients;
+          case "opened":
+            return t.opened;
+          case "clicked":
+            return t.clicked;
+          case "converted":
+            return t.converted;
+          case "openRate":
+            return t.recipients ? t.opened / t.recipients : 0;
+          case "clickRate":
+            return campLinkCount(c.body) === 0
+              ? -1
+              : t.recipients
+                ? t.clicked / t.recipients
+                : 0;
+          case "conversionRate":
+            return t.recipients ? t.converted / t.recipients : 0;
+          case "sentDate":
+            return t.firstSentDate || "";
+          case "name":
+            return c.name.toLowerCase();
+          default:
+            return 0;
+        }
+      }
+      function openRatePill(numer, denom) {
+        const r = denom ? (numer / denom) * 100 : 0;
+        let cls = "grey";
+        if (!denom) cls = "grey";
+        else if (r >= 50) cls = "green";
+        else if (r >= 30) cls = "amber";
+        else cls = "red";
+        return `<span class="pill ${cls}">${denom ? r.toFixed(1) + "%" : "0%"}</span>`;
+      }
+      function pct(numer, denom) {
+        return denom ? ((numer / denom) * 100).toFixed(1) + "%" : "0%";
+      }
       // Pill color class per metric (different thresholds for opened/clicked/converted)
       function ratePillClass(metric, r, denom, hasLink) {
         if (metric === "clicked" && !hasLink) return "grey"; // N/A
@@ -4604,11 +4822,68 @@
       function fmtDate(d) {
         return d || "—";
       }
+      function anWithinRange(dateStr) {
+        const mode = $("anTime").value;
+        if (mode === "all" || !dateStr) return mode === "all" ? true : false;
+        const d = new Date(dateStr);
+        if (mode === "30" || mode === "90") {
+          const days = mode === "30" ? 30 : 90;
+          const cutoff = new Date(TODAY);
+          cutoff.setDate(cutoff.getDate() - days);
+          return d >= cutoff && d <= TODAY;
+        }
+        if (mode === "custom") {
+          const f = $("anFrom").value ? new Date($("anFrom").value) : null;
+          const t = $("anTo").value ? new Date($("anTo").value) : null;
+          if (f && d < f) return false;
+          if (t && d > t) return false;
+          return true;
+        }
+        return true;
+      }
+      function renderPerfHead() {
+        $("perfHead").innerHTML =
+          "<tr>" +
+          AN_COLS.map((col) => {
+            const tip =
+              col.key === "recipients"
+                ? ' title="Actual number of recipients at send time. Users who joined later are not included."'
+                : "";
+            if (!col.sortable) {
+              return `<th${tip}>${col.label}</th>`;
+            }
+            let ind = "";
+            if (anSortKey === col.key)
+              ind = `<span class="an-sort-ind">${anSortDir === "asc" ? "▲" : "▼"}</span>`;
+            return `<th class="sortable"${tip} onclick="anSortBy('${col.key}')">${col.label}${ind}</th>`;
+          }).join("") +
+          "</tr>";
+      }
+      function anAggRowHtml(c) {
+        const t = campTotals(c);
+        const recurring = c.timing === "recurring";
+        const exp = !!anExpanded[c.id];
+        const arrow = recurring
+          ? `<button class="an-exp" onclick="event.stopPropagation();toggleAnExpand('${c.id}')">${exp ? "▼" : "▶"}</button>`
+          : "";
+        const sentCell = recurring
+          ? "since " + fmtDate(t.firstSentDate)
+          : fmtDate(t.firstSentDate);
+        return `<tr>
+          <td class="cell-strong" title="${escapeHtml(c.name)}">${arrow}${escapeHtml(c.name)}</td>
+          <td>${escapeHtml(c.audType)}</td>
+          <td>${sentCell}</td>
+          <td>${t.recipients.toLocaleString()}</td>
+          <td>${metricCell("opened", t.opened, t.recipients)}</td>
+          <td>${metricCell("clicked", t.clicked, t.recipients, c.body)}</td>
+          <td>${metricCell("converted", t.converted, t.recipients)}</td>
+          <td><button class="btn btn-outline btn-sm" onclick="recreateCampaign(campaigns.find(x=>x.id==='${c.id}'))">Recreate</button></td>
+        </tr>`;
+      }
       function anSubRowHtml(c, s) {
         return `<tr class="an-sub">
           <td>${fmtDate(s.sentDate)}</td>
           <td>${escapeHtml(c.audType)}</td>
-          <td></td>
           <td>${fmtDate(s.sentDate)}</td>
           <td>${s.recipients.toLocaleString()}</td>
           <td>${metricCell("opened", s.opened, s.recipients)}</td>
@@ -4619,56 +4894,51 @@
       }
       function toggleAnExpand(id) {
         anExpanded[id] = !anExpanded[id];
-        renderCampaigns();
+        renderPerf();
       }
-      function campActionsHtml(c) {
-        if (c.status === "Sent") {
-          return (
-            `<div class="act-item" onclick="campAction('view','${c.id}')">View</div>` +
-            `<div class="act-item" onclick="campAction('recreate','${c.id}')">Recreate</div>`
-          );
+      function renderPerf() {
+        renderPerfHead();
+        const aud = $("anAud") ? $("anAud").value : "";
+        const q = ($("anSearch") ? $("anSearch").value : "")
+          .toLowerCase()
+          .trim();
+        // ONLY Sent campaigns
+        let rows = campaigns.filter((c) => c.status === "Sent");
+        rows = rows.filter((c) => {
+          const t = campTotals(c);
+          if (!anWithinRange(t.firstSentDate)) return false;
+          if (aud && c.audType !== aud) return false;
+          if (q && !c.name.toLowerCase().includes(q)) return false;
+          return true;
+        });
+        if (anSortKey && anSortDir) {
+          rows.sort((a, b) => {
+            let va = anMetric(a, anSortKey);
+            let vb = anMetric(b, anSortKey);
+            let cmp;
+            if (typeof va === "string" && typeof vb === "string")
+              cmp = va < vb ? -1 : va > vb ? 1 : 0;
+            else cmp = va - vb;
+            return anSortDir === "asc" ? cmp : -cmp;
+          });
         }
-        // Scheduled / Draft
-        return (
-          `<div class="act-item" onclick="campAction('edit','${c.id}')">Edit</div>` +
-          `<div class="act-item danger" onclick="campAction('delete','${c.id}')">Delete</div>`
-        );
-      }
-      function campRowHtml(c) {
-        const t = campTotals(c);
-        const recurring = c.timing === "recurring";
-        const exp = !!anExpanded[c.id];
-        const arrow = recurring
-          ? `<button class="an-exp" onclick="event.stopPropagation();toggleAnExpand('${c.id}')">${exp ? "▼" : "▶"}</button>`
-          : "";
-        const sentCell =
-          c.status !== "Sent"
-            ? "—"
-            : recurring
-              ? "since " + fmtDate(t.firstSentDate)
-              : fmtDate(t.firstSentDate);
-        let html = `<tr>
-          <td class="cell-strong" title="${escapeHtml(c.name)}">${arrow}${escapeHtml(c.name)}</td>
-          <td>${escapeHtml(c.audience)}</td>
-          <td><span class="badge ${c.status.toLowerCase()}">${c.status}</span></td>
-          <td>${sentCell}</td>
-          <td>${t.recipients.toLocaleString()}</td>
-          <td>${metricCell("opened", t.opened, t.recipients)}</td>
-          <td>${metricCell("clicked", t.clicked, t.recipients, c.body)}</td>
-          <td>${metricCell("converted", t.converted, t.recipients)}</td>
-          <td>
-            <div class="act-wrap">
-              <button class="act-btn" onclick="toggleActMenu(event,'${c.id}')"><i class="fas fa-ellipsis"></i></button>
-            </div>
-          </td>
-        </tr>`;
-        if (recurring && exp && c.sends) {
-          c.sends.forEach((s) => (html += anSubRowHtml(c, s)));
+        if (!rows.length) {
+          $("perfBody").innerHTML =
+            `<tr><td colspan="${AN_COLS.length}" style="text-align:center;color:#999;padding:30px">No sent campaigns match your filters.</td></tr>`;
+          return;
         }
-        return html;
+        let html = "";
+        rows.forEach((c) => {
+          html += anAggRowHtml(c);
+          if (c.timing === "recurring" && anExpanded[c.id] && c.sends) {
+            c.sends.forEach((s) => (html += anSubRowHtml(c, s)));
+          }
+        });
+        $("perfBody").innerHTML = html;
       }
       let chartInstance = null;
       function initChart() {
+        renderPerf();
         if (chartInstance) return;
         const ctx = $("trendChart");
         if (!ctx || !window.Chart) return;
@@ -4736,8 +5006,10 @@
       }
 
       document.addEventListener("click", (e) => {
-        if (!e.target.closest(".act-wrap") && !e.target.closest("#globalActMenu"))
-          $("globalActMenu").classList.remove("open");
+        if (!e.target.closest(".act-wrap"))
+          document
+            .querySelectorAll(".act-menu")
+            .forEach((x) => x.classList.remove("open"));
         if (!e.target.closest(".rte-toolbar"))
           document
             .querySelectorAll(".var-dropdown")
@@ -4745,8 +5017,8 @@
       });
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
-          if ($("auto-detail").style.display === "block") {
-            closeAutoDetail();
+          if ($("autoDrawer").classList.contains("open")) {
+            closeAutoDrawer();
             return;
           }
           closeCreateGroup();
@@ -4763,7 +5035,6 @@
       renderTemplates();
       renderAutomations();
       refreshAutoTplSelect();
-      setTimeout(initChart, 30);
     </script>
   </body>
 </html>

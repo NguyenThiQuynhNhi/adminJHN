@@ -1520,8 +1520,7 @@
 
           <section class="card">
             <div class="card-title">
-              <i class="fas fa-circle-info"></i> Section 3 — Additional
-              Information (Optional)
+              <i class="fas fa-circle-info"></i> Section 3 — Additional Information
             </div>
             <div class="kv-grid" id="dAdditionalGrid"></div>
           </section>
@@ -2855,6 +2854,66 @@
             .join("");
           return `<select class="edit-input" id="prevOwnLocSelect" data-field="prevOwnershipLocation" ${disabled ? "disabled" : ""}>${opts}</select>`;
         }
+
+        function getSecurityQA(u) {
+          if (!Array.isArray(u.securityQA) || !u.securityQA.length) {
+            u.securityQA = u.securityQuestion
+              ? [{ question: u.securityQuestion, answer: u.securityAnswer || "" }]
+              : [{ question: "", answer: "" }];
+          }
+          return u.securityQA;
+        }
+        function renderSecurityQAEditor(u) {
+          const SEC_Q_OPTIONS = [
+            "What is your mother's maiden name?",
+            "What was the name of your first pet?",
+            "What city were you born in?",
+            "What was the name of your elementary school?",
+            "What is your favorite movie?",
+            "What is your favorite book?",
+            "What is the name of the street you grew up on?",
+          ];
+          const list = getSecurityQA(u);
+          return (
+            list
+              .map(
+                (qa, i) => `
+            <div style="border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:10px;margin-bottom:8px">
+              <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+                <select class="edit-input" data-secqa-index="${i}" data-secqa-part="question" style="flex:1">
+                  <option value="">Select a question</option>
+                  ${SEC_Q_OPTIONS.map((q) => `<option value="${escAttr(q)}" ${qa.question === q ? "selected" : ""}>${esc(q)}</option>`).join("")}
+                </select>
+                ${list.length > 1 ? `<button type="button" class="btn btn-sm btn-danger" onclick="removeSecurityQA(${i})"><i class="fas fa-trash"></i></button>` : ""}
+              </div>
+              <input class="edit-input" type="text" data-secqa-index="${i}" data-secqa-part="answer" placeholder="Enter your answer" value="${escAttr(qa.answer || "")}">
+            </div>`,
+              )
+              .join("") +
+            `<button type="button" class="btn btn-sm" onclick="addSecurityQA()"><i class="fas fa-plus"></i> Add another question</button>`
+          );
+        }
+        function renderSecurityQAView(u) {
+          const list = getSecurityQA(u).filter((qa) => qa.question);
+          if (!list.length) return "—";
+          return list
+            .map(
+              (qa) =>
+                `<div style="margin-bottom:6px"><div>${esc(qa.question)}</div><div style="color:var(--text-muted);font-size:12px">${qa.answer ? "••••••••" : "—"}</div></div>`,
+            )
+            .join("");
+        }
+        function addSecurityQA() {
+          if (!currentUser) return;
+          getSecurityQA(currentUser).push({ question: "", answer: "" });
+          renderEditableSections(currentUser);
+        }
+        function removeSecurityQA(i) {
+          if (!currentUser) return;
+          getSecurityQA(currentUser).splice(i, 1);
+          renderEditableSections(currentUser);
+        }
+
         function onPrevOwnershipChange(sel) {
           const loc = document.getElementById("prevOwnLocSelect");
           if (!loc) return;
@@ -3182,7 +3241,7 @@
           ].join("");
 
           // Section 3 - Additional
-          const SEC_Q_OPTIONS = [
+           const SEC_Q_OPTIONS = [
             "What is your mother's maiden name?",
             "What was the name of your first pet?",
             "What city were you born in?",
@@ -3191,31 +3250,13 @@
             "What is your favorite book?",
             "What is the name of the street you grew up on?",
           ];
-          const secQEdit = `
-            <div style="display:flex;gap:6px;align-items:center">
-              <select class="edit-input" id="secQSelect" data-field="securityQuestion" onchange="onSecQChange(this)" style="flex:1">
-                <option value="">Select a question</option>
-                ${SEC_Q_OPTIONS.map((q) => `<option value="${escAttr(q)}" ${u.securityQuestion === q ? "selected" : ""}>${esc(q)}</option>`).join("")}
-                <option value="__custom__" ${!SEC_Q_OPTIONS.includes(u.securityQuestion) && u.securityQuestion ? "selected" : ""}>✏️ Write my own question…</option>
-              </select>
-            </div>
-            <div id="secQCustomWrap" style="margin-top:6px;display:${!SEC_Q_OPTIONS.includes(u.securityQuestion) && u.securityQuestion ? "block" : "none"}">
-              <input class="edit-input" type="text" id="secQCustomInput" placeholder="Type your custom security question"
-                value="${!SEC_Q_OPTIONS.includes(u.securityQuestion) && u.securityQuestion ? escAttr(u.securityQuestion) : ""}"
-                oninput="onSecQCustomInput(this)">
-            </div>`;
-          const secAEdit = `<input class="edit-input" type="text" data-field="securityAnswer" placeholder="Enter your answer" value="${escAttr(u.securityAnswer || "")}">`;
           $("dAdditionalGrid").innerHTML = [
             kv("Have you ever owned any property in Japan?", ownedField(u)),
             kv("Property location (city / ward)", ownedLocationField(u)),
             kv("Buyer Status", buyerStatusField(u)),
             kvFull(
-              "Security Question",
-              editMode ? secQEdit : esc(u.securityQuestion) || "—",
-            ),
-            kvFull(
-              "Your Answer",
-              editMode ? secAEdit : u.securityAnswer ? "••••••••" : "—",
+              "Security Questions",
+              editMode ? renderSecurityQAEditor(u) : renderSecurityQAView(u),
             ),
           ].join("");
 
@@ -3474,6 +3515,21 @@
           Object.keys(groups).forEach((fld) => {
             currentUser[fld] = groups[fld];
           });
+
+          const secqa = {};
+          document.querySelectorAll("[data-secqa-index]").forEach((el) => {
+            const idx = el.dataset.secqaIndex;
+            const part = el.dataset.secqaPart;
+            if (!secqa[idx]) secqa[idx] = {};
+            secqa[idx][part] = el.value;
+          });
+          if (Object.keys(secqa).length) {
+            currentUser.securityQA = Object.keys(secqa)
+              .sort((a, b) => a - b)
+              .map((k) => secqa[k]);
+            currentUser.securityQuestion = currentUser.securityQA[0]?.question || "";
+            currentUser.securityAnswer = currentUser.securityQA[0]?.answer || "";
+          }
 
           document.querySelectorAll("[data-field]").forEach((el) => {
             const f = el.dataset.field;

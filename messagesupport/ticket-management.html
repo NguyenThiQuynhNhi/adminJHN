@@ -652,7 +652,6 @@
               <option>Open</option>
               <option>In Progress</option>
               <option>Resolved</option>
-              <option>Closed</option>
             </select>
           </div>
           <div class="fb-field">
@@ -876,7 +875,6 @@
               <option>Open</option>
               <option>In Progress</option>
               <option>Resolved</option>
-              <option>Closed</option>
             </select>
           </div>
         </div>
@@ -917,22 +915,7 @@
               "'": "&#39;",
             })[c],
         );
-      const LS_KEY = "yuushi.tickets";
-      const LS = {
-        get(k, d) {
-          try {
-            const v = localStorage.getItem(k);
-            return v ? JSON.parse(v) : d;
-          } catch (e) {
-            return d;
-          }
-        },
-        set(k, v) {
-          try {
-            localStorage.setItem(k, JSON.stringify(v));
-          } catch (e) {}
-        },
-      };
+      
       function toast(msg) {
         const el = document.createElement("div");
         el.className = "toast";
@@ -1004,7 +987,7 @@
           "Property Inquiry", "Booking Issue", "Payment Issue",
           "Technical Issue", "Other",
         ];
-        const statuses = ["Open", "In Progress", "Resolved", "Closed"];
+        const statuses = ["Open", "In Progress", "Resolved"];
         // "Today" anchor for spreading created dates across the last 90 days.
         const anchor = new Date(2026, 5, 21); // 2026-06-21
         const ymd = (d) =>
@@ -1015,7 +998,7 @@
           String(d.getDate()).padStart(2, "0");
 
         const out = [];
-        const COUNT = 80;
+        const COUNT = 15;
         for (let i = 0; i < COUNT; i++) {
           const id = "TK" + String(i + 1).padStart(3, "0");
           const first = firstNames[i % firstNames.length];
@@ -1070,7 +1053,7 @@
                 text: opener(name, category),
               },
             ];
-            if (status === "Resolved" || status === "Closed") {
+            if (status === "Resolved") {
               messages.push({
                 from: "yuushi",
                 name: "YUUSHI",
@@ -1097,14 +1080,7 @@
         return out;
       }
 
-      let tickets = LS.get(LS_KEY, null);
-      if (!Array.isArray(tickets) || !tickets.length) {
-        tickets = buildSeed();
-        LS.set(LS_KEY, tickets);
-      }
-      function persist() {
-        LS.set(LS_KEY, tickets);
-      }
+      let tickets = buildSeed();  
 
       // ---------- nav badge (open count) in parent shell ----------
       function openCount() {
@@ -1129,7 +1105,7 @@
       // dir: "asc" | "desc" | null (unsorted). Default: Created Date descending.
       let sortState = { key: "created", dir: "desc" };
       let page = 1;
-      const PAGE_SIZE = 50;
+      const PAGE_SIZE = 10;
 
       function getFiltered() {
         const q = $("fSearch").value.trim().toLowerCase();
@@ -1420,7 +1396,6 @@
           time: nowStamp(),
           text,
         });
-        persist();
         renderThread(t);
         body.innerHTML = "";
         toast("Reply sent successfully.");
@@ -1444,7 +1419,6 @@
         const t = tickets.find((x) => x.id === currentId);
         if (!t) return;
         t.status = val;
-        persist();
         updateNavBadge();
         toast("Status updated to " + val + ".");
       }

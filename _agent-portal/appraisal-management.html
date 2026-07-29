@@ -1,0 +1,869 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Appraisal Requests — YUUSHI Agent</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+      :root {
+        --accent: #c4714a; --accent-dark: #a55232; --accent-soft: #fdeee4; --accent-tint: #faf0e9;
+        --bg-body: #f5f0e8; --bg-card: #fff; --bg-alt: #fdfcf9;
+        --border: #e9e2d6; --border-soft: #f0ece4;
+        --text-main: #333; --text-head: #222; --text-muted: #8a8178; --text-dim: #aaa094;
+        --pink: #e74c7a; --grey-pill: #eceae4; --grey-pill-dark: #ddd8cf;
+        --green: #2f855a; --green-soft: #e6f7ef; --green-text: #1a7a45;
+        --blue: #1a6fa0; --blue-soft: #e6f4ff;
+        --red: #c53030; --red-soft: #fff0f0;
+        --grey-text: #6b7280; --grey-soft: #f3f4f6;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; }
+      body { font-family: Arial, Helvetica, system-ui, sans-serif; background: var(--bg-body); color: var(--text-main); font-size: 13px; line-height: 1.5; display: flex; -webkit-font-smoothing: antialiased; }
+      a { color: var(--accent); text-decoration: none; cursor: pointer; }
+
+      /* ===== Main ===== */
+      .main { flex: 1; display: flex; flex-direction: column; min-height: 100vh; overflow: hidden; }
+      .content { flex: 1; overflow-y: auto; padding: 24px; }
+
+      /* ===== Buttons ===== */
+      .btn { border-radius: 6px; border: 1px solid var(--border); padding: 8px 16px; font-size: 13px; background: #fff; cursor: pointer; display: inline-flex; gap: 7px; align-items: center; justify-content: center; color: var(--text-main); font-family: inherit; font-weight: 600; }
+      .btn:hover { background: var(--bg-alt); }
+      .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .btn-primary:hover { background: var(--accent-dark); }
+      .btn-pill { border-radius: 20px; }
+      .btn-green { border-color: var(--green); color: var(--green); }
+      .btn-green:hover { background: var(--green-soft); }
+      .btn-red { border-color: var(--red); color: var(--red); }
+      .btn-red:hover { background: var(--red-soft); }
+
+      /* ===== Page header ===== */
+      .page-title { font-size: 24px; font-weight: 800; color: var(--text-head); }
+      .page-subtitle { font-size: 12.5px; color: var(--accent); font-style: italic; margin-top: 2px; }
+      .list-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+      .head-right { display: flex; align-items: center; gap: 10px; }
+      .rows-sel { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; background: #fff; font-size: 13px; cursor: pointer; }
+
+      /* ===== Filter bar ===== */
+      .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+      .pill-toggle { display: inline-flex; border-radius: 20px; overflow: hidden; border: 1px solid var(--accent); }
+      .pill-toggle button { border: 0; background: #fff; color: var(--accent); padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+      .pill-toggle button.active { background: var(--accent); color: #fff; }
+      .filter-field { position: relative; }
+      .filter-field input, .filter-field select { height: 38px; border-radius: 8px; border: 1px solid var(--border); padding: 0 32px 0 12px; font-size: 13px; background: #fff; outline: none; min-width: 150px; color: var(--text-main); appearance: none; cursor: pointer; }
+      .filter-field.has-icon input { padding-left: 34px; }
+      .filter-field .fi-left { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; }
+      .filter-field .fi-right { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; font-size: 11px; }
+
+      /* ===== Card ===== */
+      .card { background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 1px 3px rgba(60,41,28,0.04); overflow: hidden; }
+
+      /* ===== Badges ===== */
+      .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+      .badge-new { background: var(--blue-soft); color: var(--blue); }
+      .badge-inprogress { background: var(--accent-soft); color: var(--accent-dark); }
+      .badge-converted { background: var(--green-soft); color: var(--green-text); }
+      .badge-declined { background: var(--red-soft); color: var(--red); }
+      .badge-auto { background: var(--grey-pill); color: #6b6256; }
+      .badge-self { background: #f5f3ff; color: #5b21b6; }
+      .match-score-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+      .ms-high { background: #d4f0d4; color: #2a7a2a; }
+      .ms-mid { background: var(--accent-soft); color: var(--accent-dark); }
+      .ms-low { background: var(--grey-pill); color: #6b6256; }
+
+      /* ===== Table ===== */
+      table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+      .data thead { background: #f6f3ec; }
+      .data th { padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 700; color: #555; white-space: nowrap; cursor: pointer; user-select: none; }
+      .data th .sort { color: var(--text-dim); margin-left: 5px; font-size: 10px; }
+      .data th.asc .sort, .data th.desc .sort { color: var(--accent); }
+      .data td { padding: 11px 14px; border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
+      .data tbody tr { cursor: pointer; }
+      .data tbody tr:nth-child(even) { background: var(--bg-alt); }
+      .data tbody tr:hover { background: var(--accent-tint); }
+      .name-cell { display: flex; align-items: center; gap: 10px; }
+      .ini-avatar { width: 30px; height: 30px; border-radius: 50%; background: #e7e2d8; color: #6b6256; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+      .act-icons { display: flex; gap: 10px; color: #b3a89c; }
+      .act-icons i { cursor: pointer; }
+      .act-icons i:hover { color: var(--accent); }
+      .cell-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+      /* ===== Pagination ===== */
+      .pagination { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; flex-wrap: wrap; gap: 10px; }
+      .pg-left { display: flex; align-items: center; gap: 12px; font-size: 12.5px; color: var(--text-muted); }
+      .pg-right { display: flex; align-items: center; gap: 4px; }
+      .pg-btn { min-width: 28px; height: 28px; border-radius: 50%; border: 0; background: 0; cursor: pointer; font-size: 13px; color: var(--text-main); display: inline-flex; align-items: center; justify-content: center; font-family: inherit; }
+      .pg-btn:hover { background: var(--bg-alt); }
+      .pg-btn.active { background: var(--accent); color: #fff; }
+      .pg-arrow { color: var(--text-muted); }
+
+      /* ===== Detail screen ===== */
+      .detail-top { position: sticky; top: 0; background: var(--bg-body); z-index: 10; padding-bottom: 12px; }
+      .dt-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+      .back-arrow { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: #fff; cursor: pointer; color: var(--text-main); font-size: 15px; flex-shrink: 0; }
+      .back-arrow:hover { background: var(--bg-alt); }
+      .dt-name { font-size: 22px; font-weight: 800; color: var(--text-head); line-height: 1.1; }
+      .dt-created { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+      .dt-stats { margin-left: auto; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+      .dt-stat { display: flex; align-items: center; gap: 8px; }
+      .dt-stat i { color: var(--accent); font-size: 16px; }
+      .dt-stat .l { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+      .dt-stat .v { font-size: 13px; color: var(--accent); font-weight: 700; }
+
+      .detail-layout { display: grid; grid-template-columns: 1fr 300px; gap: 18px; margin-top: 16px; align-items: start; }
+      @media (max-width: 1100px) { .detail-layout { grid-template-columns: 1fr; } }
+
+      .sec { padding: 18px 0; border-bottom: 1px solid var(--border-soft); }
+      .sec:first-child { padding-top: 4px; }
+      .sec:last-child { border-bottom: 0; }
+      .sec-title { font-size: 15px; font-weight: 700; color: var(--text-head); }
+      .sec-title-row { display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; }
+      .sec-title-sub { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+      .kv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 18px; }
+      @media (max-width: 760px) { .kv-grid { grid-template-columns: 1fr 1fr; } }
+      .kv-grid.two { grid-template-columns: repeat(2, 1fr); }
+      .kv-l { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 3px; }
+      .kv-v { font-size: 13px; color: var(--text-main); }
+      .kv-v.link { color: var(--accent); }
+      .kv-v.empty { color: var(--text-dim); font-style: italic; }
+      .requests-box { background: var(--bg-alt); border: 1px solid var(--border-soft); border-radius: 8px; padding: 12px 14px; font-size: 13px; line-height: 1.6; color: var(--text-main); margin-top: 14px; }
+      .subsec-label { grid-column: 1 / -1; font-size: 11px; font-weight: 700; color: var(--accent-dark); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 4px; padding-top: 10px; border-top: 1px dashed var(--border-soft); }
+      .subsec-label:first-child { border-top: 0; padding-top: 0; margin-top: 0; }
+
+      /* Bottom tabs (Files / Documents / Images / Related) */
+      .btabs { display: flex; gap: 8px; margin: 6px 0 16px; flex-wrap: wrap; }
+      .btab { padding: 7px 16px; border-radius: 20px; font-size: 12.5px; font-weight: 600; background: var(--grey-pill); color: #7a7064; cursor: pointer; border: 0; font-family: inherit; }
+      .btab.active { background: var(--accent); color: #fff; }
+      .images-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+      .images-grid img { width: 100%; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-soft); cursor: pointer; }
+      .images-grid .img-name { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+      /* Empty state */
+      .empty-state { min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; }
+      .empty-state .et { font-size: 14px; font-weight: 700; color: var(--text-head); }
+      .empty-state .es { font-size: 12.5px; color: var(--text-muted); }
+
+      /* Related appraisal card */
+      .related-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border-soft); }
+      .related-row:last-child { border-bottom: 0; }
+      .related-left .rl-title { font-weight: 700; font-size: 13px; color: var(--text-head); }
+      .related-left .rl-sub { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+
+      /* Right panel */
+      .rp-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+      .rp-title { font-size: 15px; font-weight: 700; color: var(--text-head); display: flex; align-items: center; gap: 7px; }
+      .rp-sub { font-size: 12px; color: var(--accent); font-style: italic; margin-bottom: 10px; }
+      .comment-input { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 13px; font-family: inherit; resize: vertical; min-height: 60px; outline: none; }
+      .comment-input:focus { border-color: var(--accent); }
+      .press-enter { text-align: right; font-size: 11px; color: var(--text-dim); margin: 4px 0 12px; }
+      .comment { border-top: 1px solid var(--border-soft); padding-top: 12px; margin-top: 4px; }
+      .comment .c-body { font-size: 12.5px; color: var(--text-main); }
+      .comment .c-attr { font-size: 11.5px; margin-top: 5px; }
+      .comment .c-attr .who { color: var(--accent); font-weight: 600; }
+      .comment .c-attr .when { color: var(--text-muted); }
+      .full-btn { width: 100%; margin-top: 12px; }
+
+      /* File list */
+      .file-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border-soft); }
+      .file-row:last-child { border-bottom: 0; }
+      .file-icon { width: 34px; height: 34px; border-radius: 7px; background: var(--accent-soft); color: var(--accent-dark); display: inline-flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+      .file-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
+      .file-meta { font-size: 11px; color: var(--text-dim); }
+      .file-thumb { width: 44px; height: 34px; border-radius: 6px; object-fit: cover; }
+
+      .toast-wrap { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+      .toast { background: var(--accent); color: #fff; padding: 11px 16px; border-radius: 8px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+      .toast.success { background: #2f855a; }
+
+      .hidden { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <main class="main">
+      <div class="content">
+
+        <!-- ========== SCREEN 1: LIST ========== -->
+        <div id="screenList">
+          <div class="list-head">
+            <div>
+              <div class="page-title">Appraisal Requests Management</div>
+            </div>
+            <div class="head-right">
+              <div class="rows-sel" onclick="cycleRows()"><span id="rowsLabel">10</span> <i class="fas fa-chevron-down" style="font-size:10px;color:var(--text-dim)"></i></div>
+            </div>
+          </div>
+
+          <div class="filter-bar">
+            <div class="filter-field has-icon"><i class="fas fa-search fi-left"></i><input id="searchInput" placeholder="Search client name…" /></div>
+            <div class="filter-field"><select id="statusFilter"><option value="">Status</option><option>New</option><option>In Progress</option><option>Converted</option><option>Declined</option></select><i class="fas fa-chevron-down fi-right"></i></div>
+            <div class="filter-field"><select id="sourceFilter"><option value="">Source</option><option>Auto-Distributed</option><option>Client Self-Sent</option></select><i class="fas fa-chevron-down fi-right"></i></div>
+            <div class="filter-field"><select id="typeFilter"><option value="">Property Type</option><option>House</option><option>Apartment</option><option>Villa</option><option>Office</option></select><i class="fas fa-chevron-down fi-right"></i></div>
+          </div>
+
+          <div class="card">
+            <table class="data">
+              <thead><tr>
+                <th onclick="sortBy('client')">Client Name <span class="sort">↕</span></th>
+                <th onclick="sortBy('type')">Property Type <span class="sort">↕</span></th>
+                <th onclick="sortBy('location')">Location <span class="sort">↕</span></th>
+                <th onclick="sortBy('source')">Source <span class="sort">↕</span></th>
+                <th onclick="sortBy('status')">Status <span class="sort">↕</span></th>
+                <th onclick="sortBy('received')">Received Date <span class="sort">↕</span></th>
+                <th>Actions</th>
+              </tr></thead>
+              <tbody id="listBody"></tbody>
+            </table>
+            <div class="pagination">
+              <div class="pg-left">
+                <div class="rows-sel" onclick="cycleRows()"><span id="rowsLabel2">10</span> <i class="fas fa-chevron-down" style="font-size:10px;color:var(--text-dim)"></i></div>
+                <span id="entriesLabel">Showing 0 of 0 entries</span>
+              </div>
+              <div class="pg-right" id="pgRight"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== SCREEN 2: DETAIL ========== -->
+        <div id="screenDetail" class="hidden">
+          <div class="detail-top">
+            <div class="dt-bar">
+              <button class="back-arrow" onclick="showList()"><i class="fas fa-arrow-left"></i></button>
+              <div>
+                <div class="dt-name" id="dtName">—</div>
+                <div class="dt-created" id="dtCreated">—</div>
+              </div>
+              <div class="dt-stats">
+                <div class="dt-stat"><i class="fas fa-signal"></i><div><div class="l">Source</div><div class="v" id="dtSource">—</div></div></div>
+                <div class="dt-stat"><i class="fas fa-flag"></i><div><div class="l">Status</div><div class="v" id="dtStatus">—</div></div></div>
+                <button class="btn btn-green btn-pill" id="btnConvert" onclick="markConverted()"><i class="fas fa-circle-check"></i> Mark Converted</button>
+                <button class="btn btn-red btn-pill" id="btnDecline" onclick="declineAppraisal()"><i class="fas fa-ban"></i> Decline</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-layout">
+            <div class="card" style="padding:0 22px">
+              <div class="sec" id="clientSection"></div>
+
+              <div class="sec" id="propSection"></div>
+
+              <div class="sec" style="border-bottom:0">
+                <div class="btabs">
+                  <button class="btab active" onclick="detailTab('files',this)">Files</button>
+                  <button class="btab" onclick="detailTab('documents',this)">Documents</button>
+                  <button class="btab" onclick="detailTab('images',this)">Images</button>
+                  <button class="btab" onclick="detailTab('related',this)">Related Appraisals</button>
+                </div>
+                <div id="detailTabBody"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="rp-card">
+                <div class="rp-title"><i class="fas fa-quote-left" style="color:var(--accent)"></i> Comments</div>
+                <textarea class="comment-input" id="commentInput" placeholder="Add an internal note…" onkeydown="commentKey(event)"></textarea>
+                <div class="press-enter">Press Enter to submit</div>
+                <div id="commentList"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+      function toast(msg, kind) {
+        const el = document.createElement("div");
+        el.className = "toast " + (kind || "");
+        el.textContent = msg;
+        $("toastWrap").appendChild(el);
+        setTimeout(() => el.remove(), 2600);
+      }
+      function ini2(n) { const p = n.trim().split(/\s+/); return ((p[0]?.[0] || "") + (p[1]?.[0] || "")).toUpperCase(); }
+      function propLocation(p) {
+        if (p.locationManual) return p.locationManual;
+        if (p.buildingName) return p.buildingName;
+        return "—";
+        }
+
+      /* ============================================================
+         DATA — Appraisal is fully independent from Lead: no Lead ID,
+         no Property ID link, no Activities/Pipeline. Agent<->Client
+         communication happens over Messaging; Comments here are
+         internal-only notes between agents.
+
+         propertyInfo fields follow the client-side intake spec
+         (STEP 1. Property Information) so the agent detail view can
+         mirror exactly what the client submitted.
+      ============================================================ */
+      let APPRAISALS = [
+        {
+          id: "APR-3001", source: "Auto-Distributed", score: 87, status: "In Progress",
+          received: "2026-06-18",
+          clientInfo: {
+            name: "Tanaka Yui", email: "tanaka.yui@example.com", phone: "+81-90-1122-3344",
+            relationshipToProperty: "Owner", country: "Japan", address: "3-2 Aoyama, Minato-ku, Tokyo, 107-0062",
+            contactMethod: ["Telephone", "Message"], preferredContactTime: ["Evening (16-19)", "Night (19-21)"],
+            preferredLanguage: ["JA", "EN"], reasonForSelling: "Relocation", age: "42",
+            preferredValuationMethod: "On-site appraisal",
+            specificRequests: "Wants a quick sale within 2 months — relocating overseas. Prefers cash-ready buyers only.",
+          },
+          propertyInfo: {
+            postalCode: "107-0062", locationManual: "Aoyama, Minato-ku, Tokyo", propertyType: "House", subType: "House",
+            remainingLoan: "¥8,200,000", desiredPrice: "¥98,000,000", sellingTimeline: "Within 3 months", valuationReason: "Relocation",
+            buildingName: "Aoyama Residence", exclusiveArea: "185 m²", landArea: "142 m²", buildingArea: "185 m²",
+            balconyArea: "12 m²", otherOutdoorSpace: "Private Garden", outdoorSpaceArea: "22 m²",
+            constructionType: "Wooden", bedrooms: "4 or more", layout: "4LDK", builtDate: "2011-04",
+            floor: "2", totalFloors: "2", totalUnits: "1", ceilingHeight: "2.4 m",
+            landAddress: "Aoyama 3-chome 214-banchi", landUse: "Residential", landRight: "Freehold",
+            currentSituation: "With Old Building", zoning: "1st Class Low-Rise Residential", cityPlanning: "Urbanization Zone",
+            floorAreaRatio: "150%", buildingCoverageRatio: "60%",
+            occupancyStatus: "Owner Occupied", leaseType: "Standard Japanese Lease", monthlyRent: "¥0", grossReturn: "0%",
+            estAnnualRevenue: "¥0", estGrossReturn: "0%", currentAnnualIncome: "¥0", currentGrossReturn: "0%", estAnnualIncomeFull: "¥0", estGrossReturnFull: "0%",
+            currentLivingStatus: "Owner Occupied", relationshipToProperty: "Owner", renovationHistory: "Kitchen renovated in 2019, no structural work.",
+            parking: "Available", direction: "South", petPolicy: "Allowed", propertyCondition: "Good", hoaFee: "¥0",
+            lotShape: "Regular", roadFrontage: "6m public road, south side", topography: "Flat",
+            earthquakeResistance: "New seismic standard", energyEfficiency: "Energy efficiency grade",
+            amenities: ["Floor heating", "Auto-lock", "Delivery box", "Reheating bath"],
+          },
+          attachments: [
+            { name: "Floor_Plan_Aoyama.pdf", size: "1.8 MB", type: "pdf" },
+            { name: "Registry_Extract_Aoyama.pdf", size: "0.7 MB", type: "pdf" },
+            { name: "Front_Exterior.jpg", size: "3.1 MB", type: "image", thumb: "https://picsum.photos/id/1040/160/120" },
+            { name: "Living_Room.jpg", size: "2.4 MB", type: "image", thumb: "https://picsum.photos/id/1080/160/120" },
+            { name: "Handover_Checklist.docx", size: "0.4 MB", type: "file" },
+          ],
+          comments: [{ body: "Called client, confirmed she wants to list by end of month.", by: "Chris Sales", at: "19 Jun 2026, 10:22" }],
+        },
+        {
+          id: "APR-3002", source: "Client Self-Sent", score: 0, status: "New",
+          received: "2026-07-02",
+          clientInfo: { name: "Santi Argo", phone: "+34-655-5231", email: "santi-argo@gmail.com", address: "5-12-3 Ebisu, Shibuya-ku, Tokyo, 150-0013", specificRequests: "Open to offers, no rush on timeline." },
+          propertyInfo: {
+            postalCode: "247-0007", locationManual: "2-8-1 Kabukicho, Shinjuku-ku, Tokyo", propertyType: "Villa", subType: "Resort House・Villa・Ski Chalet",
+            remainingLoan: "", desiredPrice: "", sellingTimeline: "Undecided", valuationReason: "Asset Liquidation",
+            buildingName: "Kamakura Villa", exclusiveArea: "300 m²", landArea: "410 m²", buildingArea: "300 m²",
+            balconyArea: "18 m²", otherOutdoorSpace: "Terrace", outdoorSpaceArea: "30 m²",
+            constructionType: "RC", bedrooms: "3", layout: "3LDK", builtDate: "2005 (Approximate)",
+            floor: "2", totalFloors: "2", totalUnits: "", ceilingHeight: "",
+            landAddress: "", landUse: "Residential", landRight: "Freehold", currentSituation: "", zoning: "", cityPlanning: "",
+            floorAreaRatio: "", buildingCoverageRatio: "",
+            occupancyStatus: "Vacant", leaseType: "", monthlyRent: "", grossReturn: "",
+            estAnnualRevenue: "", estGrossReturn: "", currentAnnualIncome: "", currentGrossReturn: "", estAnnualIncomeFull: "", estGrossReturnFull: "",
+            currentLivingStatus: "Vacant", relationshipToProperty: "Owner", renovationHistory: "",
+            parking: "Available", direction: "", petPolicy: "Allowed", propertyCondition: "Good", hoaFee: "",
+            lotShape: "", roadFrontage: "", topography: "", earthquakeResistance: "", energyEfficiency: "", amenities: "",
+          },
+          attachments: [
+            { name: "Villa_Front.jpg", size: "2.9 MB", type: "image", thumb: "https://picsum.photos/id/1029/160/120" },
+          ],
+          comments: [],
+        },
+        {
+          id: "APR-3002b", source: "Client Self-Sent", score: 0, status: "In Progress",
+          received: "2026-04-14",
+          clientInfo: { name: "Santi Argo", phone: "+34-655-5231", email: "santi-argo@gmail.com", address: "5-12-3 Ebisu, Shibuya-ku, Tokyo, 150-0013", specificRequests: "Second property from the same client — investment condo, wants comparable pricing to the villa." },
+          propertyInfo: {
+            postalCode: "106-0032", locationManual: "San Jose, California, USA", propertyType: "Apartment", subType: "Apartment",
+            remainingLoan: "", desiredPrice: "", sellingTimeline: "Within 1 year", valuationReason: "Asset Liquidation",
+            buildingName: "Roppongi Condos", exclusiveArea: "95 m²", landArea: "", buildingArea: "",
+            balconyArea: "8 m²", otherOutdoorSpace: "", outdoorSpaceArea: "",
+            constructionType: "RC", bedrooms: "2", layout: "2LDK", builtDate: "2014",
+            floor: "6", totalFloors: "12", totalUnits: "48", ceilingHeight: "",
+            landAddress: "", landUse: "", landRight: "", currentSituation: "", zoning: "", cityPlanning: "",
+            floorAreaRatio: "", buildingCoverageRatio: "",
+            occupancyStatus: "Tenanted", leaseType: "Standard Japanese Lease", monthlyRent: "¥185,000", grossReturn: "5.2%",
+            estAnnualRevenue: "", estGrossReturn: "", currentAnnualIncome: "", currentGrossReturn: "", estAnnualIncomeFull: "", estGrossReturnFull: "",
+            currentLivingStatus: "Tenanted", relationshipToProperty: "Owner", renovationHistory: "",
+            parking: "Nearby paid parking", direction: "East", petPolicy: "Conditional", propertyCondition: "Good", hoaFee: "¥22,000",
+            lotShape: "", roadFrontage: "", topography: "", earthquakeResistance: "New seismic standard", energyEfficiency: "", amenities: "Delivery box",
+          },
+          attachments: [
+            { name: "Condo_Registry.pdf", size: "0.6 MB", type: "pdf" },
+          ],
+          comments: [{ body: "Same client as APR-3002 — flagged as repeat seller.", by: "Chris Sales", at: "15 Apr 2026, 09:02" }],
+        },
+        {
+          id: "APR-3003", source: "Auto-Distributed", score: 64, status: "Converted",
+          received: "2026-05-11",
+          clientInfo: { name: "Colin Sik", phone: "+81-80-2233-9988", email: "colin.sik@example.com", address: "5-1 Sunworld, Shibuya, Tokyo", specificRequests: "" },
+          propertyInfo: {
+            postalCode: "150-0002", locationManual: "5-12-3 Ebisu, Shibuya-ku, Tokyo", propertyType: "Apartment", subType: "Apartment",
+            remainingLoan: "¥0", desiredPrice: "¥62,000,000", sellingTimeline: "Within 6 months", valuationReason: "Family Changes",
+            buildingName: "Sunworld Shibuya", exclusiveArea: "72 m²", landArea: "", buildingArea: "",
+            balconyArea: "6 m²", otherOutdoorSpace: "", outdoorSpaceArea: "",
+            constructionType: "RC", bedrooms: "2", layout: "2LDK", builtDate: "2016-09",
+            floor: "9", totalFloors: "15", totalUnits: "80", ceilingHeight: "",
+            landAddress: "", landUse: "", landRight: "", currentSituation: "", zoning: "", cityPlanning: "",
+            floorAreaRatio: "", buildingCoverageRatio: "",
+            occupancyStatus: "Vacant", leaseType: "", monthlyRent: "", grossReturn: "",
+            estAnnualRevenue: "", estGrossReturn: "", currentAnnualIncome: "", currentGrossReturn: "", estAnnualIncomeFull: "", estGrossReturnFull: "",
+            currentLivingStatus: "Vacant", relationshipToProperty: "Owner", renovationHistory: "",
+            parking: "None", direction: "Southeast", petPolicy: "Not allowed", propertyCondition: "Good", hoaFee: "¥18,500",
+            lotShape: "", roadFrontage: "", topography: "", earthquakeResistance: "New seismic standard", energyEfficiency: "Energy efficiency grade", amenities: "Auto-lock, Dishwasher",
+          },
+          attachments: [
+            { name: "Registry_Extract.pdf", size: "0.9 MB", type: "pdf" },
+            { name: "Kitchen.jpg", size: "1.6 MB", type: "image", thumb: "https://picsum.photos/id/225/160/120" },
+          ],
+          comments: [{ body: "Deal closed via chat, property now listed as PROP-2210. Marking converted.", by: "Tony Sales", at: "20 May 2026, 15:40" }],
+        },
+        {
+          id: "APR-3004", source: "Auto-Distributed", score: 41, status: "Declined",
+          received: "2026-04-28",
+          clientInfo: { name: "Andreas Papandreas", phone: "+30-694-000-1122", email: "andreas.p@example.com", address: "9 Near Beach Rd, Chiba", specificRequests: "Wanted an unrealistic price above market — declined." },
+          propertyInfo: {
+            postalCode: "260-0013", locationManual: "9 Near Beach Rd, Chiba", propertyType: "House", subType: "House",
+            remainingLoan: "", desiredPrice: "¥120,000,000", sellingTimeline: "Undecided", valuationReason: "Other",
+            buildingName: "Chiba Beach House", exclusiveArea: "140 m²", landArea: "165 m²", buildingArea: "140 m²",
+            balconyArea: "", otherOutdoorSpace: "", outdoorSpaceArea: "",
+            constructionType: "Wooden", bedrooms: "3", layout: "3LDK", builtDate: "1998",
+            floor: "2", totalFloors: "2", totalUnits: "", ceilingHeight: "",
+            landAddress: "Near Beach Rd 9-banchi", landUse: "Residential", landRight: "Freehold",
+            currentSituation: "With Old Building", zoning: "Category II Residential", cityPlanning: "Urbanization Zone",
+            floorAreaRatio: "100%", buildingCoverageRatio: "50%",
+            occupancyStatus: "Owner Occupied", leaseType: "", monthlyRent: "", grossReturn: "",
+            estAnnualRevenue: "", estGrossReturn: "", currentAnnualIncome: "", currentGrossReturn: "", estAnnualIncomeFull: "", estGrossReturnFull: "",
+            currentLivingStatus: "Owner Occupied", relationshipToProperty: "Owner", renovationHistory: "",
+            parking: "Available", direction: "", petPolicy: "", propertyCondition: "Needs repair", hoaFee: "",
+            lotShape: "Irregular", roadFrontage: "4m public road", topography: "Slope",
+            earthquakeResistance: "Old seismic standard", energyEfficiency: "", amenities: "",
+          },
+          attachments: [],
+          comments: [{ body: "Price expectations far above appraisal range. Declined after 2 calls.", by: "Maria Sales", at: "29 Apr 2026, 09:15" }],
+        },
+      ];
+
+      let sortKey = "received", sortDir = "desc", rowsPerPage = 10, page = 1;
+      let currentId = null;
+
+      function statusBadge(s) {
+        const map = { "New": "badge-new", "In Progress": "badge-inprogress", "Converted": "badge-converted", "Declined": "badge-declined" };
+        return `<span class="badge ${map[s] || "badge-new"}">${esc(s)}</span>`;
+      }
+      function sourceBadge(s) {
+        return s === "Auto-Distributed"
+          ? `<span class="badge badge-auto"><i class="fas fa-shuffle" style="font-size:9px"></i> Auto-Distributed</span>`
+          : `<span class="badge badge-self"><i class="fas fa-paper-plane" style="font-size:9px"></i> Client Self-Sent</span>`;
+      }
+      function scorePill(score, source) {
+        if (source === "Client Self-Sent") return `<span class="kv-v empty">—</span>`;
+        const cls = score >= 75 ? "ms-high" : score >= 50 ? "ms-mid" : "ms-low";
+        return `<span class="match-score-pill ${cls}"><i class="fas fa-bullseye"></i> ${score}</span>`;
+      }
+
+      function getFiltered() {
+        const kw = $("searchInput").value.trim().toLowerCase();
+        const statusF = $("statusFilter").value;
+        const sourceF = $("sourceFilter").value;
+        const typeF = $("typeFilter").value;
+        let rows = APPRAISALS.filter(a => {
+          if (kw && !a.clientInfo.name.toLowerCase().includes(kw)) return false;
+          if (statusF && a.status !== statusF) return false;
+          if (sourceF && a.source !== sourceF) return false;
+          if (typeF && a.propertyInfo.propertyType !== typeF) return false;
+          return true;
+        });
+        rows.sort((a, b) => {
+          const map = {
+            client: a.clientInfo.name.localeCompare(b.clientInfo.name),
+            type: a.propertyInfo.propertyType.localeCompare(b.propertyInfo.propertyType),
+            location: propLocation(a.propertyInfo).localeCompare(propLocation(b.propertyInfo)),
+            source: a.source.localeCompare(b.source),
+            status: a.status.localeCompare(b.status),
+            received: a.received.localeCompare(b.received),
+          };
+          const v = map[sortKey] ?? 0;
+          return sortDir === "asc" ? v : -v;
+        });
+        return rows;
+      }
+
+      function renderList() {
+        const filtered = getFiltered();
+        const total = filtered.length;
+        const pages = Math.max(1, Math.ceil(total / rowsPerPage));
+        if (page > pages) page = pages;
+        const start = (page - 1) * rowsPerPage;
+        const shown = filtered.slice(start, start + rowsPerPage);
+
+        if (!total) {
+          $("listBody").innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="et">No appraisal requests</div><div class="es">Try adjusting your filters.</div></div></td></tr>`;
+        } else {
+          $("listBody").innerHTML = shown.map(a => `
+            <tr onclick="showDetail('${a.id}')">
+              <td><div class="name-cell"><span class="ini-avatar">${ini2(a.clientInfo.name)}</span> ${esc(a.clientInfo.name)}</div></td>
+              <td>${esc(a.propertyInfo.propertyType)}</td>
+              <td>${esc(propLocation(a.propertyInfo))}</td>
+              <td>${sourceBadge(a.source)}</td>
+              <td>${statusBadge(a.status)}</td>
+              <td>${esc(a.received)}</td>
+              <td onclick="event.stopPropagation()"><div class="act-icons">
+                <i class="fas fa-eye" title="View" onclick="showDetail('${a.id}')"></i>
+                <i class="fas fa-circle-check" title="Mark Converted" onclick="quickAction('${a.id}','Converted')"></i>
+                <i class="fas fa-ban" title="Decline" onclick="quickAction('${a.id}','Declined')"></i>
+              </div></td>
+            </tr>`).join("");
+        }
+
+        const startLabel = total ? start + 1 : 0;
+        const endLabel = Math.min(start + rowsPerPage, total);
+        $("entriesLabel").textContent = `Showing ${startLabel} to ${endLabel} of ${total} entries`;
+        document.querySelectorAll(".data thead th").forEach(th => th.classList.remove("asc", "desc"));
+        renderPagination(total);
+      }
+
+      function renderPagination(total) {
+        const pages = Math.max(1, Math.ceil(total / rowsPerPage));
+        let h = `<button class="pg-btn pg-arrow" onclick="goPage(${page - 1})">‹</button>`;
+        for (let i = 1; i <= pages; i++) h += `<button class="pg-btn ${i === page ? "active" : ""}" onclick="goPage(${i})">${i}</button>`;
+        h += `<button class="pg-btn pg-arrow" onclick="goPage(${page + 1})">›</button>`;
+        $("pgRight").innerHTML = h;
+      }
+      function goPage(p) { const pages = Math.max(1, Math.ceil(getFiltered().length / rowsPerPage)); if (p < 1 || p > pages) return; page = p; renderList(); }
+      window.goPage = goPage;
+      function sortBy(k) { if (sortKey === k) sortDir = sortDir === "asc" ? "desc" : "asc"; else { sortKey = k; sortDir = "asc"; } renderList(); }
+      window.sortBy = sortBy;
+      function cycleRows() { rowsPerPage = rowsPerPage === 10 ? 25 : rowsPerPage === 25 ? 50 : 10; $("rowsLabel").textContent = rowsPerPage; $("rowsLabel2").textContent = rowsPerPage; page = 1; renderList(); }
+      window.cycleRows = cycleRows;
+
+      /* ============================================================
+         DETAIL
+      ============================================================ */
+      function fileIcon(type) { return type === "image" ? "fa-image" : type === "pdf" ? "fa-file-pdf" : "fa-file"; }
+
+      /* ---- Property Information rendering -----------------------
+         Mirrors the client intake form field-by-field, grouped into
+         the same categories as the spec sheet, and only shows a
+         sub-section when at least one field in it has a value or is
+         relevant to this property's type/occupancy. Fields the
+         client left blank still show as "—" so the agent can see
+         what's missing, rather than being silently dropped.
+      --------------------------------------------------------------*/
+      function kv(label, val, cls) {
+        const has = val !== undefined && val !== null && String(val).trim() !== "";
+        return `<div><div class="kv-l">${esc(label)}</div><div class="kv-v ${has ? (cls || "") : "empty"}">${has ? esc(val) : "—"}</div></div>`;
+      }
+      function subLabel(text) { return `<div class="subsec-label">${esc(text)}</div>`; }
+      function tagList(arr) {
+        const items = Array.isArray(arr) ? arr : (arr ? [arr] : []);
+        if (!items.length) return '<span class="kv-v empty">—</span>';
+        return `<div style="display:flex;flex-wrap:wrap;gap:6px">${items.map(t => `<span class="badge badge-auto">${esc(t)}</span>`).join("")}</div>`;
+      }
+      function kvTags(label, arr) {
+        return `<div><div class="kv-l">${esc(label)}</div>${tagList(arr)}</div>`;
+      }
+
+      function renderClientSection(a) {
+        const c = a.clientInfo;
+        let html = `<div class="sec-title">Client Information</div>
+          <div class="sec-title-sub" style="margin-bottom:12px">As submitted in Step 2 of the appraisal request</div>
+          <div class="kv-grid" style="margin-top:12px">
+            ${kv("Name", c.name, "link")}
+            ${kv("Email Address", c.email, "link")}
+            ${kv("Phone Number", c.phone)}
+            ${kv("Relationship to Property", c.relationshipToProperty)}
+            ${kv("Country/Region of Residence", c.country)}
+            ${kv("Current Address", c.address)}
+            ${kvTags("Contact Method", c.contactMethod)}
+            ${kvTags("Preferred Contact Time", c.preferredContactTime)}
+            ${kvTags("Preferred Language", c.preferredLanguage)}
+            ${kv("Reason for Selling", c.reasonForSelling)}
+            ${kv("Age", c.age)}
+            ${kv("Preferred Valuation Method", c.preferredValuationMethod)}
+          </div>
+          <div class="requests-box" style="margin-top:14px">
+            <div class="kv-l" style="margin-bottom:6px">Special Requests</div>
+            ${c.specificRequests ? esc(c.specificRequests) : '<span class="kv-v empty">No specific requests noted.</span>'}
+          </div>`;
+        return html;
+      }
+
+      function renderPropertySection(a) {
+        const p = a.propertyInfo;
+        const isApartment = p.propertyType === "Apartment";
+        const isHouseOrLand = p.propertyType === "House" || p.propertyType === "Villa" || p.propertyType === "Land";
+        const isWholeBldg = /whole|building/i.test(p.propertyType || "") || !!p.totalUnits;
+        const isTenanted = p.occupancyStatus === "Tenanted";
+        const isHolidayOrInvestment = p.occupancyStatus === "Holiday Rental" || p.occupancyStatus === "Operating Hotel" || isWholeBldg;
+
+        let html = `<div class="sec-title-row"><div><div class="sec-title">Property Information</div><div class="sec-title-sub">As submitted by the client during appraisal request</div></div></div>`;
+
+        // ---- Common fields ----
+        html += `<div class="kv-grid">
+          ${kv("Property Type", p.propertyType)}
+          ${kv("Sub-Type", p.subType)}
+          ${kv("Location", propLocation(p))}
+          ${kv("Postal Code", p.postalCode)}
+          ${kv("Desired Selling Price", p.desiredPrice)}
+          ${kv("Remaining Loan Balance", p.remainingLoan)}
+          ${kv("Selling Timeline", p.sellingTimeline)}
+          ${kv("Reason for Valuation", p.valuationReason)}
+        </div>`;
+
+        // ---- Building / Unit info ----
+        html += `<div class="kv-grid" style="margin-top:16px">
+          ${subLabel("Building / Unit Info")}
+          ${kv("Building Name", p.buildingName)}
+          ${kv("Exclusive Area", p.exclusiveArea)}
+          ${kv("Land Area", p.landArea)}
+          ${kv("Building Area", p.buildingArea)}
+          ${kv("Balcony Area", p.balconyArea)}
+          ${kv("Other Outdoor Space", p.otherOutdoorSpace)}
+          ${p.otherOutdoorSpace ? kv("Outdoor Space Area", p.outdoorSpaceArea) : ""}
+          ${kv("Construction Type", p.constructionType)}
+          ${kv("Bedrooms", p.bedrooms)}
+          ${kv("Layout", p.layout)}
+          ${kv("Built Date", p.builtDate)}
+          ${kv("Floor / Total Floors", (p.floor || p.totalFloors) ? `${p.floor || "—"} / ${p.totalFloors || "—"}` : "")}
+          ${isWholeBldg ? kv("Total Units", p.totalUnits) : ""}
+          ${kv("Ceiling Height / Entrance", p.ceilingHeight)}
+        </div>`;
+
+        // ---- Land info (House / Villa / Land only) ----
+        if (isHouseOrLand) {
+          html += `<div class="kv-grid" style="margin-top:16px">
+            ${subLabel("Land Info")}
+            ${kv("Land Address (Banchi/Chiban)", p.landAddress)}
+            ${kv("Land Use / Category", p.landUse)}
+            ${kv("Land Right", p.landRight)}
+            ${kv("Current Situation", p.currentSituation)}
+            ${kv("Zoning", p.zoning)}
+            ${kv("City Planning", p.cityPlanning)}
+            ${kv("Floor Area Ratio", p.floorAreaRatio)}
+            ${kv("Building Coverage Ratio", p.buildingCoverageRatio)}
+          </div>`;
+        }
+
+        // ---- Occupancy & Revenue ----
+        html += `<div class="kv-grid" style="margin-top:16px">
+          ${subLabel("Occupancy & Revenue")}
+          ${kv("Occupancy Status", p.occupancyStatus)}
+          ${isTenanted ? kv("Type of Lease", p.leaseType) : ""}
+          ${isTenanted && (isApartment || isHouseOrLand) ? kv("Monthly Rental Revenue", p.monthlyRent) : ""}
+          ${isTenanted && (isApartment || isHouseOrLand) ? kv("Gross Return", p.grossReturn) : ""}
+          ${isHolidayOrInvestment ? kv("Estimated Annual Revenue", p.estAnnualRevenue) : ""}
+          ${isHolidayOrInvestment ? kv("Estimated Gross Return", p.estGrossReturn) : ""}
+          ${isWholeBldg ? kv("Current Annual Income", p.currentAnnualIncome) : ""}
+          ${isWholeBldg ? kv("Current Gross Return", p.currentGrossReturn) : ""}
+          ${isWholeBldg ? kv("Est. Annual Income (Full Occupancy)", p.estAnnualIncomeFull) : ""}
+          ${isWholeBldg ? kv("Est. Gross Return (Full Occupancy)", p.estGrossReturnFull) : ""}
+        </div>`;
+
+        // ---- Additional details (competitor-sourced / optional fields) ----
+        html += `<div class="kv-grid" style="margin-top:16px">
+          ${subLabel("Additional Details")}
+          ${kv("Current Living Status", p.currentLivingStatus)}
+          ${kv("Relationship to Property", p.relationshipToProperty)}
+          ${kv("Parking", p.parking)}
+          ${kv("Direction / Facing", p.direction)}
+          ${kv("Pet Policy", p.petPolicy)}
+          ${kv("Property Condition", p.propertyCondition)}
+          ${kv("HOA / Management Fee", p.hoaFee)}
+          ${kv("Lot Shape", p.lotShape)}
+          ${kv("Road Frontage", p.roadFrontage)}
+          ${kv("Topography", p.topography)}
+          ${kv("Earthquake Resistance", p.earthquakeResistance)}
+          ${kv("Energy Efficiency", p.energyEfficiency)}
+        </div>`;
+        html += `<div class="requests-box" style="margin-top:16px">
+          <div class="kv-l" style="margin-bottom:6px">Renovation History</div>
+          ${p.renovationHistory ? esc(p.renovationHistory) : '<span class="kv-v empty">No renovation history noted.</span>'}
+          <div class="kv-l" style="margin:12px 0 6px">Amenities / Features</div>
+          ${tagList(p.amenities)}
+        </div>`;
+
+        return html;
+      }
+
+      function showDetail(id) {
+        const a = APPRAISALS.find(x => x.id === id);
+        if (!a) return;
+        currentId = id;
+
+        $("dtName").textContent = a.clientInfo.name;
+        $("dtCreated").textContent = "Received: " + a.received + " · Ref: " + a.id;
+        $("dtSource").innerHTML = sourceBadge(a.source);
+        $("dtStatus").innerHTML = statusBadge(a.status);
+
+        $("btnConvert").style.display = a.status === "Converted" ? "none" : "inline-flex";
+        $("btnDecline").style.display = a.status === "Declined" ? "none" : "inline-flex";
+        $("btnConvert").disabled = false;
+        $("btnDecline").disabled = false;
+
+        $("clientSection").innerHTML = renderClientSection(a);
+        $("propSection").innerHTML = renderPropertySection(a);
+
+        $("commentList").innerHTML = (a.comments || []).map(c => `
+          <div class="comment"><div class="c-body">${esc(c.body)}</div><div class="c-attr"><span class="who">${esc(c.by)}</span> &nbsp; <span class="when">${esc(c.at)}</span></div></div>
+        `).join("") || `<div style="font-size:12px;color:var(--text-dim);padding:8px 0">No internal notes yet.</div>`;
+
+        document.querySelectorAll(".btab").forEach((b, i) => b.classList.toggle("active", i === 0));
+        detailTab("files", document.querySelector(".btab"));
+
+        showOnly("screenDetail");
+      }
+      window.showDetail = showDetail;
+
+      function uploadFile(type) {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.onchange = e => {
+          const file = e.target.files[0];
+          if (file) toast(`✅ Uploaded successfully: ${file.name}`, "success");
+        };
+        input.click();
+      }
+      window.uploadFile = uploadFile;
+
+      function viewImage(img) {
+        const modal = document.createElement("div");
+        modal.style = `position:fixed; inset:0; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center; z-index:9999;`;
+        modal.innerHTML = `<img src="${img.src}" style="max-width:90%; max-height:90%; border-radius:8px;" onclick="this.parentElement.remove()">`;
+        document.body.appendChild(modal);
+      }
+      window.viewImage = viewImage;
+
+      /* ============================================================
+         DETAIL TABS — Files / Documents / Images / Related Appraisals
+      ============================================================ */
+      function detailTab(t, btn) {
+        document.querySelectorAll(".btab").forEach(b => b.classList.remove("active"));
+        if (btn) btn.classList.add("active");
+        const a = APPRAISALS.find(x => x.id === currentId);
+        if (!a) return;
+        const body = $("detailTabBody");
+
+        if (t === "files") {
+          const files = a.attachments.filter(f => f.type === "file");
+          body.innerHTML = `
+            <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+              <div style="font-weight:700;font-size:14px">Files</div>
+              <button class="btn btn-primary btn-pill" onclick="uploadFile('files')"><i class="fas fa-upload"></i> Upload</button>
+            </div>
+            <table class="data">
+              <thead><tr><th>File name <span class="sort">↕</span></th><th>Size <span class="sort">↕</span></th></tr></thead>
+              <tbody>${files.length ? files.map(f => `<tr><td>${esc(f.name)}</td><td>${esc(f.size)}</td></tr>`).join("") : `<tr><td colspan="2">${emptyBox("No files yet", "Any general file the client attaches or you upload will show here.")}</td></tr>`}</tbody>
+            </table>`;
+        } else if (t === "documents") {
+          const docs = a.attachments.filter(f => f.type === "pdf");
+          body.innerHTML = `
+            <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+              <div style="font-weight:700;font-size:14px">Documents</div>
+              <button class="btn btn-primary btn-pill" onclick="uploadFile('documents')"><i class="fas fa-upload"></i> Upload</button>
+            </div>
+            <table class="data">
+              <thead><tr><th>File name <span class="sort">↕</span></th><th>Size <span class="sort">↕</span></th></tr></thead>
+              <tbody>${docs.length ? docs.map(f => `<tr><td>${esc(f.name)}</td><td>${esc(f.size)}</td></tr>`).join("") : `<tr><td colspan="2">${emptyBox("No documents", "Contracts, registry extracts, and other paperwork will show here.")}</td></tr>`}</tbody>
+            </table>`;
+        } else if (t === "images") {
+          const imgs = a.attachments.filter(f => f.type === "image");
+          body.innerHTML = `
+            <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+              <div style="font-weight:700;font-size:14px">Images</div>
+              <button class="btn btn-primary btn-pill" onclick="uploadFile('images')"><i class="fas fa-upload"></i> Upload</button>
+            </div>
+            <table class="data">
+              <thead><tr><th>File name <span class="sort">↕</span></th><th>Size <span class="sort">↕</span></th><th>Preview</th></tr></thead>
+              <tbody>${imgs.length ? imgs.map(f => `<tr><td>${esc(f.name)}</td><td>${esc(f.size)}</td><td><img src="${f.thumb}" onclick="viewImage(this)" style="width:80px;height:60px;object-fit:cover;cursor:pointer;border-radius:4px" alt=""></td></tr>`).join("") : `<tr><td colspan="3">${emptyBox("No images", "Photos submitted by the client or uploaded by you will show here.")}</td></tr>`}</tbody>
+            </table>`;
+        } else if (t === "related") {
+          const related = APPRAISALS.filter(x => x.id !== a.id && (x.clientInfo.phone === a.clientInfo.phone || x.clientInfo.email === a.clientInfo.email));
+          body.innerHTML = `
+            <table class="data">
+              <thead><tr>
+                <th>Property Type <span class="sort">↕</span></th>
+                <th>Location <span class="sort">↕</span></th>
+                <th>Source <span class="sort">↕</span></th>
+                <th>Status <span class="sort">↕</span></th>
+                <th>Received Date <span class="sort">↕</span></th>
+              </tr></thead>
+              <tbody>${related.length ? related.map(r => `
+                <tr onclick="showDetail('${r.id}')">
+                  <td>${esc(r.propertyInfo.propertyType)}</td>
+                  <td>${esc(propLocation(r.propertyInfo))}</td>
+                  <td>${sourceBadge(r.source)}</td>
+                  <td>${statusBadge(r.status)}</td>
+                  <td>${esc(r.received)}</td>
+                </tr>`).join("") : `<tr><td colspan="5">${emptyBox("No related appraisals", "This is the only request on record from this client.")}</td></tr>`}</tbody>
+            </table>`;
+        }
+      }
+      window.detailTab = detailTab;
+
+      function emptyBox(title, sub) {
+        return `<div class="empty-state"><div class="et">${title}</div><div class="es">${sub}</div></div>`;
+      }
+
+      function commentKey(e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          const v = e.target.value.trim(); if (!v) return;
+          const a = APPRAISALS.find(x => x.id === currentId);
+          if (!a) return;
+          a.comments = a.comments || [];
+          a.comments.unshift({ body: v, by: "Chris Sales", at: new Date().toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) });
+          e.target.value = "";
+          showDetail(currentId);
+          toast("Comment added");
+        }
+      }
+      window.commentKey = commentKey;
+
+      /* ============================================================
+         ACTIONS — Mark Converted / Decline
+      ============================================================ */
+      function markConverted() {
+        const a = APPRAISALS.find(x => x.id === currentId);
+        if (!a) return;
+        a.status = "Converted";
+        toast("Marked as Converted — this request is now out of your active queue", "success");
+        showDetail(currentId);
+      }
+      window.markConverted = markConverted;
+
+      function declineAppraisal() {
+        const a = APPRAISALS.find(x => x.id === currentId);
+        if (!a) return;
+        if (!confirm("Decline this appraisal request?")) return;
+        a.status = "Declined";
+        toast("Appraisal declined");
+        showDetail(currentId);
+      }
+      window.declineAppraisal = declineAppraisal;
+
+      function quickAction(id, status) {
+        const a = APPRAISALS.find(x => x.id === id);
+        if (!a) return;
+        if (status === "Declined" && !confirm("Decline this appraisal request?")) return;
+        a.status = status;
+        toast(status === "Converted" ? "Marked as Converted" : "Appraisal declined", status === "Converted" ? "success" : "");
+        renderList();
+      }
+      window.quickAction = quickAction;
+
+      /* ============================================================
+         NAV
+      ============================================================ */
+      function showOnly(id) {
+        $("screenList").classList.toggle("hidden", id !== "screenList");
+        $("screenDetail").classList.toggle("hidden", id !== "screenDetail");
+        window.scrollTo(0, 0);
+      }
+      function showList() { showOnly("screenList"); renderList(); }
+      window.showList = showList;
+
+      $("searchInput").addEventListener("input", () => { page = 1; renderList(); });
+      $("statusFilter").addEventListener("change", () => { page = 1; renderList(); });
+      $("sourceFilter").addEventListener("change", () => { page = 1; renderList(); });
+      $("typeFilter").addEventListener("change", () => { page = 1; renderList(); });
+
+      renderList();
+    </script>
+  </body>
+</html>

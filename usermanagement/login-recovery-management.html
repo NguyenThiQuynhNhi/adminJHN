@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin - Login Recovery Management</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
     <style>
       :root {
         --bg-page: #f5f5f5;
@@ -62,6 +66,7 @@
       .page-title {
         font-size: 22px;
         font-weight: 700;
+        letter-spacing: 0.02em;
         margin-bottom: 4px;
       }
 
@@ -338,6 +343,14 @@
         color: var(--text-muted);
         margin-bottom: 8px;
       }
+      .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
 
       .pager {
         display: flex;
@@ -371,6 +384,21 @@
 
       .row-selected td {
         background: var(--bg-row-hover);
+      }
+
+      .bulk-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        background: var(--bg-card-warm);
+        border: 1px solid var(--border-warm);
+        border-radius: var(--r-md);
+        margin-bottom: 10px;
+        font-size: 13px;
+      }
+      .bulk-bar strong {
+        color: var(--text-primary);
       }
 
       .two-columns-top {
@@ -662,10 +690,13 @@
           <div class="page-title">Login Recovery Management</div>
         </div>
         <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Recovery tickets</div>
-            </div>
+          
+          <div class="bulk-bar" id="bulkBar" style="display:none">
+            <span><strong id="bulkCount">0</strong> selected</span>
+            <div style="flex:1"></div>
+            <button class="btn btn-danger btn-sm" type="button" onclick="bulkReject()">
+              Reject
+            </button>
           </div>
 
           <div class="filters">
@@ -675,7 +706,7 @@
               placeholder="Search request ID, name, phone"
             />
             <select id="statusFilter">
-              <option value="">Any status</option>
+              <option value="">All Statuses</option>
               <option value="Pending">Pending</option>
               <option value="Solved">Solved</option>
               <option value="Rejected">Rejected</option>
@@ -683,40 +714,30 @@
             <select id="typeFilter">
               <option value="">All user types</option>
               <option value="End User">End User</option>
-              <option value="Agent">Agent</option>
+              <option value="Agency">Agency</option>
               <option value="Support">Support</option>
             </select>
-            <select id="createdFilter" title="Created at">
-              <option value="">Created: Any time</option>
-              <option value="today">Today</option>
-              <option value="7d">Last 7 days</option>
-              <option value="30d">Last 30 days</option>
-              <option value="older">Older than 30 days</option>
-            </select>
-            <select id="ageFilter" title="Ticket age (only Pending)">
-              <option value="">Age: Any</option>
-              <option value="overdue">Overdue (&gt; 48h pending)</option>
-              <option value="due">Due (24–48h pending)</option>
-              <option value="fresh">Fresh (&lt; 24h pending)</option>
-            </select>
             <select id="sortBy" title="Sort by">
-              <option value="created-desc">Sort: Newest first</option>
-              <option value="created-asc">Sort: Oldest first</option>
-              <option value="status-asc">Sort: Status</option>
-              <option value="name-asc">Sort: Name A→Z</option>
+              <option value="created-desc">Newest</option>
+              <option value="created-asc">Oldest</option>
             </select>
             <button type="button" class="btn btn-ghost" id="resetFiltersBtn">
               Reset
             </button>
           </div>
 
-          <div class="result-count" id="requestCount">
-            Showing 0 of 0 recovery requests
+          <div class="results-header">
+            <div class="result-count results-count" id="requestCount">
+              Showing 0 of 0 recovery requests
+            </div>
           </div>
 
           <table>
             <thead>
               <tr>
+                <th style="width:36px">
+                  <input type="checkbox" id="selectAllChk" onchange="toggleSelectAll(this)">
+                </th>
                 <th>Request ID</th>
                 <th>Full name</th>
                 <th>Phone</th>
@@ -766,7 +787,7 @@
               <span class="field-value" id="detailName">–</span>
             </div>
             <div class="field">
-              <span class="field-label">Date of Birth</span>
+              <span class="field-label" id="detailDobLabel">Date of Birth</span>
               <span class="field-value" id="detailDob">–</span>
             </div>
             <div class="field">
@@ -878,7 +899,7 @@
           id: "REC-20260413-004",
           fullName: "Sakura Realty Co.",
           phone: "+81 3-1234-5678",
-          userType: "Agent",
+          userType: "Agency",
           accountEmail: "info@sakura-realty.jp",
           createdAt: "2026-04-13 17:45",
           status: "Pending",
@@ -888,6 +909,7 @@
           docUrl: "#",
           solvedBy: "",
           solvedAt: "",
+          establishedDate: "2010-03-15",
         },
         {
           id: "REC-20260412-002",
@@ -903,6 +925,7 @@
           docUrl: "https://via.placeholder.com/160x110.png?text=Contract",
           solvedBy: "ADM-01",
           solvedAt: "2026-04-12 11:02",
+          establishedDate: "2015-06-20",
         },
         {
           id: "REC-20260411-003",
@@ -923,7 +946,7 @@
 
       // Deterministic filler so the dataset exceeds 50 rows (demo pagination).
       (function seedFiller() {
-        const types = ["End User", "Agent", "Support"];
+        const types = ["End User", "Agency", "Support"];
         const statuses = ["Pending", "Solved", "Rejected"];
         const names = [
           "Tran Bao",
@@ -947,6 +970,7 @@
             id: `REC-20260301-${String(100 + i).padStart(3, "0")}`,
             fullName: `${names[i % names.length]} ${i}`,
             dateOfBirth: `19${String(60 + (i % 39)).padStart(2, "0")}-${String(1 + (i % 12)).padStart(2, "0")}-${String(1 + (i % 28)).padStart(2, "0")}`,
+            establishedDate: `20${String(5 + (i % 18)).padStart(2, "0")}-${String(1 + (i % 12)).padStart(2, "0")}-${String(1 + (i % 28)).padStart(2, "0")}`,
             phone: i % 5 === 0 ? "" : `+84 9${String(10000000 + i * 137).slice(0, 8)}`,
             userType,
             accountEmail: `user${i}@example.com`,
@@ -989,6 +1013,57 @@
       ];
 
       let selectedRequestId = null;
+      let selectedIds = new Set();
+
+      function getSelectedRequests() {
+        return recoveryRequests.filter((r) => selectedIds.has(r.id));
+      }
+      function updateBulkBar() {
+        const bar = document.getElementById("bulkBar");
+        const countEl = document.getElementById("bulkCount");
+        if (!bar || !countEl) return;
+        const n = selectedIds.size;
+        bar.style.display = n === 0 ? "none" : "flex";
+        countEl.textContent = n;
+      }
+      function onRowCheck(id, checked) {
+        if (checked) selectedIds.add(id);
+        else selectedIds.delete(id);
+        updateBulkBar();
+      }
+      function toggleSelectAll(cb) {
+        document.querySelectorAll(".rowChk").forEach((el) => {
+          const id = el.dataset.id;
+          const r = recoveryRequests.find((x) => x.id === id);
+          if (r && r.status !== "Pending") return;
+          el.checked = cb.checked;
+          if (cb.checked) selectedIds.add(id);
+          else selectedIds.delete(id);
+        });
+        updateBulkBar();
+      }
+      function bulkReject() {
+        const sel = getSelectedRequests().filter((r) => r.status === "Pending");
+        if (!sel.length) return;
+        UX.confirm({
+          title: "Reject selected requests?",
+          message: `Reject ${sel.length} selected request(s)? Users will not receive a new password from these tickets.`,
+          okLabel: "Reject",
+          danger: true,
+          onConfirm: () => {
+            const now = new Date().toISOString().slice(0, 16).replace("T", " ");
+            sel.forEach((r) => {
+              r.status = "Rejected";
+              r.solvedBy = currentAdmin.id;
+              r.solvedAt = now;
+              addLogEntry("Rejected request after verification (bulk action)", r.id);
+            });
+            selectedIds.clear();
+            renderRequestTable();
+            Toast.ok(`${sel.length} request(s) rejected.`);
+          },
+        });
+      }
 
       const PAGE_SIZE = 50;
       let pageNum = 1;
@@ -1039,6 +1114,9 @@
         renderRequestTable();
       }
       window.gotoPage = gotoPage;
+      window.toggleSelectAll = toggleSelectAll;
+      window.onRowCheck = onRowCheck;
+      window.bulkReject = bulkReject;
 
       function updateActionButtons(r) {
         const markSolvedBtn = document.getElementById("markSolvedBtn");
@@ -1156,6 +1234,9 @@
             tr.classList.add("row-selected");
           }
           tr.innerHTML = `
+            <td onclick="event.stopPropagation()">
+              <input type="checkbox" class="rowChk" data-id="${r.id}" ${selectedIds.has(r.id) ? "checked" : ""} ${r.status !== "Pending" ? "disabled" : ""} onchange="onRowCheck('${r.id}', this.checked)">
+            </td>
             <td>${r.id}</td>
             <td>${r.fullName}</td>
             <td>${r.phone || "—"}</td>
@@ -1164,11 +1245,15 @@
             <td>${r.createdAt}</td>
             <td><span class="status-pill ${statusClass(r.status)}">${r.status}</span></td>
           `;
-          tr.addEventListener("click", () => selectRequest(r.id));
+          tr.addEventListener("click", (e) => {
+            if (e.target.type === "checkbox") return;
+            selectRequest(r.id);
+          });
           body.appendChild(tr);
         });
 
         renderPager(total, pagerEl, "gotoPage");
+        updateBulkBar();
       }
 
       function renderDocument(r) {
@@ -1189,8 +1274,8 @@
           container.innerHTML = `
             <img src="${r.docUrl}" alt="ID document" />
             <div>
-              <div><strong>Uploaded file:</strong> ID_document.jpg</div>
-              <div style="font-size:11px;">Zoom &amp; compare details with profile data before deciding.</div>
+              <div><strong>Uploaded file:</strong></div>
+              <div style="font-size:11px;">ID_document.jpg</div>
             </div>
           `;
         }
@@ -1225,7 +1310,12 @@
         document.getElementById("detailStatus").innerHTML =
           `<span class="status-pill ${statusClass(r.status)}">${r.status}</span>`;
         document.getElementById("detailName").textContent = r.fullName;
-        document.getElementById("detailDob").textContent = r.dateOfBirth || "–";
+        const isOrg = r.userType === "Agency" || r.userType === "Support";
+        document.getElementById("detailDobLabel").textContent = isOrg
+          ? "Established Date"
+          : "Date of Birth";
+        document.getElementById("detailDob").textContent =
+          (isOrg ? r.establishedDate : r.dateOfBirth) || "–";
         document.getElementById("detailPhone").textContent = r.phone || "—";
         document.getElementById("detailUserType").textContent = r.userType;
         document.getElementById("detailEmail").textContent = r.accountEmail;
@@ -1318,7 +1408,7 @@
         if (newStatus === "Rejected") {
           UX.confirm({
             title: "Reject this request?",
-            message: `Reject request ${r.id}? User will not receive a new password from this ticket.`,
+            message: `Reject request ${r.id}? ${r.fullName} will not receive a new password from this ticket.`,
             okLabel: "Reject",
             danger: true,
             onConfirm: apply,
