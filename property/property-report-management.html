@@ -307,12 +307,12 @@
         color: var(--status-warning-text);
       }
       .badge-suspended {
-        background: var(--status-success-bg);
-        color: var(--status-success-text);
-      }
-      .badge-dismissed {
         background: var(--status-danger-bg);
         color: var(--status-danger-text);
+      }
+      .badge-dismissed {
+        background: var(--status-success-bg);
+        color: var(--status-success-text);
       }
       .badge-individual {
         background: var(--status-neutral-bg);
@@ -834,8 +834,8 @@
             <label class="field-label" for="fStatus">Status</label>
             <select id="fStatus" multiple size="3">
               <option value="pending">Pending</option>
-              <option value="suspended">Suspended</option>
-              <option value="dismissed">Dismissed</option>
+              <option value="suspended">Suspend listing</option>
+              <option value="dismissed">Dismiss report</option>
             </select>
           </div>
           <div class="field-group">
@@ -849,7 +849,6 @@
               <option value="privacy_copyright">Privacy / copyright</option>
               <option value="unauthorized_listing">Unauthorized listing</option>
               <option value="unauthorized_images">Unauthorized images</option>
-              <option value="other">Other</option>
             </select>
           </div>
           <div class="field-group">
@@ -904,9 +903,8 @@
                 <th>Reason</th>
                 <th>Reporter</th>
                 <th>Submitted</th>
-                <th>Last Update</th>
+                <th>Action Date</th>
                 <th>Status</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="listBody"></tbody>
@@ -976,9 +974,9 @@
 
         <section class="card" style="grid-column: 1 / -1">
           <div class="card-title">
-            <i class="fas fa-clock-rotate-left"></i> Audit log
+            <i class="fas fa-clock-rotate-left"></i> Action
           </div>
-          <div class="audit-log" id="dAuditLog"></div>
+          <div class="kv-grid" id="dActionInfo"></div>
         </section>
       </div>
     </div>
@@ -988,7 +986,7 @@
       <div class="modal-box">
         <div class="modal-header">
           <h3 class="modal-title">
-            <i class="fas fa-lock" style="color: var(--badge-green)"></i>
+            <i class="fas fa-lock" style="color: var(--badge-red)"></i>
             Suspend listing — apply action
           </h3>
           <button
@@ -1000,7 +998,7 @@
           </button>
         </div>
         <div class="modal-body">
-          <label for="suspendNote">Note</label>
+          <label for="suspendNote">Internal Note</label>
           <textarea
             id="suspendNote"
             placeholder="Additional context for the audit log…"
@@ -1021,7 +1019,7 @@
             Cancel
           </button>
           <button
-            class="btn btn-success"
+            class="btn btn-danger"
             type="button"
             onclick="confirmSuspend()"
           >
@@ -1036,7 +1034,7 @@
       <div class="modal-box">
         <div class="modal-header">
           <h3 class="modal-title">
-            <i class="fas fa-circle-xmark" style="color: var(--badge-red)"></i>
+            <i class="fas fa-circle-xmark" style="color: var(--badge-green)"></i>
             Dismiss report
           </h3>
           <button
@@ -1056,9 +1054,8 @@
             <option value="no_issue_found">No issue found</option>
             <option value="duplicate">Duplicate of another report</option>
             <option value="out_of_scope">Out of platform scope</option>
-            <option value="other">Other</option>
           </select>
-          <label for="dismissNote">Note to reporter</label>
+          <label for="dismissNote">Internal Note</label>
           <textarea
             id="dismissNote"
             placeholder="Explanation visible to the reporter…"
@@ -1069,7 +1066,7 @@
             Cancel
           </button>
           <button
-            class="btn btn-danger"
+            class="btn btn-success"
             type="button"
             onclick="confirmDismiss()"
           >
@@ -1091,12 +1088,11 @@
         privacy_copyright: "Privacy / copyright",
         unauthorized_listing: "Unauthorized listing",
         unauthorized_images: "Unauthorized images",
-        other: "Other",
       };
       const STATUS_LABEL = {
         pending: "Pending",
-        suspended: "Suspended",
-        dismissed: "Dismissed",
+        suspended: "Suspend listing",
+        dismissed: "Dismiss report",
       };
       const DISMISS_REASON_LABEL = {
         invalid_report: "Invalid report",
@@ -1104,7 +1100,6 @@
         duplicate: "Duplicate of another report",
         no_issue_found: "No issue found",
         out_of_scope: "Out of platform scope",
-        other: "Other",
       };
       const CURRENT_ADMIN = "Admin Tanaka";
 
@@ -1116,7 +1111,7 @@
           id: "R-2024-0001",
           propertyId: "P-1001",
           propertyTitle: "Tiny Home in Shinano Kamiminocchi",
-          propertyOwner: "Grace Miller (GM Agency)",
+          propertyOwner: "GM Agency",
           reporterType: "individual",
           reporterName: "Jack Miller",
           reporterEmail: "jack.miller@example.com",
@@ -1126,11 +1121,6 @@
             "The floor area listed seems different from what the agent told me. The ad shows 95 m² but during my site visit the agent confirmed only 82 m². Please verify and update the listing.",
           attachments: [
             { type: "image", label: "Listing screenshot", size: "412 KB" },
-            {
-              type: "link",
-              label: "External listing on partner site",
-              url: "https://example.com",
-            },
           ],
           status: "pending",
           createdAt: "2024-03-10T10:30:00",
@@ -1193,7 +1183,13 @@
           reason: "property_sold",
           description:
             "The agent told me this property is already sold but it is still shown as available on the site, leading to confusion.",
-          attachments: [],
+          attachments: [
+            {
+              type: "doc",
+              label: "Sale contract confirmation.pdf",
+              size: "198 KB",
+            },
+          ],
           status: "suspended",
           suspendNote:
             "Confirmed with agent — property closed deal on 2024-03-07. Listing suspended.",
@@ -1219,7 +1215,7 @@
           id: "R-2024-0004",
           propertyId: "P-1102",
           propertyTitle: "Shared house in Yokohama",
-          propertyOwner: "Haruka Sato (Osaka Homes)",
+          propertyOwner: "Osaka Homes",
           reporterType: "company",
           reporterName: "Legal Dept, Osaka Homes",
           reporterEmail: "legal@osakahomes.jp",
@@ -1255,7 +1251,7 @@
           id: "R-2024-0005",
           propertyId: "P-2014",
           propertyTitle: "Minami-Aoyama Penthouse",
-          propertyOwner: "Yamada Hiroshi (ABC Realty)",
+          propertyOwner: "ABC Realty",
           reporterType: "individual",
           reporterName: "Lee Min-jun",
           reporterEmail: "minjun.lee@example.com",
@@ -1310,7 +1306,6 @@
           "privacy_copyright",
           "unauthorized_listing",
           "unauthorized_images",
-          "other",
         ];
         const STATUSES = ["pending", "suspended", "dismissed"];
         const REPORTERS = [
@@ -1327,7 +1322,7 @@
           "Privacy concern: the listing exposes details that should not be public. Please look into it.",
           "This listing seems to have been posted without proper authorization from the owner.",
         ];
-        const target = 60;
+        const target = 10;
         const startCount = reports.length;
         const startNum = startCount + 1;
         for (let i = 0; i < target - startCount; i++) {
@@ -1502,7 +1497,7 @@
         if (!total) {
           $("resultCount").textContent = "Showing 0 of 0 reports";
           tbody.innerHTML =
-            '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted)">No reports match the filters.</td></tr>';
+            '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted)">No reports match the filters.</td></tr>';
           renderPagination(0, totalPages);
           return;
         }
@@ -1527,7 +1522,6 @@
             <td>${fmtDate(r.createdAt)}</td>
             <td>${fmtDate(r.updatedAt)}</td>
             <td>${badgeStatus(r.status)}</td>
-            <td><button class="btn btn-sm btn-ghost" type="button" title="Open property detail" onclick="event.stopPropagation();openPropertyTab('${escAttr(r.propertyId)}')"><i class="fas fa-arrow-up-right-from-square"></i></button></td>
           </tr>`,
           )
           .join("");
@@ -1690,8 +1684,8 @@
         const actions = $("dActions");
         if (r.status === "pending") {
           actions.innerHTML = `
-            <button class="btn btn-success" type="button" onclick="openModal('suspendModal')" title="Suspend the listing — hide from public view"><i class="fas fa-lock"></i> Suspend listing</button>
-            <button class="btn btn-danger" type="button" onclick="openModal('dismissModal')" title="Close report without action on listing"><i class="fas fa-circle-xmark"></i> Dismiss report</button>`;
+            <button class="btn btn-danger" type="button" onclick="openModal('suspendModal')" title="Suspend the listing — hide from public view"><i class="fas fa-lock"></i> Suspend listing</button>
+            <button class="btn btn-success" type="button" onclick="openModal('dismissModal')" title="Close report without action on listing"><i class="fas fa-circle-xmark"></i> Dismiss report</button>`;
         } else {
           actions.innerHTML = `
             <span style="font-size:12px;color:var(--text-muted);align-self:center">
@@ -1743,20 +1737,22 @@
             .join("");
         }
 
-        // Audit log
-        $("dAuditLog").innerHTML =
-          (r.auditLog || [])
-            .slice()
-            .reverse()
-            .map(
-              (e) => `
-          <div class="audit-entry">
-            <div class="when">${fmtDateTime(e.at)}</div>
-            <div class="what"><span class="who">${esc(e.by)}</span> · ${esc(e.detail)}</div>
-          </div>`,
-            )
-            .join("") ||
-          '<div style="color:var(--text-muted);font-size:12.5px;font-style:italic">No audit entries yet.</div>';
+        // Action info (date, actioned by, dismiss reason [dismiss only], note)
+        const lastEntry =
+          r.auditLog && r.auditLog.length > 1
+            ? r.auditLog[r.auditLog.length - 1]
+            : null;
+        const noteText = r.suspendNote || r.dismissNote || "";
+        const reasonRow =
+          r.status === "dismissed"
+            ? `<div class="kv"><span class="kv-label">Dismiss reason</span><div class="kv-value">${r.dismissReason ? esc(DISMISS_REASON_LABEL[r.dismissReason] || r.dismissReason) : "—"}</div></div>`
+            : "";
+        $("dActionInfo").innerHTML = `
+          <div class="kv"><span class="kv-label">Action date</span><div class="kv-value">${lastEntry ? fmtDateTime(lastEntry.at) : "—"}</div></div>
+          <div class="kv"><span class="kv-label">Action by</span><div class="kv-value">${lastEntry ? esc(lastEntry.by) : "—"}</div></div>
+          ${reasonRow}
+          <div class="kv kv-full"><span class="kv-label">Internal Note</span><div class="kv-value">${noteText ? esc(noteText) : "—"}</div></div>
+        `;
       }
 
       // ========================================================================
@@ -1859,16 +1855,11 @@
         window.open(url, "_blank");
       }
 
-      function openPropertyTab(propertyId) {
-        const url = `property/property-list-oversight.html?propertyId=${encodeURIComponent(propertyId)}`;
-        window.open(url, "_blank");
-      }
 
       // expose action handlers used by inline onclick
       window.confirmSuspend = confirmSuspend;
       window.confirmDismiss = confirmDismiss;
       window.openPropertyLink = openPropertyLink;
-      window.openPropertyTab = openPropertyTab;
       window.applyFilters = applyFilters;
       window.resetFilters = resetFilters;
       window.exportCsv = exportCsv;

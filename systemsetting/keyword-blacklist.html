@@ -138,6 +138,40 @@
         font-size: 14px;
         font-weight: 600;
       }
+      .card-head-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .kw-search {
+        position: relative;
+      }
+      .kw-search i {
+        position: absolute;
+        left: 11px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 12px;
+        pointer-events: none;
+      }
+      .kw-search input {
+        width: 220px;
+        height: 34px;
+        padding: 0 10px 0 32px;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-md);
+        font-size: 12.5px;
+        background: #fff;
+        color: var(--text-main);
+        font-family: inherit;
+        outline: none;
+      }
+      .kw-search input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(139, 115, 64, 0.16);
+      }
 
       .table-wrap {
         overflow-x: auto;
@@ -309,9 +343,20 @@
     <div class="card">
       <div class="card-head">
         <div class="card-title" id="tableTitle">Keywords</div>
-        <button class="btn btn-primary" onclick="openAddModal()">
-          <i class="fas fa-plus"></i> Add Keyword
-        </button>
+        <div class="card-head-actions">
+          <div class="kw-search">
+            <i class="fas fa-magnifying-glass"></i>
+            <input
+              id="fSearch"
+              type="text"
+              placeholder="Search keyword…"
+              oninput="renderTable()"
+            />
+          </div>
+          <button class="btn btn-primary" onclick="openAddModal()">
+            <i class="fas fa-plus"></i> Add Keyword
+          </button>
+        </div>
       </div>
       <div class="table-wrap">
         <table>
@@ -498,23 +543,38 @@
       }
       function selectLang(l) {
         currentLang = l;
+        $("fSearch").value = "";
         renderTabs();
         renderTable();
       }
 
       function renderTable() {
         $("tableTitle").textContent = currentLang + " keywords";
-        const rows = blacklist[currentLang] || [];
-        if (!rows.length) {
+        const allRows = blacklist[currentLang] || [];
+        const q = ($("fSearch").value || "").toLowerCase().trim();
+
+        if (!allRows.length) {
           $("tableBody").innerHTML =
             '<tr><td colspan="4" class="empty-state">No keywords added yet for this language.</td></tr>';
           return;
         }
+
+        // Filter while keeping each row's original index (needed by deleteKeyword).
+        const rows = allRows
+          .map((r, i) => ({ r, i }))
+          .filter(({ r }) => !q || r.keyword.toLowerCase().includes(q));
+
+        if (!rows.length) {
+          $("tableBody").innerHTML =
+            '<tr><td colspan="4" class="empty-state">No keywords match your search.</td></tr>';
+          return;
+        }
+
         $("tableBody").innerHTML = rows
           .map(
-            (r, i) => `
+            ({ r, i }, displayIdx) => `
           <tr>
-            <td class="col-num">${i + 1}</td>
+            <td class="col-num">${displayIdx + 1}</td>
             <td><span class="kw">${esc(r.keyword)}</span></td>
             <td class="added">${esc(rowDate(r))}</td>
             <td class="col-actions">

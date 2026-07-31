@@ -2226,6 +2226,14 @@
             <i class="fas fa-check"></i> Approve
           </button>
           <button
+            class="btn btn-danger hidden"
+            id="rejectBtn"
+            type="button"
+            onclick="rejectListing()"
+          >
+            <i class="fas fa-times"></i> Reject
+          </button>
+          <button
             class="btn hidden"
             id="toggleStatusBtn"
             type="button"
@@ -6527,6 +6535,15 @@
           apBtn.classList.add("hidden");
         }
 
+        // Reject — only shown while awaiting first-time review (Pending Review).
+        // Once already Rejected, use "Accept listing" to move it forward instead.
+        const rjBtn = $("rejectBtn");
+        if (p.publishStatus === "Pending Review") {
+          rjBtn.classList.remove("hidden");
+        } else {
+          rjBtn.classList.add("hidden");
+        }
+
         // Alerts
         const alerts = [];
         if (p.publishStatus === "Pending Review")
@@ -6769,6 +6786,38 @@
           },
         });
       }
+      function rejectListing() {
+        if (!currentProp) return;
+        openConfirm({
+          title: "Reject this listing?",
+          body: `Reject ${currentProp.id} (${currentProp.name})? The agency will be notified and the listing will not be published until re-submitted.`,
+          actionLabel: "Reject",
+          actionKind: "danger",
+          onConfirm: () => {
+            const today = new Date().toISOString().slice(0, 10);
+            const oldStatus = currentProp.publishStatus;
+            currentProp.publishStatus = "Rejected";
+            currentProp.rejectCategory = "Incomplete documentation";
+            currentProp.rejectNotes = "Rejected by admin during review.";
+            currentProp.dateUpdated = today;
+            currentProp.changeHistory = currentProp.changeHistory || [];
+            currentProp.changeHistory.unshift({
+              ts: today + "T00:00:00",
+              actorId: "ADM-002",
+              actorName: "Admin Operator",
+              role: "Admin",
+              field: "publishStatus",
+              oldVal: oldStatus,
+              newVal: "Rejected",
+            });
+            originalProp = JSON.parse(JSON.stringify(currentProp));
+            renderDetail();
+            renderList();
+            toast("Listing rejected.", "error");
+          },
+        });
+      }
+
       function deleteListing() {
         if (!currentProp) return;
         openConfirm({
