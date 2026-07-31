@@ -1880,6 +1880,44 @@
           <button class="pop-btn" type="button" onclick="openAdvModal()">
             <i class="fas fa-sliders"></i> Advanced Filter
           </button>
+          
+          <!-- Keep (Saves) filter -->
+          <div class="pop-wrap" data-pop="keep">
+            <button class="pop-btn" type="button" data-pop-toggle>
+              <i class="fas fa-bookmark"></i> Saves
+              <span class="cnt hidden" data-cnt="keep">0</span>
+              <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="pop-panel right" data-pop-panel style="min-width:240px">
+              <div class="pop-range">
+                <input type="number" min="0" placeholder="Min" id="fKeepMin" />
+                <span>to</span>
+                <input type="number" min="0" placeholder="Max" id="fKeepMax" />
+              </div>
+              <div class="pop-foot">
+                <button class="btn btn-sm" type="button" data-pop-done>Apply</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Clicks filter -->
+          <div class="pop-wrap" data-pop="click">
+            <button class="pop-btn" type="button" data-pop-toggle>
+              <i class="fas fa-arrow-pointer"></i> Clicks
+              <span class="cnt hidden" data-cnt="click">0</span>
+              <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="pop-panel right" data-pop-panel style="min-width:240px">
+              <div class="pop-range">
+                <input type="number" min="0" placeholder="Min" id="fClickMin" />
+                <span>to</span>
+                <input type="number" min="0" placeholder="Max" id="fClickMax" />
+              </div>
+              <div class="pop-foot">
+                <button class="btn btn-sm" type="button" data-pop-done>Apply</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Active filter chips -->
@@ -2176,33 +2214,6 @@
           </button>
         </div>
         <div class="detail-toolbar-right" id="toolbarView">
-          <button class="btn" type="button" onclick="enterEditMode()">
-            <i class="fas fa-edit"></i> Edit
-          </button>
-          <button
-            class="btn btn-success hidden"
-            id="approveBtn"
-            type="button"
-            onclick="approveListing()"
-          >
-            <i class="fas fa-check"></i> Approve
-          </button>
-          <button
-            class="btn hidden"
-            id="toggleStatusBtn"
-            type="button"
-            onclick="toggleSuspend()"
-          >
-            <i class="fas fa-ban"></i> Suspend
-          </button>
-          <button
-            class="btn btn-danger"
-            type="button"
-            onclick="deleteListing()"
-          >
-            <i class="fas fa-trash"></i> Delete
-          </button>
-        </div><div class="detail-toolbar-right" id="toolbarView">
           <button class="btn" type="button" onclick="enterEditMode()">
             <i class="fas fa-edit"></i> Edit
           </button>
@@ -4046,6 +4057,7 @@
         description: {
           title: "Description",
           icon: "fa-align-left",
+          full: true, 
           fields: [
             {
               k: "description",
@@ -4056,45 +4068,22 @@
             },
           ],
         },
+
+        // ----- Section 11: Performance -----
+        performance: {
+          title: "Performance",
+          icon: "fa-chart-line",
+          custom: "performance",
+        },
       };
 
       // ------------------------------------------------------------------------
       // Group → ordered section keys
       // ------------------------------------------------------------------------
       const GROUP_SECS = {
-        1: [
-          "basic_124",
-          "tx_1",
-          "propDetails_unit",
-          "building",
-          "land",
-          "highlights",
-          "amenities",
-          "poi",
-          "media",
-          "description",
-        ],
-        2: [
-          "basic_124",
-          "tx_2",
-          "propDetails_building",
-          "building",
-          "land",
-          "highlights",
-          "amenities",
-          "poi",
-          "media",
-          "description",
-        ],
-        3: [
-          "basic_3",
-          "sellPrice_3",
-          "land_3",
-          "facilities_3",
-          "poi",
-          "media",
-          "description",
-        ],
+        1: ["basic_124","tx_1","propDetails_unit","building","land","highlights","amenities","poi","media","description","performance"],
+        2: ["basic_124","tx_2","propDetails_building","building","land","highlights","amenities","poi","media","description","performance"],
+        3: ["basic_3","sellPrice_3","land_3","facilities_3","poi","media","description","performance"],
       };
 
       const GROUP_META = {
@@ -4957,6 +4946,41 @@
         });
       })();
 
+      (function seedPerformance() {
+        const AD_NAMES = [
+          { id: "AD-001", name: "Homepage Banner Top", type: "Banner #1" },
+          { id: "AD-002", name: "Search Results Sidebar", type: "Banner #2" },
+          { id: "AD-003", name: "Property Detail Related", type: "Banner #3" },
+          { id: "AD-004", name: "Email Newsletter Slot", type: "Banner #4" },
+          { id: "AD-005", name: "Mobile App Featured", type: "Banner #5" },
+          { id: "AD-006", name: "New Dev Spotlight", type: "Banner #6" },
+          { id: "AD-007", name: "Investor Dashboard Widget", type: "Banner #7" },
+        ];
+        properties.forEach((p, i) => {
+          if (p.performance) return;
+          // Standard listing metrics — deterministic per index
+          const imp   = 1200 + ((i * 317) % 8000);
+          const views = Math.round(imp * (0.18 + (i % 7) * 0.03));
+          const clicks= Math.round(views * (0.22 + (i % 5) * 0.04));
+          const keep  = Math.round(clicks * (0.08 + (i % 4) * 0.02));
+          // Ads — 0 to 3 ads per property, deterministic
+          const adCount = i % 4; // 0,1,2,3
+          const ads = [];
+          for (let a = 0; a < adCount; a++) {
+            const ad = AD_NAMES[(i + a) % AD_NAMES.length];
+            const aImp   = 800 + (((i + a) * 211) % 5000);
+            const aViews = Math.round(aImp * (0.15 + (a % 4) * 0.04));
+            const aClicks= Math.round(aViews * (0.20 + (a % 3) * 0.05));
+            const aKeep  = Math.round(aClicks * (0.07 + (a % 4) * 0.02));
+            ads.push({
+              adId: ad.id, adName: ad.name, adType: ad.type,
+              impressions: aImp, views: aViews, clicks: aClicks, keep: aKeep,
+            });
+          }
+          p.performance = { standardListing: { impressions: imp, views, clicks, keep }, ads };
+        });
+      })();
+
       // ========================================================================
       // STATE + HELPERS
       // ========================================================================
@@ -5293,6 +5317,7 @@
         let inner;
         if (sec.custom === "poi") inner = renderPOI(prop);
         else if (sec.custom === "media") inner = renderMedia(prop);
+        else if (sec.custom === "performance") inner = renderPerformance(prop);
         else if (sec.accord) inner = renderAmenities(sec, prop);
         else {
           const items = (sec.fields || [])
@@ -5812,6 +5837,153 @@
         `;
       }
 
+      function renderPerformance(prop) {
+        const perf = prop.performance || {};
+        const sl   = perf.standardListing || {};
+        const ads  = Array.isArray(perf.ads) ? perf.ads : [];
+
+        // Runtime calculations — never stored as %, always derived
+        function ctr(clicks, impressions) {
+          if (!impressions) return "—";
+          return (clicks / impressions * 100).toFixed(1) + "%";
+        }
+        function kpr(keep, clicks) {
+          if (!clicks) return "—";
+          return (keep / clicks * 100).toFixed(1) + "%";
+        }
+        function ratePillCls(pct) {
+          if (pct === "—") return "badge-gray";
+          const n = parseFloat(pct);
+          if (n >= 10) return "badge-active";
+          if (n >= 5)  return "badge-amber";
+          return "badge-closed";
+        }
+        function metricRow(label, imp, views, clicks, keep) {
+          const ctrVal = ctr(clicks, imp);
+          const kprVal = kpr(keep, clicks);
+          return `
+            <tr>
+              <td style="font-weight:600;color:var(--text-main)">${esc(label)}</td>
+              <td>${(imp   || 0).toLocaleString()}</td>
+              <td>${(views || 0).toLocaleString()}</td>
+              <td>${(clicks|| 0).toLocaleString()}</td>
+              <td><span class="badge ${ratePillCls(ctrVal)}" style="font-size:11px">${esc(ctrVal)}</span></td>
+              <td>${(keep  || 0).toLocaleString()}</td>
+              <td><span class="badge ${ratePillCls(kprVal)}" style="font-size:11px">${esc(kprVal)}</span></td>
+            </tr>`;
+        }
+
+        // Combined totals
+        let totImp = sl.impressions || 0, totViews = sl.views || 0,
+            totClicks = sl.clicks || 0, totKeep = sl.keep || 0;
+        ads.forEach(a => {
+          totImp    += a.impressions || 0;
+          totViews  += a.views       || 0;
+          totClicks += a.clicks      || 0;
+          totKeep   += a.keep        || 0;
+        });
+
+        const thead = `
+          <thead>
+            <tr style="background:var(--bg-header-soft)">
+              <th style="min-width:160px">Source</th>
+              <th>Impressions</th>
+              <th>Views</th>
+              <th>Clicks</th>
+              <th>CTR</th>
+              <th>Keep</th>
+              <th>KPR</th>
+            </tr>
+          </thead>`;
+
+        // Per Ad rows
+        const adRows = ads.length
+          ? ads.map(a => metricRow(
+              `${esc(a.adName)} <span style="font-size:10px;color:var(--text-muted)">(${esc(a.adType)})</span>`,
+              a.impressions, a.views, a.clicks, a.keep
+            )).join("")
+          : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:14px;font-size:12px">
+              <i class="fas fa-circle-info"></i> This property has not been placed in any ads yet.
+            </td></tr>`;
+
+        return `
+          <style>
+            .perf-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+            .perf-table th { padding:9px 12px; font-size:11px; font-weight:700; color:var(--text-muted);
+              text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; text-align:left; }
+            .perf-table td { padding:10px 12px; border-top:1px solid var(--border-soft);
+              color:var(--text-main); vertical-align:middle; }
+            .perf-block { border:1px solid var(--border-subtle); border-radius:var(--r-md);
+              overflow:hidden; margin-bottom:14px; }
+            .perf-block-head { padding:9px 14px; background:var(--bg-header-soft);
+              border-bottom:1px solid var(--border-subtle); display:flex; align-items:center;
+              gap:8px; font-size:12.5px; font-weight:700; color:var(--text-main); }
+            .perf-block-head i { color:var(--accent); width:16px; text-align:center; }
+            .perf-total-row td { background:var(--bg-card-warm); font-weight:700;
+              border-top:2px solid var(--border-warm); }
+          </style>
+
+          <div style="margin-bottom:10px;font-size:12px;color:var(--text-muted)">
+            <i class="fas fa-circle-info"></i>
+            CTR = Clicks ÷ Impressions · KPR = Keep ÷ Clicks · Metrics are read-only and updated daily.
+          </div>
+
+          <!-- 1. Standard Listing -->
+          <div class="perf-block">
+            <div class="perf-block-head">
+              <i class="fas fa-list-ul"></i> Standard Listing
+              <span style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:4px">
+                — organic search &amp; browse performance
+              </span>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="perf-table">
+                ${thead}
+                <tbody>
+                  ${metricRow("Standard Listing", sl.impressions, sl.views, sl.clicks, sl.keep)}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 2. Per Ad -->
+          <div class="perf-block">
+            <div class="perf-block-head">
+              <i class="fas fa-rectangle-ad"></i> Per Ad
+              <span style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:4px">
+                — ${ads.length} active ad slot${ads.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="perf-table">
+                ${thead}
+                <tbody>${adRows}</tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 3. Combined Total -->
+          <div class="perf-block">
+            <div class="perf-block-head">
+              <i class="fas fa-sigma"></i> Combined Total
+              <span style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:4px">
+                — Standard Listing + all Ads
+              </span>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="perf-table">
+                ${thead}
+                <tbody>
+                  <tr class="perf-total-row">
+                    ${metricRow("Total", totImp, totViews, totClicks, totKeep)
+                      .replace("<tr>", "").replace("</tr>", "")}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>`;
+      }
+
       // ========================================================================
       // LIST
       // ========================================================================
@@ -5825,6 +5997,24 @@
       function priceCell(p) {
         if (p.txType === "Rent") return fmtYen(p.rentMonthly) + "/mo";
         return fmtYen(p.priceBuy);
+      }
+      function fmtAddress(p) {
+        // Line 1: postcode
+        const line1 = p.postCode ? "〒" + p.postCode : "";
+        // Line 2: Prefecture, City/Ward, Chome + HouseNo
+        const ward = p.city || "";
+        const chome = p.chome ? " " + p.chome : "";
+        const houseNo = p.houseNo ? "-" + p.houseNo : "";
+        const line2Parts = [p.prefecture, ward].filter(Boolean);
+        const line2 = line2Parts.join(", ") + chome + houseNo;
+        // Line 3: Building + Unit
+        const line3Parts = [p.buildingName, p.houseNo && !p.chome ? p.houseNo : ""]
+          .filter(Boolean);
+        // Nếu buildingName tồn tại, show riêng dòng 3
+        const line3 = p.buildingName
+          ? p.buildingName + (p.unitNo ? " " + p.unitNo : "")
+          : "";
+        return [line1, line2, line3].filter(Boolean).join("<br>");
       }
       // New Development listings (Groups 5 & 6) — surfaced in the Grid view so the
       // grid spans all 6 property groups. Clicking opens the Project Management page.
@@ -6023,7 +6213,7 @@
             <td>${badgeTx(p.txType || (p.group === 3 ? "Buy" : ""))}</td>
             <td>${badgeSale(p.saleStatus)}</td>
             <td>${priceCell(p)}</td>
-            <td>${esc(p.prefecture)} · ${esc(p.city)}</td>
+            <td style="font-size:12px;line-height:1.55">${fmtAddress(p)}</td>
             <td>${esc(p.agent)}</td>
             <td>${badgePublish(p.publishStatus)}</td>
             <td>${fmtDate(p.dateUpdated)}</td>
@@ -6141,6 +6331,16 @@
           return false;
         if (F.sales.length && !F.sales.includes(p.saleStatus || "On Sale"))
           return false;
+        if (F.keepMin != null || F.keepMax != null) {
+          const k = (p.performance && p.performance.standardListing && p.performance.standardListing.keep) || 0;
+          if (F.keepMin != null && k < F.keepMin) return false;
+          if (F.keepMax != null && k > F.keepMax) return false;
+        }
+        if (F.clickMin != null || F.clickMax != null) {
+          const c = (p.performance && p.performance.standardListing && p.performance.standardListing.clicks) || 0;
+          if (F.clickMin != null && c < F.clickMin) return false;
+          if (F.clickMax != null && c > F.clickMax) return false;
+        }
         if (F.yieldMin != null) {
           const y = p.estGrossYield ?? p.grossYield ?? p.curGrossYield ?? null;
           if (y == null || Number(y) < F.yieldMin) return false;
@@ -6227,6 +6427,8 @@
         FILT.beds = [];
         FILT.sizeMin = null;
         FILT.sizeMax = null;
+        FILT.keepMin  = null; FILT.keepMax  = null;
+        FILT.clickMin = null; FILT.clickMax = null;
         FILT.priceMin = null;
         FILT.priceMax = null;
         FILT.statuses = [];
@@ -6242,6 +6444,10 @@
         $("fPriceMax").value = "";
         $("sizeFrom").value = "";
         $("sizeTo").value = "";
+        $("fKeepMin").value = "";
+        $("fKeepMax").value = "";
+        $("fClickMin").value = "";
+        $("fClickMax").value = "";
         syncFilterUI();
         applyFilters();
       }
@@ -6679,6 +6885,10 @@
         yieldMin: null,
         landMin: null,
         landMax: null,
+        keepMin: null,
+        keepMax: null,
+        clickMin: null,
+        clickMax: null,
         search: "",
         sort: "updateLatest",
       };
@@ -6903,6 +7113,10 @@
         });
         $("sizeFrom").value = FILT.sizeMin ?? "";
         $("sizeTo").value = FILT.sizeMax ?? "";
+        $("fKeepMin").value  = FILT.keepMin  ?? "";
+        $("fKeepMax").value  = FILT.keepMax  ?? "";
+        $("fClickMin").value = FILT.clickMin ?? "";
+        $("fClickMax").value = FILT.clickMax ?? "";
         $("fPriceMin").value = FILT.priceMin ?? "";
         $("fPriceMax").value = FILT.priceMax ?? "";
         document.querySelectorAll("[data-sort]").forEach((el) => {
@@ -6956,6 +7170,14 @@
         FILT.priceMax =
           $("fPriceMax").value === "" ? null : Number($("fPriceMax").value);
       }
+      function commitKeep() {
+        FILT.keepMin = $("fKeepMin").value === "" ? null : Number($("fKeepMin").value);
+        FILT.keepMax = $("fKeepMax").value === "" ? null : Number($("fKeepMax").value);
+      }
+      function commitClick() {
+        FILT.clickMin = $("fClickMin").value === "" ? null : Number($("fClickMin").value);
+        FILT.clickMax = $("fClickMax").value === "" ? null : Number($("fClickMax").value);
+      }
 
       // ------------------------------------------------------------------------
       // Active-filter chips + per-button badge counts
@@ -6978,6 +7200,8 @@
         );
         set("bed", FILT.beds.length);
         set("size", FILT.sizeMin != null || FILT.sizeMax != null ? 1 : 0);
+        set("keep",  FILT.keepMin  != null || FILT.keepMax  != null ? 1 : 0);
+        set("click", FILT.clickMin != null || FILT.clickMax != null ? 1 : 0);
         set("price", FILT.priceMin != null || FILT.priceMax != null ? 1 : 0);
         set("status", FILT.statuses.length);
         set("sale", FILT.sales.length);
@@ -7091,6 +7315,8 @@
         else if (name === "region") commitRegion();
         else if (name === "size") commitSize();
         else if (name === "price") commitPrice();
+        else if (name === "keep") commitKeep();
+        else if ( name === "click") commitClick();
         // sort commits on radio change directly
         applyFilters();
       }

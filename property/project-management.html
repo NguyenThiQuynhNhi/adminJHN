@@ -1682,7 +1682,7 @@
             <input
               id="fSearch"
               type="text"
-              placeholder="Name, ID, agent, address…"
+              placeholder="Name, ID, agency, address…"
             />
           </div>
 
@@ -1877,16 +1877,50 @@
             </div>
           </div>
 
-          <!-- Advanced Filter -->
+         <!-- Advanced Filter -->
           <button class="pop-btn" type="button" onclick="openAdvModal()">
             <i class="fas fa-sliders"></i> Advanced Filter
           </button>
+          <!-- Keep (Saves) filter -->
+          <div class="pop-wrap" data-pop="keep">
+            <button class="pop-btn" type="button" data-pop-toggle>
+              <i class="fas fa-bookmark"></i> Saves
+              <span class="cnt hidden" data-cnt="keep">0</span>
+              <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="pop-panel right" data-pop-panel style="min-width:240px">
+              <div class="pop-range">
+                <input type="number" min="0" placeholder="Min" id="fKeepMin" />
+                <span>to</span>
+                <input type="number" min="0" placeholder="Max" id="fKeepMax" />
+              </div>
+              <div class="pop-foot">
+                <button class="btn btn-sm" type="button" data-pop-done>Apply</button>
+              </div>
+            </div>
+          </div>
+          <!-- Clicks filter -->
+          <div class="pop-wrap" data-pop="click">
+            <button class="pop-btn" type="button" data-pop-toggle>
+              <i class="fas fa-arrow-pointer"></i> Clicks
+              <span class="cnt hidden" data-cnt="click">0</span>
+              <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="pop-panel right" data-pop-panel style="min-width:240px">
+              <div class="pop-range">
+                <input type="number" min="0" placeholder="Min" id="fClickMin" />
+                <span>to</span>
+                <input type="number" min="0" placeholder="Max" id="fClickMax" />
+              </div>
+              <div class="pop-foot">
+                <button class="btn btn-sm" type="button" data-pop-done>Apply</button>
+              </div>
+            </div>
+          </div>
         </div>
-
         <!-- Active filter chips -->
         <div class="chip-row hidden" id="chipRow"></div>
       </section>
-
       <style id="prjGridCss">
         .view-toggle {
           display: inline-flex;
@@ -2053,7 +2087,7 @@
                 <th>Transaction</th>
                 <th>Price</th>
                 <th>Address</th>
-                <th>Agent</th>
+                <th>Agency</th>
                 <th>Status</th>
                 <th>Updated</th>
               </tr>
@@ -2089,6 +2123,14 @@
         <div class="detail-toolbar-right" id="toolbarView">
           <button class="btn" type="button" onclick="enterEditMode()">
             <i class="fas fa-edit"></i> Edit
+          </button>
+          <button
+            class="btn btn-success hidden"
+            id="approveBtn"
+            type="button"
+            onclick="approveProject()"
+          >
+            <i class="fas fa-check"></i> Approve
           </button>
           <button
             class="btn hidden"
@@ -3116,6 +3158,11 @@
             },
           ],
         },
+        performance: {
+          title: "Performance",
+          icon: "fa-chart-line",
+          custom: "performance",
+        },
       };
 
       const GROUP_SECS = {
@@ -3130,6 +3177,7 @@
           "poi",
           "media",
           "description",
+          "performance",
         ],
         6: [
           "basic",
@@ -3142,6 +3190,7 @@
           "poi",
           "media",
           "description",
+          "performance",
         ],
       };
 
@@ -3165,7 +3214,7 @@
         {
           id: "PRJ-1042",
           group: 5,
-          agent: "Yamada Hiroshi (ABC Realty)",
+          agent: "ABC Realty",
           propType: "Apartment",
           nameJp: "東雲コンドミニアム",
           nameRomaji: "Shinonome Condominium",
@@ -3483,7 +3532,7 @@
         {
           id: "PRJ-1158",
           group: 6,
-          agent: "Sato Mei (Karuizawa Living)",
+          agent: "Karuizawa Living",
           propType: "Resort House & Villa & Ski Chalet",
           nameJp: "軽井沢ヴィラ開発",
           nameRomaji: "Karuizawa Villa Development",
@@ -3802,12 +3851,12 @@
           "Mori Building Co.",
         ];
         const AGENTS = [
-          "Yamada Hiroshi (ABC Realty)",
-          "Sato Mei (Karuizawa Living)",
-          "Tanaka Ken (Sakura Estate)",
-          "Suzuki Aya (Bay Realty)",
-          "Watanabe Jun (Highland Homes)",
-          "Ito Rei (Metro Property)",
+          "ABC Realty",
+          "Karuizawa Living",
+          "Sakura Estate",
+          "Bay Realty",
+          "Highland Homes",
+          "Metro Property",
         ];
         const G5_TYPES = OPT.propType5;
         const G6_TYPES = OPT.propType6;
@@ -3816,7 +3865,7 @@
 
         let n = 0;
         const start = 2000;
-        while (projects.length < 62) {
+        while (projects.length < 10) {
           const seed = start + n;
           const group = seed % 2 === 0 ? 5 : 6;
           const pref = PREFS[seed % PREFS.length];
@@ -3884,7 +3933,7 @@
           if (publish === "Rejected") {
             base.rejectCategory = "Incomplete documentation";
             base.rejectNotes =
-              "Auto-generated demo rejection — re-submit with valid documents.";
+              "";
           }
           if (group === 5) {
             const tCount = 2 + (seed % 3);
@@ -3975,11 +4024,37 @@
               },
             ];
           }
-          projects.push(base);
+         projects.push(base);
           n++;
         }
       })();
-
+      (function seedProjectPerformance() {
+        const AD_NAMES = [
+          { id: "AD-001", name: "Homepage Banner Top", type: "Banner #1" },
+          { id: "AD-002", name: "Search Results Sidebar", type: "Banner #2" },
+          { id: "AD-003", name: "Project Detail Related", type: "Banner #3" },
+          { id: "AD-004", name: "Email Newsletter Slot", type: "Banner #4" },
+          { id: "AD-005", name: "Mobile App Featured", type: "Banner #5" },
+        ];
+        projects.forEach((p, i) => {
+          if (p.performance) return;
+          const imp = 1500 + ((i * 331) % 9000);
+          const views = Math.round(imp * (0.2 + (i % 6) * 0.03));
+          const clicks = Math.round(views * (0.24 + (i % 5) * 0.04));
+          const keep = Math.round(clicks * (0.09 + (i % 4) * 0.02));
+          const adCount = i % 4;
+          const ads = [];
+          for (let a = 0; a < adCount; a++) {
+            const ad = AD_NAMES[(i + a) % AD_NAMES.length];
+            const aImp = 900 + (((i + a) * 223) % 5000);
+            const aViews = Math.round(aImp * (0.16 + (a % 4) * 0.04));
+            const aClicks = Math.round(aViews * (0.21 + (a % 3) * 0.05));
+            const aKeep = Math.round(aClicks * (0.08 + (a % 4) * 0.02));
+            ads.push({ adId: ad.id, adName: ad.name, adType: ad.type, impressions: aImp, views: aViews, clicks: aClicks, keep: aKeep });
+          }
+          p.performance = { standardListing: { impressions: imp, views, clicks, keep }, ads };
+        });
+      })();
       // ========================================================================
       // STATE + HELPERS
       // ========================================================================
@@ -4402,6 +4477,7 @@
         else if (sec.custom === "lots") inner = renderLots(p);
         else if (sec.custom === "poi") inner = renderPOI(p);
         else if (sec.custom === "media") inner = renderMedia(p);
+        else if (sec.custom === "performance") inner = renderPerformance(p);
         else if (sec.accord) inner = renderAmenities(sec, p);
         else {
           const items = (sec.fields || [])
@@ -5246,6 +5322,63 @@
         `;
       }
 
+      function renderPerformance(prop) {
+        const perf = prop.performance || {};
+        const sl = perf.standardListing || {};
+        const ads = Array.isArray(perf.ads) ? perf.ads : [];
+        function ctr(clicks, impressions) { return impressions ? (clicks / impressions * 100).toFixed(1) + "%" : "—"; }
+        function kpr(keep, clicks) { return clicks ? (keep / clicks * 100).toFixed(1) + "%" : "—"; }
+        function ratePillCls(pct) {
+          if (pct === "—") return "badge-gray";
+          const n = parseFloat(pct);
+          if (n >= 10) return "badge-onsale";
+          if (n >= 5) return "badge-amber";
+          return "badge-closed";
+        }
+        function metricRow(label, imp, views, clicks, keep) {
+          const ctrVal = ctr(clicks, imp), kprVal = kpr(keep, clicks);
+          return `<tr>
+            <td style="font-weight:600;color:var(--text-main)">${esc(label)}</td>
+            <td>${(imp || 0).toLocaleString()}</td>
+            <td>${(views || 0).toLocaleString()}</td>
+            <td>${(clicks || 0).toLocaleString()}</td>
+            <td><span class="badge ${ratePillCls(ctrVal)}" style="font-size:11px">${esc(ctrVal)}</span></td>
+            <td>${(keep || 0).toLocaleString()}</td>
+            <td><span class="badge ${ratePillCls(kprVal)}" style="font-size:11px">${esc(kprVal)}</span></td>
+          </tr>`;
+        }
+        let totImp = sl.impressions || 0, totViews = sl.views || 0, totClicks = sl.clicks || 0, totKeep = sl.keep || 0;
+        ads.forEach((a) => { totImp += a.impressions || 0; totViews += a.views || 0; totClicks += a.clicks || 0; totKeep += a.keep || 0; });
+        const thead = `<thead><tr style="background:var(--bg-header-soft)">
+          <th style="min-width:160px">Source</th><th>Impressions</th><th>Views</th><th>Clicks</th><th>CTR</th><th>Keep</th><th>KPR</th>
+        </tr></thead>`;
+        const adRows = ads.length
+          ? ads.map((a) => metricRow(`${esc(a.adName)} <span style="font-size:10px;color:var(--text-muted)">(${esc(a.adType)})</span>`, a.impressions, a.views, a.clicks, a.keep)).join("")
+          : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:14px;font-size:12px"><i class="fas fa-circle-info"></i> This project has not been placed in any ads yet.</td></tr>`;
+        return `
+          <style>
+            .perf-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+            .perf-table th { padding:9px 12px; font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; text-align:left; }
+            .perf-table td { padding:10px 12px; border-top:1px solid var(--border-soft); color:var(--text-main); vertical-align:middle; }
+            .perf-block { border:1px solid var(--border-subtle); border-radius:var(--r-md); overflow:hidden; margin-bottom:14px; }
+            .perf-block-head { padding:9px 14px; background:var(--bg-header-soft); border-bottom:1px solid var(--border-subtle); display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:var(--text-main); }
+            .perf-block-head i { color:var(--accent); width:16px; text-align:center; }
+            .perf-total-row td { background:var(--bg-card-warm); font-weight:700; border-top:2px solid var(--border-warm); }
+          </style>
+          <div style="margin-bottom:10px;font-size:12px;color:var(--text-muted)"><i class="fas fa-circle-info"></i> CTR = Clicks ÷ Impressions · KPR = Keep ÷ Clicks · Metrics are read-only and updated daily.</div>
+          <div class="perf-block">
+            <div class="perf-block-head"><i class="fas fa-list-ul"></i> Standard Listing<span style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:4px">— organic search &amp; browse performance</span></div>
+            <div style="overflow-x:auto"><table class="perf-table">${thead}<tbody>${metricRow("Standard Listing", sl.impressions, sl.views, sl.clicks, sl.keep)}</tbody></table></div>
+          </div>
+          <div class="perf-block">
+            <div class="perf-block-head"><i class="fas fa-rectangle-ad"></i> Per Ad<span style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:4px">— ${ads.length} active ad slot${ads.length !== 1 ? "s" : ""}</span></div>
+            <div style="overflow-x:auto"><table class="perf-table">${thead}<tbody>${adRows}</tbody></table></div>
+          </div>
+          <div class="perf-block">
+            <div class="perf-block-head"><i class="fas fa-sigma"></i> Combined Total<span style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:4px">— Standard Listing + all Ads</span></div>
+            <div style="overflow-x:auto"><table class="perf-table">${thead}<tbody><tr class="perf-total-row">${metricRow("Total", totImp, totViews, totClicks, totKeep).replace("<tr>", "").replace("</tr>", "")}</tr></tbody></table></div>
+          </div>`;
+      }
       // ========================================================================
       // LIST
       // ========================================================================
@@ -5258,6 +5391,15 @@
         if (!s || (!s.priceLo && !s.priceHi)) return "TBA";
         if (s.priceLo === s.priceHi) return fmtYenShort(s.priceLo);
         return `${fmtYenShort(s.priceLo)} – ${fmtYenShort(s.priceHi)}`;
+      }
+      function fmtAddress(p) {
+        const line1 = p.postCode ? "〒" + p.postCode : "";
+        const chome = p.chome ? " " + p.chome : "";
+        const line2 = [p.prefecture, p.city].filter(Boolean).join(", ") + chome;
+        const line3 = p.buildingName
+          ? p.buildingName + (p.unitNo ? " " + p.unitNo : "")
+          : "";
+        return [line1, line2, line3].filter(Boolean).join("<br>");
       }
       function unitsCell(p) {
         if (p.group === 5) {
@@ -5384,7 +5526,7 @@
             <td>${esc(p.propType)}</td>
             <td>${badgeTx(p.transactionType || "Buy")}</td>
             <td>${priceCell(p)}</td>
-            <td>${esc(p.prefecture)} · ${esc(p.city)}</td>
+            <td style="font-size:12px;line-height:1.55">${fmtAddress(p)}</td>
             <td>${esc(p.agent || "—")}</td>
             <td>${badgePublish(p.publishStatus)}</td>
             <td>${fmtDate(p.dateUpdated)}</td>
@@ -5459,6 +5601,10 @@
         yieldMin: null,
         landMin: null,
         landMax: null,
+        keepMin: null,
+        keepMax: null,
+        clickMin: null,
+        clickMax: null,
         developer: "", // advanced-only (Developer free text)
         completionFrom: "", // advanced-only
         completionTo: "", // advanced-only
@@ -5637,6 +5783,16 @@
           return false;
         if (F.sales.length && !F.sales.includes(p.salesStatus || "On Sale"))
           return false;
+        if (F.keepMin != null || F.keepMax != null) {
+          const k = (p.performance && p.performance.standardListing && p.performance.standardListing.keep) || 0;
+          if (F.keepMin != null && k < F.keepMin) return false;
+          if (F.keepMax != null && k > F.keepMax) return false;
+        }
+        if (F.clickMin != null || F.clickMax != null) {
+          const c = (p.performance && p.performance.standardListing && p.performance.standardListing.clicks) || 0;
+          if (F.clickMin != null && c < F.clickMin) return false;
+          if (F.clickMax != null && c > F.clickMax) return false;
+        }
         if (F.yieldMin != null) {
           const y = projYieldMax(p);
           if (y == null || y < F.yieldMin) return false;
@@ -5736,6 +5892,10 @@
         FILT.beds = [];
         FILT.sizeMin = null;
         FILT.sizeMax = null;
+        FILT.keepMin = null;
+        FILT.keepMax = null;
+        FILT.clickMin = null;
+        FILT.clickMax = null;
         FILT.priceMin = null;
         FILT.priceMax = null;
         FILT.statuses = [];
@@ -5754,6 +5914,10 @@
         $("fPriceMax").value = "";
         $("sizeFrom").value = "";
         $("sizeTo").value = "";
+        $("fKeepMin").value = "";
+        $("fKeepMax").value = "";
+        $("fClickMin").value = "";
+        $("fClickMax").value = "";
         buildSortRadios();
         syncFilterUI();
         applyFilters();
@@ -5899,6 +6063,10 @@
         });
         $("sizeFrom").value = FILT.sizeMin ?? "";
         $("sizeTo").value = FILT.sizeMax ?? "";
+        $("fKeepMin").value = FILT.keepMin ?? "";
+        $("fKeepMax").value = FILT.keepMax ?? "";
+        $("fClickMin").value = FILT.clickMin ?? "";
+        $("fClickMax").value = FILT.clickMax ?? "";
         $("fPriceMin").value = FILT.priceMin ?? "";
         $("fPriceMax").value = FILT.priceMax ?? "";
         document.querySelectorAll("[data-sort]").forEach((el) => {
@@ -5949,6 +6117,14 @@
         FILT.priceMax =
           $("fPriceMax").value === "" ? null : Number($("fPriceMax").value);
       }
+      function commitKeep() {
+        FILT.keepMin = $("fKeepMin").value === "" ? null : Number($("fKeepMin").value);
+        FILT.keepMax = $("fKeepMax").value === "" ? null : Number($("fKeepMax").value);
+      }
+      function commitClick() {
+        FILT.clickMin = $("fClickMin").value === "" ? null : Number($("fClickMin").value);
+        FILT.clickMax = $("fClickMax").value === "" ? null : Number($("fClickMax").value);
+      }
 
       function renderFilterBadges() {
         const set = (key, n) => {
@@ -5968,6 +6144,8 @@
         );
         set("bed", FILT.beds.length);
         set("size", FILT.sizeMin != null || FILT.sizeMax != null ? 1 : 0);
+        set("keep", FILT.keepMin != null || FILT.keepMax != null ? 1 : 0);
+        set("click", FILT.clickMin != null || FILT.clickMax != null ? 1 : 0);
         set("price", FILT.priceMin != null || FILT.priceMax != null ? 1 : 0);
         set("status", FILT.statuses.length);
         set("sale", FILT.sales.length);
@@ -6088,6 +6266,8 @@
         else if (name === "region") commitRegion();
         else if (name === "size") commitSize();
         else if (name === "price") commitPrice();
+        else if (name === "keep") commitKeep();
+        else if (name === "click") commitClick();
         // sort commits on radio change directly
         applyFilters();
       }
@@ -6800,6 +6980,16 @@
         } else {
           tog.className = "btn hidden";
         }
+        const apBtn = $("approveBtn");
+        if (p.publishStatus === "Pending Review" || p.publishStatus === "Rejected") {
+          apBtn.classList.remove("hidden");
+          apBtn.innerHTML =
+            p.publishStatus === "Rejected"
+              ? '<i class="fas fa-check"></i> Accept project'
+              : '<i class="fas fa-check"></i> Approve';
+        } else {
+          apBtn.classList.add("hidden");
+        }
 
         const alerts = [];
         const e = expiryInfo(p);
@@ -7049,6 +7239,40 @@
         });
       }
 
+      function approveProject() {
+        if (!currentProj) return;
+        const wasRejected = currentProj.publishStatus === "Rejected";
+        showConfirm({
+          title: wasRejected ? "Accept this project?" : "Approve this project?",
+          body: wasRejected
+            ? `Accept ${currentProj.id} (${currentProj.name})? It will be published again and become visible publicly.`
+            : `Approve ${currentProj.id} (${currentProj.name})? It will become visible publicly.`,
+          confirmLabel: wasRejected ? "Accept" : "Approve",
+          danger: false,
+          onConfirm: () => {
+            const today = new Date().toISOString().slice(0, 10);
+            currentProj.publishStatus = "Published";
+            if (!currentProj.datePublished) currentProj.datePublished = today;
+            currentProj.dateUpdated = today;
+            currentProj.rejectCategory = undefined;
+            currentProj.rejectNotes = undefined;
+            currentProj.changeHistory = currentProj.changeHistory || [];
+            currentProj.changeHistory.unshift({
+              ts: today + " 00:00:00",
+              actorId: "ADM-002",
+              actorName: "Admin Operator",
+              role: "Admin",
+              field: "publishStatus",
+              oldVal: wasRejected ? "Rejected" : "Pending Review",
+              newVal: "Published",
+            });
+            originalProj = JSON.parse(JSON.stringify(currentProj));
+            renderDetail();
+            renderList();
+            toast(wasRejected ? "Project accepted and published." : "Project approved and published.");
+          },
+        });
+      }
       function toggleSuspend() {
         if (!currentProj) return;
         // Only valid from Published (suspend) or Suspended (re-activate).
