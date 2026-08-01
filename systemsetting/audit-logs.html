@@ -69,7 +69,7 @@
       }
       .card-header {
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-end;
         align-items: center;
         gap: 10px;
         margin-bottom: 10px;
@@ -285,6 +285,16 @@
         color: var(--badge-red);
         border-color: #fed7d7;
       }
+      .cat-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .badge-cat {
+        background: #faf6ee;
+        color: var(--accent);
+        border-color: #eadccd;
+      }
 
       /* Result count + pager */
       .result-count {
@@ -439,28 +449,17 @@
   </head>
   <body>
     <h1>Audit Logs</h1>
-    <div class="retention">
-      🔒 Logs are retained for 5 years per platform policy.
-    </div>
 
     <div id="listView">
       <section class="card">
         <div class="card-header">
-          <div class="title-wrap">
-            <span class="card-title">Audit log table</span>
-          </div>
           <button id="btnExportCsv" class="btn btn-ghost" type="button">
-            Export CSV
+            Export
           </button>
-        </div>
-
-        <div class="filter-head">
-          <span class="field-label">Filters</span>
           <button id="btnReset" class="btn btn-ghost" type="button">
             Reset filters
           </button>
         </div>
-
         <div class="filters">
           <div class="field-group">
             <label class="field-label" for="presetFilter">Date preset</label>
@@ -488,16 +487,6 @@
             <label class="field-label">Action category</label>
             <div class="ms" id="msCategory"></div>
           </div>
-          <div class="field-group" style="flex: 1 1 200px">
-            <label class="field-label" for="searchLog"
-              >Search by resource</label
-            >
-            <input
-              id="searchLog"
-              type="text"
-              placeholder="e.g. USER-1042, security_policy..."
-            />
-          </div>
         </div>
 
         <div class="result-count" id="resultCount">Showing 0 of 0 entries</div>
@@ -511,6 +500,7 @@
                 <th data-sort="action">
                   Action <span class="sort-ind"></span>
                 </th>
+                <th>Action Category</th>
                 <th data-sort="resource">
                   Resource <span class="sort-ind"></span>
                 </th>
@@ -750,7 +740,7 @@
       }
 
       /* ════════ State ════════ */
-      const PAGE_SIZE = 50;
+      const PAGE_SIZE = 10;
       let page = 1;
       let sort = { col: "ts", dir: "desc" }; // default: time descending
       let _id = 0;
@@ -795,7 +785,7 @@
       (function seed() {
         const base = Date.now();
         const DAY = 86400000;
-        for (let i = 0; i < 84; i++) {
+        for (let i = 0; i < 10; i++) {
           const code = ACTION_CODES[i % ACTION_CODES.length];
           const actor = ADMINS[i % ADMINS.length];
           const dayOffset = Math.floor((i * 90) / 84); // spread 0..~89 days
@@ -913,7 +903,6 @@
           : null;
         const actors = msActor.values();
         const cats = msCategory.values();
-        const q = $("searchLog").value.trim().toLowerCase();
         return logs.filter((l) => {
           if (from && l.ts < from) return false;
           if (to && l.ts > to) return false;
@@ -921,16 +910,6 @@
           if (cats.length) {
             const ac = actionCats(l.action);
             if (!cats.some((c) => ac.includes(c))) return false;
-          }
-          if (q) {
-            const t = (
-              l.action +
-              " " +
-              l.resource +
-              " " +
-              l.summary
-            ).toLowerCase();
-            if (!t.includes(q)) return false;
           }
           return true;
         });
@@ -1025,6 +1004,19 @@
         const desc = (ACTIONS[code] && ACTIONS[code].desc) || code;
         return `<span class="action-code" title="${esc(desc)}">${esc(code)}</span>`;
       }
+      const CATEGORY_LABEL = Object.fromEntries(
+        CATEGORY_OPTS.map((o) => [o.value, o.label]),
+      );
+      function categoryHtml(code) {
+        const cats = actionCats(code);
+        if (!cats.length) return "—";
+        return `<div class="cat-badges">${cats
+          .map(
+            (c) =>
+              `<span class="badge badge-cat">${esc(CATEGORY_LABEL[c] || c)}</span>`,
+          )
+          .join("")}</div>`;
+      }
 
       function renderSortIndicators() {
         document.querySelectorAll("th[data-sort]").forEach((th) => {
@@ -1056,7 +1048,7 @@
         const tb = $("logTbody");
         if (!total) {
           tb.innerHTML =
-            '<tr><td class="empty-cell" colspan="5">No log entries match the filters.</td></tr>';
+            '<tr><td class="empty-cell" colspan="6">No log entries match the filters.</td></tr>';
           renderSortIndicators();
           renderPager(total);
           return;
@@ -1068,6 +1060,7 @@
             <td>${esc(l.time)}</td>
             <td>${actorHtml(l.actor)}</td>
             <td>${actionHtml(l.action)}</td>
+            <td>${categoryHtml(l.action)}</td>
             <td>${resourceHtml(l.resource)}</td>
           </tr>`,
           )
@@ -1192,7 +1185,6 @@
         $("dateTo").value = "";
         msActor.clear();
         msCategory.clear();
-        $("searchLog").value = "";
         sort = { col: "ts", dir: "desc" };
         page = 1;
         renderTable();
@@ -1209,10 +1201,6 @@
           renderTable();
         }),
       );
-      $("searchLog").addEventListener("input", () => {
-        page = 1;
-        renderTable();
-      });
       $("btnReset").addEventListener("click", resetFilters);
       $("btnExportCsv").addEventListener("click", exportCsv);
 
