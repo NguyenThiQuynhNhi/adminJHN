@@ -376,7 +376,7 @@ End-user (buyer) account management: filterable list + deep single-user **11-sec
 `:root`: `--bg-body#f5f3ef, --bg-card#fffaf2, --border-subtle#eadccd, --accent#c26b41, --accent-dark#a55232, --text-main#3b2f2a, --text-muted#7a6a5c, --badge-green#2f855a, --badge-red#c53030, --badge-gray#4a5568, --badge-amber#b7791f`, fs tokens. Many badge fills (active/suspended/deactivated/locked/premium). Font system-ui. Card radius 12px, modal 14px, pills 999px. `@media(max-width:768px)` stacks header/toolbar. Font Awesome 6.5.0. Charts are pure-CSS bars (no Chart.js).
 
 #### DOM Structure
-`#listView`(page-header[Export CSV], filters card, results table#listBody) + `#detailView.hidden`(toolbar[Back, #modeIndicator; #toolbarView: Edit/Suspend/Delete/Save-as-lead; #toolbarEdit: Cancel/Save], detail-hero, section-grid×11) + `#pwdResetModal`.
+`#listView`(page-header[Export], filters card, results table#listBody) + `#detailView.hidden`(toolbar[Back, #modeIndicator; #toolbarView: Edit/Suspend/Delete/Save-as-lead; #toolbarEdit: Cancel/Save], detail-hero, section-grid×11) + `#pwdResetModal`.
 
 #### Functions Reference
 `$`, `esc`, `escAttr`, `initials`, `avatarImg`, `getSel`, `fmtYen`, `parseSession`, `badgeStatus`, `badge2FA`, `badgePlan`, `badgePaid`, `badgeYesNo`, `badgeLock`, `badgeIdVerify`, `alertCount`, `alertBadge`, `renderList`, `applyFilters`, `resetFilters`, `vField(value,field,type,options,editable)`, `kv`, `kvFull`, `renderEditableSections`, `showDetail`, `renderDetail`, `renderMonthChart`, `showList`, `enterEditMode`, `cancelEdit`, `saveChanges`, `suspendAccount`, `deleteAccount`, `saveAsLead`(alert), `openChat`(alert), `saveSecurityQuestion`, `saveSecurityAnswer`, `resetPwd`, `closePwdResetModal`, `submitPwdReset`, `exportCsv`(alert).
@@ -561,7 +561,7 @@ Master/detail for third-party support partner accounts (property managers, tax/l
 ### 4.23 property/property-list-oversight.html
 
 #### Overview
-Master Property Management page. Two-view SPA: **List** (filterable table + Export CSV + New property) and **Detail** (schema-driven, group-aware, View/Edit). Three groups (G1 Single Unit, G2 Whole Building, G3 Land) generated from declarative `SEC`/`GROUP_SECS`/`OPT` schemas. Edit mode has reactive `showIf` conditional fields. Detail includes mock Google-Maps POI locator, media gallery, amenities accordion. "New property" modal → group picker; Groups 5/6 deep-link to Project Management. Moderation (Approve/Suspend/Delete) in detail toolbar.
+Master Property Management page. Two-view SPA: **List** (filterable table + Export + New property) and **Detail** (schema-driven, group-aware, View/Edit). Three groups (G1 Single Unit, G2 Whole Building, G3 Land) generated from declarative `SEC`/`GROUP_SECS`/`OPT` schemas. Edit mode has reactive `showIf` conditional fields. Detail includes mock Google-Maps POI locator, media gallery, amenities accordion. "New property" modal → group picker; Groups 5/6 deep-link to Project Management. Moderation (Approve/Suspend/Delete) in detail toolbar.
 
 #### CSS Summary
 `:root` token set (same as report-management) + extensive badge palette + POI category colors `#2c5282/#c26b41/#6b46c1/#2f855a/#c53030`. Font Awesome 6.5.0. `@keyframes toastIn`. `@media(max-width:768px)`.

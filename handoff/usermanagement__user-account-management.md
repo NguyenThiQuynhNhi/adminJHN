@@ -338,7 +338,7 @@ All dialogs on this screen are styled in-page modals (no browser-native `confirm
 1. Click the Chat button in a user's row. The shell content frame navigates to the Messages module for that user (the row itself does not open). Outside the shell, a styled "Open conversation" stub modal appears instead.
 
 **Export CSV:**
-1. Click "Export CSV" in the header. A success toast "Exported {N} users to CSV." shows (N = current filtered count).
+1. Click "Export" in the header. A success toast "Exported {N} users to CSV." shows (N = current filtered count).
 
 ---
 

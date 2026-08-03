@@ -245,6 +245,7 @@ a:hover {
         <thead>
           <tr>
             <th>Title</th>
+            <th>Type</th>
             <th>Category tag</th>
             <th>Transaction type</th>
             <th>Status</th>
@@ -268,12 +269,20 @@ a:hover {
         let newsPage = 1;
         let lastFilteredNewsRows = [];
 
+        function getNewsTypeLabel(row) {
+          if (row?.videoFlag === "Video Blog") return "Video";
+          return String(row?.type || "Blog").toLowerCase() === "video"
+            ? "Video"
+            : "Blog";
+        }
+
         // Seed ≥60 news rows to demonstrate pagination.
         const newsRows = (function buildNewsSeed() {
           const base = [
             {
               title: "Platform maintenance announcement",
               categoryTag: "Japan",
+              type: "Blog",
               transactionType: "None",
               status: "Published",
               author: "Anna",
@@ -281,6 +290,7 @@ a:hover {
             {
               title: "New lending rules impact investment",
               categoryTag: "Real estate",
+              type: "Video",
               transactionType: "SellerGuide",
               status: "Published",
               author: "Emily",
@@ -288,6 +298,7 @@ a:hover {
             {
               title: "Tax basics for investors",
               categoryTag: "Investment",
+              type: "Blog",
               transactionType: "None",
               status: "Published",
               author: "Jason",
@@ -320,6 +331,7 @@ a:hover {
             rows.push({
               title: topics[n % topics.length] + " #" + n,
               categoryTag: cats[n % cats.length],
+              type: n % 4 === 0 ? "Video" : "Blog",
               transactionType: txns[n % txns.length],
               status: n % 4 === 0 ? "Draft" : "Published",
               author: authors[n % authors.length],
@@ -421,6 +433,7 @@ a:hover {
             if (!search) return true;
             const haystack = [
               row.title,
+              getNewsTypeLabel(row),
               row.categoryTag,
               row.transactionType,
               row.status,
@@ -459,6 +472,7 @@ a:hover {
               (row, index) => `
                 <tr>
                   <td>${row.title}</td>
+                  <td><span class="badge ${getNewsTypeLabel(row) === "Video" ? "badge-info" : "badge-gray"}">${getNewsTypeLabel(row)}</span></td>
                   <td><span class="tag-chip" style="margin-right:0">${row.categoryTag}</span></td>
                   <td>${row.transactionType}</td>
                   <td><span class="badge ${row.status === "Published" ? "badge-success" : "badge-warning"}">${row.status}</span></td>
@@ -519,6 +533,7 @@ a:hover {
           if (typeof window.openBlogEditor === "function") {
             window.openBlogEditor("news", {
               title: row.title,
+              type: getNewsTypeLabel(row),
               category: row.categoryTag,
               transactionType: row.transactionType,
               status: String(row.status).toLowerCase(),

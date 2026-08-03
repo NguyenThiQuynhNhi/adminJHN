@@ -252,6 +252,7 @@ a:hover {
         <thead>
           <tr>
             <th>Title</th>
+            <th>Type</th>
             <th>Category tag</th>
             <th>Transaction type</th>
             <th>Status</th>
@@ -277,12 +278,20 @@ a:hover {
         const ARTICLE_PAGE_SIZE = 50;
         let articlePage = 1;
 
+        function getArticleTypeLabel(row) {
+          if (row?.videoFlag === "Video Blog") return "Video";
+          return String(row?.type || "Blog").toLowerCase() === "video"
+            ? "Video"
+            : "Blog";
+        }
+
         // Seed ≥60 article rows to demonstrate pagination.
         const articleRows = (function buildArticleSeed() {
           const base = [
             {
               title: "Guide: reading floor plans",
               categoryTag: "Guides",
+              type: "Blog",
               transactionType: "BuyerGuide",
               status: "Published",
               author: "Hana",
@@ -290,6 +299,7 @@ a:hover {
             {
               title: "Platform tips for new agents",
               categoryTag: "Blog",
+              type: "Video",
               transactionType: "SellerGuide",
               status: "Draft",
               author: "Yuki",
@@ -297,6 +307,7 @@ a:hover {
             {
               title: "Market insights — Q1 rental trends",
               categoryTag: "Market analysis",
+              type: "Blog",
               transactionType: "Renter Guide",
               status: "Draft",
               author: "Michael",
@@ -329,6 +340,7 @@ a:hover {
             rows.push({
               title: topics[n % topics.length] + " (Part " + n + ")",
               categoryTag: cats[n % cats.length],
+              type: n % 5 === 0 ? "Video" : "Blog",
               transactionType: txns[n % txns.length],
               status: n % 3 === 0 ? "Draft" : "Published",
               author: authors[n % authors.length],
@@ -430,6 +442,7 @@ a:hover {
             if (!search) return true;
             const haystack = [
               row.title,
+              getArticleTypeLabel(row),
               row.categoryTag,
               row.transactionType,
               row.status,
@@ -470,6 +483,7 @@ a:hover {
               (row, index) => `
                 <tr>
                   <td>${row.title}</td>
+                  <td><span class="badge ${getArticleTypeLabel(row) === "Video" ? "badge-info" : "badge-gray"}">${getArticleTypeLabel(row)}</span></td>
                   <td><span class="tag-chip" style="margin-right:0">${row.categoryTag}</span></td>
                   <td>${row.transactionType}</td>
                   <td><span class="badge ${row.status === "Published" ? "badge-success" : "badge-warning"}">${row.status}</span></td>
@@ -492,6 +506,7 @@ a:hover {
               if (typeof window.openBlogEditor === "function") {
                 window.openBlogEditor("article", {
                   title: row.title,
+                  type: getArticleTypeLabel(row),
                   category: row.categoryTag,
                   transactionType: row.transactionType,
                   status: String(row.status).toLowerCase(),

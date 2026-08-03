@@ -897,6 +897,83 @@
         max-height: 90vh;
       }
 
+      /* ============ Location Picker Modal (Shopee-style) ============ */
+      .locpick-box {
+        width: 720px;
+        max-width: 100%;
+        background: var(--bg-card);
+        border-radius: var(--r-lg);
+        box-shadow: var(--shadow-modal);
+        display: flex;
+        flex-direction: column;
+        max-height: 90vh;
+        overflow: hidden;
+      }
+      .locpick-body {
+        padding: 18px;
+        overflow: auto;
+      }
+      .locpick-selects {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .locpick-map {
+        position: relative;
+        width: 100%;
+        height: 320px;
+        border-radius: var(--r-md);
+        border: 1px solid var(--border-subtle);
+        background:
+          linear-gradient(0deg, rgba(139,115,64,0.08) 1px, transparent 1px) 0 0/28px 28px,
+          linear-gradient(90deg, rgba(139,115,64,0.08) 1px, transparent 1px) 0 0/28px 28px,
+          var(--bg-card-warm);
+        overflow: hidden;
+        cursor: grab;
+        touch-action: none;
+      }
+      .locpick-map:active { cursor: grabbing; }
+      .locpick-pin {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -100%);
+        font-size: 30px;
+        color: var(--status-danger-text);
+        pointer-events: none;
+        filter: drop-shadow(0 3px 4px rgba(0,0,0,0.3));
+      }
+      .locpick-center-dot {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--status-danger-text);
+        pointer-events: none;
+      }
+      .locpick-hint {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        background: rgba(255,255,255,0.92);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--r-sm);
+        padding: 6px 10px;
+        font-size: 11.5px;
+        color: var(--text-muted);
+        pointer-events: none;
+      }
+      .locpick-coords {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--text-muted);
+        font-family: ui-monospace, monospace;
+      }
+
       /* Group picker cards (Create modal) */
       .group-picker {
         display: flex;
@@ -1662,7 +1739,7 @@
         </div>
         <div class="page-header-actions">
           <button class="btn" type="button" onclick="exportCsv()">
-            <i class="fas fa-file-export"></i> Export CSV
+            <i class="fas fa-file-export"></i> Export
           </button>
           <button
             class="btn btn-primary"
@@ -2085,6 +2162,7 @@
                 <th>Project</th>
                 <th>Type</th>
                 <th>Transaction</th>
+                <th>Sale Status</th>
                 <th>Price</th>
                 <th>Address</th>
                 <th>Agency</th>
@@ -2133,6 +2211,14 @@
             <i class="fas fa-check"></i> Approve
           </button>
           <button
+            class="btn btn-danger hidden"
+            id="rejectBtn"
+            type="button"
+            onclick="rejectProject()"
+          >
+            <i class="fas fa-times"></i> Reject
+          </button>
+          <button
             class="btn hidden"
             type="button"
             id="btnSuspendToggle"
@@ -2164,11 +2250,6 @@
           <h2 class="detail-name" id="dName">—</h2>
           <div class="detail-meta">
             <span class="detail-id-pill" id="dId">PRJ-—</span>
-            <span id="dMetaAddress">—</span>
-            <span>·</span><span id="dMetaSales">—</span> <span>·</span
-            ><span id="dMetaPublish">—</span> <span>·</span
-            ><span id="dMetaTx">—</span> <span>·</span
-            ><span id="dMetaMembers">—</span>
           </div>
         </div>
       </div>
@@ -2285,6 +2366,46 @@
       </div>
     </div>
 
+    <!-- Location Picker Modal (map-style pin placement) -->
+    <div class="modal-backdrop" id="locPickModal">
+      <div class="locpick-box" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <h3 class="modal-title">Set location</h3>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="closeLocPicker()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="locpick-body">
+          <div class="locpick-selects">
+            <div class="field-group">
+              <label class="field-label">Prefecture</label>
+              <select id="lpPref" onchange="onLpPrefChange()"></select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">City / Ward</label>
+              <select id="lpCity" onchange="onLpCityChange()"></select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Chome</label>
+              <select id="lpChome"></select>
+            </div>
+          </div>
+          <div class="locpick-map" id="lpMap">
+            <div class="locpick-center-dot"></div>
+            <i class="fas fa-location-dot locpick-pin"></i>
+            <div class="locpick-hint">Drag the map to move the pin</div>
+          </div>
+          <div class="locpick-coords" id="lpCoords">Pin offset: 0, 0</div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" type="button" onclick="closeLocPicker()">Cancel</button>
+          <button class="btn btn-primary" type="button" onclick="confirmLocPicker()">
+            <i class="fas fa-check"></i> Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Reusable styled confirm modal -->
     <div class="modal-backdrop" id="confirmModal">
       <div class="modal-box" style="width: 460px">
@@ -2377,7 +2498,6 @@
       <div class="drawer-header">
         <div>
           <h3 id="historyTitle">Change History</h3>
-          <div class="sub">Full edit log for this project</div>
         </div>
         <button
           class="confirm-close"
@@ -2406,9 +2526,6 @@
         ></span>
         <div style="display: flex; gap: 8px; align-items: center">
           <div id="histPager" style="display: flex; gap: 6px"></div>
-          <button class="btn btn-sm" type="button" id="histExport">
-            <i class="fas fa-file-csv"></i> Export change log to CSV
-          </button>
         </div>
       </div>
     </div>
@@ -3148,6 +3265,7 @@
         description: {
           title: "Description",
           icon: "fa-align-left",
+          full: true,
           fields: [
             {
               k: "description",
@@ -3487,8 +3605,8 @@
           description:
             "Landmark 32-storey tower in Shinonome. Resort-grade amenities, panoramic bay views, walking distance to Tatsumi Station. 4 Floor Plan Types from 1LDK to 4LDK penthouse.",
           reports: [
-            { ts: "2026-04-15 10:22", reason: "Incorrect information" },
-            { ts: "2026-05-09 18:03", reason: "Unauthorized images" },
+            { ts: "2026-04-15 10:22", reason: "Incorrect information", role: "Admin", actorName: "Sato Admin", resolved: true, handledBy: "Sato Admin" },
+            { ts: "2026-05-09 18:03", reason: "Unauthorized images", role: "Admin", actorName: "Sato Admin", resolved: false, handledBy: "" },
           ],
           changeHistory: [
             {
@@ -3787,7 +3905,7 @@
           media: { tour3d: "", videoCount: 1, photoCount: 16 },
           description:
             "Boutique 5-lot villa development in Karuizawa highlands. Each lot a fully-detached wooden chalet, designed for year-round resort living.",
-          reports: [{ ts: "2026-05-04 09:15", reason: "Unauthorized listing" }],
+          reports: [{ ts: "2026-05-04 09:15", reason: "Unauthorized listing", role: "Admin", actorName: "Sato Admin", resolved: false, handledBy: "" }],
           changeHistory: [
             {
               ts: "2026-04-20 10:00",
@@ -3864,6 +3982,7 @@
         const LAYOUTS6 = ["3LDK", "4LDK", "5LDK"];
 
         let n = 0;
+        let publishCycle = 0; // independent counter so non-sold-out statuses stay evenly split
         const start = 2000;
         while (projects.length < 10) {
           const seed = start + n;
@@ -3871,8 +3990,14 @@
           const pref = PREFS[seed % PREFS.length];
           const cityList = OPT.cityByPref[pref] || ["Central"];
           const city = cityList[seed % cityList.length];
-          const publish = PUBLISH[seed % PUBLISH.length];
-          const soldOut = seed % 5 === 0; // ~1 in 5 fully sold
+          const soldOut = seed % 5 === 0; 
+          let publish;
+          if (soldOut) {
+            publish = "Suspended";
+          } else {
+            publish = PUBLISH[publishCycle % PUBLISH.length];
+            publishCycle++;
+          }
           const dev = DEVS[seed % DEVS.length];
           const agent = AGENTS[seed % AGENTS.length];
           const compMonth = (seed % 12) + 1;
@@ -3985,18 +4110,52 @@
               };
             });
           }
-          // 3–5 deterministic change-history entries.
           const hCount = 3 + (seed % 3);
+          const HIST_VALUE_PAIRS = {
+            publishStatus: [["Published", "Suspended"]],
+            salesStatus: [
+              ["On Sale", "Sold Out"],
+              ["Sold Out", "On Sale"],
+            ],
+            completionDate: (() => {
+              const d = new Date(completionDate);
+              d.setMonth(d.getMonth() - 2);
+              const oldDate = d.toISOString().slice(0, 10);
+              return [[oldDate, completionDate]];
+            })(),
+            dateUpdated: [
+              [`${compYear - 1}-07-01`, `${compYear - 1}-08-${String((seed % 27) + 1).padStart(2, "0")}`],
+            ],
+          };
           base.changeHistory = Array.from({ length: hCount }, (_, hi) => {
             const hSeed = seed + hi * 13;
+            if (hi === 0) {
+              return {
+                ts: `${compYear - 1}-01-05 18:22`,
+                actorId: "AGT-" + (200 + (hSeed % 99)),
+                actorName: AGENTS[hSeed % AGENTS.length].split(" (")[0],
+                role: "Agent",
+                field: "Project",
+                oldVal: "—",
+                newVal: "Created (Pending Review)",
+              };
+            }
+            if (hi === 1) {
+              return {
+                ts: `${compYear - 1}-02-10 11:15`,
+                actorId: "ADM-001",
+                actorName: "Sato Admin",
+                role: "Admin",
+                field: "publishStatus",
+                oldVal: "Pending Review",
+                newVal: "Published",
+              };
+            }
             const isAdmin = hSeed % 3 === 0;
-            const fields = [
-              "Created (Pending Review)",
-              "publishStatus",
-              "salesStatus",
-              "completionDate",
-              "dateUpdated",
-            ];
+            const fields = ["publishStatus", "salesStatus", "completionDate", "dateUpdated"];
+            const field = fields[hi % fields.length];
+            const pairSet = HIST_VALUE_PAIRS[field];
+            const pair = pairSet ? pairSet[hSeed % pairSet.length] : ["—", "—"];
             return {
               ts: `${compYear - 1}-0${(hi % 8) + 1}-${String((hSeed % 27) + 1).padStart(2, "0")} ${String((hSeed % 12) + 8).padStart(2, "0")}:${String(hSeed % 60).padStart(2, "0")}`,
               actorId: isAdmin ? "ADM-001" : "AGT-" + (200 + (hSeed % 99)),
@@ -4004,9 +4163,9 @@
                 ? "Sato Admin"
                 : AGENTS[hSeed % AGENTS.length].split(" (")[0],
               role: isAdmin ? "Admin" : "Agent",
-              field: hi === 0 ? "Project" : fields[hi % fields.length],
-              oldVal: hi === 0 ? "—" : "(prev)",
-              newVal: hi === 0 ? "Created (Pending Review)" : "(updated)",
+              field: field,
+              oldVal: pair[0],
+              newVal: pair[1],
             };
           });
           // A subset of projects have user reports against them.
@@ -4017,10 +4176,17 @@
               "Incorrect information",
               "Unauthorized images",
             ];
+            const resolved = seed % 2 === 0;
             base.reports = [
               {
                 ts: `${compYear - 1}-0${(seed % 8) + 1}-${String((seed % 27) + 1).padStart(2, "0")} ${String((seed % 12) + 9).padStart(2, "0")}:${String(seed % 60).padStart(2, "0")}`,
                 reason: REASONS[seed % REASONS.length],
+                // Reports are always tracked by an Admin — whether resolved
+                // or still open, an admin is the responsible party.
+                role: "Admin",
+                actorName: "Sato Admin",
+                resolved,
+                handledBy: resolved ? "Sato Admin" : "",
               },
             ];
           }
@@ -4085,10 +4251,9 @@
       const fmtYenShort = (n) => {
         if (n == null || n === "") return "—";
         const v = Number(n);
-        if (v >= 100000000)
-          return (
-            "¥" + (v / 100000000).toFixed(v % 100000000 === 0 ? 0 : 2) + "億"
-          );
+        if (v >= 1000000) {
+          return "¥" + (v / 1000000).toFixed(v % 1000000 === 0 ? 0 : 2) + "M";
+        }
         if (v >= 10000000) return "¥" + Math.round(v / 1000000) + "M";
         return "¥" + v.toLocaleString();
       };
@@ -4356,9 +4521,6 @@
       function renderField(f, prop) {
         if (f.t === "header") {
           return `<div class="kv-full" style="grid-column:1/-1;font-weight:700;color:var(--accent);font-size:12px;text-transform:uppercase;letter-spacing:0.05em;padding:6px 0 2px;border-top:1px dashed var(--border-subtle);margin-top:6px">${esc(f.l)}</div>`;
-        }
-        if (f.t === "note") {
-          return `<div class="kv-full alert info" style="margin:6px 0 0">${esc(f.l)}</div>`;
         }
         if (f.t === "auto-summary") {
           return `<div class="kv-full">${renderInlinePriceSummary(prop)}</div>`;
@@ -5165,6 +5327,104 @@
         return Math.abs(h);
       }
 
+      /* ============ Location Picker (Shopee-style drag map) ============ */
+      let lpPinOffset = { x: 0, y: 0 };
+      let lpDragging = false;
+      let lpDragStart = null;
+
+      function openLocPicker() {
+        const p = currentProj;
+        if (!p) return;
+        const prefSel = $("lpPref");
+        prefSel.innerHTML = OPT.prefectures
+          .map((pr) => `<option value="${escAttr(pr)}" ${pr === p.prefecture ? "selected" : ""}>${esc(pr)}</option>`)
+          .join("");
+        onLpPrefChange();
+        if (p.city) $("lpCity").value = p.city;
+        onLpCityChange();
+        if (p.chome && Array.from($("lpChome").options).some((o) => o.value === p.chome)) {
+          $("lpChome").value = p.chome;
+        }
+        lpPinOffset = { x: 0, y: 0 };
+        updateLpCoords();
+        $("locPickModal").classList.add("open");
+        wireLpMapDrag();
+      }
+      window.openLocPicker = openLocPicker;
+
+      function closeLocPicker() {
+        $("locPickModal").classList.remove("open");
+      }
+      window.closeLocPicker = closeLocPicker;
+
+      function onLpPrefChange() {
+        const pref = $("lpPref").value;
+        const cities = OPT.cityByPref[pref] || [];
+        $("lpCity").innerHTML = cities
+          .map((c) => `<option value="${escAttr(c)}">${esc(c)}</option>`)
+          .join("");
+        onLpCityChange();
+      }
+      window.onLpPrefChange = onLpPrefChange;
+
+      function onLpCityChange() {
+        const chomes = Array.from({ length: 9 }, (_, i) => (i + 1) + "-chome");
+        $("lpChome").innerHTML = chomes
+          .map((c) => `<option value="${escAttr(c)}">${esc(c)}</option>`)
+          .join("");
+      }
+      window.onLpCityChange = onLpCityChange;
+
+      function updateLpCoords() {
+        $("lpCoords").textContent =
+          `Pin offset: ${lpPinOffset.x}, ${lpPinOffset.y}`;
+      }
+
+      function wireLpMapDrag() {
+        const map = $("lpMap");
+        if (map.dataset.wired) return;
+        map.dataset.wired = "1";
+        const start = (x, y) => {
+          lpDragging = true;
+          lpDragStart = { x, y, ox: lpPinOffset.x, oy: lpPinOffset.y };
+        };
+        const move = (x, y) => {
+          if (!lpDragging) return;
+          const dx = x - lpDragStart.x;
+          const dy = y - lpDragStart.y;
+          lpPinOffset = { x: lpDragStart.ox - dx, y: lpDragStart.oy - dy };
+          map.style.backgroundPosition = `${-lpPinOffset.x}px ${-lpPinOffset.y}px, ${-lpPinOffset.x}px ${-lpPinOffset.y}px`;
+          updateLpCoords();
+        };
+        const end = () => { lpDragging = false; };
+        map.addEventListener("mousedown", (e) => start(e.clientX, e.clientY));
+        window.addEventListener("mousemove", (e) => move(e.clientX, e.clientY));
+        window.addEventListener("mouseup", end);
+        map.addEventListener("touchstart", (e) => {
+          const t = e.touches[0];
+          start(t.clientX, t.clientY);
+        });
+        map.addEventListener("touchmove", (e) => {
+          const t = e.touches[0];
+          move(t.clientX, t.clientY);
+        });
+        map.addEventListener("touchend", end);
+      }
+
+      function confirmLocPicker() {
+        const p = currentProj;
+        if (!p) return;
+        p.prefecture = $("lpPref").value;
+        p.city = $("lpCity").value;
+        p.chome = $("lpChome").value;
+        p.pinOffset = { ...lpPinOffset };
+        if (!editMode) originalProj = JSON.parse(JSON.stringify(p));
+        closeLocPicker();
+        renderDetail();
+        locatePOIs();
+      }
+      window.confirmLocPicker = confirmLocPicker;
+
       function locatePOIs() {
         const p = currentProj;
         if (!p) return;
@@ -5209,9 +5469,7 @@
           .filter(Boolean)
           .join(" · ");
         renderDetail();
-        toast(
-          `Located ${nearby.length} POIs within 5 km from ${p.poi.locatedAddress}.`,
-        );
+        
       }
       window.locatePOIs = locatePOIs;
 
@@ -5228,15 +5486,14 @@
         });
 
         const locateBtn = `
-          <button type="button" class="btn btn-primary btn-sm" onclick="locatePOIs()">
+          <button type="button" class="btn btn-primary btn-sm" onclick="openLocPicker()">
             <i class="fas fa-location-crosshairs"></i> ${nearby.length ? "Re-locate POIs" : "Locate POIs"}
           </button>`;
 
         const meta = nearby.length
           ? `<div class="poi-meta">
               <i class="fas fa-circle-check" style="color:var(--badge-green)"></i>
-              <strong>${nearby.length} POIs</strong> found within 5 km · Located ${esc(poi.locatedAt || "")}
-              ${poi.locatedAddress ? `<span style="color:var(--text-dim);margin-left:8px">📍 ${esc(poi.locatedAddress)}</span>` : ""}
+              <strong>${nearby.length} POIs</strong>
             </div>`
           : "";
 
@@ -5281,7 +5538,7 @@
 
         return `
           <div class="poi-header">
-            <div class="kv-label" style="margin:0">📍 Points of Interest <span style="color:var(--text-dim);font-weight:500;text-transform:none;letter-spacing:0">(within 5 km · auto-detected)</span></div>
+            <div class="kv-label" style="margin:0">📍 Points of Interest</div>
             ${locateBtn}
           </div>
           ${meta}
@@ -5353,7 +5610,7 @@
           <th style="min-width:160px">Source</th><th>Impressions</th><th>Views</th><th>Clicks</th><th>CTR</th><th>Keep</th><th>KPR</th>
         </tr></thead>`;
         const adRows = ads.length
-          ? ads.map((a) => metricRow(`${esc(a.adName)} <span style="font-size:10px;color:var(--text-muted)">(${esc(a.adType)})</span>`, a.impressions, a.views, a.clicks, a.keep)).join("")
+          ? ads.map((a) => metricRow(`${esc(a.adName)} (${esc(a.adType)}`, a.impressions, a.views, a.clicks, a.keep)).join("")
           : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:14px;font-size:12px"><i class="fas fa-circle-info"></i> This project has not been placed in any ads yet.</td></tr>`;
         return `
           <style>
@@ -5504,7 +5761,7 @@
         const tbody = $("listBody");
         if (!pageItems.length) {
           tbody.innerHTML =
-            '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted)">No projects match the filters.</td></tr>';
+            '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted)">No projects match the filters.</td></tr>';
           renderPagination(totalPages);
           return;
         }
@@ -5519,12 +5776,13 @@
                 </div>
                 <div>
                   <strong>${esc(p.name)}</strong><br>
-                  <span style="font-size:11px;color:var(--text-muted)">${p.id} · ${esc(p.nameRomaji || "")}</span>
+                  <span style="font-size:11px;color:var(--text-muted)">${p.id}</span>
                 </div>
               </div>
             </td>
             <td>${esc(p.propType)}</td>
             <td>${badgeTx(p.transactionType || "Buy")}</td>
+            <td>${badgeSales(p.salesStatus)}</td>
             <td>${priceCell(p)}</td>
             <td style="font-size:12px;line-height:1.55">${fmtAddress(p)}</td>
             <td>${esc(p.agent || "—")}</td>
@@ -6416,7 +6674,9 @@
         const actor = $("histActor").value;
         return histEntries().filter((e) => {
           if (actor) {
-            if (e.kind === "report") return false;
+            // Reports are always Admin-tracked, so they match the "Admin"
+            // filter and are excluded only under "Agency".
+            if (e.kind === "report") return actor === "Admin";
             if (actorBucket(e) !== actor) return false;
           }
           return true;
@@ -6432,14 +6692,27 @@
       function renderHistRow(e) {
         // Report entries: flag icon + danger accent, actor reads "Report".
         if (e.kind === "report") {
+          const statusBadge = e.resolved
+            ? '<span class="badge badge-published badge-role">Resolved</span>'
+            : '<span class="badge badge-amber badge-role">Unresolved</span>';
+          const adminBadge = '<span class="badge badge-members badge-role">Admin</span>';
+          const handledLine =
+            e.resolved && e.handledBy
+              ? `<div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">Handled by <strong>${esc(e.handledBy)}</strong></div>`
+              : "";
           return `
             <div class="chist-row chist-report">
               <div class="chist-meta">
                 <span class="chist-ts">${esc(fmtTs(e.ts))}</span>
                 <span>·</span>
                 <span class="badge badge-soldout badge-role">Report</span>
+                <span>·</span>
+                ${adminBadge}
+                <span>·</span>
+                ${statusBadge}
               </div>
               <div class="chist-field"><i class="fas fa-flag"></i> Reported — ${esc(e.reason)}</div>
+              ${handledLine}
             </div>`;
         }
         const actorBadge =
@@ -6487,8 +6760,7 @@
         const start = (histPage - 1) * HIST_PAGE;
         const items = all.slice(start, start + HIST_PAGE);
         body.innerHTML = items.map((e) => renderHistRow(e)).join("");
-        $("histPagerInfo").textContent =
-          `${start + 1}–${start + items.length} of ${total}`;
+        $("histPagerInfo").textContent = "";
         if (pageCount <= 1) {
           $("histPager").innerHTML = "";
         } else {
@@ -6529,9 +6801,6 @@
           histPage = 1;
           renderHistory();
         });
-        $("histExport").addEventListener("click", () =>
-          toast("Exported change log to CSV."),
-        );
         document.addEventListener("keydown", (e) => {
           if (
             e.key === "Escape" &&
@@ -6958,12 +7227,6 @@
         $("dThumb").innerHTML = `<i class="fas ${thumbIcon(p.group)}"></i>`;
         $("dName").textContent = p.name || "(Unnamed)";
         $("dId").textContent = p.id;
-        $("dMetaAddress").textContent =
-          [p.prefecture, p.city, p.chome].filter(Boolean).join(" · ") || "—";
-        $("dMetaSales").innerHTML = badgeSales(p.salesStatus);
-        $("dMetaPublish").innerHTML = badgePublish(p.publishStatus);
-        $("dMetaTx").innerHTML = badgeTx(p.transactionType || "Buy");
-        $("dMetaMembers").innerHTML = badgeMembers(p.membersOnly);
 
         // View-mode Suspend / Re-activate toggle.
         // Published -> "Suspend" (danger); Suspended -> "Re-activate" (success);
@@ -6989,6 +7252,13 @@
               : '<i class="fas fa-check"></i> Approve';
         } else {
           apBtn.classList.add("hidden");
+        }
+
+        const rjBtn = $("rejectBtn");
+        if (p.publishStatus === "Pending Review") {
+          rjBtn.classList.remove("hidden");
+        } else {
+          rjBtn.classList.add("hidden");
         }
 
         const alerts = [];
@@ -7273,6 +7543,38 @@
           },
         });
       }
+      function rejectProject() {
+        if (!currentProj) return;
+        showConfirm({
+          title: "Reject this project?",
+          body: `Reject ${currentProj.id} (${currentProj.name})? The agency will be notified and the project will not be published until re-submitted.`,
+          confirmLabel: "Reject",
+          danger: true,
+          onConfirm: () => {
+            const today = new Date().toISOString().slice(0, 10);
+            const oldStatus = currentProj.publishStatus;
+            currentProj.publishStatus = "Rejected";
+            currentProj.rejectCategory = "Incomplete documentation";
+            currentProj.rejectNotes = "Rejected by admin during review.";
+            currentProj.dateUpdated = today;
+            currentProj.changeHistory = currentProj.changeHistory || [];
+            currentProj.changeHistory.unshift({
+              ts: today + " 00:00:00",
+              actorId: "ADM-002",
+              actorName: "Admin Operator",
+              role: "Admin",
+              field: "publishStatus",
+              oldVal: oldStatus,
+              newVal: "Rejected",
+            });
+            originalProj = JSON.parse(JSON.stringify(currentProj));
+            renderDetail();
+            renderList();
+            toast("Project rejected.", "error");
+          },
+        });
+      }
+
       function toggleSuspend() {
         if (!currentProj) return;
         // Only valid from Published (suspend) or Suspended (re-activate).

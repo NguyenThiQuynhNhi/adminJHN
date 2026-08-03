@@ -91,7 +91,7 @@
       /* Layout */
       .cs-layout {
         display: grid;
-        grid-template-columns: 300px 1fr;
+        grid-template-columns: 360px 1fr;
         gap: 18px;
         align-items: start;
       }
@@ -224,9 +224,9 @@
         min-width: 0;
         font-weight: 600;
         font-size: 13px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1.35;
       }
       .tab-row.hidden-row .tab-label {
         color: var(--muted);
@@ -445,7 +445,6 @@
         padding: 0 0 12px;
       }
 
-      /* Drawer */
       .ov {
         position: fixed;
         inset: 0;
@@ -461,48 +460,51 @@
       }
       .drawer {
         position: fixed;
-        top: 0;
-        right: 0;
-        height: 100vh;
-        width: 540px;
-        max-width: 96vw;
+        inset: 0;
         background: var(--bg);
-        box-shadow: -8px 0 30px rgba(0, 0, 0, 0.18);
-        transform: translateX(100%);
+        transform: translateY(100%);
         transition: transform 0.25s ease;
         z-index: 90;
         display: flex;
         flex-direction: column;
       }
       .drawer.open {
-        transform: translateX(0);
+        transform: translateY(0);
       }
       .drawer-head {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 16px 20px;
+        padding: 14px 28px;
         border-bottom: 1px solid var(--border);
         background: var(--card);
+        flex-shrink: 0;
       }
       .drawer-head h3 {
         margin: 0;
-        font-size: 17px;
+        font-size: 18px;
         font-weight: 800;
       }
       .drawer-body {
         flex: 1;
         overflow-y: auto;
-        padding: 16px 20px 40px;
+        padding: 24px 28px 40px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        align-content: start;
       }
       .drawer-foot {
         display: flex;
         gap: 10px;
         justify-content: flex-end;
-        padding: 14px 20px;
+        padding: 14px 28px;
         border-top: 1px solid var(--border);
         background: var(--card);
+        flex-shrink: 0;
       }
+      .fb.full { grid-column: 1 / -1; }
+      .fb.half { grid-column: span 2; }
 
       fieldset.fb {
         border: 1px solid var(--border);
@@ -1020,28 +1022,30 @@
       }
       function blankFilter() {
         return {
-          txType: "",
-          keyword: "",
-          regions: [],
-          stations: [],
-          walk: "",
-          propTypes: [],
-          saleUnit: "",
-          layoutMin: "",
-          layouts: [],
-          bedrooms: [],
-          sizeMin: "",
-          sizeMax: "",
-          priceMin: "",
-          priceMax: "",
-          age: "",
-          recency: "",
-          yieldMin: "",
-          floors: "",
-          occupancy: "",
-          condition: [],
-          areaType: [],
+          txType: "", keyword: "",
+          regions: [], stations: [], walk: "",
+          propTypes: [], saleUnit: "",
+          layoutMin: "", layouts: [], bedrooms: [],
+          toilets: "", bathrooms: "", storageRooms: "", studyDen: "", wic: "", sic: "",
+          sizeMin: "", sizeMax: "",
+          priceMin: "", priceMax: "",
+          age: "", recency: "", pubDate: "", lastUpdated: "",
+          yieldMin: "", yieldMax: "",
+          mgmtFeeMax: "", repairFundMax: "",
+          floors: "", occupancy: "",
+          currentStatus: [], buildStatus: [], membersOnly: "", specialUpdates: [],
+          buildingStructure: [], mgmtForm: "", floorsMin: "", floorsMax: "",
+          unitsMin: "", unitsMax: "", manager: "", elevator: false,
+          landRight: [], landUse: [], zoning: "",
+          landAreaMin: "", landAreaMax: "",
+          buildingAreaRatioMin: "", floorAreaRatioMin: "",
+          direction: [], roadDirection: [],
+          condition: [], areaType: [],
           features: blankFeatures(),
+          interior: [], furniture: [], kitchen: [], bath: [],
+          security: [], buildingServices: [], buildingFacilities: [],
+          tvComms: [], envCert: [], surrounding: [],
+          photosAvailable: [],
         };
       }
       function F(o) {
@@ -1659,7 +1663,7 @@
                 <td><span class="item-label">${esc(it.label)}</span></td>
                 <td>${chipsHtml(it.filterSet)}</td>
                 <td>${popChipHtml(it.popularityRule)}</td>
-                <td class="count-cell"><span class="count-num">${Number(it.count).toLocaleString()}</span><span class="auto-tag" title="Calculated live from current property data.">auto</span></td>
+                <td class="count-cell"><span class="count-num">${Number(it.count).toLocaleString()}</span></td>
                 <td class="c"><label class="sw"><input type="checkbox" ${it.visible ? "checked" : ""} onchange="toggleItemVisible('${it.id}')"><span class="sw-s"></span></label></td>
                 <td class="c">
                   <button class="icon-btn" onclick="openItemDrawer('${it.sectionId}','${it.id}')" title="Edit"><i class="fas fa-pen"></i></button>
@@ -1956,7 +1960,7 @@
         const pop = item ? item.popularityRule : null;
         $("#fbTitle").textContent = item ? "Edit Item" : "Add Item";
         $("#fbBody").innerHTML = `
-          <fieldset class="fb">
+          <fieldset class="fb full">
             <legend>Basics</legend>
             <div class="field">
               <label class="fl">Item label (emoji supported)<span class="req">*</span></label>
@@ -1964,28 +1968,27 @@
             </div>
           </fieldset>
 
-          <fieldset class="fb">
+          <fieldset class="fb full">
             <legend>Popularity rule</legend>
-            <div class="pop-grid">
-              <label class="inline-check"><input type="checkbox" id="fb-pop-enabled" ${pop && pop.enabled ? "checked" : ""}> Enabled</label>
-              <div>
-                <label class="fl">Metric<span class="req">*</span></label>
-                <select id="fb-pop-metric">
-                  ${selOptions(
-                    [
-                      ["clicks", "Clicks (CL)"],
-                      ["keep", "Keep (saves)"],
-                      ["cv", "CV (conversions)"],
-                    ],
-                    pop ? pop.metric : "clicks",
-                  )}
-                </select>
-              </div>
-              <div>
-                <label class="fl">Threshold ( ≥ )<span class="req">*</span></label>
-                <input type="number" id="fb-pop-value" min="0" value="${pop ? pop.value : 10}" />
-              </div>
-            </div>
+            <table style="width:100%;font-size:12px;border-collapse:collapse">
+              <thead><tr>
+                <th style="text-align:left;padding:4px 6px;color:var(--muted);font-size:11px;text-transform:uppercase">Metric</th>
+                <th style="text-align:left;padding:4px 6px;color:var(--muted);font-size:11px;text-transform:uppercase">Include</th>
+                <th style="text-align:left;padding:4px 6px;color:var(--muted);font-size:11px;text-transform:uppercase">Threshold (≥)</th>
+              </tr></thead>
+              <tbody>
+                ${[["clicks","Clicks (CL)"],["keep","Keep (saves)"],["cv","CV (conversions)"]].map(([v,l]) => {
+                  const rule = pop && pop.metricRules && pop.metricRules[v];
+                  const checked = rule ? rule.enabled : false;
+                  const threshold = rule ? rule.value : 10;
+                  return `<tr>
+                    <td style="padding:5px 6px;font-weight:600">${esc(l)}</td>
+                    <td style="padding:5px 6px"><input type="checkbox" class="fb-pop-metric" data-metric="${v}" ${checked ? "checked" : ""}></td>
+                    <td style="padding:5px 6px"><input type="number" class="fb-pop-threshold" data-metric="${v}" min="0" value="${threshold}" style="width:80px;padding:4px 6px;border:1px solid var(--border-strong);border-radius:6px;font-size:12px" /></td>
+                  </tr>`;
+                }).join("")}
+              </tbody>
+            </table>
           </fieldset>
 
           <fieldset class="fb">
@@ -2014,11 +2017,11 @@
             <div class="tree">${stationTreeHtml(f.stations)}</div>
             <div class="field" style="margin-top:10px">
               <label class="fl">Walk time from station</label>
-              <select id="fb-walk"><option value="">Any</option>${selOptions(WALK, f.walk)}</select>
+              <select id="fb-walk"><option value="">Any</option>${selOptions([["1","≤1 min"],["5","≤5 min"],["7","≤7 min"],["10","≤10 min"],["15","≤15 min"],["20","≤20 min"],["99","Over 20 min"]], f.walk)}</select>
             </div>
           </fieldset>
 
-          <fieldset class="fb">
+          <fieldset class="fb full">
             <legend>Property type & sale unit</legend>
             <div class="field"><div class="pills">${pillsHtml("fb-ptype", PROP_TYPES, f.propTypes, true)}</div></div>
             <div class="field">
@@ -2027,7 +2030,7 @@
             </div>
           </fieldset>
 
-          <fieldset class="fb">
+          <fieldset class="fb full">
             <legend>Layout & rooms</legend>
             <div class="field">
               <label class="fl">Floor plan minimum (≥)</label>
@@ -2035,6 +2038,14 @@
             </div>
             <div class="field"><label class="fl">Specific layouts (LDK)</label><div class="pills">${pillsHtml("fb-layout", LAYOUTS, f.layouts)}</div></div>
             <div class="field"><label class="fl">Bedrooms</label><div class="pills">${pillsHtml("fb-bed", BEDROOMS, f.bedrooms)}</div></div>
+            <div class="grid2" style="margin-top:8px">
+              <div><label class="fl">No. of Toilets</label><input type="number" id="fb-toilets" min="0" value="${f.toilets||""}" style="width:100%;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px;font-size:13px" /></div>
+              <div><label class="fl">No. of Bathrooms</label><input type="number" id="fb-bathrooms" min="0" value="${f.bathrooms||""}" style="width:100%;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px;font-size:13px" /></div>
+              <div><label class="fl">No. of Storage Rooms</label><input type="number" id="fb-storagerooms" min="0" value="${f.storageRooms||""}" style="width:100%;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px;font-size:13px" /></div>
+              <div><label class="fl">No. of Study/Den</label><input type="number" id="fb-studyden" min="0" value="${f.studyDen||""}" style="width:100%;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px;font-size:13px" /></div>
+              <div><label class="fl">No. of WIC</label><input type="number" id="fb-wic" min="0" value="${f.wic||""}" style="width:100%;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px;font-size:13px" /></div>
+              <div><label class="fl">No. of SIC</label><input type="number" id="fb-sic" min="0" value="${f.sic||""}" style="width:100%;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px;font-size:13px" /></div>
+            </div>
           </fieldset>
 
           <fieldset class="fb">
@@ -2050,16 +2061,124 @@
             <div class="muted" style="font-size:11px;margin-top:6px">Enter absolute yen (e.g. 10000000 = ¥10M, 500000000 = ¥500M).</div>
           </fieldset>
 
-          <fieldset class="fb">
+          <fieldset class="fb half">
             <legend>Age, recency & investment</legend>
             <div class="grid2">
-              <div><label class="fl">Building age</label><select id="fb-age"><option value="">Any</option>${selOptions(AGE, f.age)}</select></div>
-              <div><label class="fl">Listing recency</label><select id="fb-recency"><option value="">Any</option>${selOptions(RECENCY, f.recency)}</select></div>
+              <div><label class="fl">Construction age</label><select id="fb-age"><option value="">Any</option>${selOptions([["under_construction","Under construction"],["newly_built","Newly built"],["within_5","Within 5 years"],["within_10","Within 10 years"],["within_20","Within 20 years"],["within_30","Within 30 years"]], f.age)}</select></div>
+              <div><label class="fl">Listing recency</label><select id="fb-recency"><option value="">Any</option>${selOptions([["1day","Within 1 day"],["3days","Within 3 days"],["1week","Within 7 days"],["1month","Within 1 month"]], f.recency)}</select></div>
             </div>
             <div class="grid3" style="margin-top:10px">
-              <div><label class="fl">Gross yield min (%)</label><input type="number" id="fb-yield" min="0" step="0.1" value="${f.yieldMin}" /></div>
+              <div><label class="fl">Gross yield min (%)</label><input type="number" id="fb-yield-min" min="0" step="0.1" value="${f.yieldMin}" /></div>
+              <div><label class="fl">Gross yield max (%)</label><input type="number" id="fb-yield-max" min="0" step="0.1" value="${f.yieldMax||""}" /></div>
+              <div><label class="fl">Publication date</label><select id="fb-pubdate"><option value="">Any</option>${selOptions([["1day","Within 1 day"],["3days","Within 3 days"],["7days","Within 7 days"]], f.pubDate||"")}</select></div>
+            </div>
+            <div class="grid3" style="margin-top:10px">
               <div><label class="fl">Building floors</label><select id="fb-floors"><option value="">Any</option>${selOptions(FLOORS, f.floors)}</select></div>
               <div><label class="fl">Occupancy</label><select id="fb-occupancy"><option value="">Any</option>${selOptions(OCCUPANCY, f.occupancy)}</select></div>
+              <div><label class="fl">Last updated</label><select id="fb-lastupdated"><option value="">Any</option>${selOptions([["1day","Within 1 day"],["3days","Within 3 days"],["7days","Within 7 days"]], f.lastUpdated||"")}</select></div>
+            </div>
+            <div class="grid2" style="margin-top:10px">
+              <div><label class="fl">Monthly mgmt fee max (¥)</label><input type="number" id="fb-mgmtfee" min="0" value="${f.mgmtFeeMax||""}" /></div>
+              <div><label class="fl">Repair reserve max (¥)</label><input type="number" id="fb-repairfund" min="0" value="${f.repairFundMax||""}" /></div>
+            </div>
+          </fieldset>
+
+          <fieldset class="fb">
+            <legend>Property & listing status</legend>
+            <div class="field">
+              <label class="fl">Current status</label>
+              <div class="pills">${pillsHtml("fb-status", ["Owner Occupied","Vacant","Tenanted","Under Construction"], f.currentStatus||[])}</div>
+            </div>
+            <div class="field">
+              <label class="fl">Build status</label>
+              <div class="pills">${pillsHtml("fb-buildstatus", ["Newly-Built","Newly Built not yet occupied","Secondhand","Under Construction"], f.buildStatus||[])}</div>
+            </div>
+            <div class="field">
+              <label class="fl">Members only</label>
+              <div class="radio-row">
+                <label><input type="radio" name="fbMembers" value="" ${!f.membersOnly ? "checked" : ""}> Any</label>
+                <label><input type="radio" name="fbMembers" value="public" ${f.membersOnly==="public" ? "checked" : ""}> Public</label>
+                <label><input type="radio" name="fbMembers" value="members" ${f.membersOnly==="members" ? "checked" : ""}> Members only</label>
+              </div>
+            </div>
+            <div class="field">
+              <label class="fl">Special updates</label>
+              <div class="pills">${pillsHtml("fb-specialupdate", ["Price Reduction","Price Negotiable"], f.specialUpdates||[])}</div>
+            </div>
+          </fieldset>
+
+          <fieldset class="fb">
+            <legend>Building details</legend>
+            <div class="grid2">
+              <div>
+                <label class="fl">Building structure</label>
+                <div class="pills">${pillsHtml("fb-bldgstruct", ["Steel Reinforced Concrete (SRC)","Reinforced Concrete (RC)","Steel Frame","Wooden"], f.buildingStructure||[])}</div>
+              </div>
+              <div>
+                <label class="fl">Form of management</label>
+                <select id="fb-mgmtform"><option value="">Any</option>${selOptions(["Self-management","Partially consigned","Consignment of all"], f.mgmtForm||"")}</select>
+              </div>
+            </div>
+            <div class="grid2" style="margin-top:10px">
+              <div><label class="fl">No. of floors min</label><input type="number" id="fb-floors-min" min="0" value="${f.floorsMin||""}" /></div>
+              <div><label class="fl">No. of floors max</label><input type="number" id="fb-floors-max" min="0" value="${f.floorsMax||""}" /></div>
+              <div><label class="fl">No. of units min</label><input type="number" id="fb-units-min" min="0" value="${f.unitsMin||""}" /></div>
+              <div><label class="fl">No. of units max</label><input type="number" id="fb-units-max" min="0" value="${f.unitsMax||""}" /></div>
+            </div>
+            <div class="field" style="margin-top:10px">
+              <label class="fl">Manager</label>
+              <select id="fb-manager"><option value="">Any</option>${selOptions(["Resident","Day shift","Part-time","None"], f.manager||"")}</select>
+            </div>
+            <div class="field" style="margin-top:8px">
+              <label class="inline-check"><input type="checkbox" id="fb-elevator" ${f.elevator ? "checked" : ""}> Elevator available</label>
+            </div>
+          </fieldset>
+
+          <fieldset class="fb">
+            <legend>Land details</legend>
+            <div class="field">
+              <label class="fl">Land right</label>
+              <div class="pills">${pillsHtml("fb-landright", ["Ownership / Freehold","Leasehold","Surface Right"], f.landRight||[])}</div>
+            </div>
+            <div class="field">
+              <label class="fl">Land use</label>
+              <div class="pills">${pillsHtml("fb-landuse", ["Residential Land","Commercial Land","Agricultural Land","Forest Land","Other"], f.landUse||[])}</div>
+            </div>
+            <div class="field">
+              <label class="fl">Zoning</label>
+              <select id="fb-zoning"><option value="">Any</option>${selOptions([
+                "First-class low-rise exclusive residential zone",
+                "Second-class low-rise exclusive residential zone",
+                "First-class medium-to-high-rise exclusive residential zone",
+                "Second-class medium-to-high-rise exclusive residential zone",
+                "First-class residential zone",
+                "Second-class residential zone",
+                "Semi-residential zone",
+                "Neighbourhood commercial zone",
+                "Commercial zone",
+                "Semi-industrial zone",
+                "Industrial zone",
+                "Exclusive industrial zone",
+                "Mixed use zone"
+              ], f.zoning||"")}</select>
+            </div>
+            <div class="grid2" style="margin-top:10px">
+              <div><label class="fl">Land area min (m²)</label><input type="number" id="fb-land-min" min="0" value="${f.landAreaMin||""}" /></div>
+              <div><label class="fl">Land area max (m²)</label><input type="number" id="fb-land-max" min="0" value="${f.landAreaMax||""}" /></div>
+              <div><label class="fl">Building area ratio min (%)</label><input type="number" id="fb-bar-min" min="0" value="${f.buildingAreaRatioMin||""}" /></div>
+              <div><label class="fl">Floor to area ratio min (%)</label><input type="number" id="fb-far-min" min="0" value="${f.floorAreaRatioMin||""}" /></div>
+            </div>
+          </fieldset>
+
+          <fieldset class="fb">
+            <legend>Direction</legend>
+            <div class="field">
+              <label class="fl">Balcony / main view direction</label>
+              <div class="pills">${pillsHtml("fb-direction", ["North","South","East","West","North-East","North-West","South-East","South-West"], f.direction||[])}</div>
+            </div>
+            <div class="field">
+              <label class="fl">Road direction</label>
+              <div class="pills">${pillsHtml("fb-roaddirection", ["North","South","East","West","North-East","North-West","South-East","South-West"], f.roadDirection||[])}</div>
             </div>
           </fieldset>
 
@@ -2070,9 +2189,128 @@
           </fieldset>
 
           <fieldset class="fb">
-            <legend>Feature flags</legend>
+            <legend>Highlight features</legend>
             <div class="pills">
-              ${FEATURES.map(([k, l]) => `<label class="pill ${f.features[k] ? "on" : ""}"><input type="checkbox" class="fb-feat" data-key="${k}" ${f.features[k] ? "checked" : ""}>${esc(l)}</label>`).join("")}
+              ${[
+                ["pet","Pets Allowed"],["cornerUnit","Corner Unit"],["southFacing","South Facing"],
+                ["maisonette","Maisonette"],["parking","Parking Lot"],["bicycleParking","Bicycle Parking"],
+                ["garden","Garden"],["rooftop","Rooftop"],["conciergeEnglish","Building Concierge (English)"],
+                ["towerMansion","Tower Mansion"],["allElectric","All-electric"],["fullyFurnished","Fully Furnished"],
+                ["bayWindow","Bay Window"],["designerProperty","Designer Property"],["quietArea","Quiet Residential Area"],
+                ["vrTour","3D/VR Tour"],["shortStay","Short-stay"],["moveInReady","Move-in ready"],
+                ["noKeyMoney","No Key Money"],["lowInitialFees","Low initial fees"],["view","View"],
+                ["furnished","Furnished"]
+              ].map(([k,l]) => `<label class="pill ${f.features[k] ? "on" : ""}"><input type="checkbox" class="fb-feat" data-key="${k}" ${f.features[k] ? "checked" : ""}>${esc(l)}</label>`).join("")}
+            </div>
+          </fieldset>
+
+          <fieldset class="fb">
+            <legend>Interior</legend>
+            <div class="pills">
+              ${pillsHtml("fb-interior", [
+                "Underfloor Heating","Loft","Balcony","2 or more balconies","Roof Balcony",
+                "Wooden Deck","Garden (private)","Trunk Room","Staircase","Ceiling Fan",
+                "Blinds","Shutter","Earthquake-resistant door","Pet allowed"
+              ], f.interior||[])}
+            </div>
+          </fieldset>
+
+          <fieldset class="fb">
+            <legend>Furniture & Appliances</legend>
+            <div class="pills">
+              ${pillsHtml("fb-furniture", [
+                "Air Conditioner","Fan","Curtain","Blind","Floor Heating","Washing Machine",
+                "Dryer","Lighting","Television","Dining Table & Chairs","Walk-in Closet",
+                "Shoe-in Closet","Storage","Desk"
+              ], f.furniture||[])}
+            </div>
+          </fieldset>
+
+          <fieldset class="fb">
+            <legend>Kitchen</legend>
+            <div class="pills">
+              ${pillsHtml("fb-kitchen", [
+                "Dishwasher","Gas Hob","IH Hob","Microwave","Oven",
+                "Refrigerator","Kitchen Counter","Sink"
+              ], f.kitchen||[])}
+            </div>
+          </fieldset>
+
+          <fieldset class="fb">
+            <legend>Bath & Toilet</legend>
+            <div class="pills">
+              ${pillsHtml("fb-bath", [
+                "Separate Bath and Toilet","Dressing Room","Sauna",
+                "Shower","Washbasin","Bathtub"
+              ], f.bath||[])}
+            </div>
+          </fieldset>
+
+          <fieldset class="fb">
+            <legend>Security</legend>
+            <div class="pills">
+              ${pillsHtml("fb-security", [
+                "Auto-lock","Electronic Lock","Double Lock Key","Key Card",
+                "Security Camera","24hr Emergency Call","Building Manager Onsite",
+                "Security Company","Monitored Intercom"
+              ], f.security||[])}
+            </div>
+          </fieldset>
+
+          <fieldset class="fb">
+            <legend>Building Services</legend>
+            <div class="pills">
+              ${pillsHtml("fb-bldgservices", [
+                "Front Desk","Concierge","Garbage Disposal","Garbage Collection Service",
+                "Mailbox / Delivery Box","EV Charging Facilities"
+              ], f.buildingServices||[])}
+            </div>
+          </fieldset>
+
+          <fieldset class="fb half">
+            <legend>Building Facilities</legend>
+            <div class="pills">
+              ${pillsHtml("fb-bldgfacilities", [
+                "Elevator","Guest Rooms","Kids Playground","Swimming Pool","Public Bath",
+                "Natural Onsen","Gym","Meeting Room","Rooftop Terrace","Theater Room",
+                "Lounge","Music Room","Restaurant","Cafe"
+              ], f.buildingFacilities||[])}
+            </div>
+          </fieldset>
+
+          <fieldset class="fb">
+            <legend>TV & Communications</legend>
+            <div class="pills">
+              ${pillsHtml("fb-tv", [
+                "BS Terminal","CS","CATV","Fiber Optics","Free Internet"
+              ], f.tvComms||[])}
+            </div>
+          </fieldset>
+
+          <fieldset class="fb">
+            <legend>Environmental Certification</legend>
+            <div class="pills">
+              ${pillsHtml("fb-env", [
+                "ZEH","ZEH-M","Certified Low-Carbon Housing","Long-Life Housing","Solar Power Generation"
+              ], f.envCert||[])}
+            </div>
+          </fieldset>
+
+          <fieldset class="fb">
+            <legend>Surrounding Environment (within 800m)</legend>
+            <div class="pills">
+              ${pillsHtml("fb-surrounding", [
+                "Supermarket","Convenience Store","Elementary School",
+                "General Hospital","Park","Fitness Facilities"
+              ], f.surrounding||[])}
+            </div>
+          </fieldset>
+
+          <fieldset class="fb">
+            <legend>Photos & media</legend>
+            <div class="field">
+              <label class="fl">Photos available</label>
+              <div class="pills">${pillsHtml("fb-photos", ["Exterior Image","Interior Image","With View"], f.photosAvailable||[])}</div>
             </div>
           </fieldset>`;
         $("#fbOverlay").classList.add("open");
@@ -2100,43 +2338,88 @@
         const tx = body.querySelector('input[name="fbTx"]:checked');
         f.txType = tx ? tx.value : "";
         f.keyword = $("#fb-keyword").value.trim();
+
         const wholePrefs = new Set();
-        $$(".fb-region:checked", body).forEach((cb) => {
-          if (!cb.dataset.city) wholePrefs.add(cb.dataset.pref);
-        });
-        $$(".fb-region:checked", body).forEach((cb) => {
-          const pref = cb.dataset.pref,
-            city = cb.dataset.city;
+        $$(".fb-region:checked", body).forEach(cb => { if (!cb.dataset.city) wholePrefs.add(cb.dataset.pref); });
+        $$(".fb-region:checked", body).forEach(cb => {
+          const pref = cb.dataset.pref, city = cb.dataset.city;
           if (!city) f.regions.push({ pref, city: "" });
           else if (!wholePrefs.has(pref)) f.regions.push({ pref, city });
         });
-        $$(".fb-station:checked", body).forEach((cb) =>
-          f.stations.push({
-            pref: cb.dataset.pref,
-            line: cb.dataset.line,
-            station: cb.dataset.station,
-          }),
+        $$(".fb-station:checked", body).forEach(cb =>
+          f.stations.push({ pref: cb.dataset.pref, line: cb.dataset.line, station: cb.dataset.station })
         );
+
         f.walk = $("#fb-walk").value;
-        f.propTypes = $$(".fb-ptype:checked", body).map((c) => c.value);
+        f.propTypes = $$(".fb-ptype:checked", body).map(c => c.value);
         f.saleUnit = $("#fb-saleunit").value;
         f.layoutMin = $("#fb-layoutmin").value;
-        f.layouts = $$(".fb-layout:checked", body).map((c) => c.value);
-        f.bedrooms = $$(".fb-bed:checked", body).map((c) => c.value);
+        f.layouts = $$(".fb-layout:checked", body).map(c => c.value);
+        f.bedrooms = $$(".fb-bed:checked", body).map(c => c.value);
+        f.toilets = numOrBlank($("#fb-toilets").value);
+        f.bathrooms = numOrBlank($("#fb-bathrooms").value);
+        f.storageRooms = numOrBlank($("#fb-storagerooms").value);
+        f.studyDen = numOrBlank($("#fb-studyden").value);
+        f.wic = numOrBlank($("#fb-wic").value);
+        f.sic = numOrBlank($("#fb-sic").value);
+
         f.sizeMin = numOrBlank($("#fb-size-min").value);
         f.sizeMax = numOrBlank($("#fb-size-max").value);
         f.priceMin = numOrBlank($("#fb-price-min").value);
         f.priceMax = numOrBlank($("#fb-price-max").value);
+
         f.age = $("#fb-age").value;
         f.recency = $("#fb-recency").value;
-        f.yieldMin = numOrBlank($("#fb-yield").value);
+        f.pubDate = $("#fb-pubdate").value;
+        f.lastUpdated = $("#fb-lastupdated").value;
+        f.yieldMin = numOrBlank($("#fb-yield-min").value);
+        f.yieldMax = numOrBlank($("#fb-yield-max").value);
+        f.mgmtFeeMax = numOrBlank($("#fb-mgmtfee").value);
+        f.repairFundMax = numOrBlank($("#fb-repairfund").value);
         f.floors = $("#fb-floors").value;
         f.occupancy = $("#fb-occupancy").value;
-        f.condition = $$(".fb-cond:checked", body).map((c) => c.value);
-        f.areaType = $$(".fb-area:checked", body).map((c) => c.value);
-        $$(".fb-feat:checked", body).forEach(
-          (c) => (f.features[c.dataset.key] = true),
-        );
+
+        f.currentStatus = $$(".fb-status:checked", body).map(c => c.value);
+        f.buildStatus = $$(".fb-buildstatus:checked", body).map(c => c.value);
+        const members = body.querySelector('input[name="fbMembers"]:checked');
+        f.membersOnly = members ? members.value : "";
+        f.specialUpdates = $$(".fb-specialupdate:checked", body).map(c => c.value);
+
+        f.buildingStructure = $$(".fb-bldgstruct:checked", body).map(c => c.value);
+        f.mgmtForm = $("#fb-mgmtform").value;
+        f.floorsMin = numOrBlank($("#fb-floors-min").value);
+        f.floorsMax = numOrBlank($("#fb-floors-max").value);
+        f.unitsMin = numOrBlank($("#fb-units-min").value);
+        f.unitsMax = numOrBlank($("#fb-units-max").value);
+        f.manager = $("#fb-manager").value;
+        f.elevator = $("#fb-elevator").checked;
+
+        f.landRight = $$(".fb-landright:checked", body).map(c => c.value);
+        f.landUse = $$(".fb-landuse:checked", body).map(c => c.value);
+        f.zoning = $("#fb-zoning").value;
+        f.landAreaMin = numOrBlank($("#fb-land-min").value);
+        f.landAreaMax = numOrBlank($("#fb-land-max").value);
+        f.buildingAreaRatioMin = numOrBlank($("#fb-bar-min").value);
+        f.floorAreaRatioMin = numOrBlank($("#fb-far-min").value);
+
+        f.direction = $$(".fb-direction:checked", body).map(c => c.value);
+        f.roadDirection = $$(".fb-roaddirection:checked", body).map(c => c.value);
+        f.condition = $$(".fb-cond:checked", body).map(c => c.value);
+        f.areaType = $$(".fb-area:checked", body).map(c => c.value);
+
+        $$(".fb-feat:checked", body).forEach(c => (f.features[c.dataset.key] = true));
+        f.interior = $$(".fb-interior:checked", body).map(c => c.value);
+        f.furniture = $$(".fb-furniture:checked", body).map(c => c.value);
+        f.kitchen = $$(".fb-kitchen:checked", body).map(c => c.value);
+        f.bath = $$(".fb-bath:checked", body).map(c => c.value);
+        f.security = $$(".fb-security:checked", body).map(c => c.value);
+        f.buildingServices = $$(".fb-bldgservices:checked", body).map(c => c.value);
+        f.buildingFacilities = $$(".fb-bldgfacilities:checked", body).map(c => c.value);
+        f.tvComms = $$(".fb-tv:checked", body).map(c => c.value);
+        f.envCert = $$(".fb-env:checked", body).map(c => c.value);
+        f.surrounding = $$(".fb-surrounding:checked", body).map(c => c.value);
+        f.photosAvailable = $$(".fb-photos:checked", body).map(c => c.value);
+
         return f;
       }
       function saveItem() {
@@ -2147,14 +2430,18 @@
           return;
         }
         const filterSet = collectFilter();
-        const popEnabled = $("#fb-pop-enabled").checked;
+        const popEnabled = $$(".fb-pop-metric:checked", $("#fbBody")).length > 0;
+        const metricRules = {};
+        $$(".fb-pop-metric", $("#fbBody")).forEach(cb => {
+          const m = cb.dataset.metric;
+          const threshold = $("#fbBody").querySelector(`.fb-pop-threshold[data-metric="${m}"]`);
+          metricRules[m] = {
+            enabled: cb.checked,
+            value: threshold ? Number(threshold.value) || 0 : 0,
+          };
+        });
         const popularityRule = popEnabled
-          ? {
-              enabled: true,
-              metric: $("#fb-pop-metric").value,
-              operator: ">=",
-              value: Number($("#fb-pop-value").value) || 0,
-            }
+          ? { enabled: true, metricRules, operator: ">=" }
           : null;
         if (editingItemId) {
           const it = config.items.find((x) => x.id === editingItemId);
