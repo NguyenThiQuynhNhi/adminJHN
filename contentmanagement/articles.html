@@ -531,8 +531,8 @@ a:hover {
               if (typeof window.showConfirm === "function") {
                 window
                   .showConfirm({
-                    title: "Delete article",
-                    message: `Delete "${row.title}"?`,
+                    title: "Confirm Delete",
+                    message: `Permanently delete "${row.title}"? This action cannot be undone.`,
                     confirmLabel: "Delete",
                   })
                   .then((ok) => {
@@ -624,6 +624,17 @@ a:hover {
         }
 
         function deleteArticleCategory(name) {
+          const articlesUsingCategory = articleRows.filter(
+            (row) => row.categoryTag.toLowerCase() === name.toLowerCase(),
+          );
+          if (articlesUsingCategory.length > 0) {
+            if (typeof window.showToast === "function")
+              window.showToast(
+                `Cannot delete "${name}" — ${articlesUsingCategory.length} article(s) are using this category.`,
+                "error",
+              );
+            return;
+          }
           const doDelete = () => {
             const updated = getArticleCategories().filter(
               (item) => item.toLowerCase() !== name.toLowerCase(),
@@ -641,8 +652,8 @@ a:hover {
           if (typeof window.showConfirm === "function") {
             window
               .showConfirm({
-                title: "Delete category tag",
-                message: `Delete category "${name}"?`,
+                title: "Confirm Delete",
+                message: `Permanently delete category "${name}"? This action cannot be undone.`,
                 confirmLabel: "Delete",
               })
               .then((ok) => {

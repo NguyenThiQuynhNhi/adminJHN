@@ -253,6 +253,23 @@
         .btn-warning:hover {
           background: var(--status-warning-bg);
         }
+        .btn-success {
+          background: linear-gradient(
+            135deg,
+            var(--status-success-text),
+            var(--status-success-text)
+          );
+          border-color: var(--status-success-text);
+          color: var(--bg-card);
+        }
+        .btn-success:hover {
+          background: linear-gradient(
+            135deg,
+            var(--status-success-text),
+            var(--status-success-text)
+          );
+          filter: brightness(0.92);
+        }
         .btn-star {
           color: var(--color-primary);
           border-color: var(--color-primary-light);
@@ -1334,19 +1351,6 @@
         </section>
 
         <section class="card">
-          <div class="bulk-bar hidden" id="bulkBar">
-            <span><strong id="bulkCount">0</strong> selected</span>
-            <div style="flex:1"></div>
-            <button class="btn btn-warning btn-sm" type="button" onclick="bulkSuspend()">
-              <i class="fas fa-ban"></i> Suspend
-            </button>
-            <button class="btn btn-danger btn-sm" type="button" onclick="bulkDelete()">
-              <i class="fas fa-trash"></i> Delete account
-            </button>
-            <button class="btn btn-star btn-sm" type="button" onclick="bulkSaveAsLead()">
-              <i class="fas fa-star"></i> Save as lead
-            </button>
-          </div>
           <div class="results-header">
             <div class="results-count" id="resultCount">
               Showing 0 of 0 end users
@@ -1356,9 +1360,6 @@
             <table class="data-table">
               <thead>
                 <tr>
-                  <th style="width:36px">
-                    <input type="checkbox" id="selectAllChk" onchange="toggleSelectAll(this)">
-                  </th>
                   <th>User</th>
                   <th>Buyer status</th>
                   <th>Country</th>
@@ -1398,13 +1399,24 @@
             <button
               class="btn btn-warning"
               type="button"
+              id="suspendBtn"
               onclick="suspendAccount()"
             >
               <i class="fas fa-ban"></i> Suspend
             </button>
             <button
+              class="btn btn-success"
+              type="button"
+              id="reactivateBtn"
+              onclick="suspendAccount()"
+              style="display:none"
+            >
+              <i class="fas fa-circle-check"></i> Re-activate
+            </button>
+            <button
               class="btn btn-danger"
               type="button"
+              id="deleteBtn"
               onclick="deleteAccount()"
             >
               <i class="fas fa-trash"></i> Delete account
@@ -2656,9 +2668,6 @@
             .map(
               (u) => `
             <tr onclick="showDetail('${u.id}')">
-              <td onclick="event.stopPropagation()">
-                <input type="checkbox" class="rowChk" data-id="${u.id}" ${selectedIds.has(u.id) ? "checked" : ""} onchange="onRowCheck('${u.id}', this.checked)">
-              </td>
               <td><div style="display:flex;align-items:center;gap:10px">${avatarImg(u.fullName, 36, 8)}<div><strong>${esc(u.fullName)}</strong><br><span style="font-size:11px;color:var(--text-muted)">${u.id} · ${esc(u.email)}</span></div></div></td>
               <td>${esc(Array.isArray(u.buyerStatus) ? u.buyerStatus.join(", ") : u.buyerStatus)}</td>
               <td>${esc(u.residentCountry)}</td>
@@ -3436,6 +3445,28 @@
                   )
                   .join("")
               : '<tr><td colspan="3" style="color:var(--text-muted)"><em>No support tickets.</em></td></tr>';
+
+
+          // Toggle suspend/re-activate button based on status
+          const suspendBtn = $("suspendBtn");
+          const reactivateBtn = $("reactivateBtn");
+          const deleteBtn = $("deleteBtn");
+          if (u.status === "Active") {
+            if (deleteBtn) deleteBtn.style.display = "none";
+          } else {
+            if (deleteBtn) deleteBtn.style.display = "";
+          }
+          if (u.status === "Suspended") {
+            if (suspendBtn) suspendBtn.style.display = "none";
+            if (reactivateBtn) reactivateBtn.style.display = "";
+          } else if (u.status === "Active") {
+            if (suspendBtn) suspendBtn.style.display = "";
+            if (reactivateBtn) reactivateBtn.style.display = "none";
+          } else {
+            // Withdrawn
+            if (suspendBtn) suspendBtn.style.display = "none";
+            if (reactivateBtn) reactivateBtn.style.display = "none";
+          }
         }
 
         function renderMonthChart(barId, labelId, data, recv) {

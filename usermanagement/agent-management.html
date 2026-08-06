@@ -245,6 +245,23 @@
       .btn-warning:hover {
         background: #fff6e0;
       }
+      .btn-success {
+        background: linear-gradient(
+          135deg,
+          var(--status-success-text),
+          var(--status-success-text)
+        );
+        border-color: var(--status-success-text);
+        color: var(--bg-card);
+      }
+      .btn-success:hover {
+        background: linear-gradient(
+          135deg,
+          var(--status-success-text),
+          var(--status-success-text)
+        );
+        filter: brightness(0.92);
+      }
       .btn-star {
         color: #b7791f;
         border-color: #fbd38d;
@@ -300,6 +317,45 @@
         border: 1px solid transparent;
         white-space: nowrap;
       }
+      .alert-tooltip {
+        position: fixed;
+        background: rgba(30, 30, 30, 0.98);
+        color: #fff;
+        padding: 12px 14px;
+        border-radius: 8px;
+        font-size: 11px;
+        max-width: 280px;
+        z-index: 10000;
+        transform: translate(-50%, -100%);
+        pointer-events: none;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(4px);
+        animation: tooltipFadeIn 0.15s ease;
+      }
+      @keyframes tooltipFadeIn {
+        from { opacity: 0; transform: translate(-50%, -90%); }
+        to { opacity: 1; transform: translate(-50%, -100%); }
+      }
+      .alert-tooltip-item {
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      }
+      .alert-tooltip-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+      .alert-tooltip-name {
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 2px;
+      }
+      .alert-tooltip-condition {
+        color: #ccc;
+        line-height: 1.4;
+      }
       .badge-active,
       .badge-on,
       .badge-normal,
@@ -315,6 +371,28 @@
         background: var(--status-warning-bg);
         color: var(--status-warning-text);
         border-color: var(--status-warning-bg);
+      }
+      .badge[title] {
+        position: relative;
+        cursor: help;
+      }
+      .badge[title]:hover::after {
+        content: attr(title);
+        position: absolute;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.9);
+        color: #fff;
+        padding: 10px 12px;
+        border-radius: 8px;
+        white-space: normal;
+        max-width: 220px;
+        font-size: 11px;
+        z-index: 1000;
+        font-weight: normal;
+        text-transform: none;
+        letter-spacing: normal;
       }
       .badge-suspended {
         background: var(--status-danger-bg);
@@ -1068,19 +1146,6 @@
       </section>
 
       <section class="card">
-        <div class="bulk-bar hidden" id="bulkBar">
-          <span><strong id="bulkCount">0</strong> selected</span>
-          <div style="flex:1"></div>
-          <button class="btn btn-warning btn-sm" type="button" onclick="bulkSuspend()">
-            <i class="fas fa-ban"></i> Suspend
-          </button>
-          <button class="btn btn-danger btn-sm" type="button" onclick="bulkDelete()">
-            <i class="fas fa-trash"></i> Delete account
-          </button>
-          <button class="btn btn-star btn-sm" type="button" onclick="bulkSaveAsLead()">
-            <i class="fas fa-star"></i> Save as lead
-          </button>
-        </div>
         <div class="results-header">
           <div class="results-count">
             <strong id="resultCount">Showing 0 of 0 agencies</strong>
@@ -1090,11 +1155,9 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th style="width:36px">
-                  <input type="checkbox" id="selectAllChk" onchange="toggleSelectAll(this)">
-                </th>
                 <th>Agency</th>
                 <th>Established date</th>
+                <th>Status</th>
                 <th>Head office address</th>
                 <th>Badge</th>
                 <th>Rating</th>
@@ -1130,13 +1193,24 @@
           <button
             class="btn btn-warning"
             type="button"
+            id="suspendBtn"
             onclick="suspendAccount()"
           >
             <i class="fas fa-ban"></i> Suspend
           </button>
           <button
+            class="btn btn-success"
+            type="button"
+            id="reactivateBtn"
+            onclick="suspendAccount()"
+            style="display:none"
+          >
+            <i class="fas fa-circle-check"></i> Re-activate
+          </button>
+          <button
             class="btn btn-danger"
             type="button"
+            id="deleteBtn"
             onclick="deleteAccount()"
           >
             <i class="fas fa-trash"></i> Delete account
@@ -1884,6 +1958,124 @@
     </div>
 
     <script>
+      const ALERT_TYPES = {
+        high_volume_inquiries: { name: "High Volume Inquiries", condition: "Over 30 inquiries within 1 hour" },
+        multi_device_login: { name: "Multi-Device Login", condition: "Logins from different countries/IPs/devices in a short time" },
+        consecutive_failed_logins: { name: "Consecutive Failed Logins", condition: "Over 30 failed login attempts from the same IP per day" },
+        report_received: { name: "Report Received", condition: "Receipt of a user report" },
+        multiple_listing_violations: { name: "Multiple Listing Violations", condition: "5 or more reported listings within 90 days" },
+        consecutive_payment_failure: { name: "Consecutive Payment Failure", condition: "2 consecutive failures of auto-renewal payments" },
+        end_of_free_trial: { name: "End of Free Trial", condition: "Trial ended + no application for paid subscription" },
+        long_term_inactivity: { name: "Long-term Inactivity", condition: "No login for 90+ days" },
+        dormancy: { name: "Dormancy", condition: "No login for 180+ days" },
+        new_chat_notification: { name: "New chat notification", condition: "On receipt of Admin chat" },
+        schedule_alerts: { name: "Schedule Alerts", condition: "When scheduled Admin date/time is reached" },
+        license_expiry_date: { name: "License Expiry Date", condition: "Expired License" },
+        mass_reporting_abuse: { name: "Mass Reporting (Potential Abuse)", condition: "10 or more reports submitted within a 30-day period" },
+      };
+      function getAlerts(a) {
+        const alerts = [];
+        if (!a) return alerts;
+        
+        // High Volume Inquiries
+        if (a.inqRecv30 > 30) alerts.push("high_volume_inquiries");
+        
+        // Consecutive Failed Logins
+        if (a.failedLogins > 30) alerts.push("consecutive_failed_logins");
+        
+        // Report Received
+        if (a.totalReports > 0) alerts.push("report_received");
+        
+        // Multiple Listing Violations
+        if (a.totalReports >= 5) alerts.push("multiple_listing_violations");
+        
+        // Consecutive Payment Failure
+        if (a.paymentStatus === "Overdue" && a.delinquency && a.delinquency.length >= 2) 
+          alerts.push("consecutive_payment_failure");
+        
+        // License Expiry Date
+        if (a.licExpiry) {
+          const licDate = new Date(a.licExpiry);
+          const today = new Date();
+          if (licDate < today) alerts.push("license_expiry_date");
+        }
+        
+        // Long-term Inactivity
+        if (a.lastLogin) {
+          const lastLoginDate = new Date(a.lastLogin);
+          const daysSinceLogin = (new Date() - lastLoginDate) / (1000 * 60 * 60 * 24);
+          if (daysSinceLogin >= 90 && daysSinceLogin < 180) alerts.push("long_term_inactivity");
+        }
+        
+        // Dormancy
+        if (a.lastLogin) {
+          const lastLoginDate = new Date(a.lastLogin);
+          const daysSinceLogin = (new Date() - lastLoginDate) / (1000 * 60 * 60 * 24);
+          if (daysSinceLogin >= 180) alerts.push("dormancy");
+        }
+        
+        // Mass Reporting (Potential Abuse)
+        if (a.totalReports >= 10) alerts.push("mass_reporting_abuse");
+        
+        return alerts;
+      }
+      let _alertTooltip = null;
+      function showAlertTooltip(e) {
+        const badge = e.target.closest(".alert-badge");
+        if (!badge || !badge.dataset.alerts) return;
+        
+        try {
+          const alerts = JSON.parse(badge.dataset.alerts);
+          
+          // Remove old tooltip
+          if (_alertTooltip) _alertTooltip.remove();
+          
+          // Create tooltip div
+          const tooltip = document.createElement("div");
+          tooltip.className = "alert-tooltip";
+          tooltip.innerHTML = alerts
+            .map((alertKey) => {
+              const alert = ALERT_TYPES[alertKey];
+              if (!alert) return "";
+              return `<div class="alert-tooltip-item">
+                <div class="alert-tooltip-name">${esc(alert.name)}</div>
+                <div class="alert-tooltip-condition">${esc(alert.condition)}</div>
+              </div>`;
+            })
+            .join("");
+          
+          document.body.appendChild(tooltip);
+          
+          // Position tooltip
+          const rect = badge.getBoundingClientRect();
+          tooltip.style.left = (rect.left + rect.width / 2) + "px";
+          tooltip.style.top = (rect.top - 8) + "px";
+          
+          _alertTooltip = tooltip;
+        } catch (err) {
+          console.error("Alert tooltip error:", err);
+        }
+      }
+      
+      function hideAlertTooltip() {
+        if (_alertTooltip) {
+          _alertTooltip.remove();
+          _alertTooltip = null;
+        }
+      }
+      function renderAlertTooltip(alerts) {
+        if (!alerts.length) return "No alerts";
+        return alerts
+          .map((alertKey) => {
+            const alert = ALERT_TYPES[alertKey];
+            if (!alert) return "";
+            return `<div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.2);last-child:border:none">
+              <strong style="color:#fff;font-size:12px">${alert.name}</strong><br>
+              <span style="color:#f0f0f0;font-size:11px">${alert.condition}</span>
+            </div>`;
+          })
+          .join("");
+      }
       const agents = [
         {
           id: "AG-00000001",
@@ -1914,7 +2106,7 @@
           avgRespTime: "3.4h",
           rating: 4.7,
           reviewCount: 128,
-          Alert: "—",
+          Alert: "", // Will be calculated by getAlerts()
           reviewDist: [2, 4, 12, 46, 64],
           responseRate: 92.4,
           avgListings90: 46,
@@ -2148,7 +2340,7 @@
           avgRespTime: "12h",
           rating: 0,
           reviewCount: 0,
-          Alert: "—",
+          Alert: "", // Will be calculated by getAlerts()
           reviewDist: [0, 0, 0, 0, 0],
           responseRate: 60,
           avgListings90: 5,
@@ -2265,7 +2457,7 @@
           avgRespTime: "N/A",
           rating: 2.1,
           reviewCount: 18,
-          Alert: "—",
+          Alert: "", // Will be calculated by getAlerts()
           reviewDist: [8, 5, 3, 2, 0],
           responseRate: 35,
           avgListings90: 8,
@@ -2421,7 +2613,7 @@
         ];
         const payPool = ["Paid", "Pending", "Overdue", "No issue"];
         const respPool = ["1.5h", "3.0h", "8h", "18h", "26h", "N/A"];
-        for (let n = 4; n <= 60; n++) {
+        for (let n = 4; n <= 10; n++) {
           const idNum = String(n).padStart(8, "0");
           const plan = planPool[n % planPool.length];
           const status = statusPool[n % statusPool.length];
@@ -2464,7 +2656,7 @@
             avgRespTime: respPool[n % respPool.length],
             rating: rating,
             reviewCount: (n * 7) % 200,
-            Alert: "—",
+            Alert: "", // Will be calculated by getAlerts()
             reviewDist: [0, 0, 0, 0, 0],
             responseRate: 40 + (n % 60),
             avgListings90: (n * 2) % 40,
@@ -2733,18 +2925,23 @@
           .map(
             (a) => `
           <tr onclick="showDetail('${a.id}')">
-            <td onclick="event.stopPropagation()">
-              <input type="checkbox" class="rowChk" data-id="${a.id}" ${selectedIds.has(a.id) ? "checked" : ""} onchange="onRowCheck('${a.id}', this.checked)">
-            </td>
             <td><div style="display:flex;align-items:center;gap:10px">${avatarImg(a.company, 36, 8)}<div><strong>${esc(a.company)}</strong><br><span style="font-size:11px;color:var(--text-muted)">${a.id}</span></div></div></td>
             <td>${esc(a.establishment) || "—"}</td>
+            <td>${badgeStatus(a.status)}</td>
             <td style="white-space:normal;max-width:240px">${esc(a.hqAddress) || "—"}</td>
             <td>${a.badges.length ? `<span class="badge badge-top">${esc(a.badges[0])}${a.badges.length > 1 ? ` +${a.badges.length - 1}` : ""}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
            <td>${a.rating ? `<span class="star-display">${stars(a.rating)}</span> ${a.rating} (${a.reviewCount})` : '<span style="color:var(--text-muted)">—</span>'}</td>
             <td class="num">${a.activeListings}</td>
             <td class="num">${a.staffCount}</td>
             <td>${badgePlan(a.plan)}</td>
-             <td class="num">${a.Alert}</td>
+            <td class="num" id="alertCell-${a.id}">
+              ${(() => {
+                const alerts = getAlerts(a);
+                if (!alerts.length) return '<span style="color:var(--text-muted)">—</span>';
+                const alertsJson = JSON.stringify(alerts).replace(/"/g, '&quot;');
+                return `<span class="badge badge-warning alert-badge" data-alerts='${alertsJson}' onmouseenter="showAlertTooltip(event)" onmouseleave="hideAlertTooltip()" style="cursor:help">${alerts.length} <i class="fas fa-bell" style="margin-left:4px"></i></span>`;
+              })()}
+            </td>
             <td onclick="event.stopPropagation()">
               <button class="btn-chat" type="button" onclick="openChat('${a.id}')" title="Chat with ${esc(a.company)}"><i class="fas fa-comment-dots"></i></button>
             </td>
@@ -3010,7 +3207,13 @@
         $("dName").textContent = a.company;
         $("dMetaId").textContent = a.id;
         $("dMetaPlan").innerHTML = badgePlan(a.plan);
-        $("dMetaStatus").innerHTML = badgeStatus(a.status);
+        // Alert display in hero section
+        const heroAlerts = getAlerts(a);
+        if (heroAlerts.length > 0) {
+          const alertsJson = JSON.stringify(heroAlerts).replace(/"/g, '&quot;');
+          const alertHtml = `<span class="badge badge-warning alert-badge" data-alerts='${alertsJson}' onmouseenter="showAlertTooltip(event)" onmouseleave="hideAlertTooltip()" style="cursor:help">${heroAlerts.length} <i class="fas fa-bell" style="margin-left:4px"></i></span>`;
+          $("dMetaStatus").innerHTML = badgeStatus(a.status) + " " + alertHtml;
+        }
 
         $("dTotalLogins").textContent = fmtNum(a.totalLogins);
         $("dLastLogin").textContent = a.lastLogin;
@@ -3220,6 +3423,25 @@
           : '<tr><td colspan="2" style="color:var(--text-muted)"><em>No blocks.</em></td></tr>';
 
         renderLegalAgreements();
+
+        // Toggle suspend/re-activate button based on status
+        const suspendBtn = $("suspendBtn");
+        const reactivateBtn = $("reactivateBtn");
+        const deleteBtn = $("deleteBtn");
+        if (a.status === "Suspended") {
+          if (suspendBtn) suspendBtn.style.display = "none";
+          if (reactivateBtn) reactivateBtn.style.display = "";
+          if (deleteBtn) deleteBtn.style.display = "";
+        } else if (a.status === "Active") {
+          if (suspendBtn) suspendBtn.style.display = "";
+          if (reactivateBtn) reactivateBtn.style.display = "none";
+          if (deleteBtn) deleteBtn.style.display = "none";
+        } else {
+          // Withdrawn
+          if (suspendBtn) suspendBtn.style.display = "none";
+          if (reactivateBtn) reactivateBtn.style.display = "none";
+          if (deleteBtn) deleteBtn.style.display = "";
+        }
       }
 
       // Section 19 — Legal & Agreements (read-only).

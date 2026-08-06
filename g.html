@@ -1,0 +1,1623 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Popular Neighbourhoods &amp; Land Prices — Data Management</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --bg-page: #f4efe7;
+        --bg-card: #fffdf8;
+        --bg-card-warm: #fff7ec;
+        --bg-row-hover: #f4ead8;
+        --bg-header-soft: #f8f0e4;
+        --text-primary: #1b2430;
+        --text-muted: #6b7280;
+        --text-link: #7a4f25;
+        --border-default: #ded3c3;
+        --border-warm: #e9dcc8;
+        --border-soft: #efe6d8;
+        --color-primary: #8a5d2e;
+        --color-primary-hover: #69421f;
+        --color-primary-light: #d7b07b;
+        --status-success-text: #1f6f4a;
+        --status-success-bg: #ddf4e7;
+        --status-warning-text: #a35d14;
+        --status-warning-bg: #fff1d7;
+        --status-danger-text: #a23636;
+        --status-danger-bg: #fce4e4;
+        --status-neutral-text: #556070;
+        --status-neutral-bg: #e8edf2;
+        --status-info-text: #2c5282;
+        --status-info-bg: #e6eefc;
+        --r-sm: 6px;
+        --r-md: 8px;
+        --r-lg: 12px;
+        --r-full: 999px;
+        --shadow-card: 0 16px 40px rgba(56, 38, 18, 0.08);
+        --shadow-toast: 0 12px 28px rgba(22, 28, 36, 0.22);
+        --shadow-modal: 0 24px 70px rgba(29, 22, 15, 0.28);
+        --font-stack:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: var(--font-stack);
+        background:
+          radial-gradient(circle at top right, rgba(138, 93, 46, 0.1), transparent 30%),
+          radial-gradient(circle at 10% 20%, rgba(122, 79, 37, 0.08), transparent 22%),
+          radial-gradient(circle at top left, #fff8ef 0, #f4efe7 45%, #efe6db 100%);
+        background-attachment: fixed;
+        color: var(--text-primary);
+      }
+      .shell {
+        max-width: 1240px;
+        margin: 0 auto;
+      }
+      .page-header {
+        margin-bottom: 18px;
+        padding: 10px 2px 0;
+      }
+      .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin-bottom: 4px;
+      }
+      .page-sub {
+        font-size: 12.5px;
+        color: var(--text-muted);
+      }
+      .layout {
+        margin-top: 18px;
+        border-radius: 18px;
+        overflow: hidden;
+        background: var(--bg-card);
+        border: 1px solid rgba(138, 93, 46, 0.12);
+        box-shadow: var(--shadow-card);
+      }
+      .content-wrap {
+        padding: 22px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 250, 242, 0.9)),
+          var(--bg-page);
+      }
+      .card {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: var(--r-lg);
+        border: 1px solid rgba(138, 93, 46, 0.12);
+        padding: 18px 18px 16px;
+        box-shadow: var(--shadow-card);
+        margin-bottom: 18px;
+        backdrop-filter: blur(10px);
+      }
+      .card-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 4px;
+        flex-wrap: wrap;
+      }
+      .card-title {
+        font-size: 15.5px;
+        font-weight: 700;
+      }
+      .card-desc {
+        font-size: 12px;
+        color: var(--text-muted);
+        max-width: 620px;
+        margin-bottom: 12px;
+      }
+      .subhead {
+        font-size: 13px;
+        font-weight: 700;
+        margin: 16px 0 10px;
+      }
+      .divider {
+        height: 1px;
+        background: rgba(138, 93, 46, 0.12);
+        margin: 14px 0;
+      }
+
+      /* Buttons / inputs */
+      .btn {
+        border-radius: var(--r-full);
+        border: 1px solid rgba(138, 93, 46, 0.14);
+        padding: 7px 13px;
+        font-size: 11.5px;
+        background-color: var(--bg-card);
+        cursor: pointer;
+        display: inline-flex;
+        gap: 5px;
+        align-items: center;
+        color: var(--text-primary);
+        font-family: inherit;
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.15s ease,
+          background-color 0.15s ease;
+        white-space: nowrap;
+      }
+      .btn:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(56, 38, 18, 0.08);
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #9a6a33, #6f441f);
+        border-color: #6f441f;
+        color: #fff;
+      }
+      .btn-secondary {
+        background-color: rgba(255, 252, 246, 0.92);
+      }
+      .btn-danger {
+        color: var(--status-danger-text);
+        border-color: var(--status-danger-bg);
+      }
+      .fld,
+      select.fld,
+      input.fld {
+        width: 100%;
+        border-radius: var(--r-md);
+        border: 1px solid var(--border-warm);
+        padding: 8px 10px;
+        font-size: 12.5px;
+        background-color: var(--bg-card);
+        color: var(--text-primary);
+        font-family: inherit;
+      }
+      .fld-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      .fld-hint {
+        font-size: 10.5px;
+        color: var(--text-muted);
+        margin-top: 4px;
+        line-height: 1.5;
+      }
+      .req {
+        color: var(--status-danger-text);
+      }
+
+      /* Mode switch (Auto / Manual) */
+      .mode-switch {
+        display: inline-flex;
+        background: var(--bg-row-hover);
+        border: 1px solid var(--border-warm);
+        border-radius: var(--r-full);
+        padding: 3px;
+        gap: 2px;
+      }
+      .mode-opt {
+        border: none;
+        background: transparent;
+        border-radius: var(--r-full);
+        padding: 6px 14px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .mode-opt.on {
+        background: var(--color-primary);
+        color: #fff;
+      }
+
+      /* Badges */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border-radius: var(--r-full);
+        padding: 3px 10px;
+        font-size: 10.5px;
+        font-weight: 700;
+        white-space: nowrap;
+        border: 1px solid transparent;
+      }
+      .badge-success {
+        background: var(--status-success-bg);
+        color: var(--status-success-text);
+        border-color: rgba(31, 111, 74, 0.16);
+      }
+      .badge-warning {
+        background: var(--status-warning-bg);
+        color: var(--status-warning-text);
+        border-color: rgba(163, 93, 20, 0.16);
+      }
+      .badge-danger {
+        background: var(--status-danger-bg);
+        color: var(--status-danger-text);
+        border-color: rgba(162, 54, 54, 0.16);
+      }
+      .badge-info {
+        background: var(--status-info-bg);
+        color: var(--status-info-text);
+        border-color: rgba(44, 82, 130, 0.16);
+      }
+      .badge-neutral {
+        background: var(--status-neutral-bg);
+        color: var(--status-neutral-text);
+      }
+
+      /* Source status strip */
+      .source-strip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        background: var(--bg-card-warm);
+        border: 1px solid var(--border-warm);
+        border-radius: var(--r-md);
+        padding: 10px 12px;
+        margin-bottom: 12px;
+        font-size: 12px;
+      }
+      .source-strip .lbl {
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+      .fallback-chain {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        font-size: 11.5px;
+        color: var(--text-muted);
+      }
+      .fallback-chain .step {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 9px;
+        border-radius: var(--r-full);
+        border: 1px solid var(--border-warm);
+        background: #fff;
+      }
+      .fallback-chain .step.active {
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+        font-weight: 700;
+        background: #fff3e6;
+      }
+      .fallback-chain i.fa-arrow-right-long {
+        font-size: 10px;
+        color: var(--border-warm);
+      }
+
+      /* CSV upload zone */
+      .upload-zone {
+        border: 1.5px dashed var(--border-warm);
+        border-radius: var(--r-md);
+        padding: 14px;
+        background: var(--bg-card-warm);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+      .upload-zone .info {
+        flex: 1;
+        min-width: 220px;
+      }
+      .upload-zone .info .fname {
+        font-weight: 700;
+        font-size: 12.5px;
+      }
+      .upload-zone .info .fmeta {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+
+      /* Tables */
+      .table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        border-radius: var(--r-md);
+        border: 1px solid var(--border-warm);
+      }
+      table.tbl {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      table.tbl th {
+        background: var(--bg-header-soft);
+        padding: 9px 10px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-default);
+        font-weight: 700;
+        font-size: 10.5px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      table.tbl td {
+        padding: 9px 10px;
+        border-bottom: 1px solid var(--border-soft);
+        vertical-align: middle;
+        background: var(--bg-card);
+      }
+      table.tbl tbody tr:nth-child(even) td {
+        background: var(--bg-row-hover);
+      }
+      table.tbl tbody tr:last-child td {
+        border-bottom: none;
+      }
+      .icon-btn {
+        width: 26px;
+        height: 26px;
+        border-radius: var(--r-full);
+        border: 1px solid var(--border-warm);
+        background: var(--bg-card);
+        color: var(--text-muted);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11.5px;
+        line-height: 1;
+      }
+      .icon-btn:hover {
+        background: var(--bg-row-hover);
+      }
+      .icon-btn--danger {
+        color: var(--status-danger-text);
+      }
+      .icon-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .link-cell {
+        color: var(--text-link);
+        text-decoration: underline;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .change-up {
+        color: var(--status-success-text);
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .change-down {
+        color: var(--status-danger-text);
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      /* Assignment picker (City + Area / Station) */
+      .assign-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr auto;
+        gap: 10px;
+        align-items: end;
+        margin-bottom: 12px;
+      }
+      @media (max-width: 640px) {
+        .assign-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .assign-row .btn-primary {
+        height: 34px;
+      }
+
+      /* City preview grid (Popular Neighbourhoods) */
+      .city-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+      @media (max-width: 900px) {
+        .city-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 560px) {
+        .city-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .city-card {
+        border: 1px solid var(--border-default);
+        border-radius: var(--r-md);
+        overflow: hidden;
+        background: var(--bg-card);
+      }
+      .city-card-head {
+        background: var(--bg-header-soft);
+        padding: 8px;
+        font-weight: 700;
+        text-align: center;
+        font-size: 13px;
+        border-bottom: 1px solid var(--border-default);
+      }
+      table.area-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      table.area-table th {
+        background: var(--bg-header-soft);
+        padding: 6px 8px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-default);
+        font-weight: 600;
+        font-size: 10.5px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      table.area-table td {
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--border-soft);
+        background: var(--bg-card);
+      }
+      table.area-table tr:nth-child(even) td {
+        background: var(--bg-row-hover);
+      }
+
+      /* Land price tabs (frontend preview) */
+      .land-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        border-bottom: 1px solid var(--border-default);
+        margin-bottom: 12px;
+      }
+      .land-tab {
+        padding: 7px 15px;
+        background: var(--bg-header-soft);
+        border: 0;
+        border-radius: var(--r-sm) var(--r-sm) 0 0;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: inherit;
+      }
+      .land-tab.active {
+        background: var(--color-primary);
+        color: #fff;
+      }
+      .rank-cell {
+        text-align: center;
+        font-weight: 700;
+        min-width: 46px;
+      }
+
+      /* Modal */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 999;
+        padding: 16px;
+      }
+      .modal-backdrop.open {
+        display: flex;
+      }
+      .modal-shell {
+        width: 760px;
+        max-width: 100%;
+        max-height: 90vh;
+        background: rgba(255, 253, 248, 0.98);
+        border-radius: 18px;
+        border: 1px solid rgba(138, 93, 46, 0.14);
+        box-shadow: var(--shadow-modal);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .modal-shell.sm {
+        width: 460px;
+      }
+      .modal-header {
+        padding: 14px 18px;
+        border-bottom: 1px solid rgba(138, 93, 46, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: linear-gradient(180deg, rgba(248, 240, 228, 0.98), rgba(255, 248, 238, 0.98));
+      }
+      .modal-title {
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .modal-subtitle {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+      .modal-close-btn {
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 18px;
+        line-height: 1;
+        color: var(--text-muted);
+      }
+      .modal-body {
+        padding: 16px 18px;
+        overflow: auto;
+        font-size: 12.5px;
+        background: linear-gradient(180deg, rgba(255, 250, 243, 0.94), rgba(251, 245, 236, 0.96));
+      }
+      .modal-footer {
+        padding: 12px 18px 14px;
+        border-top: 1px solid rgba(138, 93, 46, 0.12);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        background: linear-gradient(180deg, rgba(249, 242, 232, 0.96), rgba(244, 234, 221, 0.96));
+        align-items: center;
+      }
+
+      /* Toast */
+      .toast-wrap {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1200;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast {
+        background: rgba(27, 36, 48, 0.96);
+        color: #fff;
+        padding: 10px 16px;
+        border-radius: var(--r-md);
+        font-size: 13px;
+        box-shadow: var(--shadow-toast);
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .toast.ok {
+        background: linear-gradient(180deg, #1f6f4a, #17543a);
+      }
+      .toast.err {
+        background: linear-gradient(180deg, #b23b3b, #8f2626);
+      }
+      .toast.warn {
+        background: linear-gradient(180deg, #a35d14, #8a4c0d);
+      }
+
+      .kv-note {
+        font-size: 11px;
+        color: var(--text-muted);
+        background: var(--status-warning-bg);
+        border: 1px solid var(--color-primary-light);
+        border-radius: var(--r-md);
+        padding: 8px 10px;
+        margin: 6px 0 12px;
+        line-height: 1.55;
+      }
+      .kv-note code {
+        background: var(--bg-card);
+        border: 1px solid var(--border-warm);
+        border-radius: var(--r-sm);
+        padding: 0 4px;
+        color: var(--text-link);
+      }
+
+      /* Checklist inside the assign modal */
+      .item-list {
+        border: 1px solid var(--border-warm);
+        border-radius: var(--r-md);
+        overflow: hidden;
+        background: #fff;
+      }
+      .item-list-body {
+        max-height: 260px;
+        overflow-y: auto;
+      }
+      .item-list-row {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 11px;
+        border-bottom: 1px solid var(--border-soft);
+        font-size: 12.5px;
+        cursor: pointer;
+      }
+      .item-list-row:last-child {
+        border-bottom: none;
+      }
+      .item-list-row:hover {
+        background: var(--bg-row-hover);
+      }
+      .item-list-row input[type="checkbox"] {
+        width: 15px;
+        height: 15px;
+        accent-color: var(--color-primary);
+        flex-shrink: 0;
+      }
+      .item-list-empty {
+        padding: 16px 10px;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+
+      <div class="layout">
+        <section class="content-wrap">
+          <!-- ===================== 1. POPULAR NEIGHBOURHOODS ===================== -->
+          <div class="card">
+            <div class="card-title-row">
+              <div class="card-title"><i class="fas fa-map-location-dot"></i> Popular Neighbourhoods</div>
+            </div>
+
+            <div class="source-strip">
+              <span class="lbl">Data source mode:</span>
+              <div class="mode-switch">
+                <button class="mode-opt" id="pn-mode-auto" onclick="setMode('pn','auto')">Auto Mode</button>
+                <button class="mode-opt" id="pn-mode-manual" onclick="setMode('pn','manual')">Manual Mode (CSV)</button>
+              </div>
+              <span id="pn-active-badge"></span>
+            </div>
+
+            <div class="fallback-chain" id="pn-fallback-chain"></div>
+
+            <!-- Manual mode block -->
+            <div id="pn-manual-block">
+              <div class="subhead">CSV upload</div>
+              <div class="kv-note">
+                Required columns: <code>City Name, Area Name, Average Land Price (yen/m2), Change (%)</code>.
+                </div>
+                <div class="upload-zone">
+                <input type="file" id="pn-csv-file" accept=".csv" style="display:none" />
+                <div>
+                    <label class="fld-label" style="display:inline-block; margin-right:8px;">Valid Until <span class="req">*</span></label>
+                    <input type="date" class="fld" id="pn-valid-date" style="width:140px; display:inline-block; margin-right:12px;" />
+                </div>
+                <button class="btn btn-secondary" onclick="document.getElementById('pn-csv-file').click()">
+                    <i class="fas fa-file-csv"></i> Upload CSV
+                </button>
+                <div class="info">
+                  <div class="fname" id="pn-file-name">No file uploaded yet</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="card-title-row">
+              <div class="subhead" style="margin:0">Preview</div>
+              <button class="btn btn-primary" onclick="openAssignModal('pn')"><i class="fas fa-plus"></i> Add Areas</button>
+            </div>
+            <div id="pn-preview" class="city-grid"></div>
+          </div>
+
+          <!-- ===================== 3. LAND PRICES ===================== -->
+          <div class="card">
+            <div class="card-title-row">
+              <div class="card-title"><i class="fas fa-coins"></i> Land Prices</div>
+            </div>
+
+            <div class="source-strip">
+              <span class="lbl">Data source mode:</span>
+              <div class="mode-switch">
+                <button class="mode-opt" id="lp-mode-auto" onclick="setMode('lp','auto')">Auto Mode</button>
+                <button class="mode-opt" id="lp-mode-manual" onclick="setMode('lp','manual')">Manual Mode (CSV)</button>
+              </div>
+              <span id="lp-active-badge"></span>
+            </div>
+
+            <div class="fallback-chain" id="lp-fallback-chain"></div>
+
+            <!-- Manual mode block -->
+            <div id="lp-manual-block">
+              <div class="subhead">CSV upload</div>
+              <div class="kv-note">
+                Required columns: <code>City Name, Rank, Station/Ward Name, Average Land Price (yen/m2), Change (%)</code>.
+                </div>
+                <div class="upload-zone">
+                <input type="file" id="lp-csv-file" accept=".csv" style="display:none" />
+                <div>
+                    <label class="fld-label" style="display:inline-block; margin-right:8px;">Valid Until <span class="req">*</span></label>
+                    <input type="date" class="fld" id="lp-valid-date" style="width:140px; display:inline-block; margin-right:12px;" />
+                </div>
+                <button class="btn btn-secondary" onclick="document.getElementById('lp-csv-file').click()">
+                    <i class="fas fa-file-csv"></i> Upload CSV
+                </button>
+                <div class="info">
+                  <div class="fname" id="lp-file-name">No file uploaded yet</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="card-title-row">
+              <div class="subhead" style="margin:0">Preview</div>
+              <button class="btn btn-primary" onclick="openAssignModal('lp')"><i class="fas fa-plus"></i> Add Stations</button>
+            </div>
+            <div class="land-tabs" id="lp-tabs"></div>
+            <div id="lp-preview"></div>
+          </div>
+
+          <!-- ===================== 4. AUTO-SYNC SOURCE SETTINGS ===================== -->
+          <div class="card">
+            <div class="card-title-row">
+              <div class="card-title"><i class="fas fa-sliders"></i> Auto-Sync Source Settings</div>
+            </div>
+            <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+              <div>
+                <label class="fld-label">Minimum transactions to trust Platform Data (N) <span class="req">*</span></label>
+                <input type="number" min="1" class="fld" id="cfg-threshold-n" value="5" />
+                <div class="fld-hint">
+                  If completed transactions/listings for an Area or Station in the current period are fewer than N,
+                  the system falls back to MLIT API data instead of Platform Data.
+                </div>
+              </div>
+              <div>
+                <label class="fld-label">MLIT Station search radius R (meters) <span class="req">*</span></label>
+                <input type="number" min="50" step="50" class="fld" id="cfg-radius-r" value="500" />
+              </div>
+            </div>
+            
+            <div class="save-btn-row" style="text-align:right;margin-top:6px">
+              <button class="btn btn-primary" onclick="saveSourceConfig()">
+                <i class="fas fa-floppy-disk"></i> Save configuration
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+
+    <!-- ============ Assign Areas/Stations modal ============ -->
+    <div id="modal-assign" class="modal-backdrop">
+      <div class="modal-shell sm">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" id="assign-modal-title">Assign to City</div>
+            <div class="modal-subtitle" id="assign-modal-subtitle">Choose a city, then pick items to add.</div>
+          </div>
+          <button class="modal-close-btn" onclick="closeModal('modal-assign')">×</button>
+        </div>
+        <div class="modal-body">
+          <div style="margin-bottom:12px">
+            <label class="fld-label">City <span class="req">*</span></label>
+            <select class="fld" id="assign-city-select" onchange="onAssignCityChange()"></select>
+          </div>
+          <div id="assign-items-block" style="display:none">
+            <label class="fld-label" id="assign-items-label">Items</label>
+            <div class="item-list">
+              <div class="item-list-body" id="assign-items-body"></div>
+            </div>
+          </div>
+          <div id="assign-empty-hint" class="fld-hint" style="display:none">
+            Everything is already assigned to this city.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('modal-assign')">Cancel</button>
+          <button class="btn btn-primary" onclick="confirmAssign()">Add selected</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Resolve Errors Modal ============ -->
+    <div id="modal-resolve" class="modal-backdrop">
+      <div class="modal-shell" style="width: 800px;">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">Resolve Data Errors</div>
+            <div class="modal-subtitle">Geographical data mismatch detected. Please confirm suggestions, select manually, or discard invalid rows.</div>
+          </div>
+          <button class="modal-close-btn" onclick="closeModal('modal-resolve')">×</button>
+        </div>
+        <div class="modal-body" style="padding: 0;">
+          <table class="tbl" id="resolve-table">
+            <thead>
+              <tr>
+                <th style="width: 60px;">Row</th>
+                <th>Invalid Data</th>
+                <th>System Suggestion (Editable)</th>
+                <th style="width: 60px; text-align: center;">Discard</th>
+              </tr>
+            </thead>
+            <tbody id="resolve-body"></tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('modal-resolve')">Cancel Upload</button>
+          <button class="btn btn-primary" onclick="confirmResolvedData()">Confirm & Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+      // ===================== helpers =====================
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+        );
+      const LS = {
+        get(k, def) {
+          try {
+            const v = localStorage.getItem(k);
+            return v ? JSON.parse(v) : def;
+          } catch (e) {
+            return def;
+          }
+        },
+        set(k, v) {
+          try {
+            localStorage.setItem(k, JSON.stringify(v));
+          } catch (e) {}
+        },
+      };
+      function toast(msg, kind) {
+        const el = document.createElement("div");
+        el.className = "toast " + (kind || "ok");
+        const icon = kind === "err" ? "circle-exclamation" : kind === "warn" ? "triangle-exclamation" : "circle-check";
+        el.innerHTML = `<i class="fas fa-${icon}"></i> ${esc(msg)}`;
+        $("toastWrap").appendChild(el);
+        setTimeout(() => el.remove(), 3200);
+      }
+      function openModal(id) {
+        $(id).classList.add("open");
+      }
+      function closeModal(id) {
+        $(id).classList.remove("open");
+      }
+      function fmtInt(n) {
+        return Math.round(Number(n) || 0).toLocaleString("en-US");
+      }
+      function todayStr() {
+        return new Date().toISOString().slice(0, 10);
+      }
+      function daysUntil(dateStr) {
+        const d1 = new Date(todayStr() + "T00:00:00");
+        const d2 = new Date(dateStr + "T00:00:00");
+        return Math.round((d2 - d1) / 86400000);
+      }
+      const TSUBO_FACTOR = 3.305785;
+
+      // Thuật toán Levenshtein Distance để tìm gợi ý gần giống nhất
+      function getEditDistance(a, b) {
+        if(a.length === 0) return b.length;
+        if(b.length === 0) return a.length;
+        const matrix = [];
+        for(let i = 0; i <= b.length; i++){ matrix[i] = [i]; }
+        for(let j = 0; j <= a.length; j++){ matrix[0][j] = j; }
+        for(let i = 1; i <= b.length; i++){
+          for(let j = 1; j <= a.length; j++){
+            if(b.charAt(i-1) === a.charAt(j-1)) {
+              matrix[i][j] = matrix[i-1][j-1];
+            } else {
+              matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, Math.min(matrix[i][j-1] + 1, matrix[i-1][j] + 1));
+            }
+          }
+        }
+        return matrix[b.length][a.length];
+      }
+      function findBestMatch(input, pool) {
+        if (!input) return null;
+        let best = null; let minD = Infinity;
+        const lowerInput = input.toLowerCase();
+        pool.forEach(item => {
+          const d = getEditDistance(lowerInput, item.name.toLowerCase());
+          if (d < minD) { minD = d; best = item; }
+        });
+        return minD <= 3 ? best : null; // Chỉ gợi ý nếu sai tối đa 3 ký tự
+      }
+
+      // ===================== storage keys =====================
+      const K = {
+        cities: "landata.cities", // [{id,name}] — system data
+        areas: "landata.areas", // [{id,name}] — system data
+        stations: "landata.stations", // [{id,name}] — system data
+        pnAssign: "landata.pn.assign", // [{id,cityId,areaId}]
+        lpAssign: "landata.lp.assign", // [{id,cityId,stationId}]
+        pnMode: "landata.pn.mode",
+        pnCsv: "landata.pn.csv",
+        lpMode: "landata.lp.mode",
+        lpCsv: "landata.lp.csv",
+        config: "landata.config",
+      };
+
+      // ===================== seed system data =====================
+      const DEFAULT_AREAS = [
+        "Shibuya", "Shinjuku", "Minato", "Chiyoda", "Setagaya", "Meguro",
+        "Kita", "Namba", "Umeda", "Tenjin", "Hakata", "Chuo",
+      ].map((n, i) => ({ id: "area-" + (i + 1), name: n }));
+      const DEFAULT_STATIONS = [
+        "Toranomon Station", "National Diet Bldg Station", "Uchisaiwaicho Station",
+        "Shimbashi Station", "Kamiyacho Station", "Umeda Station",
+        "Namba Station", "Tenjin Station", "Hakata Station", "Sapporo Station",
+      ].map((n, i) => ({ id: "st-" + (i + 1), name: n }));
+      const DEFAULT_CITIES = ["Tokyo", "Osaka", "Fukuoka"].map((n, i) => ({ id: "city-" + (i + 1), name: n }));
+      const DEFAULT_PN_ASSIGN = [
+        { id: "pna-1", cityId: "city-1", areaId: "area-1" },
+        { id: "pna-2", cityId: "city-1", areaId: "area-2" },
+        { id: "pna-3", cityId: "city-1", areaId: "area-3" },
+        { id: "pna-4", cityId: "city-1", areaId: "area-4" },
+        { id: "pna-5", cityId: "city-2", areaId: "area-8" },
+        { id: "pna-6", cityId: "city-2", areaId: "area-9" },
+        { id: "pna-7", cityId: "city-3", areaId: "area-10" },
+      ];
+      const DEFAULT_LP_ASSIGN = [
+        { id: "lpa-1", cityId: "city-1", stationId: "st-1" },
+        { id: "lpa-2", cityId: "city-1", stationId: "st-2" },
+        { id: "lpa-3", cityId: "city-1", stationId: "st-3" },
+        { id: "lpa-4", cityId: "city-1", stationId: "st-4" },
+        { id: "lpa-5", cityId: "city-1", stationId: "st-5" },
+        { id: "lpa-6", cityId: "city-2", stationId: "st-6" },
+        { id: "lpa-7", cityId: "city-2", stationId: "st-7" },
+        { id: "lpa-8", cityId: "city-3", stationId: "st-8" },
+        { id: "lpa-9", cityId: "city-3", stationId: "st-9" },
+      ];
+
+      let areas = LS.get(K.areas, DEFAULT_AREAS);
+      let stations = LS.get(K.stations, DEFAULT_STATIONS);
+      let cities = LS.get(K.cities, DEFAULT_CITIES); // system data — City, Area, Station are all predefined, not managed here
+      let pnAssign = LS.get(K.pnAssign, DEFAULT_PN_ASSIGN);
+      let lpAssign = LS.get(K.lpAssign, DEFAULT_LP_ASSIGN);
+      let config = LS.get(K.config, { n: 5, r: 500, poll: "daily" });
+
+      const areaById = (id) => areas.find((a) => a.id === id);
+      const stationById = (id) => stations.find((s) => s.id === id);
+      const cityById = (id) => cities.find((c) => c.id === id);
+
+      function persistPnAssign() {
+        LS.set(K.pnAssign, pnAssign);
+      }
+      function persistLpAssign() {
+        LS.set(K.lpAssign, lpAssign);
+      }
+
+      // ===================== simulated Platform data (Auto Mode) =====================
+      function seededNumber(seed, min, max) {
+        let h = 0;
+        for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+        return min + (h % (max - min));
+      }
+      function platformTransactionCount(key) {
+        return seededNumber(key + "-txn", 1, 12);
+      }
+      function platformAvgPrice(key) {
+        return seededNumber(key + "-price", 480000, 1450000);
+      }
+      function platformChange(key) {
+        const v = seededNumber(key + "-chg", -900, 900) / 100;
+        return Math.round(v * 100) / 100;
+      }
+      function mlitAvgPrice(key) {
+        return seededNumber(key + "-mlit", 420000, 1300000);
+      }
+      function mlitChange(key) {
+        const v = seededNumber(key + "-mlitchg", -700, 700) / 100;
+        return Math.round(v * 100) / 100;
+      }
+
+      // ===================== Popular Neighbourhoods: remove one assignment =====================
+      function removePnAssignment(id) {
+        pnAssign = pnAssign.filter((a) => a.id !== id);
+        persistPnAssign();
+        renderAllPreviews();
+        toast("Area removed from city.");
+      }
+
+      // ===================== Land Prices: remove one assignment =====================
+      function removeLpAssignment(id) {
+        lpAssign = lpAssign.filter((a) => a.id !== id);
+        persistLpAssign();
+        renderAllPreviews();
+        toast("Station removed from city.");
+      }
+
+      // ===================== Assign modal: pick a City, then multi-select Areas/Stations =====================
+      let assignSection = null; // 'pn' | 'lp'
+      function fillAssignCitySelect(lockedCityId) {
+        const citySelect = $("assign-city-select");
+        citySelect.innerHTML =
+          '<option value="">-- Choose a city --</option>' +
+          cities.map((c) => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
+        citySelect.disabled = false;
+        if (lockedCityId) {
+          citySelect.value = lockedCityId;
+        }
+      }
+      function openAssignModal(section) {
+        assignSection = section;
+        $("assign-modal-title").textContent = section === "pn" ? "Assign Areas to a City" : "Assign Stations to a City";
+        $("assign-modal-subtitle").textContent =
+          section === "pn" ? "Pick a city, then check the areas to add." : "Pick a city, then check the stations to add.";
+        $("assign-items-label").textContent = section === "pn" ? "Areas" : "Stations";
+        fillAssignCitySelect(null);
+        $("assign-items-block").style.display = "none";
+        $("assign-empty-hint").style.display = "none";
+        openModal("modal-assign");
+      }
+      // Opened from the pencil icon on a preview row — jumps straight to the checklist for that city.
+      function openAssignModalForCity(section, cityId) {
+        const c = cityById(cityId);
+        assignSection = section;
+        $("assign-modal-title").textContent = (section === "pn" ? "Assign Areas — " : "Assign Stations — ") + (c ? c.name : "");
+        $("assign-modal-subtitle").textContent =
+          section === "pn" ? "Check the areas to add for this city." : "Check the stations to add for this city.";
+        $("assign-items-label").textContent = section === "pn" ? "Areas" : "Stations";
+        fillAssignCitySelect(cityId);
+        openModal("modal-assign");
+        onAssignCityChange();
+      }
+      function onAssignCityChange() {
+        const cityId = $("assign-city-select").value;
+        const itemsBlock = $("assign-items-block");
+        const emptyHint = $("assign-empty-hint");
+        const body = $("assign-items-body");
+        if (!cityId) {
+          itemsBlock.style.display = "none";
+          emptyHint.style.display = "none";
+          return;
+        }
+        const pool = assignSection === "pn" ? areas : stations;
+        const existing = new Set(
+          (assignSection === "pn" ? pnAssign : lpAssign)
+            .filter((a) => a.cityId === cityId)
+            .map((a) => (assignSection === "pn" ? a.areaId : a.stationId)),
+        );
+        const available = pool.filter((it) => !existing.has(it.id));
+        if (!available.length) {
+          itemsBlock.style.display = "none";
+          emptyHint.style.display = "";
+          return;
+        }
+        itemsBlock.style.display = "";
+        emptyHint.style.display = "none";
+        body.innerHTML = available
+          .map(
+            (it) => `<label class="item-list-row">
+              <input type="checkbox" value="${esc(it.id)}" />
+              <span>${esc(it.name)}</span>
+            </label>`,
+          )
+          .join("");
+      }
+      function confirmAssign() {
+        const cityId = $("assign-city-select").value;
+        if (!cityId) {
+          toast("Please choose a city first.", "err");
+          return;
+        }
+        const checked = Array.from($("assign-items-body").querySelectorAll('input[type="checkbox"]:checked')).map(
+          (el) => el.value,
+        );
+        if (!checked.length) {
+          toast("Please select at least one item.", "err");
+          return;
+        }
+        if (assignSection === "pn") {
+          checked.forEach((areaId) => pnAssign.push({ id: "pna-" + Date.now() + "-" + areaId, cityId, areaId }));
+          persistPnAssign();
+        } else {
+          checked.forEach((stationId) => lpAssign.push({ id: "lpa-" + Date.now() + "-" + stationId, cityId, stationId }));
+          persistLpAssign();
+        }
+        renderAllPreviews();
+        closeModal("modal-assign");
+        toast(checked.length + (assignSection === "pn" ? " area(s) assigned." : " station(s) assigned."));
+      }
+
+      // ===================== Mode switch (Auto / Manual) =====================
+      function getMode(section) {
+        return LS.get(section === "pn" ? K.pnMode : K.lpMode, "auto");
+      }
+      function setModeSilently(section, mode) {
+        LS.set(section === "pn" ? K.pnMode : K.lpMode, mode);
+      }
+      function setMode(section, mode) {
+        setModeSilently(section, mode);
+        renderModeUI(section);
+        renderAllPreviews();
+        toast((section === "pn" ? "Popular Neighbourhoods" : "Land Prices") + " switched to " + (mode === "auto" ? "Auto Mode" : "Manual Mode (CSV)") + ".");
+      }
+      function getCsv(section) {
+        return LS.get(section === "pn" ? K.pnCsv : K.lpCsv, null);
+      }
+      function setCsv(section, data) {
+        LS.set(section === "pn" ? K.pnCsv : K.lpCsv, data);
+      }
+      function csvStatus(section) {
+        const csv = getCsv(section);
+        if (!csv) return { state: "none" };
+        const d = daysUntil(csv.validUntil);
+        if (d < 0) return { state: "expired", days: d };
+        if (d <= 3) return { state: "expiring", days: d };
+        return { state: "active", days: d };
+      }
+
+      function renderModeUI(section) {
+        const mode = getMode(section);
+        const btnAuto = $(section + "-mode-auto");
+        const btnManual = $(section + "-mode-manual");
+        const manualBlock = $(section + "-manual-block");
+
+        if (btnAuto) btnAuto.classList.toggle("on", mode === "auto");
+        if (btnManual) btnManual.classList.toggle("on", mode === "manual");
+        if (manualBlock) manualBlock.style.display = mode === "manual" ? "" : "none";
+
+        const csv = getCsv(section);
+        const fileNameEl = $(section + "-file-name");
+        const revertBtn = $(section + "-revert-btn");
+
+        if (csv) {
+          if (fileNameEl) fileNameEl.textContent = csv.fileName + " · " + csv.rows.length + " rows";
+          if (revertBtn) revertBtn.disabled = false;
+        } else {
+          if (fileNameEl) fileNameEl.textContent = "No file uploaded yet";
+        }
+      }
+
+      // ===================== CSV parsing =====================
+      function parseCsvText(text) {
+        const lines = text.split(/\r?\n/).filter((l) => l.trim().length);
+        if (!lines.length) return [];
+        const header = lines[0].split(",").map((h) => h.trim().toLowerCase());
+        return lines.slice(1).map((line) => {
+          const cells = line.split(",").map((c) => c.trim());
+          const row = {};
+          header.forEach((h, i) => (row[h] = cells[i] ?? ""));
+          return row;
+        });
+      }
+      function normalizePnRows(rawRows) {
+        return rawRows
+          .map((r) => ({
+            city: r["city name"] || r.city || "",
+            area: r["ward/estate name"] || r["area name"] || r.area || "",
+            avgPrice: Number(r["indices value"] || r["average land price (yen/m2)"] || r.avgprice || 0),
+            change: Number(r["change percentage"] || r["change (%)"] || r.change || 0),
+          }))
+          .filter((r) => r.city && r.area);
+      }
+      function normalizeLpRows(rawRows) {
+        return rawRows
+          .map((r) => ({
+            city: r["city name"] || r.city || "",
+            rank: Number(r.rank || 0),
+            station: r["station/ward name"] || r.station || "",
+            avgPrice: Number(r["average price m2"] || r["average land price (yen/m2)"] || r.avgprice || 0),
+            change: Number(r["fluctuation rate %"] || r["change (%)"] || r.change || 0),
+          }))
+          .filter((r) => r.city && r.station);
+      }
+
+      $("pn-csv-file").addEventListener("change", (e) => onCsvSelected("pn", e));
+      $("lp-csv-file").addEventListener("change", (e) => onCsvSelected("lp", e));
+      
+      let pendingCsvData = null; 
+
+      function onCsvSelected(section, e) {
+        const validUntil = $(section + "-valid-date").value;
+        if (!validUntil) {
+          toast("Please select a Valid Until date before uploading.", "err");
+          e.target.value = "";
+          return;
+        }
+
+        const file = e.target.files && e.target.files[0];
+        e.target.value = "";
+        if (!file) return;
+        if (!file.name.toLowerCase().endsWith(".csv")) {
+          toast("Only .csv files are accepted.", "err");
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const text = String(ev.target.result || "");
+          
+          // TẦNG 1: Validate Cấu trúc Cột (Macro)
+          const headerLine = text.split(/\r?\n/)[0].toLowerCase();
+          const reqPn = ["city name", "area name", "average land price (yen/m2)", "change (%)"];
+          const reqLp = ["city name", "rank", "station/ward name", "average land price (yen/m2)", "change (%)"];
+          const reqCols = section === "pn" ? reqPn : reqLp;
+          
+          const missingCols = reqCols.filter(c => !headerLine.includes(c));
+          if (missingCols.length > 0) {
+            toast("File format error! Missing columns: " + missingCols.join(", "), "err");
+            return; 
+          }
+
+          const raw = parseCsvText(text);
+          const rows = section === "pn" ? normalizePnRows(raw) : normalizeLpRows(raw);
+          if (!rows.length) {
+            toast("The CSV file contains no data.", "err"); return;
+          }
+
+          // TẦNG 2: Validate Dữ liệu Master Data (Micro)
+          const errors = [];
+          const validRows = [];
+          const pool = section === "pn" ? areas : stations;
+          const subKey = section === "pn" ? "area" : "station";
+
+          rows.forEach((r, idx) => {
+             const cMatch = cities.find(c => c.name.toLowerCase() === r.city.toLowerCase());
+             let subMatch = null;
+             
+             if (cMatch) { 
+                subMatch = pool.find(x => x.name.toLowerCase() === r[subKey].toLowerCase());
+             }
+
+             if (!cMatch || !subMatch) {
+                errors.push({
+                   originalIndex: idx,
+                   row: r,
+                   errCity: !cMatch,
+                   errSub: !subMatch,
+                   sugCity: !cMatch ? findBestMatch(r.city, cities) : cMatch,
+                   sugSub: (!subMatch && r[subKey]) ? findBestMatch(r[subKey], pool) : subMatch
+                });
+             } else {
+                validRows.push({ ...r, city: cMatch.name, [subKey]: subMatch.name });
+             }
+          });
+
+          if (errors.length > 0) {
+             pendingCsvData = { section, file, validUntil, validRows, errors };
+             renderResolveModal();
+             openModal("modal-resolve");
+          } else {
+             saveFinalCsv(section, file.name, validUntil, validRows);
+          }
+        };
+        reader.onerror = () => toast("Could not read the file.", "err");
+        reader.readAsText(file);
+      }
+
+      function renderResolveModal() {
+         const tbody = $("resolve-body");
+         const section = pendingCsvData.section;
+         const pool = section === "pn" ? areas : stations;
+         const subLabel = section === "pn" ? "Area" : "Station";
+         const subKey = section === "pn" ? "area" : "station";
+
+         let html = "";
+         pendingCsvData.errors.forEach((err, i) => {
+            const r = err.row;
+            const subValue = r[subKey];
+
+            let cityDrop = `<select id="res-city-${i}" class="fld" style="margin-bottom:6px">
+                <option value="">-- Select City --</option>
+                ${cities.map(c => `<option value="${esc(c.name)}" ${err.sugCity && err.sugCity.name === c.name ? "selected" : ""}>${esc(c.name)}</option>`).join("")}
+            </select>`;
+
+            let subDrop = `<select id="res-sub-${i}" class="fld">
+                <option value="">-- Select ${subLabel} --</option>
+                ${pool.map(p => `<option value="${esc(p.name)}" ${err.sugSub && err.sugSub.name === p.name ? "selected" : ""}>${esc(p.name)}</option>`).join("")}
+            </select>`;
+
+            html += `<tr id="err-row-${i}">
+               <td style="font-weight:bold; color:var(--text-muted)">#${err.originalIndex + 2}</td>
+               <td>
+                  <div style="color: ${err.errCity ? 'var(--status-danger-text)' : 'inherit'}; margin-bottom:4px">City: <strong>${esc(r.city)}</strong></div>
+                  <div style="color: ${err.errSub ? 'var(--status-danger-text)' : 'inherit'};">${subLabel}: <strong>${esc(subValue)}</strong></div>
+               </td>
+               <td>
+                  ${err.errCity ? cityDrop : `<div style="margin-bottom:6px; padding:6px; background:var(--bg-row-hover); border-radius:4px; font-size:12px; color:var(--status-success-text)">City: ${esc(r.city)} ✓</div><input type="hidden" id="res-city-${i}" value="${esc(r.city)}"/>`}
+                  ${err.errSub ? subDrop : `<div style="padding:6px; background:var(--bg-row-hover); border-radius:4px; font-size:12px; color:var(--status-success-text)">${subLabel}: ${esc(subValue)} ✓</div><input type="hidden" id="res-sub-${i}" value="${esc(subValue)}"/>`}
+               </td>
+               <td style="text-align:center;">
+                  <button class="icon-btn icon-btn--danger" onclick="discardErrorRow(${i})" title="Discard this row"><i class="fas fa-trash"></i></button>
+               </td>
+            </tr>`;
+         });
+         tbody.innerHTML = html;
+      }
+
+      function discardErrorRow(idx) {
+         $("err-row-" + idx).style.display = 'none';
+         $("err-row-" + idx).classList.add('discarded');
+      }
+
+      function confirmResolvedData() {
+         const section = pendingCsvData.section;
+         const subKey = section === "pn" ? "area" : "station";
+
+         try {
+           pendingCsvData.errors.forEach((err, i) => {
+              const tr = $("err-row-" + i);
+              if (!tr.classList.contains('discarded')) {
+                 const cityVal = $("res-city-" + i).value;
+                 const subVal = $("res-sub-" + i).value;
+                 if(!cityVal || !subVal) {
+                    toast(`Row #${err.originalIndex + 2} does not have a valid selection.`, "warn");
+                    throw new Error("Validation failed"); 
+                 }
+                 const r = { ...err.row };
+                 r.city = cityVal;
+                 r[subKey] = subVal;
+                 pendingCsvData.validRows.push(r);
+              }
+           });
+         } catch(e) { return; } 
+
+         if (pendingCsvData.validRows.length === 0) {
+            toast("No valid data remaining to save.", "err");
+            closeModal("modal-resolve");
+            return;
+         }
+
+         saveFinalCsv(section, pendingCsvData.file.name, pendingCsvData.validUntil, pendingCsvData.validRows);
+         closeModal("modal-resolve");
+      }
+
+      function saveFinalCsv(section, fileName, validUntil, rows) {
+         setCsv(section, { fileName, validUntil, rows });
+         setModeSilently(section, "manual");
+         renderModeUI(section);
+         renderAllPreviews();
+         toast(`CSV activated successfully (Valid until: ${validUntil})`);
+      }
+
+      // ===================== Popular Neighbourhoods preview =====================
+      function pnRowsForCity(cityName, cityId) {
+        const mode = getMode("pn");
+        const csv = getCsv("pn");
+        const st = csvStatus("pn");
+        if (mode === "manual" && csv && st.state !== "expired") {
+          return csv.rows
+            .filter((r) => r.city.toLowerCase() === cityName.toLowerCase())
+            .map((r) => ({ area: r.area, avgPrice: r.avgPrice, change: r.change }));
+        }
+        return pnAssign
+          .filter((a) => a.cityId === cityId)
+          .map((a) => {
+            const ar = areaById(a.areaId);
+            if (!ar) return null;
+            const key = "pn-" + ar.id;
+            const txn = platformTransactionCount(key);
+            if (txn >= config.n) {
+              return { area: ar.name, avgPrice: platformAvgPrice(key), change: platformChange(key), assignId: a.id };
+            }
+            return { area: ar.name, avgPrice: mlitAvgPrice(key), change: mlitChange(key), assignId: a.id };
+          })
+          .filter(Boolean);
+      }
+      function renderPnPreview() {
+        const wrap = $("pn-preview");
+        if (!cities.length) {
+          wrap.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:24px">No cities yet.</div>';
+          return;
+        }
+        const pnMode = getMode("pn");
+        const pnCsv = getCsv("pn");
+        const pnCsvSt = csvStatus("pn");
+        const editable = !(pnMode === "manual" && pnCsv && pnCsvSt.state !== "expired");
+        wrap.innerHTML = cities
+          .map((c) => {
+            const rows = pnRowsForCity(c.name, c.id).slice(0, 6);
+            return `<div class="city-card">
+            <div class="city-card-head">
+              <span>${esc(c.name)}</span>
+              ${
+                editable
+                  ? `<span class="city-card-head-actions">
+                      <button class="icon-btn" title="Edit areas" onclick="openAssignModalForCity('pn','${esc(c.id)}')"><i class="fas fa-pen"></i></button>
+                      <button class="icon-btn icon-btn--danger" title="Remove all areas" onclick="clearCityAssignments('pn','${esc(c.id)}')"><i class="fas fa-trash"></i></button>
+                    </span>`
+                  : ""
+              }
+            </div>
+            <table class="area-table"><thead><tr><th>Area</th><th>Average Land Price (yen/m²)</th><th>Change</th></tr></thead><tbody>
+            ${
+              rows.length
+                ? rows
+                    .map((r) => {
+                      const up = Number(r.change) >= 0;
+                      return `<tr>
+                    <td class="link-cell">${esc(r.area)}</td>
+                    <td>¥${fmtInt(r.avgPrice)}</td>
+                    <td class="${up ? "change-up" : "change-down"}">${up ? "↑ +" : "↓ -"}${Math.abs(r.change).toFixed(2)}%</td>
+                  </tr>`;
+                    })
+                    .join("")
+                : `<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:10px">${
+                    editable
+                      ? `No areas assigned. <a href="#" onclick="event.preventDefault();openAssignModalForCity('pn','${esc(c.id)}')">Add one</a>.`
+                      : "No areas assigned."
+                  }</td></tr>`
+            }
+            </tbody></table>
+          </div>`;
+          })
+          .join("");
+      }
+
+      // ===================== Land Prices preview =====================
+      let lpActiveCity = null;
+      function lpRowsForCity(cityName, cityId) {
+        const mode = getMode("lp");
+        const csv = getCsv("lp");
+        const st = csvStatus("lp");
+        if (mode === "manual" && csv && st.state !== "expired") {
+          return csv.rows
+            .filter((r) => r.city.toLowerCase() === cityName.toLowerCase())
+            .sort((a, b) => a.rank - b.rank)
+            .map((r) => ({ rank: r.rank, station: r.station, avgPrice: r.avgPrice, change: r.change }));
+        }
+        return lpAssign
+          .filter((a) => a.cityId === cityId)
+          .map((a, i) => {
+            const s = stationById(a.stationId);
+            if (!s) return null;
+            const key = "lp-" + s.id;
+            const txn = platformTransactionCount(key);
+            const avgPrice = txn >= config.n ? platformAvgPrice(key) : mlitAvgPrice(key);
+            const change = txn >= config.n ? platformChange(key) : mlitChange(key);
+            return { rank: i + 1, station: s.name, avgPrice, change, assignId: a.id };
+          })
+          .filter(Boolean);
+      }
+      function renderLpTabs() {
+        const enabledCities = cities.filter((c) => lpAssign.some((a) => a.cityId === c.id));
+        if (!lpActiveCity || !enabledCities.some((c) => c.id === lpActiveCity)) {
+          lpActiveCity = enabledCities[0]?.id || null;
+        }
+        $("lp-tabs").innerHTML = enabledCities
+          .map((c) => `<button class="land-tab ${c.id === lpActiveCity ? "active" : ""}" onclick="setLpTab('${esc(c.id)}')">${esc(c.name)}</button>`)
+          .join("");
+      }
+      function setLpTab(id) {
+        lpActiveCity = id;
+        renderLpTabs();
+        renderLpTable();
+      }
+      function renderLpTable() {
+        const wrap = $("lp-preview");
+        const c = lpActiveCity ? cityById(lpActiveCity) : null;
+        if (!c) {
+          wrap.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:24px">No city with stations yet.</div>';
+          return;
+        }
+        const lpMode = getMode("lp");
+        const lpCsv = getCsv("lp");
+        const lpCsvSt = csvStatus("lp");
+        const editable = !(lpMode === "manual" && lpCsv && lpCsvSt.state !== "expired");
+        const rows = lpRowsForCity(c.name, c.id).slice(0, 8);
+        const headHtml = `<div class="city-card-head" style="border-radius:var(--r-md);margin-bottom:10px">
+          <span>${esc(c.name)}</span>
+          ${
+            editable
+              ? `<span class="city-card-head-actions">
+                  <button class="icon-btn" title="Edit stations" onclick="openAssignModalForCity('lp','${esc(c.id)}')"><i class="fas fa-pen"></i></button>
+                  <button class="icon-btn icon-btn--danger" title="Remove all stations" onclick="clearCityAssignments('lp','${esc(c.id)}')"><i class="fas fa-trash"></i></button>
+                </span>`
+              : ""
+          }
+        </div>`;
+        if (!rows.length) {
+          wrap.innerHTML =
+            headHtml +
+            `<div style="text-align:center;color:var(--text-muted);padding:24px">No stations assigned for this city.${
+              editable ? ` <a href="#" onclick="event.preventDefault();openAssignModalForCity('lp','${esc(c.id)}')">Add one</a>.` : ""
+            }</div>`;
+          return;
+        }
+        wrap.innerHTML =
+          headHtml +
+          `<div class="table-wrap"><table class="tbl">
+          <thead><tr>
+            <th style="width:60px">Rank</th><th>Station Name</th>
+            <th>Average Land Price (yen/m²)</th><th>Average Price per Tsubo (yen/tsubo)</th><th>Change</th>
+          </tr></thead><tbody>
+          ${rows
+            .map((r) => {
+              const tsubo = r.avgPrice * TSUBO_FACTOR;
+              const up = Number(r.change) >= 0;
+              return `<tr>
+              <td class="rank-cell">${r.rank}</td>
+              <td class="link-cell">${esc(r.station)}</td>
+              <td>¥${fmtInt(r.avgPrice)}</td>
+              <td>¥${fmtInt(tsubo)}</td>
+              <td class="${up ? "change-up" : "change-down"}">${up ? "↑ +" : "↓ -"}${Math.abs(r.change).toFixed(2)}%</td>
+            </tr>`;
+            })
+            .join("")}
+          </tbody></table></div>`;
+      }
+
+      function renderAllPreviews() {
+        renderPnPreview();
+        renderLpTabs();
+        renderLpTable();
+      }
+
+      // ===================== source config =====================
+      function saveSourceConfig() {
+        const n = parseInt($("cfg-threshold-n").value, 10);
+        const r = parseInt($("cfg-radius-r").value, 10);
+        if (!Number.isFinite(n) || n < 1) {
+          toast("Threshold N must be at least 1.", "err");
+          return;
+        }
+        if (!Number.isFinite(r) || r < 50) {
+          toast("Radius R must be at least 50 meters.", "err");
+          return;
+        }
+        config = { n, r };
+        LS.set(K.config, config);
+        renderAllPreviews();
+        toast("Auto-sync source settings saved.");
+      }
+
+      // ===================== expiry watcher =====================
+      function checkExpiryWarnings() {
+        ["pn", "lp"].forEach((section) => {
+          const st = csvStatus(section);
+          if (st.state === "expiring") {
+            toast(
+              (section === "pn" ? "Popular Neighbourhoods" : "Land Prices") +
+                " CSV expires in " + st.days + " day(s) — upload a new file before it lapses.",
+              "warn",
+            );
+          } else if (st.state === "expired") {
+            toast(
+              (section === "pn" ? "Popular Neighbourhoods" : "Land Prices") +
+                " CSV has expired — now showing Auto fallback data.",
+              "warn",
+            );
+          }
+        });
+      }
+
+      // ===================== init =====================
+      document.querySelectorAll(".modal-backdrop").forEach((bd) =>
+        bd.addEventListener("click", (e) => {
+          if (e.target === bd) bd.classList.remove("open");
+        }),
+      );
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") document.querySelectorAll(".modal-backdrop.open").forEach((m) => m.classList.remove("open"));
+      });
+      $("cfg-threshold-n").value = config.n;
+      $("cfg-radius-r").value = config.r;
+
+      renderModeUI("pn");
+      renderModeUI("lp");
+      renderAllPreviews();
+      checkExpiryWarnings();
+    </script>
+  </body>
+</html>

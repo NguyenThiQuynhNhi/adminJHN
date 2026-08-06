@@ -496,112 +496,6 @@
         color: var(--text-muted);
       }
 
-      /* Drill-down panel */
-      .drill-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(28, 18, 12, 0.4);
-        display: none;
-        z-index: 90;
-      }
-      .drill-backdrop.open {
-        display: block;
-        animation: fadeIn 0.15s ease;
-      }
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-        }
-        to {
-          opacity: 1;
-        }
-      }
-      .drill-panel {
-        position: fixed;
-        top: 0;
-        right: -540px;
-        bottom: 0;
-        width: 520px;
-        max-width: 95vw;
-        background: #fff;
-        box-shadow: -10px 0 40px rgba(0, 0, 0, 0.18);
-        z-index: 100;
-        display: flex;
-        flex-direction: column;
-        transition: right 0.25s ease;
-      }
-      .drill-panel.open {
-        right: 0;
-      }
-      .drill-header {
-        padding: 18px 22px;
-        border-bottom: 1px solid var(--border-subtle);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        background: linear-gradient(180deg, #fffaf2, #fef1e6);
-      }
-      .drill-header .avatar {
-        width: 48px;
-        height: 48px;
-        border-radius: 10px;
-        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 16px;
-        flex-shrink: 0;
-      }
-      .drill-header .info {
-        flex: 1;
-        min-width: 0;
-      }
-      .drill-header .info .name {
-        font-size: 15px;
-        font-weight: 700;
-      }
-      .drill-header .info .meta {
-        font-size: 12px;
-        color: var(--text-muted);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-top: 4px;
-      }
-      .drill-close {
-        background: transparent;
-        border: 0;
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
-        font-size: 18px;
-        color: var(--text-muted);
-        cursor: pointer;
-      }
-      .drill-close:hover {
-        background: rgba(0, 0, 0, 0.05);
-        color: var(--text-main);
-      }
-      .drill-body {
-        padding: 18px 22px;
-        overflow: auto;
-        flex: 1;
-      }
-      .drill-body h4 {
-        margin: 18px 0 8px;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--text-muted);
-      }
-      .drill-body h4:first-child {
-        margin-top: 0;
-      }
-
       .inactivity-banner {
         background: #fde8e8;
         border: 1px solid #fbcaca;
@@ -902,21 +796,6 @@
       <div class="pager" id="pager"></div>
     </div>
 
-    <!-- ============ DRILL-DOWN PANEL ============ -->
-    <div class="drill-backdrop" id="drillBackdrop"></div>
-    <aside class="drill-panel" id="drillPanel">
-      <div class="drill-header">
-        <div class="avatar" id="dpAvatar">—</div>
-        <div class="info">
-          <div class="name" id="dpName">—</div>
-          <div class="meta" id="dpMeta">—</div>
-        </div>
-        <button class="drill-close" type="button" onclick="closeDrill()">
-          &times;
-        </button>
-      </div>
-      <div class="drill-body" id="drillBody"></div>
-    </aside>
 
     <!-- ============ ASSIGN-BADGE POPOVER ============ -->
     <div class="badge-pop" id="badgePop">
@@ -1196,16 +1075,22 @@
 
       // Filler agencies to take the dataset above the 50-row paging threshold.
       (function seedFiller() {
+        const prefixes = [
+          "Meguro", "Setagaya", "Nakano", "Fukuoka", "Sendai",
+          "Kobe", "Sapporo", "Hiroshima",
+        ];
         const suffix = ["Estates", "Realty", "Homes", "Partners", "Group"];
-        for (let i = 13; i <= 60; i++) {
+        for (let i = 13; i <= 10; i++) {
           const v = 6 + ((i * 7) % 26);
           const status =
             i % 17 === 0 ? "Withdrawn" : i % 11 === 0 ? "Suspended" : "Active";
           const days = i % 9 === 0 ? 14 + (i % 7) : i % 13;
+          const p = prefixes[(i - 13) % prefixes.length];
+          const s = suffix[(i - 13) % suffix.length];
           AGENCIES.push(
             mk({
               id: "AG-" + String(i).padStart(4, "0"),
-              name: "Agency " + i + " " + suffix[i % 5],
+              name: p + " " + s,
               plan: ["Free", "Bronze", "Silver", "Gold"][i % 4],
               listings: 3 + (i % 24),
               status,
@@ -1427,7 +1312,7 @@
                   <div class="agent-avatar">${initials(a.name)}</div>
                   <div>
                     <span class="agent-name">${esc(a.name)}</span>
-                    <span class="agent-sub"><span class="badge plan-${a.plan}">${a.plan}</span> · ${a.listings} listings · ${a.id}</span>
+                    <span class="agent-sub"><span class="badge plan-${a.plan}">${a.plan}</span> · ${a.id}</span>
                   </div>
                 </div>
               </td>
@@ -1443,15 +1328,13 @@
                   : `<span class="days-cell" style="color:var(--text-muted)">${a.daysSinceActivity === 0 ? "Today" : a.daysSinceActivity + "d ago"}</span>`
               }</td>
               <td class="actions" onclick="event.stopPropagation()">
+                <button class="btn btn-icon btn-sm" type="button" title="View Detail" onclick="viewDetail('${a.id}')"><i class="fas fa-eye"></i></button>
                 <button class="btn btn-icon btn-sm" type="button" title="Send Message" onclick="actMessage('${a.id}')"><i class="fas fa-envelope"></i></button>
                 <button class="btn btn-icon btn-sm" type="button" title="Assign Badge" onclick="openBadgePop('${a.id}', event)"><i class="fas fa-award"></i></button>
               </td>
             </tr>`;
           })
           .join("");
-        body.querySelectorAll("tr[data-id]").forEach((tr) => {
-          tr.addEventListener("click", () => openDrill(tr.dataset.id));
-        });
         renderPager(total, pages);
       }
 
@@ -1508,131 +1391,12 @@
       // ========================================================================
       // DRILL-DOWN PANEL
       // ========================================================================
-      function openDrill(id) {
+      function viewDetail(id) {
         const a = AGENCIES.find((x) => x.id === id);
         if (!a) return;
-        state.selectedId = id;
-        renderTable();
-
-        $("dpAvatar").textContent = initials(a.name);
-        $("dpName").textContent = a.name;
-        $("dpMeta").innerHTML = `
-          <span class="badge plan-${a.plan}">${a.plan}</span>
-          <span>${a.listings} listings · ${a.id}</span>
-        `;
-
-        const inactivityBanner =
-          a.daysSinceActivity >= 14
-            ? `
-          <div class="inactivity-banner">
-            <i class="fas fa-triangle-exclamation"></i>
-            <div><strong>No activity for ${a.daysSinceActivity} days.</strong></div>
-          </div>`
-            : "";
-
-        const profileBlock = `
-          <h4>Agency Profile</h4>
-          <div style="font-size:12.5px; line-height:1.9; color:var(--text-main)">
-            <div><strong>Service Areas:</strong> ${a.serviceAreas.join(", ")}</div>
-            <div><strong>Languages:</strong> ${a.languages.join(", ")}</div>
-            <div><strong>Specialties:</strong> ${a.specialties.join(", ")}</div>
-            <div><strong>Badges:</strong> ${a.badges.length ? a.badges.join(", ") : "None yet"}</div>
-          </div>`;
-        
-        const cur = metrics(a);
-        const prv = prevMetrics(a);
-        const deals = cur.jobs || 0;
-        const lastActive =
-          a.daysSinceActivity <= 0 ? "today" : a.daysSinceActivity + "d ago";
-        const summaryLine = `
-          <div class="perf-score">
-            <div class="perf-sub" style="font-size:13px">Response rate <strong>${cur.resp || 0}%</strong> · <strong>${deals}</strong> deal${deals === 1 ? "" : "s"} closed · last active <strong>${lastActive}</strong></div>
-          </div>`;
-
-        const totalAct = (cur.viewings||0) + (cur.calls||0) + (cur.emails||0) + (cur.tasks||0);
-        const pct = (v) => totalAct ? Math.round(v / totalAct * 100) : 0;
-
-        const activityMixBlock = totalAct ? `
-          <h4>Activity Mix (${PERIOD_CUR[state.period]})</h4>
-          <div style="display:flex; flex-direction:column; gap:6px; font-size:12px">
-            ${[["Viewings", cur.viewings], ["Calls", cur.calls], ["Emails", cur.emails], ["Tasks", cur.tasks]]
-              .map(([label, v]) => `
-                <div style="display:flex; align-items:center; gap:8px">
-                  <span style="width:60px; flex-shrink:0">${label}</span>
-                  <div style="flex:1; background:#f0e5d6; border-radius:4px; height:8px; overflow:hidden">
-                    <div style="width:${pct(v)}%; background:var(--accent); height:100%"></div>
-                  </div>
-                  <span style="width:36px; text-align:right; color:var(--text-muted)">${pct(v)}%</span>
-                </div>`).join("")}
-          </div>` : "";
-
-        const jobsClosed = cur.jobs || 0;
-        const effViewings = cur.viewings ? ((jobsClosed / cur.viewings) * 100).toFixed(1) : "—";
-        const effTasks = cur.tasks ? ((jobsClosed / cur.tasks) * 100).toFixed(1) : "—";
-        const actPerDeal = jobsClosed ? (totalAct / jobsClosed).toFixed(1) : "—";
-
-        const efficiencyBlock = `
-          <h4>Conversion Efficiency</h4>
-          <table class="cmp-table">
-            <tbody>
-              <tr><td>Viewings → Jobs Closed</td><td colspan="3" style="text-align:right">${effViewings}${effViewings !== "—" ? "%" : ""}</td></tr>
-              <tr><td>Tasks → Jobs Closed</td><td colspan="3" style="text-align:right">${effTasks}${effTasks !== "—" ? "%" : ""}</td></tr>
-              <tr><td>Activities per Deal</td><td colspan="3" style="text-align:right">${actPerDeal}</td></tr>
-            </tbody>
-          </table>`;
-
-        const cmpRows = [
-          ["Viewings", "viewings"],
-          ["Calls", "calls"],
-          ["Emails", "emails"],
-          ["Tasks", "tasks"],
-          ["Jobs Closed", "jobs"],
-        ]
-          .map(([label, key]) => {
-            const c = cur[key] || 0;
-            const p = prv[key] || 0;
-            const t = trend(c, p);
-            const arrow = t.dir === "up" ? "▲" : t.dir === "down" ? "▼" : "—";
-            const change =
-              t.dir === "flat"
-                ? "—"
-                : `${t.pct > 0 ? "+" : ""}${t.pct}% ${arrow}`;
-            return `<tr><td>${label}</td><td>${p}</td><td>${c}</td><td class="trend-${t.dir}">${change}</td></tr>`;
-          })
-          .join("");
-        const cmpTable = `
-          <h4>Period-over-period comparison (${PERIOD_CUR[state.period]})</h4>
-          <table class="cmp-table">
-            <thead><tr><th>Metric</th><th>${PERIOD_PREV[state.period]}</th><th>${PERIOD_CUR[state.period]}</th><th>Change</th></tr></thead>
-            <tbody>${cmpRows}</tbody>
-          </table>`;
-
-        $("drillBody").innerHTML = `
-          ${profileBlock}
-          ${summaryLine}
-          ${inactivityBanner}
-          ${activityMixBlock}
-          ${efficiencyBlock}
-          ${cmpTable}
-          
-          <div class="drill-actions">
-            <button class="btn btn-primary" type="button" onclick="actMessage('${a.id}')"><i class="fas fa-envelope"></i> Send Message</button>
-            <button class="btn" type="button" onclick="openBadgePop('${a.id}', event)"><i class="fas fa-award"></i> Assign Badge</button>
-            <button class="btn" type="button" onclick="exportAgency('${a.id}')"><i class="fas fa-file-export"></i> Export Agency Report</button>
-            <button class="btn btn-suspend" type="button" onclick="confirmSuspend('${a.id}')"><i class="fas fa-ban"></i> Suspend Agency</button>
-          </div>
-        `;
-
-        $("drillPanel").classList.add("open");
-        $("drillBackdrop").classList.add("open");
+        toast(`View detail for ${a.name} (${a.id}) — would navigate to Agency Detail page.`);
       }
-      function closeDrill() {
-        $("drillPanel").classList.remove("open");
-        $("drillBackdrop").classList.remove("open");
-        state.selectedId = null;
-        renderTable();
-      }
-      window.closeDrill = closeDrill;
+      window.viewDetail = viewDetail;
 
       // ========================================================================
       // ACTIONS
@@ -1650,7 +1414,6 @@
         if (!confirm(`Suspend ${a.name}? They will be removed from this list.`)) return;
         a.status = "Suspended";
         toast(`${a.name} has been suspended.`, "error");
-        closeDrill();
         renderTable();
       }
       window.confirmSuspend = confirmSuspend;
@@ -1778,45 +1541,6 @@
         );
         toast(`Exported ${list.length} agencies to CSV.`);
       }
-      function exportAgency(id) {
-        const a = AGENCIES.find((x) => x.id === id);
-        if (!a) return;
-        const m = metrics(a),
-          p = prevMetrics(a);
-        const rows = [
-          ["Field", "Value"],
-          ["Agency", a.name],
-          ["Agency ID", a.id],
-          ["Plan", a.plan],
-          ["Status", a.status],
-          ["Listings", a.listings],
-          ["Service Areas", a.serviceAreas.join(" / ")],
-          ["Languages", a.languages.join(" / ")],
-          ["Specialties", a.specialties.join(" / ")],
-          ["Response Rate (%)", m.resp],
-          ["Days Since Activity", a.daysSinceActivity],
-          [`Viewings (${PERIOD_CUR[state.period]})`, m.viewings],
-          [`Viewings (${PERIOD_PREV[state.period]})`, p.viewings],
-          [`Calls (${PERIOD_CUR[state.period]})`, m.calls],
-          [`Calls (${PERIOD_PREV[state.period]})`, p.calls],
-          [`Emails (${PERIOD_CUR[state.period]})`, m.emails],
-          [`Emails (${PERIOD_PREV[state.period]})`, p.emails],
-          [`Tasks (${PERIOD_CUR[state.period]})`, m.tasks],
-          [`Tasks (${PERIOD_PREV[state.period]})`, p.tasks],
-          [`Jobs Closed (${PERIOD_CUR[state.period]})`, m.jobs],
-          [`Jobs Closed (${PERIOD_PREV[state.period]})`, p.jobs],
-          ["", ""],
-          ["Newest Listing", "Posted (days ago)"],
-          ...newest.map((l) => [l.title, l.posted]),
-        ];
-        const csv = rows.map((r) => r.map(csvCell).join(",")).join("\n");
-        download(
-          `agency-${a.id}-${state.period}-${new Date().toISOString().slice(0, 10)}.csv`,
-          csv,
-        );
-        toast(`Exported ${a.name} report.`);
-      }
-      window.exportAgency = exportAgency;
 
       // ========================================================================
       // EVENT WIRING
@@ -1863,13 +1587,10 @@
         });
       });
 
-      // Drill / popover dismissal
-      $("drillBackdrop").addEventListener("click", closeDrill);
+      // Popover dismissal
       document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          if ($("badgePop").classList.contains("open")) cancelBadge();
-          else if ($("drillPanel").classList.contains("open")) closeDrill();
-        }
+        if (e.key === "Escape" && $("badgePop").classList.contains("open"))
+          cancelBadge();
       });
       document.addEventListener("click", (e) => {
         const pop = $("badgePop");

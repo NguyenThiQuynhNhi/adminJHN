@@ -231,6 +231,15 @@
       .btn-warning:hover {
         background: var(--status-warning-bg);
       }
+      .btn-success {
+        background: var(--status-success-text);
+        border-color: var(--status-success-text);
+        color: #ffffff;
+      }
+      .btn-success:hover {
+        background: var(--status-success-text);
+        filter: brightness(0.92);
+      }
       .data-table-wrap {
         overflow-x: auto;
       }
@@ -773,16 +782,6 @@
       </section>
 
       <section class="card">
-        <div class="bulk-bar hidden" id="bulkBar">
-          <span><strong id="bulkCount">0</strong> selected</span>
-          <div style="flex:1"></div>
-          <button class="btn btn-warning btn-sm" type="button" onclick="bulkSuspend()">
-            <i class="fas fa-ban"></i> Suspend
-          </button>
-          <button class="btn btn-danger btn-sm" type="button" onclick="bulkDelete()">
-            <i class="fas fa-trash"></i> Delete account
-          </button>
-        </div>
         <div class="results-header">
           <div class="results-count">
             <strong id="resultCount">Showing 0 of 0 admins</strong>
@@ -792,9 +791,6 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th style="width:36px">
-                  <input type="checkbox" id="selectAllChk" onchange="toggleSelectAll(this)">
-                </th>
                 <th>Full Name</th>
                 <th>Email</th>
                 <th>Role</th>
@@ -830,6 +826,15 @@
             onclick="suspendAccount()"
           >
             <i class="fas fa-ban"></i> Suspend
+          </button>
+          <button
+            id="btnReactivate"
+            class="btn btn-success"
+            type="button"
+            onclick="suspendAccount()"
+            style="display:none"
+          >
+            <i class="fas fa-circle-check"></i> Re-activate
           </button>
           <button
             id="btnDelete"
@@ -1543,7 +1548,7 @@
           })).sort((a,b) => b.at.localeCompare(a.at));
         }
 
-        for (let i = 2; i <= 60; i++) {
+        for (let i = 2; i <= 10; i++) {
           const id = "ADM-" + String(i).padStart(3, "0");
           const fn = rnd(firstNames);
           const ln = rnd(lastNames);
@@ -1743,9 +1748,6 @@
           .map(
             (a) => `
           <tr onclick="showDetail('${a.id}')">
-            <td onclick="event.stopPropagation()">
-              <input type="checkbox" class="rowChk" data-id="${a.id}" ${selectedIds.has(a.id) ? "checked" : ""} onchange="onRowCheck('${a.id}', this.checked)">
-            </td>
             <td><div style="display:flex;align-items:center;gap:10px">${avatarImg(a.fullName, 36, 8)}<div><strong>${esc(a.fullName)}</strong><br><span style="font-size:11px;color:var(--text-muted)">${a.id}</span></div></div></td>
             <td>${esc(a.email)}</td>
             <td>${esc(a.role)}</td>
@@ -1912,10 +1914,18 @@
         $("toolbarView").classList.toggle("hidden", editMode);
         $("toolbarEdit").classList.toggle("hidden", !editMode);
         const isSuspended = a.status === "Suspended";
-        $("btnSuspend").innerHTML = isSuspended
-          ? '<i class="fas fa-rotate-left"></i> Reactivate'
-          : '<i class="fas fa-ban"></i> Suspend';
-        $("btnDelete").classList.toggle("hidden", !isSuspended);
+        const btnSuspend = $("btnSuspend");
+        const btnReactivate = $("btnReactivate");
+        const btnDelete = $("btnDelete");
+        if (isSuspended) {
+          if (btnSuspend) btnSuspend.style.display = "none";
+          if (btnReactivate) btnReactivate.style.display = "";
+          if (btnDelete) btnDelete.style.display = "";
+        } else {
+          if (btnSuspend) btnSuspend.style.display = "";
+          if (btnReactivate) btnReactivate.style.display = "none";
+          if (btnDelete) btnDelete.style.display = "none";
+        }
 
         $("dAvatar").textContent = initials(a.fullName);
         $("dName").textContent = a.fullName;
