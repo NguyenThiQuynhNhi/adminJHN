@@ -2601,6 +2601,95 @@
       </div>
     </div>
 
+    <!-- Suspension modal with reason picker -->
+    <div class="modal-backdrop" id="suspModal">
+      <div class="confirm-box" style="width: 480px" role="dialog" aria-modal="true">
+        <div class="confirm-header">
+          <h3 class="confirm-title">Suspend Listing</h3>
+          <button class="confirm-close" type="button" id="suspClose"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="confirm-body" style="padding: 18px">
+          <div class="field-group" style="margin-bottom: 14px">
+            <label class="field-label">Reason for Removal <span class="required">*</span></label>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 6px" id="suspReasonCards">
+              <button type="button" class="btn" data-reason="sold" style="justify-content:flex-start;text-align:left;flex-direction:column;align-items:flex-start;gap:2px">
+                <strong>Sold</strong><span style="font-size:11px;color:var(--text-muted)">Agent closed the deal</span>
+              </button>
+              <button type="button" class="btn" data-reason="sold-others" style="justify-content:flex-start;text-align:left;flex-direction:column;align-items:flex-start;gap:2px">
+                <strong>Sold by Others</strong><span style="font-size:11px;color:var(--text-muted)">Another party sold it</span>
+              </button>
+              <button type="button" class="btn" data-reason="seller-withdrew" style="justify-content:flex-start;text-align:left;flex-direction:column;align-items:flex-start;gap:2px">
+                <strong>Seller Withdrew</strong><span style="font-size:11px;color:var(--text-muted)">Did not want to sell</span>
+              </button>
+              <button type="button" class="btn" data-reason="expired" style="justify-content:flex-start;text-align:left;flex-direction:column;align-items:flex-start;gap:2px">
+                <strong>Listing Expired</strong><span style="font-size:11px;color:var(--text-muted)">Contract period ended</span>
+              </button>
+              <button type="button" class="btn" data-reason="legal" style="justify-content:flex-start;text-align:left;flex-direction:column;align-items:flex-start;gap:2px">
+                <strong>Legal Hold</strong><span style="font-size:11px;color:var(--text-muted)">Dispute or freeze</span>
+              </button>
+            </div>
+            <span class="field-error hidden" id="suspReasonErr" style="color:var(--status-danger-text);font-size:11.5px">Please select a reason.</span>
+          </div>
+          <div class="field-group hidden" id="suspPriceWrap" style="margin-bottom: 12px">
+            <label class="field-label">Transaction Price (¥) <span class="required">*</span></label>
+            <input class="edit-input" type="number" min="0" id="suspPrice" placeholder="Enter final transaction price">
+            <span class="field-error hidden" id="suspPriceErr" style="color:var(--status-danger-text);font-size:11.5px">Required when reason is Sold.</span>
+          </div>
+          <div class="field-group hidden" id="suspPublicWrap" style="margin-bottom: 12px">
+            <div class="check-row">
+              <input type="checkbox" id="suspPublicPrice">
+              <label for="suspPublicPrice">Make transaction price public</label>
+            </div>
+          </div>
+          <div class="field-group" style="margin-bottom: 12px">
+            <label class="field-label">Suspension Date <span class="required">*</span></label>
+            <input class="edit-input" type="date" id="suspDate">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Notes</label>
+            <textarea class="edit-input" id="suspNotes" style="min-height:60px"></textarea>
+          </div>
+        </div>
+        <div class="confirm-footer">
+          <button class="btn" type="button" id="suspCancel">Cancel</button>
+          <button class="btn btn-danger" type="button" id="suspConfirm">Confirm Suspension</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reject reason modal -->
+    <div class="modal-backdrop" id="rejectModal">
+      <div class="confirm-box" style="width: 460px" role="dialog" aria-modal="true">
+        <div class="confirm-header">
+          <h3 class="confirm-title">Reject this listing?</h3>
+          <button class="confirm-close" type="button" id="rejectClose"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="confirm-body" style="padding: 18px">
+          <div class="field-group" style="margin-bottom: 12px">
+            <label class="field-label">Reject category <span class="required">*</span></label>
+            <select class="edit-input" id="rejectCategorySelect">
+              <option value="">Select a reason…</option>
+              <option value="Incomplete information">Incomplete information</option>
+              <option value="Inappropriate content">Inappropriate content</option>
+              <option value="Duplicate listing">Duplicate listing</option>
+              <option value="Invalid license">Invalid license</option>
+              <option value="Poor image quality">Poor image quality</option>
+              <option value="Policy violation">Policy violation</option>
+            </select>
+            <span class="field-error hidden" id="rejectCategoryErr" style="color:var(--status-danger-text);font-size:11.5px">Please select a reason.</span>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Notes (optional)</label>
+            <textarea class="edit-input" id="rejectNotesInput" style="min-height:60px" placeholder="Additional detail for the agency…"></textarea>
+          </div>
+        </div>
+        <div class="confirm-footer">
+          <button class="btn" type="button" id="rejectCancel">Cancel</button>
+          <button class="btn btn-danger" type="button" id="rejectConfirmBtn">Reject</button>
+        </div>
+      </div>
+    </div>
+
     <div class="toast-wrap" id="toastWrap"></div>
 
     <script src="../property-card.js"></script>
@@ -3051,6 +3140,7 @@
               t: "select",
               opts: OPT.saleStatus,
               req: true,
+              readonly: true,
             },
             {
               k: "membersOnly",
@@ -3131,6 +3221,7 @@
               t: "select",
               opts: OPT.saleStatus,
               req: true,
+              readonly: true,
             },
             {
               k: "membersOnly",
@@ -4985,6 +5076,18 @@
         });
       })();
 
+      (function normalizeSuspensionData() {
+        properties.forEach((p) => {
+          if (p.publishStatus === "Suspended" && !p.suspensionReason) {
+            p.suspensionReason = "seller-withdrew";
+            p.suspensionDate = p.suspensionDate || p.dateUpdated || "";
+            p.suspensionNotes =
+              p.suspensionNotes ||
+              "Suspended prior to reason tracking (legacy record).";
+          }
+        });
+      })();
+
       // ========================================================================
       // STATE + HELPERS
       // ========================================================================
@@ -6560,23 +6663,63 @@
         // Prominent Sold-Out record card (shown ABOVE the section cards).
         let soldCardHtml = "";
         if (p.saleStatus === "Sold Out") {
-          const notesHtml = `<div style="margin-top:8px;font-size:12.5px;color:var(--status-danger-text)"><strong>Final sale price:</strong> ${
-            p.publishPrice ? "Published" : "Hidden"
-          }</div>`;
+          const saleLine = `Sold at ${fmtYen(p.finalSalePrice)} on ${fmtDate(p.soldDate)}`;
           soldCardHtml = `
             <section class="card" style="grid-column:1/-1;background:var(--status-danger-bg);border:1px solid var(--status-danger-text)">
               <div class="card-title" style="border-bottom-color:var(--status-danger-text);color:var(--status-danger-text)">
                 <i class="fas fa-circle-check"></i> Sold — sale record
               </div>
               <div style="font-size:15px;font-weight:700;color:var(--status-danger-text)">
-                Sold at ${fmtYen(p.finalSalePrice)} on ${fmtDate(p.soldDate)}
+                ${saleLine}
               </div>
-              ${notesHtml}
+              <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:10px 12px">
+                <div>
+                  <div style="font-size:12.5px;font-weight:700;color:var(--text-main)"><i class="fas fa-eye" style="margin-right:6px"></i>Show final sale price to end user</div>
+                </div>
+                <label style="position:relative;width:40px;height:22px;cursor:pointer;flex-shrink:0">
+                  <input type="checkbox" id="soldPublishToggle" ${p.publishPrice ? "checked" : ""} onchange="toggleSoldPricePublish(this)" style="opacity:0;width:0;height:0;position:absolute">
+                  <span style="position:absolute;inset:0;background:${p.publishPrice ? "var(--color-primary)" : "var(--border-default)"};border-radius:11px;transition:.2s"></span>
+                  <span style="position:absolute;width:18px;height:18px;left:${p.publishPrice ? "20px" : "2px"};top:2px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span>
+                </label>
+              </div>
+            </section>`;
+        }
+
+        let suspCardHtml = "";
+        if (p.publishStatus === "Suspended" && p.suspensionReason) {
+          const SUSP_REASON_LABELS = {
+            sold: { title: "Sold", sub: "Agent closed the deal" },
+            "sold-others": { title: "Sold by Others", sub: "Another party sold it" },
+            "seller-withdrew": { title: "Seller Withdrew", sub: "Did not want to sell" },
+            expired: { title: "Listing Expired", sub: "Contract period ended" },
+            legal: { title: "Legal Hold", sub: "Dispute or freeze" },
+          };
+          const r = SUSP_REASON_LABELS[p.suspensionReason] || {
+            title: p.suspensionReason,
+            sub: "",
+          };
+          const priceLine =
+            p.suspensionReason === "sold"
+              ? `<div style="margin-top:6px;font-size:13px;color:var(--status-warning-text)">
+                   Transaction price: <strong>${fmtYen(p.suspensionTxPrice)}</strong>
+                   ${p.suspensionPublicPrice ? '<span class="badge badge-published" style="margin-left:6px">Public</span>' : '<span class="badge badge-gray" style="margin-left:6px">Hidden</span>'}
+                 </div>`
+              : "";
+          suspCardHtml = `
+            <section class="card" style="grid-column:1/-1;background:var(--status-warning-bg);border:1px solid var(--status-warning-text)">
+              <div class="card-title" style="border-bottom-color:var(--status-warning-text);color:var(--status-warning-text)">
+                <i class="fas fa-circle-pause"></i> Suspended — ${esc(r.title)}
+              </div>
+              <div style="font-size:13px;color:var(--text-main)">${esc(r.sub)}</div>
+              <div style="margin-top:6px;font-size:12.5px;color:var(--text-muted)">Suspension date: ${fmtDate(p.suspensionDate)}</div>
+              ${priceLine}
+              ${p.suspensionNotes ? `<div style="margin-top:8px;font-size:12.5px;color:var(--text-muted);white-space:pre-wrap">${esc(p.suspensionNotes)}</div>` : ""}
             </section>`;
         }
 
         $("dAlerts").innerHTML =
           soldCardHtml +
+          suspCardHtml +
           alerts
             .map(
               (a) =>
@@ -6665,48 +6808,101 @@
       }
       function saveChanges() {
         collectInputsToState();
-        // Mark-as-Sold flow: when Sale Status changes On Sale → Sold Out, capture
-        // the sale details BEFORE saving and auto-suspend the listing.
-        const wasOnSale =
-          !originalProp || originalProp.saleStatus !== "Sold Out";
-        const nowSoldOut = currentProp.saleStatus === "Sold Out";
-        if (wasOnSale && nowSoldOut) {
-          openSoldModal((payload) => {
-            // Atomic save: sale record + auto-suspend, separate from Selling Price.
-            currentProp.saleStatus = "Sold Out";
-            currentProp.finalSalePrice = payload.finalSalePrice;
-            currentProp.soldDate = payload.soldDate;
-            currentProp.publishPrice = payload.publishPrice;
-            currentProp.publishStatus = "Suspended"; // auto-suspend
-            commitSave();
-            toast(
-              `Listing marked as Sold. Final sale price: ${fmtYen(
-                payload.finalSalePrice,
-              )}. Listing has been suspended.`,
-            );
-          });
-          return; // wait for modal confirmation before committing
+        if (
+          currentProp.saleStatus === "Sold Out" &&
+          (currentProp.publishStatus === "Pending Review" ||
+            currentProp.publishStatus === "Rejected")
+        ) {
+          toast(
+            "This listing must be approved (Published) before it can be marked Sold Out.",
+            "error",
+          );
+          return;
         }
         commitSave();
       }
+
+      function toggleSoldPricePublish(cb) {
+        if (!currentProp) return;
+        currentProp.publishPrice = cb.checked;
+        if (originalProp) originalProp.publishPrice = cb.checked;
+        renderDetail();
+        toast(cb.checked ? "Final sale price is now public." : "Final sale price is now hidden.");
+      }
+
+      let _suspReason = null;
+      function openSuspModal() {
+        _suspReason = null;
+        $("suspReasonCards").querySelectorAll("[data-reason]").forEach((b) => b.style.borderColor = "");
+        $("suspReasonErr").classList.add("hidden");
+        $("suspPriceWrap").classList.add("hidden");
+        $("suspPublicWrap").classList.add("hidden");
+        $("suspPrice").value = "";
+        $("suspPriceErr").classList.add("hidden");
+        $("suspPublicPrice").checked = false;
+        $("suspDate").value = new Date().toISOString().slice(0, 10);
+        $("suspNotes").value = "";
+        $("suspModal").classList.add("open");
+      }
+      function closeSuspModal() {
+        $("suspModal").classList.remove("open");
+      }
+      (function wireSuspModal() {
+        $("suspReasonCards").querySelectorAll("[data-reason]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            _suspReason = btn.dataset.reason;
+            $("suspReasonCards").querySelectorAll("[data-reason]").forEach((b) => (b.style.borderColor = ""));
+            btn.style.borderColor = "var(--color-primary)";
+            $("suspReasonErr").classList.add("hidden");
+            const needsPrice = _suspReason === "sold";
+            $("suspPriceWrap").classList.toggle("hidden", !needsPrice);
+            $("suspPublicWrap").classList.toggle("hidden", !needsPrice);
+          });
+        });
+        $("suspCancel").addEventListener("click", closeSuspModal);
+        $("suspClose").addEventListener("click", closeSuspModal);
+        $("suspModal").addEventListener("click", (e) => {
+          if (e.target === $("suspModal")) closeSuspModal();
+        });
+        $("suspConfirm").addEventListener("click", () => {
+          if (!_suspReason) {
+            $("suspReasonErr").classList.remove("hidden");
+            return;
+          }
+          const priceRaw = $("suspPrice").value.trim();
+          if (_suspReason === "sold" && !priceRaw) {
+            $("suspPriceErr").classList.remove("hidden");
+            $("suspPrice").focus();
+            return;
+          }
+          $("suspPriceErr").classList.add("hidden");
+          if (!currentProp) return;
+          currentProp.publishStatus = "Suspended";
+          currentProp.suspensionReason = _suspReason;
+          currentProp.suspensionDate = $("suspDate").value;
+          currentProp.suspensionNotes = $("suspNotes").value.trim();
+          currentProp.suspensionTxPrice = priceRaw ? Number(priceRaw) : null;
+          currentProp.suspensionPublicPrice = $("suspPublicPrice").checked;
+          currentProp.dateUpdated = new Date().toISOString().slice(0, 10);
+          if (_suspReason === "sold") {
+            currentProp.saleStatus = "Sold Out";
+            currentProp.finalSalePrice = Number(priceRaw);
+            currentProp.soldDate = $("suspDate").value;
+            currentProp.publishPrice = $("suspPublicPrice").checked;
+          }
+          originalProp = JSON.parse(JSON.stringify(currentProp));
+          closeSuspModal();
+          renderDetail();
+          renderList();
+          toast("Listing suspended.");
+        });
+      })();
 
       function toggleSuspend() {
         if (!currentProp) return;
         // Only Published <-> Suspended toggling is allowed from this button.
         if (currentProp.publishStatus === "Published") {
-          openConfirm({
-            title: "Suspend listing?",
-            body: `Suspend ${currentProp.id} (${currentProp.name})? The listing will be hidden from public view until re-activated.`,
-            actionLabel: "Suspend",
-            actionKind: "danger",
-            onConfirm: () => {
-              currentProp.publishStatus = "Suspended";
-              originalProp.publishStatus = "Suspended";
-              renderDetail();
-              renderList();
-              toast("Listing suspended.");
-            },
-          });
+          openSuspModal();
         } else if (currentProp.publishStatus === "Suspended") {
           if (currentProp.saleStatus === "Sold Out") {
             // Sold-Out re-activation clears the sale record and resets to On Sale.
@@ -6740,7 +6936,12 @@
             actionKind: "success",
             onConfirm: () => {
               currentProp.publishStatus = "Published";
-              originalProp.publishStatus = "Published";
+              currentProp.suspensionReason = undefined;
+              currentProp.suspensionDate = undefined;
+              currentProp.suspensionNotes = undefined;
+              currentProp.suspensionTxPrice = undefined;
+              currentProp.suspensionPublicPrice = undefined;
+              originalProp = JSON.parse(JSON.stringify(currentProp));
               renderDetail();
               renderList();
               toast("Listing re-activated.");
@@ -6782,37 +6983,53 @@
           },
         });
       }
+      
       function rejectListing() {
         if (!currentProp) return;
-        openConfirm({
-          title: "Reject this listing?",
-          body: `Reject ${currentProp.id} (${currentProp.name})? The agency will be notified and the listing will not be published until re-submitted.`,
-          actionLabel: "Reject",
-          actionKind: "danger",
-          onConfirm: () => {
-            const today = new Date().toISOString().slice(0, 10);
-            const oldStatus = currentProp.publishStatus;
-            currentProp.publishStatus = "Rejected";
-            currentProp.rejectCategory = "Incomplete documentation";
-            currentProp.rejectNotes = "Rejected by admin during review.";
-            currentProp.dateUpdated = today;
-            currentProp.changeHistory = currentProp.changeHistory || [];
-            currentProp.changeHistory.unshift({
-              ts: today + "T00:00:00",
-              actorId: "ADM-002",
-              actorName: "Admin Operator",
-              role: "Admin",
-              field: "publishStatus",
-              oldVal: oldStatus,
-              newVal: "Rejected",
-            });
-            originalProp = JSON.parse(JSON.stringify(currentProp));
-            renderDetail();
-            renderList();
-            toast("Listing rejected.", "error");
-          },
-        });
+        $("rejectCategorySelect").value = "";
+        $("rejectNotesInput").value = "";
+        $("rejectCategoryErr").classList.add("hidden");
+        $("rejectModal").classList.add("open");
       }
+      (function wireRejectModal() {
+        const modal = $("rejectModal");
+        const close = () => modal.classList.remove("open");
+        $("rejectClose").addEventListener("click", close);
+        $("rejectCancel").addEventListener("click", close);
+        modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && modal.classList.contains("open")) close();
+        });
+        $("rejectConfirmBtn").addEventListener("click", () => {
+          const cat = $("rejectCategorySelect").value;
+          if (!cat) {
+            $("rejectCategoryErr").classList.remove("hidden");
+            return;
+          }
+          if (!currentProp) return;
+          const today = new Date().toISOString().slice(0, 10);
+          const oldStatus = currentProp.publishStatus;
+          currentProp.publishStatus = "Rejected";
+          currentProp.rejectCategory = cat;
+          currentProp.rejectNotes = $("rejectNotesInput").value.trim();
+          currentProp.dateUpdated = today;
+          currentProp.changeHistory = currentProp.changeHistory || [];
+          currentProp.changeHistory.unshift({
+            ts: today + "T00:00:00",
+            actorId: "ADM-002",
+            actorName: "Admin Operator",
+            role: "Admin",
+            field: "publishStatus",
+            oldVal: oldStatus,
+            newVal: "Rejected",
+          });
+          originalProp = JSON.parse(JSON.stringify(currentProp));
+          close();
+          renderDetail();
+          renderList();
+          toast("Listing rejected.", "error");
+        });
+      })();
 
       function deleteListing() {
         if (!currentProp) return;

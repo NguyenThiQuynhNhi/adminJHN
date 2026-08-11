@@ -2015,6 +2015,83 @@
           border-radius: 0;
         }
       }
+
+        /* ============ Location Picker Modal (Shopee-style) ============ */
+      .locpick-box {
+        width: 720px;
+        max-width: 100%;
+        background: var(--bg-card);
+        border-radius: var(--r-lg);
+        box-shadow: var(--shadow-modal);
+        display: flex;
+        flex-direction: column;
+        max-height: 90vh;
+        overflow: hidden;
+      }
+      .locpick-body {
+        padding: 18px;
+        overflow: auto;
+      }
+      .locpick-selects {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .locpick-map {
+        position: relative;
+        width: 100%;
+        height: 320px;
+        border-radius: var(--r-md);
+        border: 1px solid var(--border-subtle);
+        background:
+          linear-gradient(0deg, rgba(139,115,64,0.08) 1px, transparent 1px) 0 0/28px 28px,
+          linear-gradient(90deg, rgba(139,115,64,0.08) 1px, transparent 1px) 0 0/28px 28px,
+          var(--bg-card-warm);
+        overflow: hidden;
+        cursor: grab;
+        touch-action: none;
+      }
+      .locpick-map:active { cursor: grabbing; }
+      .locpick-pin {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -100%);
+        font-size: 30px;
+        color: var(--status-danger-text);
+        pointer-events: none;
+        filter: drop-shadow(0 3px 4px rgba(0,0,0,0.3));
+      }
+      .locpick-center-dot {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--status-danger-text);
+        pointer-events: none;
+      }
+      .locpick-hint {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        background: rgba(255,255,255,0.92);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--r-sm);
+        padding: 6px 10px;
+        font-size: 11.5px;
+        color: var(--text-muted);
+        pointer-events: none;
+      }
+      .locpick-coords {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--text-muted);
+        font-family: ui-monospace, monospace;
+      }
     </style>
   </head>
   <body>
@@ -2251,6 +2328,44 @@
           <button class="pop-btn" type="button" onclick="openAdvModal()">
             <i class="fas fa-sliders"></i> Advanced Filter
           </button>
+
+          <!-- Keep (Saves) filter -->
+          <div class="pop-wrap" data-pop="keep">
+            <button class="pop-btn" type="button" data-pop-toggle>
+              <i class="fas fa-bookmark"></i> Saves
+              <span class="cnt hidden" data-cnt="keep">0</span>
+              <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="pop-panel right" data-pop-panel style="min-width:240px">
+              <div class="pop-range">
+                <input type="number" min="0" placeholder="Min" id="fKeepMin" />
+                <span>to</span>
+                <input type="number" min="0" placeholder="Max" id="fKeepMax" />
+              </div>
+              <div class="pop-foot">
+                <button class="btn btn-sm" type="button" data-pop-done>Apply</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Clicks filter -->
+          <div class="pop-wrap" data-pop="click">
+            <button class="pop-btn" type="button" data-pop-toggle>
+              <i class="fas fa-arrow-pointer"></i> Clicks
+              <span class="cnt hidden" data-cnt="click">0</span>
+              <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="pop-panel right" data-pop-panel style="min-width:240px">
+              <div class="pop-range">
+                <input type="number" min="0" placeholder="Min" id="fClickMin" />
+                <span>to</span>
+                <input type="number" min="0" placeholder="Max" id="fClickMax" />
+              </div>
+              <div class="pop-foot">
+                <button class="btn btn-sm" type="button" data-pop-done>Apply</button>
+              </div>
+            </div>
+          </div>
 
           <!-- Alerts filter pill -->
           <button
@@ -2687,15 +2802,6 @@
           <h2 class="detail-name" id="dName">—</h2>
           <div class="detail-meta">
             <span class="detail-id-pill" id="dId">PROP-—</span>
-            <span id="dMetaAddress">—</span>
-            <span>·</span>
-            <span id="dMetaPublish">—</span>
-            <span>·</span>
-            <span id="dMetaSale">—</span>
-            <span>·</span>
-            <span id="dMetaMembers">—</span>
-            <span>·</span>
-            <span id="dMetaTx">—</span>
           </div>
         </div>
       </div>
@@ -3170,6 +3276,46 @@
           </button>
           <button class="btn btn-primary" type="button" id="advSearch">
             <i class="fas fa-search"></i> Search
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Location Picker Modal (map-style pin placement) -->
+    <div class="modal-backdrop" id="locPickModal">
+      <div class="locpick-box" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <h3 class="modal-title">Set property location</h3>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="closeLocPicker()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="locpick-body">
+          <div class="locpick-selects">
+            <div class="field-group">
+              <label class="field-label">Prefecture</label>
+              <select id="lpPref" onchange="onLpPrefChange()"></select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">City / Ward</label>
+              <select id="lpCity"></select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Chome</label>
+              <input type="text" id="lpChome" placeholder="e.g. 3-7-1" />
+            </div>
+          </div>
+          <div class="locpick-map" id="lpMap">
+            <div class="locpick-center-dot"></div>
+            <i class="fas fa-location-dot locpick-pin"></i>
+            <div class="locpick-hint">Drag the map to move the pin — pin always stays centered</div>
+          </div>
+          <div class="locpick-coords" id="lpCoords">Pin offset: 0, 0 (relative — for demo positioning only)</div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" type="button" onclick="closeLocPicker()">Cancel</button>
+          <button class="btn btn-primary" type="button" onclick="confirmLocPicker()">
+            <i class="fas fa-check"></i> Confirm location &amp; locate POIs
           </button>
         </div>
       </div>
@@ -3737,6 +3883,7 @@
               t: "select",
               opts: OPT.saleStatus,
               req: true,
+              readonly: true,
             },
             {
               k: "membersOnly",
@@ -3817,6 +3964,7 @@
               t: "select",
               opts: OPT.saleStatus,
               req: true,
+              readonly: true,
             },
             {
               k: "membersOnly",
@@ -4747,6 +4895,7 @@
         description: {
           title: "Description",
           icon: "fa-align-left",
+          full: true,
           fields: [
             {
               k: "description",
@@ -4756,6 +4905,12 @@
               hideLabel: true,
             },
           ],
+        },
+
+        performance: {
+          title: "Performance",
+          icon: "fa-chart-line",
+          custom: "performance",
         },
       };
 
@@ -4774,6 +4929,7 @@
           "poi",
           "media",
           "description",
+          "performance",
         ],
         2: [
           "basic_124",
@@ -4786,6 +4942,7 @@
           "poi",
           "media",
           "description",
+          "performance",
         ],
         3: [
           "basic_3",
@@ -4795,6 +4952,7 @@
           "poi",
           "media",
           "description",
+          "performance",
         ],
       };
 
@@ -4823,7 +4981,7 @@
         {
           id: "PROP-58210",
           group: 1,
-          agent: "Suzuki Aya (Bay Realty)",
+          agent: "Suzuki Aya",
           propType: "Tower Mansion",
           name: "Toyosu Bayside Tower",
           nameRomaji: "Toyosu Bayside Tower",
@@ -4854,7 +5012,7 @@
         {
           id: "PROP-58222",
           group: 2,
-          agent: "Mori Takeshi (Kansai Estates)",
+          agent: "Mori Takeshi",
           propType: "Residential Multi-Family Building",
           name: "Namba Apartment Block",
           nameRomaji: "Namba Apartment Block",
@@ -4884,7 +5042,7 @@
         {
           id: "PROP-58231",
           group: 3,
-          agent: "Tanaka Kenji (Land Pros)",
+          agent: "Tanaka Kenji",
           propType: "Commercial Land",
           name: "Yokohama Commercial Lot",
           postCode: "220-0011",
@@ -4914,7 +5072,7 @@
         {
           id: "PROP-58244",
           group: 1,
-          agent: "Kobayashi Rin (Sakura Homes)",
+          agent: "Kobayashi Rin",
           propType: "House",
           name: "Sapporo Family House",
           nameRomaji: "Sapporo Family House",
@@ -4945,7 +5103,7 @@
         {
           id: "PROP-58255",
           group: 2,
-          agent: "Watanabe Sho (Fukuoka Realty)",
+          agent: "Watanabe Sho",
           propType: "Retail Building",
           name: "Hakata Retail Building",
           nameRomaji: "Hakata Retail Building",
@@ -4976,7 +5134,7 @@
         {
           id: "PROP-58102",
           group: 1,
-          agent: "Yamada Hiroshi (ABC Realty)",
+          agent: "Yamada Hiroshi",
           propType: "Apartment",
           name: "Minami-Aoyama Penthouse",
           nameRomaji: "Minami-Aoyama Penthouse",
@@ -5443,7 +5601,7 @@
         ];
         const TX_CYCLE = ["Buy", "Rent"];
         const LAYOUTS = ["1K", "1LDK", "2LDK", "3LDK", "4LDK"];
-        const TARGET = 61; // ≥ 60 total listings
+        const TARGET = 10; // ≥ 60 total listings
         let n = TARGET - properties.length;
         for (let i = 0; i < n; i++) {
           const group = (i % 3) + 1; // 1,2,3 round-robin
@@ -5707,15 +5865,6 @@
           p6.priceBuy = 900000000; // ≫ +25% of comparable commercial-land avg
         }
 
-        // (7) Sold but not closed — Sold Out with NO txDate + NO final price.
-        const p7 = byId("PROP-58255"); // Hakata Retail Building
-        if (p7) {
-          p7.saleStatus = "Sold Out";
-          p7.finalSalePrice = undefined;
-          p7.soldDate = undefined;
-          p7.txDate = undefined;
-        }
-
         // (8) Duplicate detected — clone PROP-58210's address/floor/area twin.
         if (p1 && !byId("PROP-58210D")) {
           properties.push({
@@ -5753,6 +5902,23 @@
               "Possible duplicate of PROP-58210 — same building, floor and area.",
           });
         }
+      })();
+
+      // ========================================================================
+      // Backfill suspension reason/date/notes for legacy Suspended seed records
+      // (listings hardcoded as "Suspended" without ever going through the
+      // suspend modal) so the Suspended card always has something to show.
+      // ========================================================================
+      (function normalizeSuspensionData() {
+        properties.forEach((p) => {
+          if (p.publishStatus === "Suspended" && !p.suspensionReason) {
+            p.suspensionReason = "seller-withdrew";
+            p.suspensionDate = p.suspensionDate || p.dateUpdated || "";
+            p.suspensionNotes =
+              p.suspensionNotes ||
+              "Suspended prior to reason tracking (legacy record).";
+          }
+        });
       })();
 
       // ========================================================================
@@ -5839,6 +6005,13 @@
       // Confirms via openConfirm(); feedback via toast(). 7-day mutes stored in
       // localStorage key "yuushi.ploAlertMutes" = { alertKey: expiryMs }.
       // ========================================================================
+      const SUSP_REASON_LABELS = {
+        sold: { title: "Sold", sub: "Agent closed the deal" },
+        "sold-others": { title: "Sold by Others", sub: "Another party sold it" },
+        "seller-withdrew": { title: "Seller Withdrew", sub: "Did not want to sell" },
+        expired: { title: "Listing Expired", sub: "Contract period ended" },
+        legal: { title: "Legal Hold", sub: "Dispute or freeze" },
+      };
       const ALERT_MUTE_KEY = "yuushi.ploAlertMutes";
       const ALERT_MUTE_MS = 7 * 24 * 60 * 60 * 1000;
       const DAY_MS = 24 * 60 * 60 * 1000;
@@ -6075,35 +6248,6 @@
         };
       }
 
-      function detSoldNotClosed(p) {
-        if ((p.saleStatus || "On Sale") !== "Sold Out") return null;
-        const hasTx = !!(p.soldDate || p.txDate);
-        const hasPrice = !!p.finalSalePrice;
-        if (hasTx && hasPrice) return null;
-        const key = "sold:" + p.id;
-        return {
-          key,
-          id: key,
-          entityId: p.id,
-          severity: "warning",
-          title: "Sold but not closed",
-          desc: `${esc(p.name)} is marked Sold Out but is missing the transaction date and/or final price.`,
-          actionLabel: "Complete closing data",
-          actionFn: () => {
-            currentProp = p;
-            openSoldModal((payload) => {
-              p.finalSalePrice = payload.finalSalePrice;
-              p.soldDate = payload.soldDate;
-              p.txDate = payload.soldDate;
-              p.publishPrice = payload.publishPrice;
-              toast("Closing data saved.", "success");
-              refreshAlertsUI();
-              if (currentProp && currentProp.id === p.id) renderDetail();
-            });
-          },
-        };
-      }
-
       function detDuplicate(p) {
         const twin = properties.find(
           (q) =>
@@ -6167,7 +6311,6 @@
         detPendingTooLong,
         detFlagged,
         detPriceAnomaly,
-        detSoldNotClosed,
         detDuplicate,
       ];
 
@@ -6457,7 +6600,23 @@
 
         _suspTxProp.publishStatus = "Suspended";
         _suspTxProp.dateUpdated = new Date().toISOString().slice(0, 10);
+        // Persist the suspension record directly on the property so it can be
+        // displayed on the detail page (localStorage log alone isn't enough).
+        _suspTxProp.suspensionReason = _suspTxReason;
+        _suspTxProp.suspensionDate = payload.suspensionDate;
+        _suspTxProp.suspensionNotes = payload.notes;
+        _suspTxProp.suspensionTxPrice = payload.transactionPrice;
+        _suspTxProp.suspensionPublicPrice = payload.publicPrice;
+        if (_suspTxReason === "sold") {
+          _suspTxProp.saleStatus = "Sold Out";
+          _suspTxProp.finalSalePrice = payload.transactionPrice;
+          _suspTxProp.soldDate = payload.suspensionDate;
+          _suspTxProp.publishPrice = payload.publicPrice;
+        }
         pushHistory(_suspTxProp, "publishStatus", "Published", "Suspended");
+        if (currentProp && currentProp.id === _suspTxProp.id) {
+          originalProp = JSON.parse(JSON.stringify(currentProp));
+        }
 
         try {
           const existing = JSON.parse(localStorage.getItem("yuushi.suspensionTx") || "[]");
@@ -6780,6 +6939,7 @@
         let inner;
         if (sec.custom === "poi") inner = renderPOI(prop);
         else if (sec.custom === "media") inner = renderMedia(prop);
+        else if (sec.custom === "performance") inner = renderPerformance(prop);
         else if (sec.accord) inner = renderAmenities(sec, prop);
         else {
           const items = (sec.fields || [])
@@ -7101,6 +7261,95 @@
       }
       window.locatePOIs = locatePOIs;
 
+        /* ============ Location Picker (Shopee-style drag map) ============ */
+      let lpPinOffset = { x: 0, y: 0 };
+      let lpDragging = false;
+      let lpDragStart = null;
+
+      function openLocPicker() {
+        const prop = currentProp;
+        if (!prop) return;
+        const prefSel = $("lpPref");
+        prefSel.innerHTML = OPT.prefectures
+          .map((p) => `<option value="${escAttr(p)}" ${p === prop.prefecture ? "selected" : ""}>${esc(p)}</option>`)
+          .join("");
+        onLpPrefChange();
+        if (prop.city) $("lpCity").value = prop.city;
+        $("lpChome").value = prop.chome || "";
+        lpPinOffset = { x: 0, y: 0 };
+        updateLpCoords();
+        $("locPickModal").classList.add("open");
+        wireLpMapDrag();
+      }
+      window.openLocPicker = openLocPicker;
+
+      function closeLocPicker() {
+        $("locPickModal").classList.remove("open");
+      }
+      window.closeLocPicker = closeLocPicker;
+
+      function onLpPrefChange() {
+        const pref = $("lpPref").value;
+        const cities = OPT.cityByPref[pref] || [];
+        $("lpCity").innerHTML = cities
+          .map((c) => `<option value="${escAttr(c)}">${esc(c)}</option>`)
+          .join("");
+      }
+      window.onLpPrefChange = onLpPrefChange;
+
+      function updateLpCoords() {
+        $("lpCoords").textContent =
+          `Pin offset: ${lpPinOffset.x}, ${lpPinOffset.y} (relative — for demo positioning only)`;
+      }
+
+      // Drag-to-pan map, like a Shopee/Grab address picker: the pin stays fixed
+      // at the map's center, the underlying map (represented by the grid
+      // background) shifts, and we track the pin's accumulated offset.
+      function wireLpMapDrag() {
+        const map = $("lpMap");
+        if (map.dataset.wired) return;
+        map.dataset.wired = "1";
+        const start = (x, y) => {
+          lpDragging = true;
+          lpDragStart = { x, y, ox: lpPinOffset.x, oy: lpPinOffset.y };
+        };
+        const move = (x, y) => {
+          if (!lpDragging) return;
+          const dx = x - lpDragStart.x;
+          const dy = y - lpDragStart.y;
+          lpPinOffset = { x: lpDragStart.ox - dx, y: lpDragStart.oy - dy };
+          map.style.backgroundPosition = `${-lpPinOffset.x}px ${-lpPinOffset.y}px, ${-lpPinOffset.x}px ${-lpPinOffset.y}px`;
+          updateLpCoords();
+        };
+        const end = () => { lpDragging = false; };
+        map.addEventListener("mousedown", (e) => start(e.clientX, e.clientY));
+        window.addEventListener("mousemove", (e) => move(e.clientX, e.clientY));
+        window.addEventListener("mouseup", end);
+        map.addEventListener("touchstart", (e) => {
+          const t = e.touches[0];
+          start(t.clientX, t.clientY);
+        });
+        map.addEventListener("touchmove", (e) => {
+          const t = e.touches[0];
+          move(t.clientX, t.clientY);
+        });
+        map.addEventListener("touchend", end);
+      }
+
+      function confirmLocPicker() {
+        const prop = currentProp;
+        if (!prop) return;
+        prop.prefecture = $("lpPref").value;
+        prop.city = $("lpCity").value;
+        prop.chome = $("lpChome").value.trim();
+        prop.pinOffset = { ...lpPinOffset };
+        if (!editMode) originalProp = JSON.parse(JSON.stringify(prop));
+        closeLocPicker();
+        renderDetail();
+        locatePOIs();
+      }
+      window.confirmLocPicker = confirmLocPicker;
+
       function fmtDist(m) {
         return m >= 1000 ? (m / 1000).toFixed(2) + " km" : m + " m";
       }
@@ -7114,7 +7363,7 @@
         });
 
         const locateBtn = `
-          <button type="button" class="btn btn-primary btn-sm" onclick="locatePOIs()">
+          <button type="button" class="btn btn-primary btn-sm" onclick="openLocPicker()">
             <i class="fas fa-location-crosshairs"></i> ${nearby.length ? "Re-locate POIs" : "Locate POIs"}
           </button>`;
 
@@ -7174,6 +7423,188 @@
           <div class="poi-categories">${categories}</div>
         `;
       }
+
+      function renderPerformance(prop) {
+        const perf = prop.performance || {};
+        const sl   = perf.standardListing || {};
+        const ads  = Array.isArray(perf.ads) ? perf.ads : [];
+
+        // Runtime calculations — never stored as %, always derived
+        function ctr(clicks, impressions) {
+          if (!impressions) return "—";
+          return (clicks / impressions * 100).toFixed(1) + "%";
+        }
+        function kpr(keep, clicks) {
+          if (!clicks) return "—";
+          return (keep / clicks * 100).toFixed(1) + "%";
+        }
+        function ratePillCls(pct) {
+          if (pct === "—") return "badge-gray";
+          const n = parseFloat(pct);
+          if (n >= 10) return "badge-active";
+          if (n >= 5)  return "badge-amber";
+          return "badge-closed";
+        }
+        function metricRow(label, imp, views, clicks, keep) {
+          const ctrVal = ctr(clicks, imp);
+          const kprVal = kpr(keep, clicks);
+          return `
+            <tr>
+              <td style="font-weight:600;color:var(--text-main)">${esc(label)}</td>
+              <td>${(imp   || 0).toLocaleString()}</td>
+              <td>${(views || 0).toLocaleString()}</td>
+              <td>${(clicks|| 0).toLocaleString()}</td>
+              <td><span class="badge ${ratePillCls(ctrVal)}" style="font-size:11px">${esc(ctrVal)}</span></td>
+              <td>${(keep  || 0).toLocaleString()}</td>
+              <td><span class="badge ${ratePillCls(kprVal)}" style="font-size:11px">${esc(kprVal)}</span></td>
+            </tr>`;
+        }
+
+        // Combined totals
+        let totImp = sl.impressions || 0, totViews = sl.views || 0,
+            totClicks = sl.clicks || 0, totKeep = sl.keep || 0;
+        ads.forEach(a => {
+          totImp    += a.impressions || 0;
+          totViews  += a.views       || 0;
+          totClicks += a.clicks      || 0;
+          totKeep   += a.keep        || 0;
+        });
+
+        const thead = `
+          <thead>
+            <tr style="background:var(--bg-header-soft)">
+              <th style="min-width:160px">Source</th>
+              <th>Impressions</th>
+              <th>Views</th>
+              <th>Clicks</th>
+              <th>CTR</th>
+              <th>Keep</th>
+              <th>KPR</th>
+            </tr>
+          </thead>`;
+
+        // Per Ad rows
+        const adRows = ads.length
+          ? ads.map(a => metricRow(
+              `${esc(a.adName)} (${esc(a.adType)})`,
+              a.impressions, a.views, a.clicks, a.keep
+            )).join("")
+          : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:14px;font-size:12px">
+              <i class="fas fa-circle-info"></i> This property has not been placed in any ads yet.
+            </td></tr>`;
+
+        return `
+          <style>
+            .perf-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+            .perf-table th { padding:9px 12px; font-size:11px; font-weight:700; color:var(--text-muted);
+              text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; text-align:left; }
+            .perf-table td { padding:10px 12px; border-top:1px solid var(--border-soft);
+              color:var(--text-main); vertical-align:middle; }
+            .perf-block { border:1px solid var(--border-subtle); border-radius:var(--r-md);
+              overflow:hidden; margin-bottom:14px; }
+            .perf-block-head { padding:9px 14px; background:var(--bg-header-soft);
+              border-bottom:1px solid var(--border-subtle); display:flex; align-items:center;
+              gap:8px; font-size:12.5px; font-weight:700; color:var(--text-main); }
+            .perf-block-head i { color:var(--accent); width:16px; text-align:center; }
+            .perf-total-row td { background:var(--bg-card-warm); font-weight:700;
+              border-top:2px solid var(--border-warm); }
+          </style>
+
+          <div style="margin-bottom:10px;font-size:12px;color:var(--text-muted)">
+            <i class="fas fa-circle-info"></i>
+            CTR = Clicks ÷ Impressions · KPR = Keep ÷ Clicks · Metrics are read-only and updated daily.
+          </div>
+
+          <!-- 1. Standard Listing -->
+          <div class="perf-block">
+            <div class="perf-block-head">
+              <i class="fas fa-list-ul"></i> Standard Listing
+              <span style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:4px">
+                — organic search &amp; browse performance
+              </span>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="perf-table">
+                ${thead}
+                <tbody>
+                  ${metricRow("Standard Listing", sl.impressions, sl.views, sl.clicks, sl.keep)}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 2. Per Ad -->
+          <div class="perf-block">
+            <div class="perf-block-head">
+              <i class="fas fa-rectangle-ad"></i> Per Ad
+              <span style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:4px">
+                — ${ads.length} active ad slot${ads.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="perf-table">
+                ${thead}
+                <tbody>${adRows}</tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 3. Combined Total -->
+          <div class="perf-block">
+            <div class="perf-block-head">
+              <i class="fas fa-sigma"></i> Combined Total
+              <span style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:4px">
+                — Standard Listing + all Ads
+              </span>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="perf-table">
+                ${thead}
+                <tbody>
+                  <tr class="perf-total-row">
+                    ${metricRow("Total", totImp, totViews, totClicks, totKeep)
+                      .replace("<tr>", "").replace("</tr>", "")}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>`;
+      }
+
+      (function seedPerformance() {
+        const AD_NAMES = [
+          { id: "AD-001", name: "Homepage Banner Top", type: "Banner #1" },
+          { id: "AD-002", name: "Search Results Sidebar", type: "Banner #2" },
+          { id: "AD-003", name: "Property Detail Related", type: "Banner #3" },
+          { id: "AD-004", name: "Email Newsletter Slot", type: "Banner #4" },
+          { id: "AD-005", name: "Mobile App Featured", type: "Banner #5" },
+          { id: "AD-006", name: "New Dev Spotlight", type: "Banner #6" },
+          { id: "AD-007", name: "Investor Dashboard Widget", type: "Banner #7" },
+        ];
+        properties.forEach((p, i) => {
+          if (p.performance) return;
+          // Standard listing metrics — deterministic per index
+          const imp   = 1200 + ((i * 317) % 8000);
+          const views = Math.round(imp * (0.18 + (i % 7) * 0.03));
+          const clicks= Math.round(views * (0.22 + (i % 5) * 0.04));
+          const keep  = Math.round(clicks * (0.08 + (i % 4) * 0.02));
+          // Ads — 0 to 3 ads per property, deterministic
+          const adCount = i % 4; // 0,1,2,3
+          const ads = [];
+          for (let a = 0; a < adCount; a++) {
+            const ad = AD_NAMES[(i + a) % AD_NAMES.length];
+            const aImp   = 800 + (((i + a) * 211) % 5000);
+            const aViews = Math.round(aImp * (0.15 + (a % 4) * 0.04));
+            const aClicks= Math.round(aViews * (0.20 + (a % 3) * 0.05));
+            const aKeep  = Math.round(aClicks * (0.07 + (a % 4) * 0.02));
+            ads.push({
+              adId: ad.id, adName: ad.name, adType: ad.type,
+              impressions: aImp, views: aViews, clicks: aClicks, keep: aKeep,
+            });
+          }
+          p.performance = { standardListing: { impressions: imp, views, clicks, keep }, ads };
+        });
+      })();
 
       function renderMedia(prop) {
         const m = prop.media || {};
@@ -7240,6 +7671,18 @@
       function priceCell(p) {
         if (p.txType === "Rent") return fmtYen(p.rentMonthly) + "/mo";
         return fmtYen(p.priceBuy);
+      }
+      function fmtAddress(p) {
+        const line1 = p.postCode ? "〒" + p.postCode : "";
+        const ward = p.city || "";
+        const chome = p.chome ? " " + p.chome : "";
+        const houseNo = p.houseNo ? "-" + p.houseNo : "";
+        const line2Parts = [p.prefecture, ward].filter(Boolean);
+        const line2 = line2Parts.join(", ") + chome + houseNo;
+        const line3 = p.buildingName
+          ? p.buildingName + (p.unitNo ? " " + p.unitNo : "")
+          : "";
+        return [line1, line2, line3].filter(Boolean).join("<br>");
       }
       // New Development listings (Groups 5 & 6) — surfaced in the Grid view so the
       // grid spans all 6 property groups. Clicking opens the Project Management page.
@@ -7450,7 +7893,7 @@
             <td class="editable" data-cell="price" data-id="${escAttr(p.id)}"
               title="Double-click to edit price"
               ondblclick="startInlineEdit(this, '${escAttr(p.id)}', 'price', event)">${priceCell(p)}</td>
-            <td>${esc(p.prefecture)} · ${esc(p.city)}</td>
+            <td style="font-size:12px;line-height:1.55">${fmtAddress(p)}</td>
             <td class="editable" data-cell="agent" data-id="${escAttr(p.id)}"
               title="Double-click to edit agent"
               ondblclick="startInlineEdit(this, '${escAttr(p.id)}', 'agent', event)">${esc(p.agent)}</td>
@@ -8027,9 +8470,15 @@
           return false;
         if (F.sales.length && !F.sales.includes(p.saleStatus || "On Sale"))
           return false;
-        if (F.yieldMin != null) {
-          const y = p.estGrossYield ?? p.grossYield ?? p.curGrossYield ?? null;
-          if (y == null || Number(y) < F.yieldMin) return false;
+        if (F.keepMin != null || F.keepMax != null) {
+          const k = (p.performance && p.performance.standardListing && p.performance.standardListing.keep) || 0;
+          if (F.keepMin != null && k < F.keepMin) return false;
+          if (F.keepMax != null && k > F.keepMax) return false;
+        }
+        if (F.clickMin != null || F.clickMax != null) {
+          const c = (p.performance && p.performance.standardListing && p.performance.standardListing.clicks) || 0;
+          if (F.clickMin != null && c < F.clickMin) return false;
+          if (F.clickMax != null && c > F.clickMax) return false;
         }
         if (F.landMin != null || F.landMax != null) {
           const la = p.landArea || p.landAreaBldg;
@@ -8117,6 +8566,8 @@
         FILT.sizeMax = null;
         FILT.priceMin = null;
         FILT.priceMax = null;
+        FILT.keepMin  = null; FILT.keepMax  = null;
+        FILT.clickMin = null; FILT.clickMax = null;
         FILT.statuses = [];
         FILT.sales = [];
         FILT.yieldMin = null;
@@ -8128,6 +8579,10 @@
         $("fTx").value = "";
         $("fPriceMin").value = "";
         $("fPriceMax").value = "";
+        $("fKeepMin").value = "";
+        $("fKeepMax").value = "";
+        $("fClickMin").value = "";
+        $("fClickMax").value = "";
         $("sizeFrom").value = "";
         $("sizeTo").value = "";
         syncFilterUI();
@@ -8181,14 +8636,7 @@
         $("dThumb").innerHTML = `<i class="fas ${thumbIcon(p.group)}"></i>`;
         $("dName").textContent = p.name || "(Unnamed)";
         $("dId").textContent = p.id;
-        $("dMetaAddress").textContent =
-          [p.prefecture, p.city, p.chome].filter(Boolean).join(" · ") || "—";
-        $("dMetaPublish").innerHTML = badgePublish(p.publishStatus);
-        $("dMetaSale").innerHTML = badgeSale(p.saleStatus);
-        $("dMetaMembers").innerHTML = badgeMembers(p.membersOnly);
-        $("dMetaTx").innerHTML = badgeTx(
-          p.txType || (p.group === 3 ? "Buy" : ""),
-        );
+        
 
         // Suspend / Re-activate toggle button — only meaningful for
         // Published (→ Suspend) or Suspended (→ Re-activate); hidden otherwise.
@@ -8225,18 +8673,25 @@
         // Prominent Sold-Out record card (shown ABOVE the section cards).
         let soldCardHtml = "";
         if (p.saleStatus === "Sold Out") {
-          const notesHtml = `<div style="margin-top:8px;font-size:12.5px;color:var(--status-danger-text)"><strong>Final sale price:</strong> ${
-            p.publishPrice ? "Published" : "Hidden"
-          }</div>`;
+          const saleLine = `Sold at ${fmtYen(p.finalSalePrice)} on ${fmtDate(p.soldDate)}`;
           soldCardHtml = `
             <section class="card" style="grid-column:1/-1;background:var(--status-danger-bg);border:1px solid var(--status-danger-text)">
               <div class="card-title" style="border-bottom-color:var(--status-danger-text);color:var(--status-danger-text)">
                 <i class="fas fa-circle-check"></i> Sold — sale record
               </div>
               <div style="font-size:15px;font-weight:700;color:var(--status-danger-text)">
-                Sold at ${fmtYen(p.finalSalePrice)} on ${fmtDate(p.soldDate)}
+                ${saleLine}
               </div>
-              ${notesHtml}
+              <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:10px 12px">
+                <div>
+                  <div style="font-size:12.5px;font-weight:700;color:var(--text-main)"><i class="fas fa-eye" style="margin-right:6px"></i>Show final sale price to end user</div>
+                </div>
+                <label style="position:relative;width:40px;height:22px;cursor:pointer;flex-shrink:0">
+                  <input type="checkbox" id="soldPublishToggle" ${p.publishPrice ? "checked" : ""} onchange="toggleSoldPricePublish(this)" style="opacity:0;width:0;height:0;position:absolute">
+                  <span style="position:absolute;inset:0;background:${p.publishPrice ? "var(--color-primary)" : "var(--border-default)"};border-radius:11px;transition:.2s"></span>
+                  <span style="position:absolute;width:18px;height:18px;left:${p.publishPrice ? "20px" : "2px"};top:2px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span>
+                </label>
+              </div>
             </section>`;
         }
 
@@ -8250,8 +8705,34 @@
               .join("")}</div>`
           : "";
 
+        let suspCardHtml = "";
+        if (p.publishStatus === "Suspended" && p.suspensionReason) {
+          const r = SUSP_REASON_LABELS[p.suspensionReason] || {
+            title: p.suspensionReason,
+            sub: "",
+          };
+          const priceLine =
+            p.suspensionReason === "sold"
+              ? `<div style="margin-top:6px;font-size:13px;color:var(--status-warning-text)">
+                   Transaction price: <strong>${fmtYen(p.suspensionTxPrice)}</strong>
+                   ${p.suspensionPublicPrice ? '<span class="badge badge-published" style="margin-left:6px">Public</span>' : '<span class="badge badge-gray" style="margin-left:6px">Hidden</span>'}
+                 </div>`
+              : "";
+          suspCardHtml = `
+            <section class="card" style="grid-column:1/-1;background:var(--status-warning-bg);border:1px solid var(--status-warning-text)">
+              <div class="card-title" style="border-bottom-color:var(--status-warning-text);color:var(--status-warning-text)">
+                <i class="fas fa-circle-pause"></i> Suspended — ${esc(r.title)}
+              </div>
+              <div style="font-size:13px;color:var(--text-main)">${esc(r.sub)}</div>
+              <div style="margin-top:6px;font-size:12.5px;color:var(--text-muted)">Suspension date: ${fmtDate(p.suspensionDate)}</div>
+              ${priceLine}
+              ${p.suspensionNotes ? `<div style="margin-top:8px;font-size:12.5px;color:var(--text-muted);white-space:pre-wrap">${esc(p.suspensionNotes)}</div>` : ""}
+            </section>`;
+        }
+
         $("dAlerts").innerHTML =
           soldCardHtml +
+          suspCardHtml +
           alerts
             .map(
               (a) =>
@@ -8682,6 +9163,21 @@
           }
         }
 
+        // ---- Sale Status: only Published listings can be marked Sold Out ----
+        const saleEl = byField["saleStatus"];
+        const willBeSoldOut =
+          (saleEl ? saleEl.value : currentProp.saleStatus) === "Sold Out";
+        const notYetApproved =
+          currentProp.publishStatus === "Pending Review" ||
+          currentProp.publishStatus === "Rejected";
+        if (willBeSoldOut && notYetApproved) {
+          const el = saleEl || byField["publishStatus"];
+          const msg =
+            "This listing must be approved (Published) by the admin before it can be marked Sold Out.";
+          setFieldError(el, msg);
+          return { el, msg };
+        }
+
         // ---- Dates: no future for past events; sold >= listing ----
         const today = new Date().toISOString().slice(0, 10);
         const listEl = byField["datePublished"];
@@ -8722,29 +9218,15 @@
           }
           return;
         }
-        // Mark-as-Sold flow: when Sale Status changes On Sale → Sold Out, capture
-        // the sale details BEFORE saving and auto-suspend the listing.
-        const wasOnSale =
-          !originalProp || originalProp.saleStatus !== "Sold Out";
-        const nowSoldOut = currentProp.saleStatus === "Sold Out";
-        if (wasOnSale && nowSoldOut) {
-          openSoldModal((payload) => {
-            // Atomic save: sale record + auto-suspend, separate from Selling Price.
-            currentProp.saleStatus = "Sold Out";
-            currentProp.finalSalePrice = payload.finalSalePrice;
-            currentProp.soldDate = payload.soldDate;
-            currentProp.publishPrice = payload.publishPrice;
-            currentProp.publishStatus = "Suspended"; // auto-suspend
-            commitSave();
-            toast(
-              `Listing marked as Sold. Final sale price: ${fmtYen(
-                payload.finalSalePrice,
-              )}. Listing has been suspended.`,
-            );
-          });
-          return; // wait for modal confirmation before committing
-        }
         commitSave();
+      }
+
+      function toggleSoldPricePublish(cb) {
+        if (!currentProp) return;
+        currentProp.publishPrice = cb.checked;
+        if (originalProp) originalProp.publishPrice = cb.checked;
+        renderDetail();
+        toast(cb.checked ? "Final sale price is now public." : "Final sale price is now hidden.");
       }
 
       function toggleSuspend() {
@@ -8786,7 +9268,12 @@
             actionKind: "success",
             onConfirm: () => {
               currentProp.publishStatus = "Published";
-              originalProp.publishStatus = "Published";
+              currentProp.suspensionReason = undefined;
+              currentProp.suspensionDate = undefined;
+              currentProp.suspensionNotes = undefined;
+              currentProp.suspensionTxPrice = undefined;
+              currentProp.suspensionPublicPrice = undefined;
+              originalProp = JSON.parse(JSON.stringify(currentProp));
               renderDetail();
               renderList();
               toast("Listing re-activated.");
@@ -9023,6 +9510,10 @@
         yieldMin: null,
         landMin: null,
         landMax: null,
+        keepMin: null,
+        keepMax: null,
+        clickMin: null,
+        clickMax: null,
         search: "",
         sort: "updateLatest",
       };
@@ -9249,6 +9740,10 @@
         $("sizeTo").value = FILT.sizeMax ?? "";
         $("fPriceMin").value = FILT.priceMin ?? "";
         $("fPriceMax").value = FILT.priceMax ?? "";
+        $("fKeepMin").value  = FILT.keepMin  ?? "";
+        $("fKeepMax").value  = FILT.keepMax  ?? "";
+        $("fClickMin").value = FILT.clickMin ?? "";
+        $("fClickMax").value = FILT.clickMax ?? "";
         document.querySelectorAll("[data-sort]").forEach((el) => {
           el.checked = el.value === FILT.sort;
         });
@@ -9294,11 +9789,13 @@
         FILT.sizeMax =
           $("sizeTo").value === "" ? null : Number($("sizeTo").value);
       }
-      function commitPrice() {
-        FILT.priceMin =
-          $("fPriceMin").value === "" ? null : Number($("fPriceMin").value);
-        FILT.priceMax =
-          $("fPriceMax").value === "" ? null : Number($("fPriceMax").value);
+      function commitKeep() {
+        FILT.keepMin = $("fKeepMin").value === "" ? null : Number($("fKeepMin").value);
+        FILT.keepMax = $("fKeepMax").value === "" ? null : Number($("fKeepMax").value);
+      }
+      function commitClick() {
+        FILT.clickMin = $("fClickMin").value === "" ? null : Number($("fClickMin").value);
+        FILT.clickMax = $("fClickMax").value === "" ? null : Number($("fClickMax").value);
       }
 
       // ------------------------------------------------------------------------
@@ -9323,6 +9820,8 @@
         set("bed", FILT.beds.length);
         set("size", FILT.sizeMin != null || FILT.sizeMax != null ? 1 : 0);
         set("price", FILT.priceMin != null || FILT.priceMax != null ? 1 : 0);
+        set("keep",  FILT.keepMin  != null || FILT.keepMax  != null ? 1 : 0);
+        set("click", FILT.clickMin != null || FILT.clickMax != null ? 1 : 0);
         set("status", FILT.statuses.length);
         set("sale", FILT.sales.length);
       }
@@ -9435,6 +9934,8 @@
         else if (name === "region") commitRegion();
         else if (name === "size") commitSize();
         else if (name === "price") commitPrice();
+        else if (name === "keep") commitKeep();
+        else if (name === "click") commitClick();
         // sort commits on radio change directly
         applyFilters();
       }
