@@ -666,6 +666,36 @@
         color: var(--text-muted);
         font-size: 12px;
       }
+
+      /* Searchable city combobox */
+      .city-search-wrap {
+        position: relative;
+      }
+      .city-search-dropdown {
+        position: fixed;
+        z-index: 1100;
+        background: #fff;
+        border: 1px solid var(--border-warm);
+        border-radius: var(--r-md);
+        box-shadow: var(--shadow-modal);
+        max-height: 340px;
+        overflow-y: auto;
+      }
+      .city-search-option {
+        padding: 8px 11px;
+        font-size: 12.5px;
+        cursor: pointer;
+      }
+      .city-search-option:hover,
+      .city-search-option.active {
+        background: var(--bg-row-hover);
+      }
+      .city-search-empty {
+        padding: 10px 11px;
+        font-size: 12px;
+        color: var(--text-muted);
+        text-align: center;
+      }
     </style>
   </head>
   <body>
@@ -784,7 +814,7 @@
               </div>
               <div>
                 <label class="fld-label">MLIT Station search radius R (meters) <span class="req">*</span></label>
-                <input type="number" min="50" step="50" class="fld" id="cfg-radius-r" value="500" />
+                <input type="number" min="50" step="50" class="fld" id="cfg-radius-r" value="5000" />
               </div>
             </div>
             
@@ -801,7 +831,7 @@
 
     <!-- ============ Assign Areas/Stations modal ============ -->
     <div id="modal-assign" class="modal-backdrop">
-      <div class="modal-shell sm">
+      <div class="modal-shell" style="width:560px">
         <div class="modal-header">
           <div>
             <div class="modal-title" id="assign-modal-title">Assign to City</div>
@@ -812,7 +842,19 @@
         <div class="modal-body">
           <div style="margin-bottom:12px">
             <label class="fld-label">City <span class="req">*</span></label>
-            <select class="fld" id="assign-city-select" onchange="onAssignCityChange()"></select>
+            <div class="city-search-wrap">
+              <input
+                type="text"
+                class="fld"
+                id="assign-city-search"
+                placeholder="Type to search a city…"
+                autocomplete="off"
+                oninput="onCitySearchInput()"
+                onfocus="onCitySearchInput()"
+              />
+              <input type="hidden" id="assign-city-select" value="" />
+              <div id="assign-city-dropdown" class="city-search-dropdown" style="display:none"></div>
+            </div>
           </div>
           <div id="assign-items-block" style="display:none">
             <label class="fld-label" id="assign-items-label">Items</label>
@@ -913,6 +955,14 @@
       }
       const TSUBO_FACTOR = 3.305785;
 
+      // Giả lập Backend kiểm tra 4 lớp dữ liệu (CSV -> Platform Sold -> MLIT 5km -> Platform Active Listing)
+      // Trả về false nếu địa điểm đó cạn kiệt hoàn toàn dữ liệu ở cả 4 nguồn.
+      function hasSufficientData(id) {
+        // Hardcode vài id (Minato, Namba, Shimbashi Station, Hakata Station) để test giao diện
+        const noDataItems = ["area-3", "area-8", "st-4", "st-9"];
+        return !noDataItems.includes(id);
+      }
+
       // Thuật toán Levenshtein Distance để tìm gợi ý gần giống nhất
       function getEditDistance(a, b) {
         if(a.length === 0) return b.length;
@@ -966,7 +1016,18 @@
         "Shimbashi Station", "Kamiyacho Station", "Umeda Station",
         "Namba Station", "Tenjin Station", "Hakata Station", "Sapporo Station",
       ].map((n, i) => ({ id: "st-" + (i + 1), name: n }));
-      const DEFAULT_CITIES = ["Tokyo", "Osaka", "Fukuoka"].map((n, i) => ({ id: "city-" + (i + 1), name: n }));
+      const DEFAULT_CITIES = ["Tokyo", "Yokohama", "Osaka",
+       "Nagoya", "Sapporo", "Fukuoka", "Kawasaki", 
+       "Kobe", "Kyoto", "Saitama", "Hiroshima", "Sendai", 
+       "Chiba", "Kitakyushu", "Niigata", "Hamamatsu", 
+       "Kumamoto", "Sagamihara", "Shizuoka", "Okayama", 
+       "Kagoshima", "Utsunomiya", "Matsuyama", "Himeji",
+        "Kanazawa", "Nagasaki", "Oita", "Nara", "Morioka", 
+        "Akita", "Aomori", "Yamagata", "Fukushima", "Mito",
+         "Maebashi", "Nagano", "Kofu", "Toyama", "Fukui", 
+         "Gifu", "Takamatsu", "Tokushima", "Kochi", "Miyazaki",
+          "Saga", "Tottori", "Matsue", "Yamaguchi", "Hakodate",
+           "Naha"].map((n, i) => ({ id: "city-" + (i + 1), name: n }));
       const DEFAULT_PN_ASSIGN = [
         { id: "pna-1", cityId: "city-1", areaId: "area-1" },
         { id: "pna-2", cityId: "city-1", areaId: "area-2" },
@@ -993,7 +1054,7 @@
       let cities = LS.get(K.cities, DEFAULT_CITIES); // system data — City, Area, Station are all predefined, not managed here
       let pnAssign = LS.get(K.pnAssign, DEFAULT_PN_ASSIGN);
       let lpAssign = LS.get(K.lpAssign, DEFAULT_LP_ASSIGN);
-      let config = LS.get(K.config, { n: 5, r: 500, poll: "daily" });
+      let config = LS.get(K.config, { n: 15, r: 5000, poll: "daily" });
 
       const areaById = (id) => areas.find((a) => a.id === id);
       const stationById = (id) => stations.find((s) => s.id === id);
@@ -1046,18 +1107,79 @@
         toast("Station removed from city.");
       }
 
+      // ===================== Clear all assignments for a city (city disappears from preview) =====================
+      function clearCityAssignments(section, cityId) {
+        const c = cityById(cityId);
+        const label = section === "pn" ? "areas" : "stations";
+        if (!confirm(`Remove all ${label} assigned to ${c ? c.name : "this city"}? The city will no longer appear in this preview.`)) {
+          return;
+        }
+        if (section === "pn") {
+          pnAssign = pnAssign.filter((a) => a.cityId !== cityId);
+          persistPnAssign();
+        } else {
+          lpAssign = lpAssign.filter((a) => a.cityId !== cityId);
+          persistLpAssign();
+          if (lpActiveCity === cityId) lpActiveCity = null; // force tab re-pick since this city is gone
+        }
+        renderAllPreviews();
+        toast((c ? c.name : "City") + " removed from the " + (section === "pn" ? "Popular Neighbourhoods" : "Land Prices") + " preview.");
+      }
+
       // ===================== Assign modal: pick a City, then multi-select Areas/Stations =====================
       let assignSection = null; // 'pn' | 'lp'
       function fillAssignCitySelect(lockedCityId) {
-        const citySelect = $("assign-city-select");
-        citySelect.innerHTML =
-          '<option value="">-- Choose a city --</option>' +
-          cities.map((c) => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
-        citySelect.disabled = false;
+        const hiddenInput = $("assign-city-select");
+        const searchInput = $("assign-city-search");
+        $("assign-city-dropdown").style.display = "none";
         if (lockedCityId) {
-          citySelect.value = lockedCityId;
+          const c = cityById(lockedCityId);
+          hiddenInput.value = lockedCityId;
+          searchInput.value = c ? c.name : "";
+        } else {
+          hiddenInput.value = "";
+          searchInput.value = "";
         }
       }
+      function positionCityDropdown() {
+        const input = $("assign-city-search");
+        const dropdown = $("assign-city-dropdown");
+        const rect = input.getBoundingClientRect();
+        dropdown.style.left = rect.left + "px";
+        dropdown.style.top = rect.bottom + 4 + "px";
+        dropdown.style.width = rect.width + "px";
+      }
+      function onCitySearchInput() {
+        const q = $("assign-city-search").value.trim().toLowerCase();
+        const dropdown = $("assign-city-dropdown");
+        const matches = (q ? cities.filter((c) => c.name.toLowerCase().includes(q)) : cities).slice(0, 80);
+        dropdown.innerHTML = matches.length
+          ? matches
+              .map(
+                (c) =>
+                  `<div class="city-search-option" onmousedown="event.preventDefault();selectAssignCity('${esc(c.id)}','${esc(c.name)}')">${esc(c.name)}</div>`,
+              )
+              .join("")
+          : `<div class="city-search-empty">No matching city.</div>`;
+        positionCityDropdown();
+        dropdown.style.display = "";
+      }
+      window.addEventListener("resize", () => {
+        const dropdown = $("assign-city-dropdown");
+        if (dropdown && dropdown.style.display !== "none") positionCityDropdown();
+      });
+      function selectAssignCity(cityId, cityName) {
+        $("assign-city-select").value = cityId;
+        $("assign-city-search").value = cityName;
+        $("assign-city-dropdown").style.display = "none";
+        onAssignCityChange();
+      }
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest(".city-search-wrap")) {
+          const dd = $("assign-city-dropdown");
+          if (dd) dd.style.display = "none";
+        }
+      });
       function openAssignModal(section) {
         assignSection = section;
         $("assign-modal-title").textContent = section === "pn" ? "Assign Areas to a City" : "Assign Stations to a City";
@@ -1106,12 +1228,24 @@
         itemsBlock.style.display = "";
         emptyHint.style.display = "none";
         body.innerHTML = available
-          .map(
-            (it) => `<label class="item-list-row">
-              <input type="checkbox" value="${esc(it.id)}" />
-              <span>${esc(it.name)}</span>
-            </label>`,
-          )
+          .map((it) => {
+            const hasData = hasSufficientData(it.id);
+            if (hasData) {
+              return `<label class="item-list-row">
+                <input type="checkbox" value="${esc(it.id)}" />
+                <span>${esc(it.name)}</span>
+              </label>`;
+            }
+            return `<label class="item-list-row" style="opacity:0.55;cursor:not-allowed;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:9px">
+                <input type="checkbox" value="${esc(it.id)}" disabled />
+                <span>${esc(it.name)}</span>
+              </div>
+              <span style="font-size:10px;color:var(--status-warning-text);background:var(--status-warning-bg);padding:3px 8px;border-radius:4px;border:1px solid rgba(163,93,20,0.2);font-weight:600;white-space:nowrap">
+                <i class="fas fa-triangle-exclamation"></i> Insufficient Data
+              </span>
+            </label>`;
+          })
           .join("");
       }
       function confirmAssign() {
@@ -1417,15 +1551,24 @@
       }
       function renderPnPreview() {
         const wrap = $("pn-preview");
-        if (!cities.length) {
-          wrap.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:24px">No cities yet.</div>';
-          return;
-        }
         const pnMode = getMode("pn");
         const pnCsv = getCsv("pn");
         const pnCsvSt = csvStatus("pn");
         const editable = !(pnMode === "manual" && pnCsv && pnCsvSt.state !== "expired");
-        wrap.innerHTML = cities
+
+        // Only show cities that actually have data — a city with no assignment (or no CSV rows) doesn't render.
+        const visibleCities = editable
+          ? cities.filter((c) => pnAssign.some((a) => a.cityId === c.id))
+          : cities.filter((c) => pnCsv.rows.some((r) => r.city.toLowerCase() === c.name.toLowerCase()));
+
+        if (!visibleCities.length) {
+          wrap.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:24px">
+            No cities assigned yet.${editable ? ` <a href="#" onclick="event.preventDefault();openAssignModal('pn')">Add areas</a>.` : ""}
+          </div>`;
+          return;
+        }
+
+        wrap.innerHTML = visibleCities
           .map((c) => {
             const rows = pnRowsForCity(c.name, c.id).slice(0, 6);
             return `<div class="city-card">
@@ -1441,24 +1584,16 @@
               }
             </div>
             <table class="area-table"><thead><tr><th>Area</th><th>Average Land Price (yen/m²)</th><th>Change</th></tr></thead><tbody>
-            ${
-              rows.length
-                ? rows
-                    .map((r) => {
-                      const up = Number(r.change) >= 0;
-                      return `<tr>
+            ${rows
+              .map((r) => {
+                const up = Number(r.change) >= 0;
+                return `<tr>
                     <td class="link-cell">${esc(r.area)}</td>
                     <td>¥${fmtInt(r.avgPrice)}</td>
                     <td class="${up ? "change-up" : "change-down"}">${up ? "↑ +" : "↓ -"}${Math.abs(r.change).toFixed(2)}%</td>
                   </tr>`;
-                    })
-                    .join("")
-                : `<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:10px">${
-                    editable
-                      ? `No areas assigned. <a href="#" onclick="event.preventDefault();openAssignModalForCity('pn','${esc(c.id)}')">Add one</a>.`
-                      : "No areas assigned."
-                  }</td></tr>`
-            }
+              })
+              .join("")}
             </tbody></table>
           </div>`;
           })
