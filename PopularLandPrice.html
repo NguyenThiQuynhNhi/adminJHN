@@ -913,19 +913,13 @@
           /[&<>"']/g,
           (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
         );
+      const MEM_STORE = {};
       const LS = {
         get(k, def) {
-          try {
-            const v = localStorage.getItem(k);
-            return v ? JSON.parse(v) : def;
-          } catch (e) {
-            return def;
-          }
+          return Object.prototype.hasOwnProperty.call(MEM_STORE, k) ? MEM_STORE[k] : def;
         },
         set(k, v) {
-          try {
-            localStorage.setItem(k, JSON.stringify(v));
-          } catch (e) {}
+          MEM_STORE[k] = v;
         },
       };
       function toast(msg, kind) {
@@ -957,10 +951,10 @@
 
       // Giả lập Backend kiểm tra 4 lớp dữ liệu (CSV -> Platform Sold -> MLIT 5km -> Platform Active Listing)
       // Trả về false nếu địa điểm đó cạn kiệt hoàn toàn dữ liệu ở cả 4 nguồn.
-      function hasSufficientData(id) {
-        // Hardcode vài id (Minato, Namba, Shimbashi Station, Hakata Station) để test giao diện
-        const noDataItems = ["area-3", "area-8", "st-4", "st-9"];
-        return !noDataItems.includes(id);
+      // Check theo TÊN thay vì ID để không bị vỡ khi cấu trúc ID thay đổi.
+      function hasSufficientData(item) {
+        const noDataNames = new Set(["Minato", "Namba", "Shibuya Station", "Hakata Station"]);
+        return !noDataNames.has(item.name);
       }
 
       // Thuật toán Levenshtein Distance để tìm gợi ý gần giống nhất
@@ -1007,47 +1001,103 @@
       };
 
       // ===================== seed system data =====================
-      const DEFAULT_AREAS = [
-        "Shibuya", "Shinjuku", "Minato", "Chiyoda", "Setagaya", "Meguro",
-        "Kita", "Namba", "Umeda", "Tenjin", "Hakata", "Chuo",
-      ].map((n, i) => ({ id: "area-" + (i + 1), name: n }));
-      const DEFAULT_STATIONS = [
-        "Toranomon Station", "National Diet Bldg Station", "Uchisaiwaicho Station",
-        "Shimbashi Station", "Kamiyacho Station", "Umeda Station",
-        "Namba Station", "Tenjin Station", "Hakata Station", "Sapporo Station",
-      ].map((n, i) => ({ id: "st-" + (i + 1), name: n }));
-      const DEFAULT_CITIES = ["Tokyo", "Yokohama", "Osaka",
-       "Nagoya", "Sapporo", "Fukuoka", "Kawasaki", 
-       "Kobe", "Kyoto", "Saitama", "Hiroshima", "Sendai", 
-       "Chiba", "Kitakyushu", "Niigata", "Hamamatsu", 
-       "Kumamoto", "Sagamihara", "Shizuoka", "Okayama", 
-       "Kagoshima", "Utsunomiya", "Matsuyama", "Himeji",
-        "Kanazawa", "Nagasaki", "Oita", "Nara", "Morioka", 
+      // Mỗi city có 2 danh sách riêng biệt:
+      //  - pool: TOÀN BỘ area/station có thể chọn (nguồn cho dropdown "Add Areas/Stations")
+      //  - seed: tập con được gán sẵn mặc định khi mới load trang
+      // Tách riêng để "Add Areas" luôn còn option để chọn thêm, không bị rỗng ngay từ đầu.
+      const CITY_SEED = {
+        Tokyo: {
+          areaPool: ["Shibuya","Shinjuku","Minato","Chiyoda","Setagaya","Meguro","Kita","Chuo","Taito","Bunkyo"],
+          areaSeed: ["Shibuya","Shinjuku","Minato"],
+          stationPool: ["Tokyo Station","Shinjuku Station","Shibuya Station","Ikebukuro Station","Ueno Station","Shinagawa Station","Akihabara Station","Ginza Station","Roppongi Station","Nakano Station"],
+          stationSeed: ["Tokyo Station","Shinjuku Station","Shibuya Station","Ikebukuro Station","Ueno Station"],
+        },
+        Osaka: {
+          areaPool: ["Namba","Umeda","Tennoji","Kita","Chuo","Nishi","Naniwa","Fukushima","Yodogawa","Higashinari"],
+          areaSeed: ["Namba","Umeda","Tennoji"],
+          stationPool: ["Osaka Station","Namba Station","Shin-Osaka Station","Tennoji Station","Umeda Station","Kyobashi Station","Tsuruhashi Station","Nakatsu Station","Fukushima Station","Nipponbashi Station"],
+          stationSeed: ["Osaka Station","Namba Station","Shin-Osaka Station","Tennoji Station","Umeda Station"],
+        },
+        Yokohama: {
+          areaPool: ["Minato Mirai","Naka","Nishi","Kohoku","Tsurumi","Isogo","Kanazawa","Totsuka","Aoba","Kanagawa"],
+          areaSeed: ["Minato Mirai","Naka","Nishi"],
+          stationPool: ["Yokohama Station","Sakuragicho Station","Kannai Station","Shin-Yokohama Station","Tsurumi Station","Totsuka Station","Kamiooka Station","Hiyoshi Station","Kikuna Station","Higashi-Kanagawa Station"],
+          stationSeed: ["Yokohama Station","Sakuragicho Station","Kannai Station","Shin-Yokohama Station","Tsurumi Station"],
+        },
+        Nagoya: {
+          areaPool: ["Naka","Nakamura","Higashi","Chikusa","Showa","Mizuho","Atsuta","Minato","Moriyama","Meito"],
+          areaSeed: ["Naka","Nakamura","Higashi"],
+          stationPool: ["Nagoya Station","Sakae Station","Kanayama Station","Fushimi Station","Motoyama Station","Ozone Station","Chikusa Station","Imaike Station","Atsuta-Jingumae Station","Kachigawa Station"],
+          stationSeed: ["Nagoya Station","Sakae Station","Kanayama Station","Fushimi Station","Motoyama Station"],
+        },
+        Sapporo: {
+          areaPool: ["Chuo","Kita","Higashi","Shiroishi","Toyohira","Nishi","Atsubetsu","Minami","Teine","Kiyota"],
+          areaSeed: ["Chuo","Kita","Higashi"],
+          stationPool: ["Sapporo Station","Odori Station","Susukino Station","Shin-Sapporo Station","Kikusui Station","Maruyama-koen Station","Kotoni Station","Shiroishi Station","Nakanoshima Station","Fukuzumi Station"],
+          stationSeed: ["Sapporo Station","Odori Station","Susukino Station","Shin-Sapporo Station","Kikusui Station"],
+        },
+        Fukuoka: {
+          areaPool: ["Tenjin","Hakata","Chuo","Sawara","Minami","Higashi","Nishi","Jonan","Hakozaki","Momochi"],
+          areaSeed: ["Tenjin","Hakata","Chuo"],
+          stationPool: ["Hakata Station","Tenjin Station","Tenjin-Minami Station","Gion Station","Nishitetsu Fukuoka Station","Yakuin Station","Fukuoka Airport Station","Nanakuma Station","Hashimoto Station","Meinohama Station"],
+          stationSeed: ["Hakata Station","Tenjin Station","Tenjin-Minami Station","Gion Station","Nishitetsu Fukuoka Station"],
+        },
+      };
+
+      // Các city còn lại: pool 10 area/10 station (placeholder), seed sẵn 3 area / 5 station đầu.
+      const OTHER_CITY_NAMES = [
+        "Kawasaki", "Kobe", "Kyoto", "Saitama", "Hiroshima", "Sendai",
+        "Chiba", "Kitakyushu", "Niigata", "Hamamatsu",
+        "Kumamoto", "Sagamihara", "Shizuoka", "Okayama",
+        "Kagoshima", "Utsunomiya", "Matsuyama", "Himeji",
+        "Kanazawa", "Nagasaki", "Oita", "Nara", "Morioka",
         "Akita", "Aomori", "Yamagata", "Fukushima", "Mito",
-         "Maebashi", "Nagano", "Kofu", "Toyama", "Fukui", 
-         "Gifu", "Takamatsu", "Tokushima", "Kochi", "Miyazaki",
-          "Saga", "Tottori", "Matsue", "Yamaguchi", "Hakodate",
-           "Naha"].map((n, i) => ({ id: "city-" + (i + 1), name: n }));
-      const DEFAULT_PN_ASSIGN = [
-        { id: "pna-1", cityId: "city-1", areaId: "area-1" },
-        { id: "pna-2", cityId: "city-1", areaId: "area-2" },
-        { id: "pna-3", cityId: "city-1", areaId: "area-3" },
-        { id: "pna-4", cityId: "city-1", areaId: "area-4" },
-        { id: "pna-5", cityId: "city-2", areaId: "area-8" },
-        { id: "pna-6", cityId: "city-2", areaId: "area-9" },
-        { id: "pna-7", cityId: "city-3", areaId: "area-10" },
+        "Maebashi", "Nagano", "Kofu", "Toyama", "Fukui",
+        "Gifu", "Takamatsu", "Tokushima", "Kochi", "Miyazaki",
+        "Saga", "Tottori", "Matsue", "Yamaguchi", "Hakodate",
       ];
-      const DEFAULT_LP_ASSIGN = [
-        { id: "lpa-1", cityId: "city-1", stationId: "st-1" },
-        { id: "lpa-2", cityId: "city-1", stationId: "st-2" },
-        { id: "lpa-3", cityId: "city-1", stationId: "st-3" },
-        { id: "lpa-4", cityId: "city-1", stationId: "st-4" },
-        { id: "lpa-5", cityId: "city-1", stationId: "st-5" },
-        { id: "lpa-6", cityId: "city-2", stationId: "st-6" },
-        { id: "lpa-7", cityId: "city-2", stationId: "st-7" },
-        { id: "lpa-8", cityId: "city-3", stationId: "st-8" },
-        { id: "lpa-9", cityId: "city-3", stationId: "st-9" },
-      ];
+      OTHER_CITY_NAMES.forEach((name) => {
+        const areaPool = Array.from({ length: 10 }, (_, i) => `${name} Area ${i + 1}`);
+        const stationPool = Array.from({ length: 10 }, (_, i) => `${name} Station ${i + 1}`);
+        CITY_SEED[name] = {
+          areaPool,
+          areaSeed: [], // không tự gán sẵn — city này sẽ KHÔNG hiện ở preview cho tới khi Admin tự "Add Areas"
+          stationPool,
+          stationSeed: [], // tương tự cho Land Prices
+        };
+      });
+
+      // ===== Build cities / areas / stations / assignments từ CITY_SEED =====
+      const DEFAULT_CITIES = [];
+      const DEFAULT_AREAS = [];
+      const DEFAULT_STATIONS = [];
+      const DEFAULT_PN_ASSIGN = [];
+      const DEFAULT_LP_ASSIGN = [];
+      Object.keys(CITY_SEED).forEach((cityName, ci) => {
+        const cityId = "city-" + (ci + 1);
+        const seed = CITY_SEED[cityName];
+        DEFAULT_CITIES.push({ id: cityId, name: cityName });
+
+        // Toàn bộ pool -> DEFAULT_AREAS/STATIONS (option cho dropdown/checklist)
+        seed.areaPool.forEach((areaName, ai) => {
+          DEFAULT_AREAS.push({ id: "area-" + cityId + "-" + (ai + 1), name: areaName });
+        });
+        seed.stationPool.forEach((stName, si) => {
+          DEFAULT_STATIONS.push({ id: "st-" + cityId + "-" + (si + 1), name: stName });
+        });
+
+        // Chỉ phần seed (tập con) -> assignment mặc định
+        seed.areaSeed.forEach((areaName) => {
+          const idx = seed.areaPool.indexOf(areaName);
+          const areaId = "area-" + cityId + "-" + (idx + 1);
+          DEFAULT_PN_ASSIGN.push({ id: "pna-" + areaId, cityId, areaId });
+        });
+        seed.stationSeed.forEach((stName) => {
+          const idx = seed.stationPool.indexOf(stName);
+          const stId = "st-" + cityId + "-" + (idx + 1);
+          DEFAULT_LP_ASSIGN.push({ id: "lpa-" + stId, cityId, stationId: stId });
+        });
+      });
 
       let areas = LS.get(K.areas, DEFAULT_AREAS);
       let stations = LS.get(K.stations, DEFAULT_STATIONS);
@@ -1219,20 +1269,23 @@
             .filter((a) => a.cityId === cityId)
             .map((a) => (assignSection === "pn" ? a.areaId : a.stationId)),
         );
-        const available = pool.filter((it) => !existing.has(it.id));
-        if (!available.length) {
+        if (!pool.length) {
           itemsBlock.style.display = "none";
           emptyHint.style.display = "";
+          emptyHint.textContent = "No areas/stations available for this city.";
           return;
         }
         itemsBlock.style.display = "";
         emptyHint.style.display = "none";
-        body.innerHTML = available
+        // Hiện TOÀN BỘ pool — item nào đã gán cho city này thì tick sẵn (checked),
+        // item nào thiếu dữ liệu thì disable + hiện badge cảnh báo (trừ khi nó đã được gán từ trước).
+        body.innerHTML = pool
           .map((it) => {
-            const hasData = hasSufficientData(it.id);
-            if (hasData) {
+            const isChecked = existing.has(it.id);
+            const hasData = hasSufficientData(it);
+            if (hasData || isChecked) {
               return `<label class="item-list-row">
-                <input type="checkbox" value="${esc(it.id)}" />
+                <input type="checkbox" value="${esc(it.id)}" ${isChecked ? "checked" : ""} />
                 <span>${esc(it.name)}</span>
               </label>`;
             }
@@ -1254,23 +1307,38 @@
           toast("Please choose a city first.", "err");
           return;
         }
-        const checked = Array.from($("assign-items-body").querySelectorAll('input[type="checkbox"]:checked')).map(
-          (el) => el.value,
-        );
-        if (!checked.length) {
-          toast("Please select at least one item.", "err");
+        const checkboxes = Array.from($("assign-items-body").querySelectorAll('input[type="checkbox"]:not(:disabled)'));
+        const checkedIds = new Set(checkboxes.filter((el) => el.checked).map((el) => el.value));
+        const uncheckedIds = new Set(checkboxes.filter((el) => !el.checked).map((el) => el.value));
+
+        const key = assignSection === "pn" ? "areaId" : "stationId";
+        const list = assignSection === "pn" ? pnAssign : lpAssign;
+        const existingIds = new Set(list.filter((a) => a.cityId === cityId).map((a) => a[key]));
+
+        const toAdd = [...checkedIds].filter((id) => !existingIds.has(id));
+        const toRemove = list.filter((a) => a.cityId === cityId && uncheckedIds.has(a[key]));
+
+        if (!toAdd.length && !toRemove.length) {
+          toast("No changes to save.", "err");
           return;
         }
+
         if (assignSection === "pn") {
-          checked.forEach((areaId) => pnAssign.push({ id: "pna-" + Date.now() + "-" + areaId, cityId, areaId }));
+          toAdd.forEach((areaId) => pnAssign.push({ id: "pna-" + Date.now() + "-" + areaId, cityId, areaId }));
+          pnAssign = pnAssign.filter((a) => !toRemove.includes(a));
           persistPnAssign();
         } else {
-          checked.forEach((stationId) => lpAssign.push({ id: "lpa-" + Date.now() + "-" + stationId, cityId, stationId }));
+          toAdd.forEach((stationId) => lpAssign.push({ id: "lpa-" + Date.now() + "-" + stationId, cityId, stationId }));
+          lpAssign = lpAssign.filter((a) => !toRemove.includes(a));
           persistLpAssign();
         }
+
         renderAllPreviews();
         closeModal("modal-assign");
-        toast(checked.length + (assignSection === "pn" ? " area(s) assigned." : " station(s) assigned."));
+        const parts = [];
+        if (toAdd.length) parts.push(toAdd.length + " added");
+        if (toRemove.length) parts.push(toRemove.length + " removed");
+        toast(parts.join(", ") + ".");
       }
 
       // ===================== Mode switch (Auto / Manual) =====================
