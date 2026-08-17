@@ -675,19 +675,6 @@
         border-color: var(--status-danger-text);
         box-shadow: 0 0 0 2px rgba(178, 59, 59, 0.16);
       }
-
-      .bulk-bar {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 14px;
-        background: var(--bg-card-warm);
-        border: 1px solid var(--border-warm);
-        border-radius: var(--r-md);
-        margin-bottom: 10px;
-        font-size: 13px;
-      }
-      .bulk-bar strong { color: var(--text-main); }
     </style>
   </head>
   <body>
@@ -1600,45 +1587,6 @@
       let editMode = false;
 
       const $ = (id) => document.getElementById(id);
-      let selectedIds = new Set();
-      function getSelectedAdmins() { return admins.filter((a) => selectedIds.has(a.id)); }
-      function updateBulkBar() {
-        const n = selectedIds.size;
-        $("bulkBar").classList.toggle("hidden", n === 0);
-        $("bulkCount").textContent = n;
-      }
-      function onRowCheck(id, checked) {
-        if (checked) selectedIds.add(id); else selectedIds.delete(id);
-        updateBulkBar();
-      }
-      function toggleSelectAll(cb) {
-        document.querySelectorAll(".rowChk").forEach((el) => {
-          el.checked = cb.checked;
-          if (cb.checked) selectedIds.add(el.dataset.id); else selectedIds.delete(el.dataset.id);
-        });
-        updateBulkBar();
-      }
-      function bulkSuspend() {
-        const sel = getSelectedAdmins();
-        if (!sel.length) return;
-        const next = sel.every((a) => a.status === "Suspended") ? "Active" : "Suspended";
-        if (!confirm(`${next === "Suspended" ? "Suspend" : "Reactivate"} ${sel.length} selected admin(s)?`)) return;
-        sel.forEach((a) => { a.status = next; });
-        selectedIds.clear();
-        renderList();
-        toast(`${sel.length} admin(s) ${next === "Suspended" ? "suspended" : "reactivated"} successfully.`);
-      }
-      function bulkDelete() {
-        const sel = getSelectedAdmins();
-        if (!sel.length) return;
-        if (!confirm(`Permanently delete ${sel.length} selected admin(s)? This action cannot be undone.`)) return;
-        const ids = new Set(sel.map((a) => a.id));
-        for (let i = admins.length - 1; i >= 0; i--) if (ids.has(admins[i].id)) admins.splice(i, 1);
-        filtered = filtered.filter((a) => !ids.has(a.id));
-        selectedIds.clear();
-        renderList();
-        toast(`${sel.length} admin(s) deleted successfully.`);
-      }
       const esc = (s) =>
         String(s ?? "")
           .replace(/&/g, "&amp;")
@@ -1737,7 +1685,6 @@
           tbody.innerHTML =
             '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted)">No admins match the filters.</td></tr>';
           renderPager(total, $("adminPager"), "gotoPage");
-          updateBulkBar();
           return;
         }
         const startIdx = (pageNum - 1) * PAGE_SIZE;
@@ -1760,7 +1707,6 @@
           )
           .join("");
         renderPager(total, $("adminPager"), "gotoPage");
-        updateBulkBar();
       }
 
       function applyFilters() {
