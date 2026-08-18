@@ -260,7 +260,7 @@
               <div class="page-title">Leads</div>
             </div>
             <div class="head-right">
-              <div class="rows-sel" onclick="cycleRows()"><span id="rowsLabel">10</span> <i class="fas fa-chevron-down" style="font-size:10px;color:var(--text-dim)"></i></div>
+              <!-- <div class="rows-sel" onclick="cycleRows()"><span id="rowsLabel">10</span> <i class="fas fa-chevron-down" style="font-size:10px;color:var(--text-dim)"></i></div> -->
               <button class="btn btn-primary btn-pill" onclick="showEdit()"><i class="fas fa-plus"></i> Add</button>
             </div>
           </div>
@@ -269,6 +269,7 @@
             <div class="pill-toggle">
               <button class="active" id="pillBuy" onclick="setIntent('buy')">To Buy</button>
               <button id="pillRent" onclick="setIntent('rent')">To Rent</button>
+              <button id="pillProject" onclick="setIntent('project')">New Development</button>
             </div>
             <div class="filter-field has-icon"><i class="fas fa-globe fi-left"></i><input placeholder="Location" /></div>
             <div class="filter-field">
@@ -281,7 +282,7 @@
                 <option value="proposal">Proposal</option>
                 <option value="negotiation">Negotiation</option>
                 <option value="asleep">Asleep</option>
-                <option value="closed_won">Closed Won</option>
+                <option value="sold">Sold</option>
                 <option value="closed_lost">Closed Lost</option>
               </select>
               <i class="fas fa-chevron-down fi-right"></i>
@@ -307,7 +308,6 @@
           <div class="card">
             <table class="data">
               <thead><tr>
-                <th style="width:40px"></th>
                 <th onclick="sortBy('leadname')">Lead Name <span class="sort">↕</span></th>
                 <th onclick="sortBy('name')">Contact Name <span class="sort">↕</span></th>
                 <th onclick="sortBy('type')">Property <span class="sort">↕</span></th>
@@ -315,7 +315,6 @@
                 <th onclick="sortBy('follow')">Next Follow Up Date <span class="sort">↕</span></th>
                 <th onclick="sortBy('status')">Status <span class="sort">↕</span></th>
                 <th onclick="sortBy('owner')">Owner <span class="sort">↕</span></th>
-                <th>Actions</th>
               </tr></thead>
               <tbody id="listBody"></tbody>
             </table>
@@ -346,8 +345,6 @@
                 <div class="more-menu">
                   <button class="nav-icon" onclick="toggleMore(event)"><i class="fas fa-ellipsis-vertical"></i></button>
                   <div class="menu-pop" id="morePop">
-                    <button onclick="toast('Duplicate lead')">Duplicate</button>
-                    <button onclick="toast('Archive lead')">Archive</button>
                     <button onclick="if(confirm('Delete this lead?'))toast('Deleted')" style="color:#c53030">Delete</button>
                   </div>
                 </div>
@@ -410,7 +407,7 @@
               </div>
               <div class="sec" style="border-bottom:0">
                 <div class="btabs">
-                  <button class="btab active" onclick="detailTab('matching',this)">Matching Properties</button>
+                  <button class="btab active" id="btabMatching" onclick="detailTab('matching',this)">Matching Properties</button>
                   <button class="btab" onclick="detailTab('related',this)">Related Leads</button>
                   <button class="btab" onclick="detailTab('offers',this)">Offers</button>
                   <button class="btab" onclick="detailTab('images',this)">Images</button>
@@ -448,7 +445,6 @@
 
               <div class="rp-card">
                 <div class="rp-title"><i class="fas fa-quote-left" style="color:var(--accent)"></i> Comments</div>
-                <div class="rp-sub">It's good to talk</div>
                 <textarea class="comment-input" id="commentInput" placeholder="Say something..." onkeydown="commentKey(event)"></textarea>
                 <div class="press-enter">Press Enter to Submit</div>
                 <div id="commentList">
@@ -481,7 +477,7 @@
             <div class="form-grid">
               <div class="fld"><label>Lead Name <span class="req">*</span></label><input value="Santi Argo - Complex in Tokyo" /></div>
               <div class="fld"><label>Contact Name <span class="req">*</span></label><div class="fld-combo"><select><option>Santi Argo (100029)</option></select></div></div>
-              <div class="fld"><label>Status <span class="req">*</span></label><select><option value="">Select</option><option>New</option><option>Assigned</option><option selected>Proposal</option><option>Negotiation</option><option>Closed Won</option></select></div>
+              <div class="fld"><label>Status <span class="req">*</span></label><select><option value="">Select</option><option>New</option><option>Assigned</option><option selected>Proposal</option><option>Negotiation</option><option>Sold</option></select></div>
               <div class="fld"><label>Owner</label><select><option>Chris Sales (100031)</option><option>Maria Sales</option><option>Tony Sales</option></select></div>
               <div class="fld"><label>Created</label><input value="22/05/2025" /></div>
               <div class="fld"><label>Next Follow Up Date</label><input value="27/05/2025, 00:00" /></div>
@@ -538,6 +534,79 @@
       </div>
     </main>
 
+    <!-- Mark Lead as Sold — price capture modal -->
+    <div class="modal-backdrop" id="leadSoldModal">
+      <div class="modal-box" style="width:400px">
+        <div class="modal-header">
+          <div class="modal-title" id="soldModalTitle"><i class="fas fa-handshake" style="color:var(--accent)"></i> Complete Transaction</div>
+          <button style="border:0;background:0;cursor:pointer;font-size:16px;color:var(--text-muted)" onclick="closeLeadSoldModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="fld" style="margin-bottom:12px">
+            <label id="lblTxnPrice">Final Price (¥) <span class="req">*</span></label>
+            <input type="number" min="0" id="leadSoldPrice" placeholder="Enter final transaction price">
+            <div id="leadSoldPriceErr" class="hidden" style="color:#c53030;font-size:11.5px;margin-top:4px"></div>
+          </div>
+          <div class="fld hidden" id="rentDurationWrap" style="margin-bottom:12px">
+            <label>Contract Duration (Months) <span class="req">*</span></label>
+            <input type="number" min="1" id="leadRentDuration" value="24" placeholder="e.g. 24 (2 years)">
+            <div style="font-size:11px;color:var(--text-dim);margin-top:3px">Used to calculate Total Deal Contract Volume: (Monthly Rent × Months)</div>
+          </div>
+          <div class="fld hidden" id="projectUnitWrap" style="margin-bottom:12px">
+            <label>Unit Type <span class="req">*</span></label>
+            <select id="leadSoldUnitType"></select>
+          </div>
+          <div class="fld">
+            <label id="lblTxnDate">Transaction Date <span class="req">*</span></label>
+            <input type="date" id="leadSoldDate">
+            <div id="leadSoldDateErr" class="hidden" style="color:#c53030;font-size:11.5px;margin-top:4px"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-pill" onclick="closeLeadSoldModal()">Cancel</button>
+          <button class="btn btn-primary btn-pill" onclick="confirmLeadSold()">Confirm Deal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Offer modal -->
+    <div class="modal-backdrop" id="addOfferModal">
+      <div class="modal-box" style="width:420px">
+        <div class="modal-header">
+          <div class="modal-title"><i class="fas fa-file-invoice-dollar" style="color:var(--accent)"></i> Add Offer</div>
+          <button style="border:0;background:0;cursor:pointer;font-size:16px;color:var(--text-muted)" onclick="closeAddOfferModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="fld" style="margin-bottom:10px">
+            <label>Property <span class="req">*</span></label>
+            <input type="text" id="offerProperty" placeholder="Property name">
+            <div id="offerPropertyErr" class="hidden" style="color:#c53030;font-size:11.5px;margin-top:4px">Property is required.</div>
+          </div>
+          <div class="fld" style="margin-bottom:10px">
+            <label>Offer Price (¥) <span class="req">*</span></label>
+            <input type="number" min="0" id="offerPrice" placeholder="Enter offer price">
+            <div id="offerPriceErr" class="hidden" style="color:#c53030;font-size:11.5px;margin-top:4px">Offer price is required.</div>
+          </div>
+          <div class="fld" style="margin-bottom:10px">
+            <label>Offer Date Sent</label>
+            <input type="date" id="offerDate">
+          </div>
+          <div class="fld" style="margin-bottom:10px">
+            <label>Counteroffer Price (¥)</label>
+            <input type="number" min="0" id="offerCounterPrice" placeholder="Optional">
+          </div>
+          <div class="fld">
+            <label>Counteroffer Date Sent</label>
+            <input type="date" id="offerCounterDate">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-pill" onclick="closeAddOfferModal()">Cancel</button>
+          <button class="btn btn-primary btn-pill" onclick="confirmAddOffer()">Add Offer</button>
+        </div>
+      </div>
+    </div>
+
     <div class="toast-wrap" id="toastWrap"></div>
 
     <script>
@@ -559,58 +628,236 @@
       }
 
       const OWNERS = { MS: "Maria Sales", TS: "Tony Sales", JS: "Jenny Sales" };
-      const LEADS = [
-        { leadname: "Neil Down - Green Vintage House", name: "Neil Down", type: "Green Vintage House", enquiry: "2025-05-27", follow: "2025-06-03", status: "New", owner: "MS" },
-        { leadname: "Colin Sik - Sunworld Apartment", name: "Colin Sik", type: "Sunworld Apartment", enquiry: "2025-05-27", follow: "2025-06-03", status: "Assigned", owner: "TS" },
-        { leadname: "Dee End - Mushroom House", name: "Dee End", type: "Mushroom House", enquiry: "2025-05-27", follow: "2025-06-03", status: "Converted", owner: "JS" },
-        { leadname: "Art Decco - Jody Office", name: "Art Decco", type: "Jody Office", enquiry: "2025-05-27", follow: "2025-06-03", status: "Assigned", owner: "TS" },
-        { leadname: "Audi Yose - Complex Apartment in Tokyo", name: "Audi Yose", type: "Complex Apartment in Tokyo", enquiry: "2025-05-27", follow: "2025-06-03", status: "In Progress", owner: "TS" },
-        { leadname: "Mark Ateer - Kyoto Biggest Apartment", name: "Mark Ateer", type: "Kyoto Biggest Apartment", enquiry: "2025-05-27", follow: "2025-06-03", status: "Converted", owner: "MS" },
-        { leadname: "Andreas Papandreas - Near Beach House", name: "Andreas Papandreas", type: "Near Beach House", enquiry: "2025-05-27", follow: "2025-06-03", status: "Assigned", owner: "MS" },
-        { leadname: "Margarett Romanovich - Osaka suburban Apartment", name: "Margarett Romanovich", type: "Osaka suburban Apartment", enquiry: "2025-05-27", follow: "2025-06-03", status: "Converted", owner: "MS" },
-        { leadname: "Oscar Nommanee - Cheapest House", name: "Oscar Nommanee", type: "Cheapest House", enquiry: "2025-05-27", follow: "2025-06-03", status: "Converted", owner: "MS" },
-        { leadname: "Stan Dupp - Classical House", name: "Stan Dupp", type: "Classical House", enquiry: "2025-05-27", follow: "2025-06-03", status: "Assigned", owner: "MS" },
+
+      let OFFERS = [
+        { property: "San Jose 4-bedroom Villa", offerPrice: 2200000, offerDate: "2025-05-25", counterPrice: 2300000, counterDate: "2025-05-27" },
       ];
+
+      function fmtDMY(iso) {
+        if (!iso) return "—";
+        const d = new Date(iso);
+        if (isNaN(d)) return iso;
+        return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+      }
+
+      function renderOffersTab(body) {
+        const rows = OFFERS.length
+          ? OFFERS.map((o, i) => `
+            <tr>
+              <td>${o.property}</td>
+              <td>¥${o.offerPrice.toLocaleString()}</td>
+              <td>${fmtDMY(o.offerDate)}</td>
+              <td>${o.counterPrice ? "¥" + o.counterPrice.toLocaleString() : "—"}</td>
+              <td>${fmtDMY(o.counterDate)}</td>
+            </tr>`).join("")
+          : `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px">No offers yet.</td></tr>`;
+        body.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-weight:700;font-size:14px">List</div><button class="btn btn-primary btn-pill" onclick="openAddOfferModal()"><i class="fas fa-plus-circle"></i> ADD</button></div>
+            <table class="data"><thead><tr><th>Property <span class="sort">↕</span></th><th>Offer Price <span class="sort">↕</span></th><th>Offer Date Sent <span class="sort">↕</span></th><th>Counteroffer Price <span class="sort">↕</span></th><th>Counteroffer Date Sent <span class="sort">↕</span></th></tr></thead>
+            <tbody>${rows}</tbody></table>
+            <div class="pagination"><div class="pg-left"><div class="rows-sel">10 <i class="fas fa-chevron-down" style="font-size:10px;color:var(--text-dim)"></i></div><span>Showing 1 to ${OFFERS.length} of ${OFFERS.length} entries</span></div></div>`;
+      }
+
+      function openAddOfferModal() {
+        document.getElementById("offerProperty").value = "";
+        document.getElementById("offerPrice").value = "";
+        document.getElementById("offerDate").value = new Date().toISOString().slice(0, 10);
+        document.getElementById("offerCounterPrice").value = "";
+        document.getElementById("offerCounterDate").value = "";
+        document.getElementById("offerPropertyErr").classList.add("hidden");
+        document.getElementById("offerPriceErr").classList.add("hidden");
+        document.getElementById("addOfferModal").classList.add("open");
+      }
+      window.openAddOfferModal = openAddOfferModal;
+      function closeAddOfferModal() {
+        document.getElementById("addOfferModal").classList.remove("open");
+      }
+      window.closeAddOfferModal = closeAddOfferModal;
+      function confirmAddOffer() {
+        const property = document.getElementById("offerProperty").value.trim();
+        const priceRaw = document.getElementById("offerPrice").value.trim();
+        let ok = true;
+        if (!property) {
+          document.getElementById("offerPropertyErr").classList.remove("hidden");
+          ok = false;
+        } else {
+          document.getElementById("offerPropertyErr").classList.add("hidden");
+        }
+        if (!priceRaw) {
+          document.getElementById("offerPriceErr").classList.remove("hidden");
+          ok = false;
+        } else {
+          document.getElementById("offerPriceErr").classList.add("hidden");
+        }
+        if (!ok) return;
+        OFFERS.unshift({
+          property,
+          offerPrice: Number(priceRaw),
+          offerDate: document.getElementById("offerDate").value,
+          counterPrice: document.getElementById("offerCounterPrice").value ? Number(document.getElementById("offerCounterPrice").value) : null,
+          counterDate: document.getElementById("offerCounterDate").value || null,
+        });
+        closeAddOfferModal();
+        detailTab("offers", document.querySelector('.btab[onclick*="offers"]'));
+        toast("Offer added.", "success");
+      }
+      window.confirmAddOffer = confirmAddOffer;
+      // ===== PROJECTS =====
+      // group: 5 → floorPlanTypes (bucket, KHÔNG có unit ID riêng)
+      // group: 6 → lots (mỗi lot = 1 căn vật lý cụ thể, CÓ thể chốt deal đúng căn)
+      const PROJECTS = [
+        {
+          id: "PRJ-1042",
+          group: 5,
+          name: "Shinonome Condominium",
+          prefecture: "Tokyo", city: "Koto",
+          floorPlanTypes: [
+            { name: "Type A", saleStatus: "On Sale", priceMin: 35000000, priceMax: 40000000, layout: "1LDK", units: 20 },
+            { name: "Type B", saleStatus: "On Sale", priceMin: 55000000, priceMax: 65000000, layout: "2LDK", units: 15 },
+            { name: "Type C", saleStatus: "Sold Out", priceMin: 80000000, priceMax: 95000000, layout: "3LDK", units: 8 },
+            { name: "Type D — Penthouse", saleStatus: "On Sale", priceMin: 150000000, priceMax: 180000000, layout: "4LDK", units: 2 },
+          ],
+        },
+        {
+          id: "PRJ-1158",
+          group: 6,
+          name: "Karuizawa Villa Development",
+          prefecture: "Hokkaido", city: "Sapporo",
+          lots: [
+            { name: "Lot 1", saleStatus: "On Sale", price: 85000000, layout: "3LDK" },
+            { name: "Lot 2", saleStatus: "On Sale", price: 110000000, layout: "4LDK" },
+            { name: "Lot 3", saleStatus: "Sold Out", price: 95000000, layout: "3LDK" },
+            { name: "Lot 4", saleStatus: "On Sale", price: 150000000, layout: "5LDK" },
+          ],
+        },
+      ];
+
+      // helper: lấy danh sách target (Type hoặc Lot) của 1 project, bất kể group nào
+      function getProjectTargets(project) {
+        return project.group === 5 ? (project.floorPlanTypes || []) : (project.lots || []);
+      }
+      // helper: giá thấp nhất để hiển thị "From ¥..."
+      function getTargetPrice(target, project) {
+        return project.group === 5 ? target.priceMin : target.price;
+      }
+
+      // ===== LEADS =====
+      // intent: "buy" | "rent" | "project"
+      const LEADS = [
+        { id: 1,leadname: "Neil Down - Green Vintage House", name: "Neil Down", type: "Green Vintage House", enquiry: "2025-05-27", follow: "2025-06-03", status: "New", owner: "MS", intent: "buy", price: 45000000 },
+        { id: 2,leadname: "Colin Sik - Sunworld Apartment", name: "Colin Sik", type: "Sunworld Apartment", enquiry: "2025-05-27", follow: "2025-06-03", status: "Assigned", owner: "TS", intent: "rent", price: 180000 },
+        { id: 3,leadname: "Dee End - Mushroom House", name: "Dee End", type: "Mushroom House", enquiry: "2025-05-27", follow: "2025-06-03", status: "Proposal", owner: "JS", intent: "buy", price: 29500000 },
+        { id: 4,leadname: "Art Decco - Jody Office", name: "Art Decco", type: "Jody Office", enquiry: "2025-05-27", follow: "2025-06-03", status: "Negotiation", owner: "TS", intent: "rent", price: 350000 },
+        { id: 5,leadname: "Audi Yose - Complex Apartment in Tokyo", name: "Audi Yose", type: "Complex Apartment in Tokyo", enquiry: "2025-05-27", follow: "2025-06-03", status: "Viewing", owner: "TS", intent: "buy", price: 67000000 },
+        { id: 6,leadname: "Mark Ateer - Kyoto Biggest Apartment", name: "Mark Ateer", type: "Kyoto Biggest Apartment", enquiry: "2025-05-27", follow: "2025-06-03", status: "Contact", owner: "MS", intent: "rent", price: 220000 },
+        { id: 7,leadname: "Andreas Papandreas - Near Beach House", name: "Andreas Papandreas", type: "Near Beach House", enquiry: "2025-05-27", follow: "2025-06-03", status: "Assigned", owner: "MS", intent: "buy", price: 82000000 },
+        { id: 8,leadname: "Margarett Romanovich - Osaka suburban Apartment", name: "Margarett Romanovich", type: "Osaka suburban Apartment", enquiry: "2025-05-27", follow: "2025-06-03", status: "New", owner: "MS", intent: "rent", price: 140000 },
+        { id: 9,leadname: "Oscar Nommanee - Cheapest House", name: "Oscar Nommanee", type: "Cheapest House", enquiry: "2025-05-27", follow: "2025-06-03", status: "Asleep", owner: "MS", intent: "buy", price: 18000000 },
+        { id: 10,leadname: "Stan Dupp - Classical House", name: "Stan Dupp", type: "Classical House", enquiry: "2025-05-27", follow: "2025-06-03", status: "Proposal", owner: "MS", intent: "buy", price: 54000000 },
+        { id: 11,leadname: "Santi Argo - Shibuya Luxury Suite", name: "Santi Argo", type: "Shibuya Luxury Suite", enquiry: "2025-05-22", follow: "2025-05-27", status: "Proposal", owner: "CS", intent: "buy", price: 95000000 },
+        { id: 12,leadname: "Jenny Craig - Roppongi Tower Studio", name: "Jenny Craig", type: "Roppongi Tower Studio", enquiry: "2025-05-20", follow: "2025-05-26", status: "Viewing", owner: "MS", intent: "rent", price: 280000 },
+        { id: 13, leadname: "Kenji Watanabe - Shinonome Condominium Type A", name: "Kenji Watanabe", type: "Shinonome Condominium",
+          enquiry: "2025-06-01", follow: "2025-06-08", status: "Viewing", owner: "TS",
+          intent: "project", projectId: "PRJ-1042",
+          targetName: "Type A",  
+          price: 35000000 }
+      ];
+
+      // ===== LEAD_PROJECT_INTERESTS =====
+      let TRANSACTIONS = []; 
+
       let sortKey = "name", sortDir = "asc", rowsPerPage = 10, page = 1, intent = "buy";
       const TOTAL = 100;
 
       function ini2(n) { const p = n.trim().split(/\s+/); return ((p[0]?.[0] || "") + (p[1]?.[0] || p[0]?.[1] || "")).toUpperCase(); }
 
+      function setIntent(i) {
+        intent = i;
+        document.getElementById("pillBuy").classList.toggle("active", i === "buy");
+        document.getElementById("pillRent").classList.toggle("active", i === "rent");
+        document.getElementById("pillProject").classList.toggle("active", i === "project");
+        page = 1;
+        renderList();
+      }
+      window.setIntent = setIntent;
+
       function renderList() {
-        let rows = LEADS.slice();
+        // 1. Filter by Intent (To Buy / To Rent / New Development)
+        let rows = LEADS.filter(l => !intent || l.intent === intent);
+
+        // 2. Filter by Price range popover
         const pMin = parseFloat(document.getElementById("fPriceMin")?.value) || null;
         const pMax = parseFloat(document.getElementById("fPriceMax")?.value) || null;
-        if (pMin != null) rows = rows.filter(l => (l.price ?? 0) >= pMin * 1e6);
-        if (pMax != null) rows = rows.filter(l => (l.price ?? 0) <= pMax * 1e6);
+
+        // Multiplier: Rent nhập trực tiếp (¥/mo), Buy & Project nhập theo ¥M (triệu yên)
+        const multiplier = intent === "rent" ? 1 : 1e6;
+        if (pMin != null) rows = rows.filter(l => (l.price ?? 0) >= pMin * multiplier);
+        if (pMax != null) rows = rows.filter(l => (l.price ?? 0) <= pMax * multiplier);
+
+        // 3. Sort
         rows.sort((a, b) => {
-          const va = sortKey === "owner" ? OWNERS[a.owner] : a[sortKey], vb = sortKey === "owner" ? OWNERS[b.owner] : b[sortKey];
+          const va = sortKey === "owner" ? (OWNERS[a.owner] || a.owner) : a[sortKey];
+          const vb = sortKey === "owner" ? (OWNERS[b.owner] || b.owner) : b[sortKey];
           return (va < vb ? -1 : va > vb ? 1 : 0) * (sortDir === "asc" ? 1 : -1);
         });
-        const shown = rows.slice(0, rowsPerPage);
-        document.getElementById("listBody").innerHTML = shown.map(l => `
-          <tr onclick="showDetail()">
-            <td onclick="event.stopPropagation();this.querySelector('.circle-check').classList.toggle('checked')"><span class="circle-check"></span></td>
-            <td><div class="name-cell"><span class="ini-avatar">${ini2(l.leadname)}</span> ${l.leadname}</div></td>
-            <td><div class="name-cell"><span class="ini-avatar">${ini2(l.name)}</span> ${l.name}</div></td>
-            <td>${l.type}</td>
-            <td>${l.enquiry}</td>
-            <td>${l.follow}</td>
-            <td>${l.status}</td>
-            <td><div class="owner-cell"><span class="owner-avatar">${l.owner}</span> ${OWNERS[l.owner]}</div></td>
-            <td onclick="event.stopPropagation()"><div class="act-icons"><i class="fas fa-pen" onclick="showEdit()"></i><i class="fas fa-trash" onclick="if(confirm('Delete lead?'))toast('Deleted')"></i></div></td>
-          </tr>`).join("");
+
+        const totalFiltered = rows.length;
+        const start = totalFiltered === 0 ? 0 : (page - 1) * rowsPerPage + 1;
+        const end = Math.min(page * rowsPerPage, totalFiltered);
+        const shown = rows.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+
+        // ---- Hàm helper format giá theo 3 loại intent ----
+        function fmtPriceCell(l) {
+          if (l.intent === "rent") {
+            return `¥${(l.price || 0).toLocaleString()}/mo`;
+          }
+          if (l.intent === "project") {
+            return `From ¥${(l.price || 0).toLocaleString()}`;
+          }
+          // buy
+          return `¥${((l.price || 0) / 1e6).toFixed(1)}M`;
+        }
+
+        if (shown.length === 0) {
+          const label = intent === "buy" ? "Buy" : intent === "rent" ? "Rent" : "New Development";
+          document.getElementById("listBody").innerHTML = `
+            <tr>
+              <td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">
+                No ${label} leads found matching criteria.
+              </td>
+            </tr>`;
+        } else {
+          document.getElementById("listBody").innerHTML = shown.map(l => `
+            <tr onclick="showDetail(${l.id})">
+              <td><div class="name-cell"><span class="ini-avatar">${ini2(l.leadname)}</span> ${l.leadname}</div></td>
+              <td><div class="name-cell"><span class="ini-avatar">${ini2(l.name)}</span> ${l.name}</div></td>
+              <td>
+                <div>${l.type}</div>
+                <div style="font-size:11px;color:var(--accent);font-weight:600">
+                  ${fmtPriceCell(l)}
+                </div>
+              </td>
+              <td>${l.enquiry}</td>
+              <td>${l.follow}</td>
+              <td><span class="mc-pill ${l.status === 'Sold' ? 'mc-ok' : 'mc-miss'}" style="background:var(--grey-pill);color:var(--text-main)">${l.status}</span></td>
+              <td><div class="owner-cell"><span class="owner-avatar">${l.owner}</span> ${OWNERS[l.owner] || l.owner}</div></td>
+            </tr>`).join("");
+        }
+
         document.querySelectorAll(".data thead th").forEach(th => th.classList.remove("asc", "desc"));
-        const colIdx = { name: 1, type: 2, enquiry: 3, follow: 4, status: 5, owner: 6 }[sortKey];
-        if (colIdx) document.querySelectorAll("#screenList .data thead th")[colIdx].classList.add(sortDir);
-        const start = (page - 1) * rowsPerPage + 1, end = Math.min(page * rowsPerPage, TOTAL);
-        document.getElementById("entriesLabel").textContent = `Showing ${start} to ${end} of ${TOTAL} entries`;
-        renderPagination();
+        const colIdx = { leadname: 0, name: 1, type: 2, enquiry: 3, follow: 4, status: 5, owner: 6 }[sortKey];
+        if (colIdx !== undefined) document.querySelectorAll("#screenList .data thead th")[colIdx].classList.add(sortDir);
+
+        document.getElementById("entriesLabel").textContent = `Showing ${start} to ${end} of ${totalFiltered} entries`;
+        renderPagination(totalFiltered);
       }
-      function renderPagination() {
-        const pages = Math.ceil(TOTAL / rowsPerPage);
-        let h = `<button class="pg-btn pg-arrow" onclick="goPage(${page - 1})">‹</button>`;
-        for (let i = 1; i <= Math.min(5, pages); i++) h += `<button class="pg-btn ${i === page ? "active" : ""}" onclick="goPage(${i})">${i}</button>`;
-        h += `<button class="pg-btn pg-arrow" onclick="goPage(${page + 1})">›</button>`;
+
+      function renderPagination(totalCount = LEADS.length) {
+        const pages = Math.max(1, Math.ceil(totalCount / rowsPerPage));
+        let h = `<button class="pg-btn pg-arrow" onclick="goPage(${page - 1})" ${page <= 1 ? 'disabled style="opacity:0.4"' : ''}>‹</button>`;
+        for (let i = 1; i <= Math.min(5, pages); i++) {
+          h += `<button class="pg-btn ${i === page ? "active" : ""}" onclick="goPage(${i})">${i}</button>`;
+        }
+        h += `<button class="pg-btn pg-arrow" onclick="goPage(${page + 1})" ${page >= pages ? 'disabled style="opacity:0.4"' : ''}>›</button>`;
         document.getElementById("pgRight").innerHTML = h;
       }
       function goPage(p) { const pages = Math.ceil(TOTAL / rowsPerPage); if (p < 1 || p > pages) return; page = p; renderList(); }
@@ -640,19 +887,204 @@
         if (active) cnt.textContent = "1";
         page = 1; renderList();
       }
-      function setIntent(i) { intent = i; document.getElementById("pillBuy").classList.toggle("active", i === "buy"); document.getElementById("pillRent").classList.toggle("active", i === "rent"); }
-      window.setIntent = setIntent;
-
-      const STAGES = ["New", "Assigned", "Contact", "Viewing", "Proposal", "Negotiation", "Asleep", "Closed Won", "Closed Lost"];
+      const STAGES = ["New", "Assigned", "Contact", "Viewing", "Proposal", "Negotiation", "Asleep", "Sold", "Closed Lost"];
       let currentStage = 4;
+      let leadIsSold = false;
+      let leadTxnType = "Buy"; // "Buy" or "Rent"
+      let leadSoldPrice = null;
+      let leadSoldDate = null;
+      let leadRentDuration = 24;
+      let leadTotalVolume = null;
+      let leadAgencyCommission = null;
+
       function renderPipeline() {
         document.getElementById("pipeline").innerHTML = STAGES.map((s, i) => {
           const cls = i === currentStage ? "active" : i < currentStage ? "past" : "";
-          return `<span class="pipe-step ${cls}" onclick="setStage(${i})">${s}</span>` + (i < STAGES.length - 1 ? '<span class="pipe-sep">→</span>' : "");
+          const locked = leadIsSold && i !== currentStage;
+          const style = locked ? "opacity:0.45;cursor:not-allowed" : "";
+          return `<span class="pipe-step ${cls}" style="${style}" onclick="setStage(${i})">${s}</span>` + (i < STAGES.length - 1 ? '<span class="pipe-sep">→</span>' : "");
         }).join("");
+        if (leadIsSold) {
+          const badge = document.createElement("span");
+          badge.style = "margin-left:10px;font-size:11.5px;color:var(--text-muted)";
+          if (leadTxnType === "Rent") {
+            badge.innerHTML = `<i class="fas fa-lock"></i> Leased at ¥${Number(leadSoldPrice).toLocaleString()}/mo (${leadRentDuration} mos, Total Volume: ¥${Number(leadTotalVolume).toLocaleString()}) on ${leadSoldDate} — status locked`;
+          } else if (leadTxnType === "Project") {
+            badge.innerHTML = `<i class="fas fa-lock"></i> ${currentLead.soldTargetName || ""} sold at ¥${Number(leadSoldPrice).toLocaleString()} on ${leadSoldDate} — status locked`;
+          } else {
+            badge.innerHTML = `<i class="fas fa-lock"></i> Sold at ¥${Number(leadSoldPrice).toLocaleString()} on ${leadSoldDate} — status locked`;
+          }
+          document.getElementById("pipeline").appendChild(badge);
+        }
       }
-      function setStage(i) { currentStage = i; renderPipeline(); toast("Status: " + STAGES[i]); }
+
+      function setStage(i) {
+        // Once sold/leased, no further status changes are allowed.
+        if (leadIsSold) {
+          toast("This lead is closed — status is locked and cannot be changed.", "error");
+          return;
+        }
+        const targetStage = STAGES[i];
+        if (targetStage === "Sold") {
+          // Trigger price capture modal
+          openLeadSoldModal(i);
+          return;
+        }
+        currentStage = i;
+        renderPipeline();
+        toast("Status: " + STAGES[i]);
+      }
       window.setStage = setStage;
+
+      // ===== Dynamic Transaction Capture Modal (Buy vs Rent) =====
+      let _pendingSoldStageIdx = null;
+      function openLeadSoldModal(stageIdx) {
+        _pendingSoldStageIdx = stageIdx;
+        const t = currentLead.intent; // "buy" | "rent" | "project"
+
+        document.getElementById("rentDurationWrap").classList.add("hidden");
+        document.getElementById("projectUnitWrap").classList.add("hidden");
+        document.getElementById("projectUnitNoWrap").classList.add("hidden");
+
+        if (t === "rent") {
+          document.getElementById("soldModalTitle").innerHTML = '<i class="fas fa-key" style="color:var(--accent)"></i> Mark as Rented / Closed';
+          document.getElementById("lblTxnPrice").innerHTML = 'Agreed Monthly Rent (¥/month) <span class="req">*</span>';
+          document.getElementById("leadSoldPrice").placeholder = "Enter agreed monthly rent";
+          document.getElementById("rentDurationWrap").classList.remove("hidden");
+          document.getElementById("lblTxnDate").innerHTML = 'Lease Start Date <span class="req">*</span>';
+
+        } else if (t === "project") {
+          const project = PROJECTS.find(p => p.id === currentLead.projectId);
+          const isG6 = project.group === 6;
+          const target = getProjectTargets(project).find(tg => tg.name === currentLead.targetName);
+
+          document.getElementById("soldModalTitle").innerHTML = isG6
+            ? '<i class="fas fa-house" style="color:var(--accent)"></i> Mark Lot as Sold'
+            : '<i class="fas fa-building" style="color:var(--accent)"></i> Mark Type as Sold';
+          document.getElementById("lblTxnPrice").innerHTML = `Final Sale Price for ${target.name} (¥) <span class="req">*</span>`;
+          document.getElementById("leadSoldPrice").placeholder = "Enter final sale price";
+          document.getElementById("lblTxnDate").innerHTML = 'Sold Date <span class="req">*</span>';
+          document.getElementById("projectUnitWrap").classList.remove("hidden");
+
+          // Khóa cứng — lead này chỉ gắn với đúng 1 target, không cho chọn lại
+          const sel = document.getElementById("leadSoldUnitType");
+          const sold = target.saleStatus === "Sold Out";
+          const price = getTargetPrice(target, project);
+          sel.innerHTML = `<option value="${target.name}">${target.name} — ¥${Number(price).toLocaleString()}${sold ? ' — Already Sold Out' : ''}</option>`;
+          sel.disabled = true;
+          if (sold) {
+            document.getElementById("leadSoldPriceErr").textContent = `${target.name} is already Sold Out. This lead should be marked Closed Lost instead.`;
+            document.getElementById("leadSoldPriceErr").classList.remove("hidden");
+          }
+
+        } else {
+          document.getElementById("soldModalTitle").innerHTML = '<i class="fas fa-handshake" style="color:var(--accent)"></i> Mark as Sold';
+          document.getElementById("lblTxnPrice").innerHTML = 'Final Sale Price (¥) <span class="req">*</span>';
+          document.getElementById("leadSoldPrice").placeholder = "Enter final sale price";
+          document.getElementById("lblTxnDate").innerHTML = 'Sold Date <span class="req">*</span>';
+        }
+
+        document.getElementById("leadSoldPrice").value = "";
+        document.getElementById("leadSoldDate").value = new Date().toISOString().slice(0, 10);
+        document.getElementById("leadSoldPriceErr").classList.add("hidden");
+        document.getElementById("leadSoldDateErr").classList.add("hidden");
+        document.getElementById("leadSoldModal").classList.add("open");
+      }
+      function closeLeadSoldModal() {
+        document.getElementById("leadSoldModal").classList.remove("open");
+        _pendingSoldStageIdx = null;
+      }
+      window.closeLeadSoldModal = closeLeadSoldModal;
+
+      function confirmLeadSold() {
+        const t = currentLead.intent;
+        const priceRaw = document.getElementById("leadSoldPrice").value.trim();
+        const dateRaw = document.getElementById("leadSoldDate").value;
+        const isRent = t === "rent";
+        const isProject = t === "project";
+        const durationMonths = isRent ? (Number(document.getElementById("leadRentDuration").value) || 24) : 1;
+
+        let ok = true;
+        if (!priceRaw) {
+          document.getElementById("leadSoldPriceErr").textContent = isRent ? "Please enter agreed monthly rent." : "Please enter final price.";
+          document.getElementById("leadSoldPriceErr").classList.remove("hidden");
+          ok = false;
+        } else {
+          document.getElementById("leadSoldPriceErr").classList.add("hidden");
+        }
+        if (!dateRaw) {
+          document.getElementById("leadSoldDateErr").textContent = "Please select transaction date.";
+          document.getElementById("leadSoldDateErr").classList.remove("hidden");
+          ok = false;
+        } else {
+          document.getElementById("leadSoldDateErr").classList.add("hidden");
+        }
+
+        const targetName = isProject ? currentLead.targetName : null;
+        if (isProject && !targetName) { ok = false; toast("This lead has no target Type/Lot assigned.", "error"); }
+        if (!ok) return;
+
+        const rawAmount = Number(priceRaw);
+        currentStage = _pendingSoldStageIdx;
+        leadIsSold = true;
+        leadSoldPrice = rawAmount;
+        leadSoldDate = dateRaw;
+
+        if (isRent) {
+          leadTxnType = "Rent";
+          leadRentDuration = durationMonths;
+          leadTotalVolume = rawAmount * durationMonths;
+          leadAgencyCommission = rawAmount;
+          toast(`Lease recorded at ¥${rawAmount.toLocaleString()}/mo (Contract Volume: ¥${leadTotalVolume.toLocaleString()}). Status locked.`, "success");
+
+        } else if (isProject) {
+          leadTxnType = "Project";
+          leadTotalVolume = rawAmount;
+          leadAgencyCommission = Math.round(rawAmount * 0.03 + 60000);
+          currentLead.soldTargetName = targetName;
+
+          const project = PROJECTS.find(p => p.id === currentLead.projectId);
+
+          if (project.group === 6) {
+            // Lot = unit vật lý thật — chốt xong đổi thẳng saleStatus của đúng lot đó,
+            // đúng field schema Admin đã có sẵn (finalSalePrice / soldDate / publishPrice).
+            const lot = project.lots.find(l => l.name === targetName);
+            lot.saleStatus = "Sold Out";
+            lot.finalSalePrice = rawAmount;
+            lot.soldDate = dateRaw;
+            toast(`${targetName} sold at ¥${rawAmount.toLocaleString()}. Lot marked Sold Out.`, "success");
+          } else {
+            // Type (group 5) = bucket nhiều căn, KHÔNG có unit ID riêng.
+            // Chỉ ghi log giao dịch — KHÔNG tự ý đổi saleStatus của cả Type,
+            // vì Type vẫn còn các căn khác chưa bán. Admin tự tay đổi khi họ
+            // xác nhận Type đã bán hết (không có cơ chế đếm tồn kho tự động).
+            TRANSACTIONS.push({
+              id: "TXN-" + Date.now(),
+              leadId: currentLead.id, projectId: project.id,
+              targetType: "floorPlanType", targetName,
+              price: rawAmount, date: dateRaw,
+            });
+            toast(`Sale recorded for ${targetName} at ¥${rawAmount.toLocaleString()}. Type status unchanged — update manually in Project Admin when fully sold.`, "success");
+          }
+
+        } else {
+          leadTxnType = "Buy";
+          leadTotalVolume = rawAmount;
+          leadAgencyCommission = Math.round(rawAmount * 0.03 + 60000);
+          toast(`Lead marked as Sold at ¥${rawAmount.toLocaleString()}. Status locked.`, "success");
+        }
+
+        closeLeadSoldModal();
+        renderPipeline();
+      }
+      window.confirmLeadSold = confirmLeadSold;
+
+      function deleteFileRow(el) {
+        if (!confirm("Delete this file?")) return;
+        el.closest("tr").remove();
+        toast("File deleted.");
+      }
+      window.deleteFileRow = deleteFileRow;
 
       function uploadFile(type) {
         const input = document.createElement('input');
@@ -684,6 +1116,42 @@
       function detailTab(t, btn) {
         document.querySelectorAll(".btab").forEach(b => b.classList.remove("active")); btn.classList.add("active");
         const body = document.getElementById("detailTabBody");
+        if (t === "matching" && currentLead && currentLead.intent === "project") {
+          // Matching Projects: gợi ý các project khác có Type/Lot cùng phân khúc giá & khu vực
+          const curProject = PROJECTS.find(p => p.id === currentLead.projectId);
+          const curTarget = curProject ? getProjectTargets(curProject).find(t2 => t2.name === currentLead.targetName) : null;
+          const curPrice = curTarget ? getTargetPrice(curTarget, curProject) : currentLead.price;
+
+          const rows = PROJECTS
+            .filter(p => p.id !== currentLead.projectId)
+            .flatMap(p => getProjectTargets(p).map(tg => ({ project: p, target: tg })))
+            .map(({ project, target }) => {
+              const price = getTargetPrice(target, project);
+              const sold = target.saleStatus === "Sold Out";
+              const priceMatch = curPrice ? Math.abs(price - curPrice) / curPrice <= 0.2 : false;
+              const prefMatch = curProject && project.prefecture === curProject.prefecture;
+              return { project, target, price, sold, priceMatch, prefMatch, score: (priceMatch?1:0)+(prefMatch?1:0) };
+            })
+            .sort((a,b) => b.score - a.score)
+            .slice(0, 5)
+            .map(m => `
+              <tr class="match-row">
+                <td>
+                  <div class="match-prop-name">${m.project.name} — ${m.target.name}</div>
+                  <div class="match-prop-sub">${m.project.prefecture}, ${m.project.city} · ${m.target.layout || ""}</div>
+                </td>
+                <td ${m.prefMatch ? "style='color:#2a7a2a;font-weight:600'" : ""}>${m.project.prefecture}</td>
+                <td ${m.priceMatch ? "style='color:#2a7a2a;font-weight:600'" : ""}>¥${m.price.toLocaleString()}</td>
+                <td>${m.sold ? '<span class="mc-pill mc-miss">SOLD OUT</span>' : '<span class="mc-pill mc-ok">Available</span>'}</td>
+              </tr>`).join("");
+
+          body.innerHTML = `
+            <table class="data" style="table-layout:auto">
+              <thead><tr><th>Project / Type/Lot</th><th>Prefecture</th><th>Price</th><th>Status</th></tr></thead>
+              <tbody>${rows || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px">No other projects to compare.</td></tr>'}</tbody>
+            </table>`;
+          return; // không rơi xuống nhánh matching Buy bên dưới
+        }
         if (t === "matching") {
           // Mock lead criteria (trong thực tế đọc từ currentLead)
           const lead = {
@@ -787,10 +1255,7 @@
               <tbody>${rows}</tbody>
             </table>`;
         } else if (t === "offers") {
-          body.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-weight:700;font-size:14px">List</div><button class="btn btn-primary btn-pill" onclick="toast('Add offer')"><i class="fas fa-plus-circle"></i> ADD</button></div>
-            <table class="data"><thead><tr><th>Property <span class="sort">↕</span></th><th>Offer Price <span class="sort">↕</span></th><th>Offer Date Sent <span class="sort">↕</span></th><th>Counteroffer Price <span class="sort">↕</span></th><th>Counteroffer Date Sent <span class="sort">↕</span></th><th>Actions</th></tr></thead>
-            <tbody><tr><td>San Jose 4-bedroom Villa</td><td>¥2,200,000</td><td>25 May 2025</td><td>¥2,300,000</td><td>27 May 2025</td><td><i class="fas fa-ellipsis-vertical" style="color:#b3a89c;cursor:pointer"></i></td></tr></tbody></table>
-            <div class="pagination"><div class="pg-left"><div class="rows-sel">10 <i class="fas fa-chevron-down" style="font-size:10px;color:var(--text-dim)"></i></div><span>Showing 1 to 1 of 1 entries</span></div></div>`;
+          renderOffersTab(body);
         } else if (t === "agreements") {
             body.innerHTML = `
               <div style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
@@ -804,16 +1269,19 @@
                   <tr>
                     <th>File name <span class="sort">↕</span></th>
                     <th>Size <span class="sort">↕</span></th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody id="tableBody">
                   <tr>
                     <td>Sales_Agreement_Tanaka_Yui_2026.pdf</td>
                     <td>4.2 MB</td>
+                    <td><i class="fas fa-trash" style="color:#b3a89c;cursor:pointer" onclick="deleteFileRow(this)"></i></td>
                   </tr>
                   <tr>
                     <td>Reservation_Contract_Santi_Argo.pdf</td>
                     <td>2.8 MB</td>
+                    <td><i class="fas fa-trash" style="color:#b3a89c;cursor:pointer" onclick="deleteFileRow(this)"></i></td>
                   </tr>
                 </tbody>
               </table>`;
@@ -833,6 +1301,7 @@
                     <th>File name <span class="sort">↕</span></th>
                     <th>Size <span class="sort">↕</span></th>
                     <th>Preview</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody id="tableBody">
@@ -840,11 +1309,13 @@
                     <td>Property_Front_View.jpg</td>
                     <td>5.6 MB</td>
                     <td><img src="https://picsum.photos/id/1015/80/60" onclick="viewImage(this)" style="cursor:pointer;border-radius:4px;" alt="Property"></td>
+                    <td><i class="fas fa-trash" style="color:#b3a89c;cursor:pointer" onclick="deleteFileRow(this)"></i></td>
                   </tr>
                   <tr>
                     <td>Living_Room_Interior.png</td>
                     <td>3.9 MB</td>
                     <td><img src="https://picsum.photos/id/201/80/60" onclick="viewImage(this)" style="cursor:pointer;border-radius:4px;" alt="Interior"></td>
+                    <td><i class="fas fa-trash" style="color:#b3a89c;cursor:pointer" onclick="deleteFileRow(this)"></i></td>
                   </tr>
                 </tbody>
               </table>`;
@@ -863,16 +1334,19 @@
                   <tr>
                     <th>File name <span class="sort">↕</span></th>
                     <th>Size <span class="sort">↕</span></th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody id="tableBody">
                   <tr>
                     <td>Contract_Agreement_20260715.pdf</td>
                     <td>3.8 MB</td>
+                    <td><i class="fas fa-trash" style="color:#b3a89c;cursor:pointer" onclick="deleteFileRow(this)"></i></td>
                   </tr>
                   <tr>
                     <td>Payment_Receipt_Inv_7890.pdf</td>
                     <td>1.1 MB</td>
+                    <td><i class="fas fa-trash" style="color:#b3a89c;cursor:pointer" onclick="deleteFileRow(this)"></i></td>
                   </tr>
                 </tbody>
               </table>`;
@@ -888,7 +1362,6 @@
             <table class="data">
               <thead>
                 <tr>
-                  <th style="width:40px"></th>
                   <th onclick="sortBy('name')">Lead Name <span class="sort">↕</span></th>
                   <th onclick="sortBy('name')">Contact Name <span class="sort">↕</span></th>
                   <th onclick="sortBy('type')">Property <span class="sort">↕</span></th>
@@ -900,7 +1373,6 @@
               </thead>
               <tbody id="leadsTableBody">
                 <tr>
-                  <td><input type="checkbox" class="checkbox"></td>
                   <td>Santi Argo - Complex in Tokyo</td>
                   <td>Santi Argo</td>
                   <td>Complex in Tokyo</td>
@@ -910,7 +1382,6 @@
                   <td>Chris Sales</td>
                 </tr>
                 <tr>
-                  <td><input type="checkbox" class="checkbox"></td>
                   <td>Santi Argo - Maria Villa</td>
                   <td>Santi Argo</td>
                   <td>Maria Villa</td>
@@ -947,7 +1418,118 @@
       window.toggleMore = toggleMore;
 
       function showList() { document.getElementById("screenList").classList.remove("hidden"); document.getElementById("screenDetail").classList.add("hidden"); document.getElementById("screenEdit").classList.add("hidden"); }
-      function showDetail() { document.getElementById("screenList").classList.add("hidden"); document.getElementById("screenDetail").classList.remove("hidden"); document.getElementById("screenEdit").classList.add("hidden"); renderPipeline(); detailTab("matching", document.querySelector(".btab")); window.scrollTo(0, 0); }
+      
+      let currentLead = null;
+
+      function showDetail(id) {
+        if (id != null) {
+          const found = LEADS.find(l => l.id === id);
+          if (found) currentLead = found;
+        }
+        if (!currentLead) currentLead = LEADS[0]; // fallback an toàn
+
+        renderDetailScreen(currentLead);
+
+        document.getElementById("screenList").classList.add("hidden");
+        document.getElementById("screenDetail").classList.remove("hidden");
+        document.getElementById("screenEdit").classList.add("hidden");
+        renderPipeline();
+        detailTab("matching", document.querySelector(".btab"));
+        window.scrollTo(0, 0);
+      }
+      window.showDetail = showDetail;
+
+      function renderDetailScreen(lead) {
+        const isRent = lead.intent === "rent";
+        const isProject = lead.intent === "project";
+
+        document.querySelector(".dt-name").textContent = lead.name;
+        const matchingLabel = document.getElementById("btabMatching");
+        if (matchingLabel) matchingLabel.textContent = isProject ? "Matching Projects" : "Matching Properties";
+
+        // ---- Stats trên đầu ----
+        let statsBody = "";
+        if (isProject) {
+          const project = PROJECTS.find(p => p.id === lead.projectId);
+          statsBody = `
+            <div class="dt-stat"><i class="fas fa-building"></i><div><div class="l">Project</div><div class="v">${project ? project.name : "—"}</div></div></div>
+            <div class="dt-stat"><i class="fas fa-tag"></i><div><div class="l">Interest</div><div class="v">New Development</div></div></div>
+            <div class="dt-stat"><i class="fas fa-yen-sign"></i><div><div class="l">From</div><div class="v">¥${lead.price.toLocaleString()}</div></div></div>`;
+        } else {
+          statsBody = `
+            <div class="dt-stat"><i class="fas fa-house"></i><div><div class="l">Looking for</div><div class="v">${lead.type}</div></div></div>
+            <div class="dt-stat"><i class="fas fa-tag"></i><div><div class="l">Interest</div><div class="v">${isRent ? "To Rent" : "To Buy"}</div></div></div>
+            <div class="dt-stat"><i class="fas fa-yen-sign"></i><div><div class="l">Budget</div><div class="v">¥${lead.price.toLocaleString()}${isRent ? "/mo" : ""}</div></div></div>`;
+        }
+
+        document.querySelector(".dt-stats").innerHTML = statsBody + `
+          <button class="btn btn-primary btn-pill" onclick="showEdit()">Edit</button>
+          <div class="more-menu">
+            <button class="nav-icon" onclick="toggleMore(event)"><i class="fas fa-ellipsis-vertical"></i></button>
+            <div class="menu-pop" id="morePop">
+              <button onclick="if(confirm('Delete this lead?'))toast('Deleted')" style="color:#c53030">Delete</button>
+            </div>
+          </div>`;
+
+        // ---- Nếu là Project: hiện thêm danh sách Unit Type quan tâm + tồn kho ----
+        let unitsInfoEl = document.getElementById("projectUnitsInfo");
+        if (!unitsInfoEl) {
+          // tạo mới nếu HTML chưa có sẵn div này
+          unitsInfoEl = document.createElement("div");
+          unitsInfoEl.id = "projectUnitsInfo";
+          document.getElementById("pipeline").insertAdjacentElement("afterend", unitsInfoEl);
+        }
+        if (isProject) {
+          const project = PROJECTS.find(p => p.id === lead.projectId);
+          const target = project ? getProjectTargets(project).find(t => t.name === lead.targetName) : null;
+          if (target) {
+            const sold = target.saleStatus === "Sold Out";
+            const priceTxt = "¥" + Number(getTargetPrice(target, project)).toLocaleString();
+            unitsInfoEl.innerHTML = `<div style="margin-top:10px">
+              <span class="mc-pill ${sold ? 'mc-miss' : 'mc-ok'}">${target.name} — ${priceTxt}${sold ? ' (SOLD OUT)' : ''}</span>
+              <span style="margin-left:8px;font-size:11.5px;color:var(--text-muted)">${target.layout || ""}</span>
+            </div>`;
+          } else {
+            unitsInfoEl.innerHTML = `<div style="margin-top:10px"><em style="color:var(--text-muted)">Target Type/Lot not found</em></div>`;
+          }
+          unitsInfoEl.classList.remove("hidden");
+        } else {
+          unitsInfoEl.innerHTML = "";
+          unitsInfoEl.classList.add("hidden");
+        }
+
+        // ---- Details section ----
+        document.querySelectorAll(".sec")[0].querySelector(".kv-grid").innerHTML = `
+          <div><div class="kv-l">Id</div><div class="kv-v">${100000 + lead.id}</div></div>
+          <div><div class="kv-l">Lead Name</div><div class="kv-v">${lead.leadname}</div></div>
+          <div><div class="kv-l">Status</div><div class="kv-v">${lead.status}</div></div>
+          <div><div class="kv-l">Owner</div><div class="kv-v">${OWNERS[lead.owner] || lead.owner}</div></div>
+          <div><div class="kv-l">Created</div><div class="kv-v">${lead.enquiry}</div></div>
+          <div><div class="kv-l">Next Follow Up Date</div><div class="kv-v">${lead.follow}</div></div>
+          <div><div class="kv-l">Property Type</div><div class="kv-v">${lead.type}</div></div>`;
+
+        // ---- Budget & Necessities section ----
+        let budgetHtml;
+        if (isProject) {
+          const project = PROJECTS.find(p => p.id === lead.projectId);
+          const isG6 = project && project.group === 6;
+          budgetHtml = `
+            <div><div class="kv-l">Transaction Type</div><div class="kv-v">New Development</div></div>
+            <div><div class="kv-l">${isG6 ? "Lot" : "Unit Type"}</div><div class="kv-v">${lead.targetName || "—"}</div></div>
+            <div><div class="kv-l">Sale Price</div><div class="kv-v">¥${lead.price.toLocaleString()}</div></div>`;
+        } else {
+          budgetHtml = `
+            <div><div class="kv-l">Transaction Type</div><div class="kv-v">${isRent ? "To Rent" : "To Buy"}</div></div>
+            <div><div class="kv-l">${isRent ? "Monthly Rent" : "List Selling Price"}</div><div class="kv-v">¥${lead.price.toLocaleString()}${isRent ? "/mo" : ""}</div></div>`;
+        }
+        document.querySelectorAll(".sec")[2].querySelector(".kv-grid").innerHTML = budgetHtml;
+
+        // ---- Contact Information ----
+        document.querySelectorAll(".sec")[4].querySelector(".kv-grid").innerHTML = `
+          <div><div class="kv-l">Contact Name</div><div class="kv-v">${lead.name}</div></div>
+          <div><div class="kv-l">Phone</div><div class="kv-v">—</div></div>
+          <div><div class="kv-l">Email</div><div class="kv-v link">—</div></div>`;
+      }
       function showEdit() { document.getElementById("screenList").classList.add("hidden"); document.getElementById("screenDetail").classList.add("hidden"); document.getElementById("screenEdit").classList.remove("hidden"); window.scrollTo(0, 0); }
       function saveLead() { toast("Lead saved successfully", "success"); setTimeout(showDetail, 400); }
       window.showList = showList; window.showDetail = showDetail; window.showEdit = showEdit; window.saveLead = saveLead;
@@ -987,6 +1569,7 @@
       // Close on backdrop click
       document.addEventListener("click", e => {
         if (e.target.id === "sendConfirmModal") closeSendConfirm();
+        if (e.target.id === "leadSoldModal") closeLeadSoldModal();
       });
 
       renderList();

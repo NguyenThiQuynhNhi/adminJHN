@@ -2101,6 +2101,47 @@
         display: block;
         font-size: 13px;
       }
+      .staff-section {
+  border-bottom: 1px solid var(--border);
+}
+.staff-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  padding: 12px 18px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.staff-clients {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.staff-client-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 18px 9px 36px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  font-size: 13px;
+}
+.staff-client-item:hover {
+  background: #f6f1e8;
+}
+.staff-client-item.active {
+  background: #f1e9da;
+  border-left-color: var(--gold);
+}
+.staff-client-item .name {
+  flex: 1;
+  font-weight: 500;
+}
+.staff-client-item .meta {
+  font-size: 11px;
+  color: var(--text-sec);
+  white-space: nowrap;
+}
 
       @media (max-width: 1100px) {
         .info {
@@ -2134,17 +2175,17 @@
   </head>
   <body>
     <!-- ============ PANEL 1 — SIDEBAR ============ -->
+
     <aside class="sidebar" id="sidebar">
       <div class="sb-top">
         <div class="sb-search">
           <i class="fas fa-search"></i>
-          <input
-            type="text"
-            id="searchInput"
-            placeholder="Search messages, people"
-            oninput="renderList()"
-          />
+          <input type="text" id="searchInput" placeholder="Search messages, people" oninput="renderList()" />
         </div>
+      </div>
+      <div class="sb-tabs" id="sbTabs" style="display:none">
+        <div class="sb-tab active" data-view="inbox" onclick="switchSidebarView('inbox')">Agency Message</div>
+        <div class="sb-tab" data-view="staff" onclick="switchSidebarView('staff')">Agents Message</div>
       </div>
       <div class="convo-list" id="convoList"></div>
     </aside>
@@ -2486,22 +2527,40 @@
         ],
       };
 
+      // const companyInboxThread = {
+      //   id: "company-inbox",
+      //   kind: "company",
+      //   name: "YUUSHI Agency – Company Inbox",
+      //   img: AV(70),
+      //   time: "10:20 AM",
+      //   preview: "🏠 Appraisal Request — Tanaka Yui · Aoyama, Minato-ku",
+      //   unread: 1,
+      //   online: true,
+      //   company: "Agency Management & Support",
+      //   address: "All clients appraisal requests & lead routing",
+      //   response: "Immediate (internal)",
+      //   saved: false,
+      //   msgs: [
+      //     { sender: "them", type: "appraisal", appraisal: APPRAISAL_TANAKA, time: "10:20 AM" },
+      //     { sender: "them", text: "Hello, I'd like to get my house appraised for a possible sale.", time: "10:22 AM" },
+      //   ],
+      // };
+
       /* Client conversations — end users the agent is chatting with. */
       const clients = [
         {
-          id: "u0", kind: "client", name: "Tanaka Yui", img: AV(24),
+          id: "u0", kind: "client", name: "Tanaka Yui", img: AV(24), agentId: "a1",
           time: "10:22 AM", preview: "🏠 Appraisal Request — House · Aoyama, Minato-ku",
           unread: 1, online: true, email: "tanaka.yui@example.com", phone: "+81-90-1122-3344",
           saved: false,
           msgs: [
             { sender: "them", type: "appraisal", appraisal: APPRAISAL_TANAKA, time: "10:20 AM" },
-            { sender: "them", type: "pdf", pdfName: APPRAISAL_TANAKA.pdfName, pdfSize: APPRAISAL_TANAKA.pdfSize, appraisalId: APPRAISAL_TANAKA.id, time: "10:20 AM" },
             { sender: "them", text: "Hello, I'd like to get my house appraised for a possible sale.", time: "10:22 AM" },
           ],
         },
-        { id: "u1", kind: "client", name: "Liam Anderson", img: AV(11), time: "04:50 PM", preview: "I don't know", unread: 0, online: false, email: "liam.anderson@email.com", phone: "+81 90 1234 5678", saved: false, msgs: genMsgs("Liam Anderson", "I don't know") },
-        { id: "u2", kind: "client", name: "Lucas Williams", img: AV(12), time: "10:30 AM", preview: "Hey, how's it going?", unread: 2, online: true, email: "lucas.williams@email.com", phone: "+81 90 2345 6789", saved: false, msgs: genMsgs("Lucas Williams", "Hey, how's it going?") },
-        { id: "u3", kind: "client", name: "Grace Miller", img: AV(5), time: "10:25 AM", preview: "Can't wait for the weekend!", unread: 0, online: true, email: "grace.miller@email.com", phone: "+81 90 3456 7890", saved: false, msgs: [
+        { id: "u1", kind: "client", name: "Liam Anderson", img: AV(11), agentId: "a2", time: "04:50 PM", preview: "I don't know", unread: 0, online: false, email: "liam.anderson@email.com", phone: "+81 90 1234 5678", saved: false, msgs: genMsgs("Liam Anderson", "I don't know") },
+        { id: "u2", kind: "client", name: "Lucas Williams", img: AV(12), agentId: "a1", time: "10:30 AM", preview: "Hey, how's it going?", unread: 2, online: true, email: "lucas.williams@email.com", phone: "+81 90 2345 6789", saved: false, msgs: genMsgs("Lucas Williams", "Hey, how's it going?") },
+        { id: "u3", kind: "client", name: "Grace Miller", img: AV(5), agentId: "a3", time: "10:25 AM", preview: "Can't wait for the weekend!", unread: 0, online: true, email: "grace.miller@example.com", phone: "+81 90 3456 7890", saved: false, msgs: [
             { sender: "them", text: "Hi Taro! I'm doing well, thanks. Can't wait for the weekend!", time: "10:30 AM" },
             { sender: "me", text: "I know, right? Weekend plans are the best. Any exciting plans on your end?", time: "10:30 AM" },
             { sender: "them", text: "Absolutely! I'm thinking of going for a hike on Saturday. How about you?", time: "10:30 AM" },
@@ -2509,11 +2568,11 @@
             { sender: "them", text: "That sounds like a great plan! Excited 😀", time: "10:30 AM" },
             { sender: "me", text: "Can't wait for the weekend!", time: "10:30 AM", status: "failed" },
         ] },
-        { id: "u4", kind: "client", name: "Sophia Chen", img: AV(9), time: "07:23 PM", preview: "Remember that concert last y...", unread: 0, online: false, email: "sophia.chen@email.com", phone: "+81 90 4567 8901", saved: false, msgs: genMsgs("Sophia Chen", "Remember that concert last year?") },
-        { id: "u5", kind: "client", name: "Benjamin Knight", img: AV(13), time: "08:45 PM", preview: "Just got back from a hiking trip!", unread: 1, online: false, email: "benjamin.knight@email.com", phone: "+81 90 5678 9012", saved: false, msgs: genMsgs("Benjamin Knight", "Just got back from a hiking trip!") },
-        { id: "u6", kind: "client", name: "Olivia Foster", img: AV(20), time: "Yesterday", preview: "Excited for the upcoming vac...", unread: 0, online: false, email: "olivia.foster@email.com", phone: "+81 90 6789 0123", saved: false, msgs: genMsgs("Olivia Foster", "Excited for the upcoming vacation!") },
-        { id: "u7", kind: "client", name: "Jackson Adams", img: AV(15), time: "Yesterday", preview: "Looking forward to the weekend...", unread: 0, online: false, email: "jackson.adams@email.com", phone: "+81 90 7890 1234", saved: false, msgs: genMsgs("Jackson Adams", "Looking forward to the weekend!") },
-        { id: "u8", kind: "client", name: "Ethan Sullivan", img: AV(33), time: "Yesterday", preview: "Finished reading a captivating no...", unread: 0, online: false, email: "ethan.sullivan@email.com", phone: "+81 90 8901 2345", saved: false, msgs: genMsgs("Ethan Sullivan", "Finished reading a captivating novel!") },
+        { id: "u4", kind: "client", name: "Sophia Chen", agentId: "a3", img: AV(9), time: "07:23 PM", preview: "Remember that concert last y...", unread: 0, online: false, email: "sophia.chen@email.com", phone: "+81 90 4567 8901", saved: false, msgs: genMsgs("Sophia Chen", "Remember that concert last year?") },
+        { id: "u5", kind: "client", name: "Benjamin Knight", agentId: "a3", img: AV(13), time: "08:45 PM", preview: "Just got back from a hiking trip!", unread: 1, online: false, email: "benjamin.knight@email.com", phone: "+81 90 5678 9012", saved: false, msgs: genMsgs("Benjamin Knight", "Just got back from a hiking trip!") },
+        { id: "u6", kind: "client", name: "Olivia Foster", agentId: "a4", img: AV(20), time: "Yesterday", preview: "Excited for the upcoming vac...", unread: 0, online: false, email: "olivia.foster@email.com", phone: "+81 90 6789 0123", saved: false, msgs: genMsgs("Olivia Foster", "Excited for the upcoming vacation!") },
+        { id: "u7", kind: "client", name: "Jackson Adams", agentId: "a3", img: AV(15), time: "Yesterday", preview: "Looking forward to the weekend...", unread: 0, online: false, email: "jackson.adams@email.com", phone: "+81 90 7890 1234", saved: false, msgs: genMsgs("Jackson Adams", "Looking forward to the weekend!") },
+        { id: "u8", kind: "client", name: "Ethan Sullivan", agentId: "a3", img: AV(33), time: "Yesterday", preview: "Finished reading a captivating no...", unread: 0, online: false, email: "ethan.sullivan@email.com", phone: "+81 90 8901 2345", saved: false, msgs: genMsgs("Ethan Sullivan", "Finished reading a captivating novel!") },
       ];
 
       const LANGS = [
@@ -3047,7 +3106,7 @@
         $("epModal").classList.remove("open");
       }
 
-      function renderAppraisalCard(a) {
+      function renderAppraisalCard(a, showSuggest) {
         return `
           <div class="apb">
             <div class="apb-head">
@@ -3061,22 +3120,12 @@
                 <span class="apb-price">${escapeHtml(a.desiredPrice)}</span>
               </div>
               <button class="apb-btn" onclick="openApprModal('${a.id}')">View Full Details</button>
+              ${showSuggest ? `<button class="apb-btn" style="margin-top:8px;background:var(--accent);color:#fff;border-color:var(--accent)" onclick="openSuggestAgentModal('${a.id}', '${a.clientName}')">Suggest Agent</button>` : ""}
             </div>
           </div>`;
       }
 
-      function renderPdfBubble(m) {
-        return `
-          <div class="pdfb" onclick="openApprModal('${m.appraisalId}')">
-            <span class="pdfb-icon"><i class="fas fa-file-pdf"></i></span>
-            <div class="pdfb-mid">
-              <div class="pdfb-name">${escapeHtml(m.pdfName)}</div>
-              <div class="pdfb-meta">${escapeHtml(m.pdfSize)}</div>
-            </div>
-            <i class="fas fa-arrow-up-right-from-square pdfb-dl"></i>
-          </div>`;
-      }
-
+      
       function openApprModal(id) {
         const a = APPRAISAL_TANAKA.id === id ? APPRAISAL_TANAKA : null;
         if (!a) return;
@@ -3102,6 +3151,7 @@
       // `currentKind` reflects the active conversation: "admin" (the pinned
       // Platform Admin / Support thread) or "client" (an end-user thread).
       let currentKind = "client";
+      let currentUserRole = "ceo"; // "ceo" | "agent"  — demo default CEO
       let current = null; // current conversation object
       let pinned = []; // [{name, text}]
       let translatedIdx = new Set(); // indices of messages currently shown translated
@@ -3112,8 +3162,8 @@
 
       // All conversation objects, admin thread first.
       function allConvos() {
-        return [adminThread].concat(clients);
-      }
+  return [adminThread].concat(clients);
+}
       function findConvo(id) {
         return allConvos().find((x) => x.id === id);
       }
@@ -3121,9 +3171,94 @@
       /* ============ SIDEBAR LIST ============ */
       // The Admin / Support thread is pinned at the top; the Client threads are
       // listed beneath it. There are no Agent/Client tabs.
+      let sidebarView = "inbox"; // "inbox" | "staff"
+
+function switchSidebarView(view) {
+  sidebarView = view;
+  document.querySelectorAll("#sbTabs .sb-tab").forEach(t => 
+    t.classList.toggle("active", t.dataset.view === view)
+  );
+  renderList();
+}
+
+function groupClientsByAgent() {
+  // Group clients by the agent they're chatting with
+  const groups = {};
+  AGENTS.forEach(a => {
+    groups[a.id] = { agent: a, chats: [] };
+  });
+  
+  clients.forEach(c => {
+    if (c.agentId && groups[c.agentId]) {
+      groups[c.agentId].chats.push(c);
+    }
+  });
+  
+  return groups;
+}
+
+function renderStaffView() {
+  const list = $("convoList");
+  list.innerHTML = "";
+  const groups = groupClientsByAgent();
+  
+  let hasAny = false;
+  AGENTS.forEach(a => {
+    const g = groups[a.id];
+    if (!g.chats.length) return;
+    hasAny = true;
+    
+    const section = document.createElement("div");
+    section.className = "staff-section";
+    
+    const title = document.createElement("div");
+    title.className = "staff-name";
+    title.textContent = a.name;
+    section.appendChild(title);
+    
+    const clientsList = document.createElement("div");
+    clientsList.className = "staff-clients";
+    
+    g.chats.forEach(c => {
+      const item = document.createElement("div");
+      item.className = "staff-client-item" + (current && c.id === current.id ? " active" : "");
+      item.onclick = () => selectConvo(c.id);
+      
+      const msgCount = c.msgs ? c.msgs.length : 0;
+      item.innerHTML = `
+        <span class="name">${escapeHtml(c.name)}</span>
+        <span class="meta">${msgCount} msg${msgCount !== 1 ? "s" : ""}</span>`;
+      
+      clientsList.appendChild(item);
+    });
+    
+    section.appendChild(clientsList);
+    list.appendChild(section);
+  });
+  
+  if (!hasAny) {
+    list.innerHTML = `<div class="empty-list">No active conversations yet.</div>`;
+  }
+}
+
       function renderList() {
-        const q = ($("searchInput").value || "").toLowerCase();
-        const list = $("convoList");
+        // Guard: check if elements exist
+        const sbTabs = $("sbTabs");
+        const searchInput = $("searchInput");
+        const convoList = $("convoList");
+        
+        if (!sbTabs || !searchInput || !convoList) return; // abort if elements missing
+        
+        // Nếu CEO, hiển thị tabs
+        sbTabs.style.display = currentUserRole === "ceo" ? "flex" : "none";
+        
+        if (sidebarView === "staff") {
+          renderStaffView();
+          return;
+        }
+        
+        const q = (searchInput.value || "").toLowerCase();
+        const list = convoList;
         list.innerHTML = "";
 
         const matches = (c) =>
@@ -3227,6 +3362,18 @@
         $("topDot").style.display = c.online ? "block" : "none";
 
         const isAdmin = currentKind === "admin";
+        // Show role badge in chat-top (optional)
+        if (currentUserRole === "ceo") {
+          $("topName").textContent += " [CEO View]";
+        }
+        const isCeoViewingAgent = currentKind === "client" && current.ceoReadOnly;
+        const composerDisabled = isAdmin || isCeoViewingAgent;
+
+        // Disable composer
+        $("composerInput").disabled = composerDisabled;
+        $("composerInput").style.opacity = composerDisabled ? "0.5" : "1";
+        $("composerInput").placeholder = composerDisabled ? "You cannot reply" : "Type message...";
+        document.querySelectorAll(".composer button").forEach(btn => btn.disabled = composerDisabled);
         const sub = $("topSub");
         const statusTxt = c.online
           ? '<span class="st-online">Online</span>'
@@ -3282,12 +3429,8 @@
           const avatar = isMe ? AV(60) : c.img;
 
           if (m.type === "appraisal") {
-            row.innerHTML = `<img class="m-av" src="${avatar}" alt="" /><div class="m-body"><div class="m-meta">${name} · ${m.time}</div>${renderAppraisalCard(m.appraisal)}</div>`;
-            box.appendChild(row);
-            return;
-          }
-          if (m.type === "pdf") {
-            row.innerHTML = `<img class="m-av" src="${avatar}" alt="" /><div class="m-body"><div class="m-meta">${name} · ${m.time}</div>${renderPdfBubble(m)}</div>`;
+            const showSuggestBtn = currentUserRole === "ceo" && !current.ceoReadOnly;
+            row.innerHTML = `<img class="m-av" src="${avatar}" alt="" /><div class="m-body"><div class="m-meta">${name} · ${m.time}</div>${renderAppraisalCard(m.appraisal, showSuggestBtn)}</div>`;
             box.appendChild(row);
             return;
           }
@@ -3734,6 +3877,69 @@
         if (e.key === "Escape") closeAllPopups();
       });
 
+      // Agents list — in real app, fetch from backend
+      const AGENTS = [
+        { id: "a1", name: "Taro Yamamoto", img: AV(61) },
+        { id: "a2", name: "Yuki Sato", img: AV(62) },
+        { id: "a3", name: "Keiko Tanaka", img: AV(63) },
+      ];
+
+      function openSuggestAgentModal(aprId, clientName) {
+        const modal = document.createElement("div");
+        modal.className = "modal-ov open";
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        modal.innerHTML = `
+          <div class="modal" style="width:400px">
+            <div class="ep-head">
+              <div><h3>Suggest Agent to ${escapeHtml(clientName)}</h3></div>
+              <button class="ep-x" onclick="this.closest('.modal-ov').remove()">×</button>
+            </div>
+            <div class="ep-body" style="padding:16px">
+              ${AGENTS.map(a => `
+                <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:9px;margin-bottom:8px;cursor:pointer" onclick="confirmSuggestAgent('${a.id}', '${escapeHtml(clientName)}', ${aprId})">
+                  <img src="${a.img}" style="width:40px;height:40px;border-radius:50%;object-fit:cover" />
+                  <span style="font-weight:600">${escapeHtml(a.name)}</span>
+                </div>
+              `).join("")}
+            </div>
+          </div>`;
+        document.body.appendChild(modal);
+      }
+
+      function confirmSuggestAgent(agentId, clientName, aprId) {
+        const agent = AGENTS.find(a => a.id === agentId);
+        if (!agent) return;
+        
+        // Fix: dùng ID thay vì clientName
+        const clientId = current.id;
+        let agentChat = clients.find(c => c.id === "agent-" + agentId + "-" + clientId);
+        if (!agentChat) {
+          agentChat = {
+            id: "agent-" + agentId + "-" + clientId,
+            kind: "client",
+            name: current.name,
+            img: current.img,
+            email: current.email,
+            phone: current.phone,
+            time: "Now",
+            preview: "New conversation started by CEO",
+            unread: 0,
+            online: true,
+            saved: false,
+            ceoReadOnly: true,
+            agentId: agentId,
+            msgs: [
+              { sender: "them", text: "[Agent " + agent.name + " has been suggested to handle your request]", time: "Now" }
+            ]
+          };
+          clients.push(agentChat);
+        }
+        
+        document.querySelector(".modal-ov").remove();
+        selectConvo(agentChat.id);
+        toast("Started chat with " + agent.name);
+      }
+
       /* ============ INIT ============ */
       (function init() {
         // Build static popover panel contents + wire popovers now that $ is defined
@@ -3745,7 +3951,7 @@
         wireEpPopovers();
 
         renderList();
-        // default: open the pinned Platform Admin / Support thread
+        // default: open the pinned Company Inbox thread
         selectConvo("u0");
         if (window.innerWidth <= 760) $("sidebar").classList.add("hidden");
       })();

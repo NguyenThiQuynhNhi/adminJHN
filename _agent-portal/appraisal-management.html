@@ -195,8 +195,7 @@
 
           <div class="filter-bar">
             <div class="filter-field has-icon"><i class="fas fa-search fi-left"></i><input id="searchInput" placeholder="Search client name…" /></div>
-            <div class="filter-field"><select id="statusFilter"><option value="">Status</option><option>New</option><option>In Progress</option><option>Converted</option><option>Declined</option></select><i class="fas fa-chevron-down fi-right"></i></div>
-            <div class="filter-field"><select id="sourceFilter"><option value="">Source</option><option>Auto-Distributed</option><option>Client Self-Sent</option></select><i class="fas fa-chevron-down fi-right"></i></div>
+            <div class="filter-field"><select id="statusFilter"><option value="">Status</option><option>In Progress</option><option>Converted</option><option>Declined</option></select><i class="fas fa-chevron-down fi-right"></i></div>
             <div class="filter-field"><select id="typeFilter"><option value="">Property Type</option><option>House</option><option>Apartment</option><option>Villa</option><option>Office</option></select><i class="fas fa-chevron-down fi-right"></i></div>
           </div>
 
@@ -206,7 +205,6 @@
                 <th onclick="sortBy('client')">Client Name <span class="sort">↕</span></th>
                 <th onclick="sortBy('type')">Property Type <span class="sort">↕</span></th>
                 <th onclick="sortBy('location')">Location <span class="sort">↕</span></th>
-                <th onclick="sortBy('source')">Source <span class="sort">↕</span></th>
                 <th onclick="sortBy('status')">Status <span class="sort">↕</span></th>
                 <th onclick="sortBy('received')">Received Date <span class="sort">↕</span></th>
                 <th>Actions</th>
@@ -233,7 +231,6 @@
                 <div class="dt-created" id="dtCreated">—</div>
               </div>
               <div class="dt-stats">
-                <div class="dt-stat"><i class="fas fa-signal"></i><div><div class="l">Source</div><div class="v" id="dtSource">—</div></div></div>
                 <div class="dt-stat"><i class="fas fa-flag"></i><div><div class="l">Status</div><div class="v" id="dtStatus">—</div></div></div>
                 <button class="btn btn-green btn-pill" id="btnConvert" onclick="markConverted()"><i class="fas fa-circle-check"></i> Mark Converted</button>
                 <button class="btn btn-red btn-pill" id="btnDecline" onclick="declineAppraisal()"><i class="fas fa-ban"></i> Decline</button>
@@ -303,7 +300,7 @@
       ============================================================ */
       let APPRAISALS = [
         {
-          id: "APR-3001", source: "Auto-Distributed", score: 87, status: "In Progress",
+          id: "APR-3001", score: 87, status: "In Progress",
           received: "2026-06-18",
           clientInfo: {
             name: "Tanaka Yui", email: "tanaka.yui@example.com", phone: "+81-90-1122-3344",
@@ -341,7 +338,7 @@
           comments: [{ body: "Called client, confirmed she wants to list by end of month.", by: "Chris Sales", at: "19 Jun 2026, 10:22" }],
         },
         {
-          id: "APR-3002", source: "Client Self-Sent", score: 0, status: "New",
+          id: "APR-3002", score: 0, status: "In Progress",
           received: "2026-07-02",
           clientInfo: { name: "Santi Argo", phone: "+34-655-5231", email: "santi-argo@gmail.com", address: "5-12-3 Ebisu, Shibuya-ku, Tokyo, 150-0013", specificRequests: "Open to offers, no rush on timeline." },
           propertyInfo: {
@@ -365,7 +362,7 @@
           comments: [],
         },
         {
-          id: "APR-3002b", source: "Client Self-Sent", score: 0, status: "In Progress",
+          id: "APR-3002b", score: 0, status: "In Progress",
           received: "2026-04-14",
           clientInfo: { name: "Santi Argo", phone: "+34-655-5231", email: "santi-argo@gmail.com", address: "5-12-3 Ebisu, Shibuya-ku, Tokyo, 150-0013", specificRequests: "Second property from the same client — investment condo, wants comparable pricing to the villa." },
           propertyInfo: {
@@ -389,7 +386,7 @@
           comments: [{ body: "Same client as APR-3002 — flagged as repeat seller.", by: "Chris Sales", at: "15 Apr 2026, 09:02" }],
         },
         {
-          id: "APR-3003", source: "Auto-Distributed", score: 64, status: "Converted",
+          id: "APR-3003", score: 64, status: "Converted",
           received: "2026-05-11",
           clientInfo: { name: "Colin Sik", phone: "+81-80-2233-9988", email: "colin.sik@example.com", address: "5-1 Sunworld, Shibuya, Tokyo", specificRequests: "" },
           propertyInfo: {
@@ -414,7 +411,7 @@
           comments: [{ body: "Deal closed via chat, property now listed as PROP-2210. Marking converted.", by: "Tony Sales", at: "20 May 2026, 15:40" }],
         },
         {
-          id: "APR-3004", source: "Auto-Distributed", score: 41, status: "Declined",
+          id: "APR-3004", score: 41, status: "Declined",
           received: "2026-04-28",
           clientInfo: { name: "Andreas Papandreas", phone: "+30-694-000-1122", email: "andreas.p@example.com", address: "9 Near Beach Rd, Chiba", specificRequests: "Wanted an unrealistic price above market — declined." },
           propertyInfo: {
@@ -443,14 +440,10 @@
       let currentId = null;
 
       function statusBadge(s) {
-        const map = { "New": "badge-new", "In Progress": "badge-inprogress", "Converted": "badge-converted", "Declined": "badge-declined" };
+        const map = { "In Progress": "badge-inprogress", "Converted": "badge-converted", "Declined": "badge-declined" };
         return `<span class="badge ${map[s] || "badge-new"}">${esc(s)}</span>`;
       }
-      function sourceBadge(s) {
-        return s === "Auto-Distributed"
-          ? `<span class="badge badge-auto"><i class="fas fa-shuffle" style="font-size:9px"></i> Auto-Distributed</span>`
-          : `<span class="badge badge-self"><i class="fas fa-paper-plane" style="font-size:9px"></i> Client Self-Sent</span>`;
-      }
+      
       function scorePill(score, source) {
         if (source === "Client Self-Sent") return `<span class="kv-v empty">—</span>`;
         const cls = score >= 75 ? "ms-high" : score >= 50 ? "ms-mid" : "ms-low";
@@ -460,12 +453,10 @@
       function getFiltered() {
         const kw = $("searchInput").value.trim().toLowerCase();
         const statusF = $("statusFilter").value;
-        const sourceF = $("sourceFilter").value;
         const typeF = $("typeFilter").value;
         let rows = APPRAISALS.filter(a => {
           if (kw && !a.clientInfo.name.toLowerCase().includes(kw)) return false;
           if (statusF && a.status !== statusF) return false;
-          if (sourceF && a.source !== sourceF) return false;
           if (typeF && a.propertyInfo.propertyType !== typeF) return false;
           return true;
         });
@@ -474,7 +465,6 @@
             client: a.clientInfo.name.localeCompare(b.clientInfo.name),
             type: a.propertyInfo.propertyType.localeCompare(b.propertyInfo.propertyType),
             location: propLocation(a.propertyInfo).localeCompare(propLocation(b.propertyInfo)),
-            source: a.source.localeCompare(b.source),
             status: a.status.localeCompare(b.status),
             received: a.received.localeCompare(b.received),
           };
@@ -500,7 +490,6 @@
               <td><div class="name-cell"><span class="ini-avatar">${ini2(a.clientInfo.name)}</span> ${esc(a.clientInfo.name)}</div></td>
               <td>${esc(a.propertyInfo.propertyType)}</td>
               <td>${esc(propLocation(a.propertyInfo))}</td>
-              <td>${sourceBadge(a.source)}</td>
               <td>${statusBadge(a.status)}</td>
               <td>${esc(a.received)}</td>
               <td onclick="event.stopPropagation()"><div class="act-icons">
@@ -688,7 +677,6 @@
 
         $("dtName").textContent = a.clientInfo.name;
         $("dtCreated").textContent = "Received: " + a.received + " · Ref: " + a.id;
-        $("dtSource").innerHTML = sourceBadge(a.source);
         $("dtStatus").innerHTML = statusBadge(a.status);
 
         $("btnConvert").style.display = a.status === "Converted" ? "none" : "inline-flex";
@@ -787,7 +775,6 @@
                 <tr onclick="showDetail('${r.id}')">
                   <td>${esc(r.propertyInfo.propertyType)}</td>
                   <td>${esc(propLocation(r.propertyInfo))}</td>
-                  <td>${sourceBadge(r.source)}</td>
                   <td>${statusBadge(r.status)}</td>
                   <td>${esc(r.received)}</td>
                 </tr>`).join("") : `<tr><td colspan="5">${emptyBox("No related appraisals", "This is the only request on record from this client.")}</td></tr>`}</tbody>
@@ -860,7 +847,6 @@
 
       $("searchInput").addEventListener("input", () => { page = 1; renderList(); });
       $("statusFilter").addEventListener("change", () => { page = 1; renderList(); });
-      $("sourceFilter").addEventListener("change", () => { page = 1; renderList(); });
       $("typeFilter").addEventListener("change", () => { page = 1; renderList(); });
 
       renderList();
