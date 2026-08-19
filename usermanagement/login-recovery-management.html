@@ -690,14 +690,6 @@
           <div class="page-title">Login Recovery Management</div>
         </div>
         <div class="card">
-          
-          <div class="bulk-bar" id="bulkBar" style="display:none">
-            <span><strong id="bulkCount">0</strong> selected</span>
-            <div style="flex:1"></div>
-            <button class="btn btn-danger btn-sm" type="button" onclick="bulkReject()">
-              Reject
-            </button>
-          </div>
 
           <div class="filters">
             <input
@@ -735,9 +727,6 @@
           <table>
             <thead>
               <tr>
-                <th style="width:36px">
-                  <input type="checkbox" id="selectAllChk" onchange="toggleSelectAll(this)">
-                </th>
                 <th>Request ID</th>
                 <th>Full name</th>
                 <th>Phone</th>
@@ -1013,57 +1002,6 @@
       ];
 
       let selectedRequestId = null;
-      let selectedIds = new Set();
-
-      function getSelectedRequests() {
-        return recoveryRequests.filter((r) => selectedIds.has(r.id));
-      }
-      function updateBulkBar() {
-        const bar = document.getElementById("bulkBar");
-        const countEl = document.getElementById("bulkCount");
-        if (!bar || !countEl) return;
-        const n = selectedIds.size;
-        bar.style.display = n === 0 ? "none" : "flex";
-        countEl.textContent = n;
-      }
-      function onRowCheck(id, checked) {
-        if (checked) selectedIds.add(id);
-        else selectedIds.delete(id);
-        updateBulkBar();
-      }
-      function toggleSelectAll(cb) {
-        document.querySelectorAll(".rowChk").forEach((el) => {
-          const id = el.dataset.id;
-          const r = recoveryRequests.find((x) => x.id === id);
-          if (r && r.status !== "Pending") return;
-          el.checked = cb.checked;
-          if (cb.checked) selectedIds.add(id);
-          else selectedIds.delete(id);
-        });
-        updateBulkBar();
-      }
-      function bulkReject() {
-        const sel = getSelectedRequests().filter((r) => r.status === "Pending");
-        if (!sel.length) return;
-        UX.confirm({
-          title: "Reject selected requests?",
-          message: `Reject ${sel.length} selected request(s)? Users will not receive a new password from these tickets.`,
-          okLabel: "Reject",
-          danger: true,
-          onConfirm: () => {
-            const now = new Date().toISOString().slice(0, 16).replace("T", " ");
-            sel.forEach((r) => {
-              r.status = "Rejected";
-              r.solvedBy = currentAdmin.id;
-              r.solvedAt = now;
-              addLogEntry("Rejected request after verification (bulk action)", r.id);
-            });
-            selectedIds.clear();
-            renderRequestTable();
-            Toast.ok(`${sel.length} request(s) rejected.`);
-          },
-        });
-      }
 
       const PAGE_SIZE = 50;
       let pageNum = 1;
@@ -1114,9 +1052,6 @@
         renderRequestTable();
       }
       window.gotoPage = gotoPage;
-      window.toggleSelectAll = toggleSelectAll;
-      window.onRowCheck = onRowCheck;
-      window.bulkReject = bulkReject;
 
       function updateActionButtons(r) {
         const markSolvedBtn = document.getElementById("markSolvedBtn");
@@ -1234,9 +1169,6 @@
             tr.classList.add("row-selected");
           }
           tr.innerHTML = `
-            <td onclick="event.stopPropagation()">
-              <input type="checkbox" class="rowChk" data-id="${r.id}" ${selectedIds.has(r.id) ? "checked" : ""} ${r.status !== "Pending" ? "disabled" : ""} onchange="onRowCheck('${r.id}', this.checked)">
-            </td>
             <td>${r.id}</td>
             <td>${r.fullName}</td>
             <td>${r.phone || "—"}</td>
@@ -1253,7 +1185,6 @@
         });
 
         renderPager(total, pagerEl, "gotoPage");
-        updateBulkBar();
       }
 
       function renderDocument(r) {
