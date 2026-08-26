@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Service Requests — YUUSHI Support Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+      :root {
+        --accent: #c4714a; --accent-dark: #a55232; --accent-soft: #fdeee4; --accent-tint: #faf0e9;
+        --bg-body: #f5f0e8; --bg-card: #fff; --bg-alt: #fdfcf9;
+        --border: #e9e2d6; --border-soft: #f0ece4;
+        --text-main: #333; --text-head: #222; --text-muted: #8a8178; --text-dim: #aaa094;
+        --green: #2f855a; --green-soft: #e6f7ef; --green-text: #1a7a45;
+        --blue: #1a6fa0; --blue-soft: #e6f4ff;
+        --red: #c53030; --red-soft: #fff0f0;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; }
+      body { font-family: Arial, Helvetica, system-ui, sans-serif; background: var(--bg-body); color: var(--text-main); font-size: 13px; line-height: 1.5; display: flex; -webkit-font-smoothing: antialiased; }
+      a { color: var(--accent); text-decoration: none; cursor: pointer; }
+
+      .main { flex: 1; display: flex; flex-direction: column; min-height: 100vh; overflow: hidden; }
+      .content { flex: 1; overflow-y: auto; padding: 24px; }
+
+      .btn { border-radius: 6px; border: 1px solid var(--border); padding: 8px 16px; font-size: 13px; background: #fff; cursor: pointer; display: inline-flex; gap: 7px; align-items: center; justify-content: center; color: var(--text-main); font-family: inherit; font-weight: 600; }
+      .btn:hover { background: var(--bg-alt); }
+      .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .btn-primary:hover { background: var(--accent-dark); }
+      .btn-pill { border-radius: 20px; }
+      .btn-green { border-color: var(--green); color: var(--green); }
+      .btn-green:hover { background: var(--green-soft); }
+      .btn-red { border-color: var(--red); color: var(--red); }
+      .btn-red:hover { background: var(--red-soft); }
+
+      .page-title { font-size: 24px; font-weight: 800; color: var(--text-head); }
+      .list-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+      .head-right { display: flex; align-items: center; gap: 10px; }
+      .rows-sel { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; background: #fff; font-size: 13px; cursor: pointer; }
+
+      .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+      .filter-field { position: relative; }
+      .filter-field input, .filter-field select { height: 38px; border-radius: 8px; border: 1px solid var(--border); padding: 0 32px 0 12px; font-size: 13px; background: #fff; outline: none; min-width: 150px; color: var(--text-main); appearance: none; cursor: pointer; }
+      .filter-field.has-icon input { padding-left: 34px; }
+      .filter-field .fi-left { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; }
+      .filter-field .fi-right { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; font-size: 11px; }
+
+      .card { background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 1px 3px rgba(60,41,28,0.04); overflow: hidden; }
+
+      .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+      .badge-new { background: var(--blue-soft); color: var(--blue); }
+      .badge-inprogress { background: var(--accent-soft); color: var(--accent-dark); }
+      .badge-converted { background: var(--green-soft); color: var(--green-text); }
+      .badge-declined { background: var(--red-soft); color: var(--red); }
+
+      table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+      .data thead { background: #f6f3ec; }
+      .data th { padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 700; color: #555; white-space: nowrap; cursor: pointer; user-select: none; }
+      .data th .sort { color: var(--text-dim); margin-left: 5px; font-size: 10px; }
+      .data th.asc .sort, .data th.desc .sort { color: var(--accent); }
+      .data td { padding: 11px 14px; border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
+      .data tbody tr { cursor: pointer; }
+      .data tbody tr:nth-child(even) { background: var(--bg-alt); }
+      .data tbody tr:hover { background: var(--accent-tint); }
+      .name-cell { display: flex; align-items: center; gap: 10px; }
+      .ini-avatar { width: 30px; height: 30px; border-radius: 50%; background: #e7e2d8; color: #6b6256; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+      .act-icons { display: flex; gap: 10px; color: #b3a89c; }
+      .act-icons i { cursor: pointer; }
+      .act-icons i:hover { color: var(--accent); }
+
+      .pagination { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; flex-wrap: wrap; gap: 10px; }
+      .pg-left { display: flex; align-items: center; gap: 12px; font-size: 12.5px; color: var(--text-muted); }
+      .pg-right { display: flex; align-items: center; gap: 4px; }
+      .pg-btn { min-width: 28px; height: 28px; border-radius: 50%; border: 0; background: 0; cursor: pointer; font-size: 13px; color: var(--text-main); display: inline-flex; align-items: center; justify-content: center; font-family: inherit; }
+      .pg-btn:hover { background: var(--bg-alt); }
+      .pg-btn.active { background: var(--accent); color: #fff; }
+
+      .detail-top { position: sticky; top: 0; background: var(--bg-body); z-index: 10; padding-bottom: 12px; }
+      .dt-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+      .back-arrow { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: #fff; cursor: pointer; color: var(--text-main); font-size: 15px; flex-shrink: 0; }
+      .back-arrow:hover { background: var(--bg-alt); }
+      .dt-name { font-size: 22px; font-weight: 800; color: var(--text-head); line-height: 1.1; }
+      .dt-created { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+      .dt-stats { margin-left: auto; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+      .dt-stat { display: flex; align-items: center; gap: 8px; }
+      .dt-stat i { color: var(--accent); font-size: 16px; }
+      .dt-stat .l { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+      .dt-stat .v { font-size: 13px; color: var(--accent); font-weight: 700; }
+
+      .detail-layout { display: grid; grid-template-columns: 1fr 300px; gap: 18px; margin-top: 16px; align-items: start; }
+      @media (max-width: 1100px) { .detail-layout { grid-template-columns: 1fr; } }
+
+      .sec { padding: 18px 0; border-bottom: 1px solid var(--border-soft); }
+      .sec:first-child { padding-top: 4px; }
+      .sec:last-child { border-bottom: 0; }
+      .sec-title { font-size: 15px; font-weight: 700; color: var(--text-head); margin-bottom: 12px; }
+      .kv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 18px; }
+      @media (max-width: 760px) { .kv-grid { grid-template-columns: 1fr 1fr; } }
+      .kv-l { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 3px; }
+      .kv-v { font-size: 13px; color: var(--text-main); }
+      .kv-v.empty { color: var(--text-dim); font-style: italic; }
+      .requests-box { background: var(--bg-alt); border: 1px solid var(--border-soft); border-radius: 8px; padding: 12px 14px; font-size: 13px; line-height: 1.6; color: var(--text-main); margin-top: 14px; }
+      .subsec-label { grid-column: 1 / -1; font-size: 11px; font-weight: 700; color: var(--accent-dark); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 4px; padding-top: 10px; border-top: 1px dashed var(--border-soft); }
+      
+      .rp-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+      .rp-title { font-size: 15px; font-weight: 700; color: var(--text-head); display: flex; align-items: center; gap: 7px; margin-bottom: 12px;}
+      .comment-input { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 13px; font-family: inherit; resize: vertical; min-height: 60px; outline: none; }
+      .press-enter { text-align: right; font-size: 11px; color: var(--text-dim); margin: 4px 0 12px; }
+      .comment { border-top: 1px solid var(--border-soft); padding-top: 12px; margin-top: 4px; }
+      .comment .c-body { font-size: 12.5px; color: var(--text-main); }
+      .comment .c-attr { font-size: 11.5px; margin-top: 5px; }
+      .comment .c-attr .who { color: var(--accent); font-weight: 600; }
+      .comment .c-attr .when { color: var(--text-muted); }
+
+      .hidden { display: none !important; }
+      .toast-wrap { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+      .toast { background: var(--accent); color: #fff; padding: 11px 16px; border-radius: 8px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+      .toast.success { background: #2f855a; }
+    </style>
+  </head>
+  <body>
+    <main class="main">
+      <div class="content">
+
+        <!-- ========== SCREEN 1: LIST ========== -->
+        <div id="screenList">
+          <div class="list-head">
+            <div>
+              <div class="page-title">Service Requests</div>
+              <div class="page-subtitle" style="font-size: 12.5px; color: var(--accent); font-style: italic; margin-top: 2px;">Requests submitted by clients or routed to you directly by the platform</div>
+            </div>
+            <div class="head-right">
+              <div class="rows-sel" onclick="cycleRows()"><span id="rowsLabel">10</span> <i class="fas fa-chevron-down" style="font-size:10px;color:var(--text-dim)"></i></div>
+            </div>
+          </div>
+
+          <div class="filter-bar">
+            <div class="filter-field has-icon"><i class="fas fa-search fi-left"></i><input id="searchInput" placeholder="Search client name…" /></div>
+            <div class="filter-field"><select id="statusFilter"><option value="">Status</option><option>New</option><option>In Progress</option><option>Converted</option><option>Declined</option></select><i class="fas fa-chevron-down fi-right"></i></div>
+          </div>
+
+          <div class="card">
+            <table class="data">
+              <thead><tr>
+                <th onclick="sortBy('client')">Client Name <span class="sort">↕</span></th>
+                <th onclick="sortBy('subservice')">Requested Service <span class="sort">↕</span></th>
+                <th onclick="sortBy('location')">Location <span class="sort">↕</span></th>
+                <th onclick="sortBy('status')">Status <span class="sort">↕</span></th>
+                <th onclick="sortBy('received')">Received Date <span class="sort">↕</span></th>
+                <th>Actions</th>
+              </tr></thead>
+              <tbody id="listBody"></tbody>
+            </table>
+            <div class="pagination">
+              <div class="pg-left">
+                <div class="rows-sel" onclick="cycleRows()"><span id="rowsLabel2">10</span> <i class="fas fa-chevron-down" style="font-size:10px;color:var(--text-dim)"></i></div>
+                <span id="entriesLabel">Showing 0 of 0 entries</span>
+              </div>
+              <div class="pg-right" id="pgRight"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== SCREEN 2: DETAIL ========== -->
+        <div id="screenDetail" class="hidden">
+          <div class="detail-top">
+            <div class="dt-bar">
+              <button class="back-arrow" onclick="showList()"><i class="fas fa-arrow-left"></i></button>
+              <div>
+                <div class="dt-name" id="dtName">—</div>
+                <div class="dt-created" id="dtCreated">—</div>
+              </div>
+              <div class="dt-stats">
+                <div class="dt-stat"><i class="fas fa-flag"></i><div><div class="l">Status</div><div class="v" id="dtStatus">—</div></div></div>
+                <button class="btn btn-green btn-pill" id="btnConvert" onclick="markConverted()"><i class="fas fa-circle-check"></i> Mark Converted</button>
+                <button class="btn btn-red btn-pill" id="btnDecline" onclick="declineRequest()"><i class="fas fa-ban"></i> Decline</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-layout">
+            <div class="card" style="padding:0 22px">
+              <div class="sec" id="clientSection"></div>
+              <div class="sec" id="requestSection" style="border-bottom: 0;"></div>
+            </div>
+
+            <div>
+              <div class="rp-card">
+                <div class="rp-title"><i class="fas fa-quote-left" style="color:var(--accent)"></i> Internal Notes</div>
+                <textarea class="comment-input" id="commentInput" placeholder="Add an internal note…" onkeydown="commentKey(event)"></textarea>
+                <div class="press-enter">Press Enter to submit</div>
+                <div id="commentList"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+      function toast(msg, kind) {
+        const el = document.createElement("div");
+        el.className = "toast " + (kind || "");
+        el.textContent = msg;
+        $("toastWrap").appendChild(el);
+        setTimeout(() => el.remove(), 2600);
+      }
+      function ini2(n) { const p = n.trim().split(/\s+/); return ((p[0]?.[0] || "") + (p[1]?.[0] || "")).toUpperCase(); }
+
+      /* ============================================================
+         MOCK DATA
+         Note: a Supportal account is locked to one main service category
+         (this account = Tax Accountants), so every request below shares
+         that category — only the sub-service varies.
+      ============================================================ */
+      let REQUESTS = [
+        {
+          id: "SRV-3001", status: "In Progress", received: "2026-06-18",
+          clientInfo: {
+            name: "Tanaka Yui", email: "tanaka.yui@example.com", phone: "+81-90-1122-3344",
+            preferredContactTime: "Evening (16-19)",
+          },
+          requestInfo: {
+            category: "Tax Accountants", subService: "Inheritance Tax Consultation",
+            location: "Aoyama, Minato-ku, Tokyo", postcode: "107-0062",
+            description: "I recently inherited land from a family member and need help calculating and filing the inheritance tax before the deadline.",
+          },
+          comments: [{ body: "Called client, scheduled initial consultation for Friday.", by: "Supportal Admin", at: "19 Jun 2026, 10:22" }],
+        },
+        {
+          id: "SRV-3002", status: "New", received: "2026-07-02",
+          clientInfo: { name: "Santi Argo", phone: "+34-655-5231", email: "santi-argo@gmail.com", preferredContactTime: "Morning (9-12)" },
+          requestInfo: {
+            category: "Tax Accountants", subService: "Capital Gains Tax",
+            location: "Shibuya-ku, Tokyo", postcode: "150-0013",
+            description: "Sold an investment property this year and need help estimating capital gains tax liability before filing.",
+          },
+          comments: [],
+        },
+        {
+          id: "SRV-3003", status: "Converted", received: "2026-05-11",
+          clientInfo: { name: "Colin Sik", phone: "+81-80-2233-9988", email: "colin.sik@example.com", preferredContactTime: "Anytime" },
+          requestInfo: {
+            category: "Tax Accountants", subService: "Property Tax Assessment",
+            location: "Setagaya-ku, Tokyo", postcode: "154-0024",
+            description: "Believe my rental property's annual property tax assessment is too high and would like it reviewed.",
+          },
+          comments: [{ body: "Reviewed assessment, filed correction request on client's behalf.", by: "Supportal Admin", at: "12 May 2026, 15:40" }],
+        },
+        {
+          id: "SRV-3004", status: "Declined", received: "2026-04-28",
+          clientInfo: { name: "Andreas Papandreas", phone: "+30-694-000-1122", email: "andreas.p@example.com", preferredContactTime: "Afternoon (13-17)" },
+          requestInfo: {
+            category: "Tax Accountants", subService: "Corporate Tax Filing",
+            location: "Chiba City, Chiba", postcode: "260-0013",
+            description: "Need a full corporate tax filing for a newly formed real estate holding company.",
+          },
+          comments: [{ body: "Outside our current capacity for corporate filings this quarter. Declined.", by: "Supportal Admin", at: "29 Apr 2026, 09:15" }],
+        },
+      ];
+
+      let sortKey = "received", sortDir = "desc", rowsPerPage = 10, page = 1;
+      let currentId = null;
+
+      function statusBadge(s) {
+        const map = { "New": "badge-new", "In Progress": "badge-inprogress", "Converted": "badge-converted", "Declined": "badge-declined" };
+        return `<span class="badge ${map[s] || "badge-new"}">${esc(s)}</span>`;
+      }
+
+      function getFiltered() {
+        const kw = $("searchInput").value.trim().toLowerCase();
+        const statusF = $("statusFilter").value;
+        let rows = REQUESTS.filter(a => {
+          if (kw && !a.clientInfo.name.toLowerCase().includes(kw)) return false;
+          if (statusF && a.status !== statusF) return false;
+          return true;
+        });
+        rows.sort((a, b) => {
+          const map = {
+            client: a.clientInfo.name.localeCompare(b.clientInfo.name),
+            subservice: a.requestInfo.subService.localeCompare(b.requestInfo.subService),
+            location: a.requestInfo.location.localeCompare(b.requestInfo.location),
+            status: a.status.localeCompare(b.status),
+            received: a.received.localeCompare(b.received),
+          };
+          const v = map[sortKey] ?? 0;
+          return sortDir === "asc" ? v : -v;
+        });
+        return rows;
+      }
+
+      function renderList() {
+        const filtered = getFiltered();
+        const total = filtered.length;
+        const pages = Math.max(1, Math.ceil(total / rowsPerPage));
+        if (page > pages) page = pages;
+        const start = (page - 1) * rowsPerPage;
+        const shown = filtered.slice(start, start + rowsPerPage);
+
+        if (!total) {
+          $("listBody").innerHTML = `<tr><td colspan="6"><div style="text-align:center; padding:24px; color:var(--text-muted)">No service requests found.</div></td></tr>`;
+        } else {
+          $("listBody").innerHTML = shown.map(a => `
+            <tr onclick="showDetail('${a.id}')">
+              <td><div class="name-cell"><span class="ini-avatar">${ini2(a.clientInfo.name)}</span> ${esc(a.clientInfo.name)}</div></td>
+              <td>${esc(a.requestInfo.subService)}<br><span style="font-size:11px;color:var(--text-muted)">${esc(a.requestInfo.category)}</span></td>
+              <td>${esc(a.requestInfo.location)}</td>
+              <td>${statusBadge(a.status)}</td>
+              <td>${esc(a.received)}</td>
+              <td onclick="event.stopPropagation()"><div class="act-icons">
+                <i class="fas fa-eye" title="View Details" onclick="showDetail('${a.id}')"></i>
+                <i class="fas fa-circle-check" title="Mark Converted" onclick="quickAction('${a.id}','Converted')"></i>
+                <i class="fas fa-ban" title="Decline" onclick="quickAction('${a.id}','Declined')"></i>
+              </div></td>
+            </tr>`).join("");
+        }
+
+        const startLabel = total ? start + 1 : 0;
+        const endLabel = Math.min(start + rowsPerPage, total);
+        $("entriesLabel").textContent = `Showing ${startLabel} to ${endLabel} of ${total} entries`;
+        document.querySelectorAll(".data thead th").forEach(th => th.classList.remove("asc", "desc"));
+        renderPagination(total);
+      }
+
+      function renderPagination(total) {
+        const pages = Math.max(1, Math.ceil(total / rowsPerPage));
+        let h = `<button class="pg-btn pg-arrow" onclick="goPage(${page - 1})">‹</button>`;
+        for (let i = 1; i <= pages; i++) h += `<button class="pg-btn ${i === page ? "active" : ""}" onclick="goPage(${i})">${i}</button>`;
+        h += `<button class="pg-btn pg-arrow" onclick="goPage(${page + 1})">›</button>`;
+        $("pgRight").innerHTML = h;
+      }
+      function goPage(p) { const pages = Math.max(1, Math.ceil(getFiltered().length / rowsPerPage)); if (p < 1 || p > pages) return; page = p; renderList(); }
+      window.goPage = goPage;
+      function sortBy(k) { if (sortKey === k) sortDir = sortDir === "asc" ? "desc" : "asc"; else { sortKey = k; sortDir = "asc"; } renderList(); }
+      window.sortBy = sortBy;
+      function cycleRows() { rowsPerPage = rowsPerPage === 10 ? 25 : rowsPerPage === 25 ? 50 : 10; $("rowsLabel").textContent = rowsPerPage; $("rowsLabel2").textContent = rowsPerPage; page = 1; renderList(); }
+      window.cycleRows = cycleRows;
+
+      /* ============================================================
+         DETAIL VIEW
+      ============================================================ */
+      function kv(label, val) {
+        const has = val && String(val).trim() !== "";
+        return `<div><div class="kv-l">${esc(label)}</div><div class="kv-v ${has ? "" : "empty"}">${has ? esc(val) : "—"}</div></div>`;
+      }
+
+      function renderClientSection(a) {
+        const c = a.clientInfo;
+        return `<div class="sec-title">Client Information</div>
+          <div class="kv-grid">
+            ${kv("Name", c.name)}
+            ${kv("Email Address", c.email)}
+            ${kv("Phone Number", c.phone)}
+            ${kv("Preferred Contact Time", c.preferredContactTime)}
+          </div>`;
+      }
+
+      function renderRequestSection(a) {
+        const p = a.requestInfo;
+        return `<div class="sec-title">Service Request Details</div>
+          <div class="kv-grid">
+            ${kv("Requested Service", p.subService)}
+            ${kv("Service Category", p.category)}
+            ${kv("Location", p.location)}
+            ${kv("Postal Code", p.postcode)}
+          </div>
+          <div class="requests-box">
+            <div class="kv-l" style="margin-bottom:6px">Detailed Request Description</div>
+            ${p.description ? esc(p.description) : '<span class="kv-v empty">No detailed description provided.</span>'}
+          </div>`;
+      }
+
+      function showDetail(id) {
+        const a = REQUESTS.find(x => x.id === id);
+        if (!a) return;
+        currentId = id;
+
+        $("dtName").textContent = a.clientInfo.name;
+        $("dtCreated").textContent = "Received: " + a.received + " · Ref: " + a.id;
+        $("dtStatus").innerHTML = statusBadge(a.status);
+
+        $("btnConvert").style.display = a.status === "Converted" ? "none" : "inline-flex";
+        $("btnDecline").style.display = a.status === "Declined" ? "none" : "inline-flex";
+
+        $("clientSection").innerHTML = renderClientSection(a);
+        $("requestSection").innerHTML = renderRequestSection(a);
+
+        $("commentList").innerHTML = (a.comments || []).map(c => `
+          <div class="comment"><div class="c-body">${esc(c.body)}</div><div class="c-attr"><span class="who">${esc(c.by)}</span> &nbsp; <span class="when">${esc(c.at)}</span></div></div>
+        `).join("") || `<div style="font-size:12px;color:var(--text-dim);padding:8px 0">No internal notes yet.</div>`;
+
+        $("screenList").classList.add("hidden");
+        $("screenDetail").classList.remove("hidden");
+        window.scrollTo(0, 0);
+      }
+      window.showDetail = showDetail;
+
+      function commentKey(e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          const v = e.target.value.trim(); if (!v) return;
+          const a = REQUESTS.find(x => x.id === currentId);
+          if (!a) return;
+          a.comments = a.comments || [];
+          a.comments.unshift({ body: v, by: "Supportal Staff", at: new Date().toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) });
+          e.target.value = "";
+          showDetail(currentId);
+          toast("Internal note added");
+        }
+      }
+      window.commentKey = commentKey;
+
+      function markConverted() {
+        const a = REQUESTS.find(x => x.id === currentId);
+        if (!a) return;
+        a.status = "Converted";
+        toast("Marked as Converted", "success");
+        showDetail(currentId);
+      }
+      window.markConverted = markConverted;
+
+      function declineRequest() {
+        const a = REQUESTS.find(x => x.id === currentId);
+        if (!a) return;
+        if (!confirm("Decline this service request?")) return;
+        a.status = "Declined";
+        toast("Request declined");
+        showDetail(currentId);
+      }
+      window.declineRequest = declineRequest;
+
+      function quickAction(id, status) {
+        const a = REQUESTS.find(x => x.id === id);
+        if (!a) return;
+        if (status === "Declined" && !confirm("Decline this service request?")) return;
+        a.status = status;
+        toast(status === "Converted" ? "Marked as Converted" : "Request declined", status === "Converted" ? "success" : "");
+        renderList();
+      }
+      window.quickAction = quickAction;
+
+      function showList() { 
+        $("screenDetail").classList.add("hidden"); 
+        $("screenList").classList.remove("hidden"); 
+        renderList(); 
+      }
+      window.showList = showList;
+
+      $("searchInput").addEventListener("input", () => { page = 1; renderList(); });
+      $("statusFilter").addEventListener("change", () => { page = 1; renderList(); });
+
+      renderList();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Roles & Permissions — YUUSHI Support Portal</title>
+    <style>
+      :root {
+        --accent: #c4714a;
+        --accent-hover: #a55232;
+        --accent-light: #ddbf87;
+        --bg: #f5f0e8;
+        --card: #fff;
+        --warm: #fffaf2;
+        --border: #e9e2d6;
+        --border-strong: #cfc6b3;
+        --text: #1a1a1a;
+        --muted: #8a8178;
+        --soft: #a89a83;
+        --danger: #b23b3b;
+        --danger-bg: #fbe9e9;
+        --success: #2f7d4f;
+        --success-bg: #e8f3ec;
+        --info-bg: #eef1f6;
+        --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; font-family: var(--font); color: var(--text); background: var(--bg); min-height: 100vh; font-size: 14px; }
+
+      /* MAIN */
+      .main { padding: 28px 32px 40px; max-width: 1280px; margin: 0 auto; }
+      @media (max-width: 900px) { .main { padding: 20px; } }
+
+      /* PAGE HEAD */
+      .page-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; gap: 20px; flex-wrap: wrap; }
+      h1 { margin: 0 0 6px; font-size: 24px; font-weight: 600; letter-spacing: -0.01em; }
+      .page-sub { margin: 0; color: var(--muted); font-size: 14px; }
+      .mode-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; background: var(--info-bg); color: var(--muted); }
+      .mode-pill.editing { background: #fff3df; color: var(--accent-hover); border: 1px solid #ecdfc6; }
+
+      /* LAYOUT */
+      .rp-grid { display: grid; grid-template-columns: 300px 1fr; gap: 18px; align-items: start; }
+      @media (max-width: 1024px) { .rp-grid { grid-template-columns: 1fr; } }
+
+      /* ROLE LIST CARD */
+      .role-list-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; position: sticky; top: 80px; }
+      .role-list-head { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+      .role-list-head h3 { margin: 0; font-size: 14px; font-weight: 600; }
+      .role-list-head .count { font-size: 11.5px; color: var(--soft); }
+      .role-list { padding: 6px; }
+      .role-row { padding: 11px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+      .role-row:hover { background: #f5f1ea; }
+      .role-row.active { background: var(--warm); border-left: 3px solid var(--accent); padding-left: 9px; }
+      .role-row .nm { font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+      .role-row .nm small { font-weight: 400; color: var(--soft); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+      .role-row .members { font-size: 11.5px; color: var(--muted); font-weight: 500; background: #f0ebe1; padding: 2px 8px; border-radius: 999px; flex-shrink: 0; }
+      .role-list-foot { padding: 10px; border-top: 1px solid var(--border); background: #fafafa; }
+      .add-role-btn { width: 100%; padding: 9px; border: 1px dashed var(--border-strong); border-radius: 7px; background: #fff; color: var(--accent-hover); font-weight: 600; font-size: 13px; cursor: pointer; font-family: inherit; }
+      .add-role-btn:hover { background: var(--warm); border-color: var(--accent); }
+
+      /* DETAIL CARD */
+      .detail-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+      .detail-head { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+      .detail-head h2 { margin: 0 0 4px; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+      .detail-head h2 .sys-pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; background: var(--info-bg); color: var(--muted); border: 1px solid #dce0e8; }
+      .detail-head .desc { color: var(--muted); font-size: 13px; }
+      .detail-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+      /* MATRIX */
+      .matrix-section { padding: 0; }
+      .section-bar { padding: 14px 22px; background: #fafafa; border-bottom: 1px solid var(--border); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+      .matrix-wrap { overflow-x: auto; }
+      table.matrix { width: 100%; border-collapse: collapse; min-width: 780px; }
+      table.matrix th { padding: 13px 14px; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); background: #fafafa; text-align: center; }
+      table.matrix th.feat { text-align: left; background: #fff; width: 38%; font-size: 12px; text-transform: none; letter-spacing: 0; color: var(--text); }
+      table.matrix th.col-action { min-width: 90px; }
+      table.matrix td { padding: 12px 14px; border-bottom: 1px solid #f0ebe1; font-size: 13px; vertical-align: middle; text-align: center; }
+      table.matrix td.feat { text-align: left; }
+      table.matrix tr:last-child td { border-bottom: 0; }
+      table.matrix tr:hover td { background: #fbf9f5; }
+      table.matrix .feat-name { font-weight: 600; color: var(--text); }
+      table.matrix .feat-desc { font-size: 11.5px; color: var(--soft); margin-top: 2px; line-height: 1.4; }
+
+      /* CHECKBOX */
+      .check-cell { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 5px; cursor: pointer; border: 1px solid var(--border); background: #fff; transition: 0.15s; color: transparent; font-weight: 600; font-size: 14px; }
+      .check-cell:hover { border-color: var(--border-strong); }
+      .check-cell.checked { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .check-cell.disabled { cursor: not-allowed; opacity: 0.4; }
+      .check-cell.locked { background: #f5f1ea; color: var(--soft); cursor: not-allowed; border-color: var(--border); }
+      .check-cell.locked.checked { background: var(--soft); color: #fff; }
+
+      /* SCOPE PILL */
+      .scope-cell { display: flex; justify-content: center; }
+      .scope-pill { padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 11.5px; background: #fff; color: var(--text); cursor: pointer; font-family: inherit; }
+      .scope-pill.own { background: var(--warm); border-color: #ecdfc6; color: var(--accent-hover); }
+      .scope-pill.agency { background: var(--info-bg); border-color: #dce0e8; color: var(--muted); }
+      .scope-pill.none { background: #fafafa; border-color: var(--border); color: var(--soft); }
+      .scope-pill:disabled { cursor: not-allowed; opacity: 0.7; }
+
+      /* ROLE META FIELDS */
+      .role-meta { padding: 18px 22px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      @media (max-width: 780px) { .role-meta { grid-template-columns: 1fr; } }
+      .field label { display: block; margin-bottom: 5px; font-size: 12.5px; font-weight: 500; color: var(--text); }
+      .field input, .field textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; font-family: inherit; background: #fff; }
+      .field input:focus, .field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(196, 113, 74, 0.12); }
+      .field input:disabled, .field textarea:disabled { background: #fafafa; color: var(--muted); }
+      .field .hint { margin-top: 4px; font-size: 11.5px; color: var(--soft); }
+
+      /* BUTTONS */
+      .btn { padding: 9px 16px; border: 0; border-radius: 7px; font-size: 13.5px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+      .btn-primary { background: var(--accent); color: #fff; }
+      .btn-primary:hover { background: var(--accent-hover); }
+      .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+      .btn-ghost:hover { background: #f5f1ea; color: var(--text); }
+      .btn-small { padding: 6px 12px; font-size: 12px; }
+      .btn-danger-ghost { background: transparent; color: var(--danger); border: 1px solid #e9c4c4; }
+      .btn-danger-ghost:hover { background: var(--danger-bg); }
+
+      /* MODAL */
+      .modal-backdrop { position: fixed; inset: 0; background: rgba(20, 16, 8, 0.4); display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
+      .modal-backdrop.open { display: flex; }
+      .modal { background: #fff; border-radius: 14px; padding: 24px; max-width: 440px; width: 100%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2); }
+      .modal h3 { margin: 0 0 12px; font-size: 17px; }
+      .modal p { margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+      .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+      .modal .field { margin-bottom: 14px; }
+      .modal .err { display: none; margin-top: 5px; font-size: 11.5px; color: var(--danger); }
+      .modal .err.show { display: block; }
+
+      /* TOAST */
+      .toasts { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; }
+      .toast { background: #fff; border: 1px solid var(--border); border-left: 3px solid var(--success); border-radius: 8px; padding: 12px 16px; font-size: 13px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1); min-width: 240px; animation: slide 0.25s ease-out; }
+      .toast.error { border-left-color: var(--danger); }
+      @keyframes slide { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    </style>
+  </head>
+  <body>
+    <main class="main">
+      <div class="page-head">
+        <div>
+          <h1>Roles & Permissions</h1>
+        </div>
+        <span class="mode-pill" id="mode-pill" style="display: none">View mode</span>
+      </div>
+
+      <div class="rp-grid">
+        <!-- LEFT — ROLE LIST -->
+        <div class="role-list-card">
+          <div class="role-list-head">
+            <h3>Roles</h3>
+            <span class="count"><span id="role-count">4</span> total</span>
+          </div>
+          <div class="role-list" id="role-list"></div>
+          <div class="role-list-foot">
+            <button class="add-role-btn" onclick="openAddRole()">+ Create custom role</button>
+          </div>
+        </div>
+
+        <!-- RIGHT — DETAIL -->
+        <div class="detail-card">
+          <div class="detail-head">
+            <div>
+              <h2 id="rl-name">Service Consultant<span class="sys-pill" id="rl-sys-pill" style="display: none">System</span></h2>
+              <div class="desc" id="rl-desc">Default role for staff who manage client interactions and service requests.</div>
+            </div>
+            <div class="detail-actions">
+              <button class="btn btn-ghost btn-small" id="duplicate-btn" onclick="duplicateRole()">Duplicate</button>
+              <button class="btn btn-danger-ghost btn-small" id="delete-btn" onclick="askDeleteRole()" style="display: none">Delete role</button>
+              <button class="btn btn-ghost" id="cancel-btn" style="display: none" onclick="askCancel()">Cancel</button>
+              <button class="btn btn-primary" id="edit-btn" onclick="enterEdit()">Edit role</button>
+              <button class="btn btn-primary" id="save-btn" style="display: none" onclick="saveRole()">Save changes</button>
+            </div>
+          </div>
+
+          <!-- ROLE METADATA -->
+          <div class="role-meta">
+            <div class="field">
+              <label>Role name <span style="color: var(--danger)">*</span></label>
+              <input id="rl-name-input" type="text" maxlength="60" disabled />
+            </div>
+            <div class="field">
+              <label>Description</label>
+              <input id="rl-desc-input" type="text" maxlength="200" disabled />
+              <div class="hint"></div>
+            </div>
+          </div>
+
+          <!-- MATRIX: SERVICE REQUESTS -->
+          <div class="section-bar">Service Requests</div>
+          <div class="matrix-wrap">
+            <table class="matrix" data-section="requests"></table>
+          </div>
+
+          <!-- MATRIX: LEADS & PIPELINE -->
+          <div class="section-bar">Leads & Pipeline</div>
+          <div class="matrix-wrap">
+            <table class="matrix" data-section="leads"></table>
+          </div>
+
+          <!-- MATRIX: CUSTOMERS & CRM -->
+          <div class="section-bar">Customers & CRM</div>
+          <div class="matrix-wrap">
+            <table class="matrix" data-section="crm"></table>
+          </div>
+
+          <!-- MATRIX: ANALYTICS & REPORTS -->
+          <div class="section-bar">Analytics & Reports</div>
+          <div class="matrix-wrap">
+            <table class="matrix" data-section="analytics"></table>
+          </div>
+
+          <!-- MATRIX: ADMINISTRATION -->
+          <div class="section-bar">Administration</div>
+          <div class="matrix-wrap">
+            <table class="matrix" data-section="admin"></table>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ADD ROLE MODAL -->
+    <div class="modal-backdrop" id="add-modal" onclick="if (event.target === this) closeModal('add-modal');">
+      <div class="modal">
+        <h3>Create custom role</h3>
+        <p>Start from a system role's permissions, then refine on the next screen.</p>
+        <div class="field">
+          <label>Role name <span style="color: var(--danger)">*</span></label>
+          <input id="new-name" type="text" maxlength="60" placeholder="e.g., Senior Consultant" />
+          <div class="err" id="err-new-name">Role name is required and must be unique.</div>
+        </div>
+        <div class="field">
+          <label>Description</label>
+          <input id="new-desc" type="text" maxlength="200" placeholder="Short summary of what this role does" />
+        </div>
+        <div class="field">
+          <label>Start from</label>
+          <select id="new-base" style="width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; font-family: inherit; background: #fff;">
+            <option value="">Blank (no permissions)</option>
+            <option value="Service Consultant">Service Consultant</option>
+            <option value="Specialist">Specialist</option>
+            <option value="Reception">Reception</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" onclick="closeModal('add-modal')">Cancel</button>
+          <button class="btn btn-primary" onclick="confirmAddRole()">Create role</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELETE ROLE MODAL -->
+    <div class="modal-backdrop" id="del-modal" onclick="if (event.target === this) closeModal('del-modal');">
+      <div class="modal">
+        <h3>Delete this role?</h3>
+        <p id="del-msg">Removing this role cannot be undone. Members currently assigned to it will be reassigned to <b>Service Consultant</b> automatically.</p>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" onclick="closeModal('del-modal')">Cancel</button>
+          <button class="btn btn-primary" style="background: var(--danger)" onclick="confirmDeleteRole()">Delete role</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DISCARD MODAL -->
+    <div class="modal-backdrop" id="discard-modal" onclick="if (event.target === this) closeModal('discard-modal');">
+      <div class="modal">
+        <h3>Discard unsaved changes?</h3>
+        <p>You have unsaved changes to this role. Discarding will revert everything to the last saved state.</p>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" onclick="closeModal('discard-modal')">Keep editing</button>
+          <button class="btn btn-primary" style="background: var(--danger)" onclick="confirmDiscard()">Discard changes</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toasts" id="toasts"></div>
+
+    <script>
+      // ============ MATRIX DEFINITION ============
+      const sections = {
+        requests: [
+          { key: "requests_view", name: "Service requests", desc: "View and manage incoming service requests.", hasScope: true, actions: ["view", "accept", "decline", "convert"] },
+          { key: "request_tracking", name: "Request tracking", desc: "Add notes and track progress on service requests.", hasScope: true, actions: ["view", "edit"] },
+        ],
+        leads: [
+          { key: "leads_view", name: "Lead pipeline", desc: "Manage leads across all pipeline stages.", hasScope: true, actions: ["view", "create", "edit", "move"] },
+          { key: "leads_convert", name: "Lead conversion", desc: "Convert leads to customers and close deals.", hasScope: true, actions: ["view", "edit"] },
+        ],
+        crm: [
+          { key: "customers", name: "Customer directory", desc: "View and manage customer contact information.", hasScope: true, actions: ["view", "create", "edit", "delete"] },
+          { key: "customer_groups", name: "Customer groups", desc: "Create and manage customer tags and groups.", hasScope: true, actions: ["view", "create", "edit", "delete"] },
+          { key: "crm_activities", name: "CRM activities", desc: "Log tasks, calls, meetings, and communications.", hasScope: true, actions: ["view", "create", "edit", "delete"] },
+        ],
+        analytics: [
+          { key: "analytics_dashboard", name: "Analytics dashboard", desc: "View performance KPIs and metrics.", hasScope: true, actions: ["view", "export"] },
+          { key: "activity_reports", name: "Activity reports", desc: "Generate reports on team activities and conversions.", hasScope: true, actions: ["view", "export"] },
+        ],
+        admin: [
+          { key: "staff", name: "Staff management", desc: "Add, edit, remove staff members. Manage roles.", hasScope: false, actions: ["view", "create", "edit", "remove"] },
+          { key: "roles", name: "Roles & permissions", desc: "Manage roles and permissions for this page.", hasScope: false, actions: ["view", "create", "edit", "delete"] },
+          { key: "profile", name: "Company profile", desc: "Edit company information and settings.", hasScope: false, actions: ["view", "edit"] },
+        ],
+      };
+
+      const actionLabels = {
+        view: "View", create: "Create", edit: "Edit", delete: "Delete", accept: "Accept", decline: "Decline", 
+        convert: "Convert", move: "Move", export: "Export", remove: "Remove",
+      };
+
+      // ============ ROLES ============
+      const roles = [
+        { id: "admin", name: "Supportal Admin", desc: "Full access across the supportal. Manages staff and configuration.", system: false, members: 1, perms: fullAccess() },
+        { id: "consultant", name: "Service Consultant", desc: "Manages service requests, leads, and customer interactions.", system: false, members: 3, perms: consultantAccess() },
+        { id: "specialist", name: "Specialist", desc: "Manages assigned service requests and customer interactions.", system: false, members: 2, perms: specialistAccess() },
+        { id: "reception", name: "Reception", desc: "Read-only access to service requests and customer information.", system: false, members: 1, perms: receptionAccess() },
+      ];
+
+      function fullAccess() {
+        const p = {};
+        Object.keys(sections).forEach((s) => sections[s].forEach((f) => {
+          p[f.key] = { scope: f.hasScope ? "agency" : null, actions: {} };
+          f.actions.forEach((a) => (p[f.key].actions[a] = true));
+        }));
+        return p;
+      }
+
+      function consultantAccess() {
+        const p = {};
+        p["requests_view"] = { scope: "agency", actions: { view: true, accept: true, decline: true, convert: true } };
+        p["request_tracking"] = { scope: "agency", actions: { view: true, edit: true } };
+        p["leads_view"] = { scope: "agency", actions: { view: true, create: true, edit: true, move: true } };
+        p["leads_convert"] = { scope: "agency", actions: { view: true, edit: true } };
+        p["customers"] = { scope: "agency", actions: { view: true, create: true, edit: true, delete: false } };
+        p["customer_groups"] = { scope: "agency", actions: { view: true, create: true, edit: true, delete: true } };
+        p["crm_activities"] = { scope: "agency", actions: { view: true, create: true, edit: true, delete: true } };
+        p["analytics_dashboard"] = { scope: "agency", actions: { view: true, export: true } };
+        p["activity_reports"] = { scope: "agency", actions: { view: true, export: true } };
+        p["staff"] = { scope: null, actions: { view: false, create: false, edit: false, remove: false } };
+        p["roles"] = { scope: null, actions: { view: false, create: false, edit: false, delete: false } };
+        p["profile"] = { scope: null, actions: { view: true, edit: false } };
+        return p;
+      }
+
+      function specialistAccess() {
+        const p = {};
+        p["requests_view"] = { scope: "own", actions: { view: true, accept: true, decline: false, convert: true } };
+        p["request_tracking"] = { scope: "own", actions: { view: true, edit: true } };
+        p["leads_view"] = { scope: "own", actions: { view: true, create: true, edit: true, move: false } };
+        p["leads_convert"] = { scope: "own", actions: { view: true, edit: false } };
+        p["customers"] = { scope: "agency", actions: { view: true, create: false, edit: false, delete: false } };
+        p["customer_groups"] = { scope: "none", actions: { view: false, create: false, edit: false, delete: false } };
+        p["crm_activities"] = { scope: "own", actions: { view: true, create: true, edit: true, delete: true } };
+        p["analytics_dashboard"] = { scope: "own", actions: { view: true, export: false } };
+        p["activity_reports"] = { scope: "none", actions: { view: false, export: false } };
+        p["staff"] = { scope: null, actions: { view: false, create: false, edit: false, remove: false } };
+        p["roles"] = { scope: null, actions: { view: false, create: false, edit: false, delete: false } };
+        p["profile"] = { scope: null, actions: { view: true, edit: false } };
+        return p;
+      }
+
+      function receptionAccess() {
+        const p = {};
+        p["requests_view"] = { scope: "agency", actions: { view: true, accept: false, decline: false, convert: false } };
+        p["request_tracking"] = { scope: "agency", actions: { view: true, edit: false } };
+        p["leads_view"] = { scope: "none", actions: { view: false, create: false, edit: false, move: false } };
+        p["leads_convert"] = { scope: "none", actions: { view: false, edit: false } };
+        p["customers"] = { scope: "agency", actions: { view: true, create: false, edit: false, delete: false } };
+        p["customer_groups"] = { scope: "none", actions: { view: false, create: false, edit: false, delete: false } };
+        p["crm_activities"] = { scope: "none", actions: { view: false, create: false, edit: false, delete: false } };
+        p["analytics_dashboard"] = { scope: "agency", actions: { view: true, export: false } };
+        p["activity_reports"] = { scope: "none", actions: { view: false, export: false } };
+        p["staff"] = { scope: null, actions: { view: false, create: false, edit: false, remove: false } };
+        p["roles"] = { scope: null, actions: { view: false, create: false, edit: false, delete: false } };
+        p["profile"] = { scope: null, actions: { view: true, edit: false } };
+        return p;
+      }
+
+      // ============ STATE ============
+      let currentRoleId = "consultant";
+      let editing = false;
+      let snapshot = null;
+      let dirty = false;
+
+      // ============ RENDER ============
+      function renderRoleList() {
+        const wrap = document.getElementById("role-list");
+        wrap.innerHTML = roles.map((r) => `
+          <div class="role-row ${r.id === currentRoleId ? "active" : ""}" onclick="selectRole('${r.id}')">
+            <div><div class="nm">${r.name}</div></div>
+            <div class="members">${r.members}</div>
+          </div>
+        `).join("");
+        document.getElementById("role-count").textContent = roles.length;
+      }
+
+      function renderDetail() {
+        const r = roles.find((x) => x.id === currentRoleId);
+        if (!r) return;
+        document.getElementById("rl-name").textContent = r.name;
+        document.getElementById("rl-desc").textContent = r.desc;
+        document.getElementById("rl-name-input").value = r.name;
+        document.getElementById("rl-desc-input").value = r.desc;
+        document.getElementById("mode-pill").style.display = editing ? "inline-flex" : "none";
+        document.getElementById("duplicate-btn").style.display = r.system ? "none" : "";
+        document.getElementById("delete-btn").style.display = r.system ? "none" : "";
+      }
+
+      function renderMatrix() {
+        document.querySelectorAll("table.matrix").forEach((tbl) => {
+          const sec = tbl.dataset.section;
+          if (!sections[sec]) return;
+          const r = roles.find((x) => x.id === currentRoleId);
+          if (!r) return;
+          
+          let thead = `<thead><tr><th class="feat">Feature</th>`;
+          thead += `<th class="col-action">Access Scope</th>`;
+          sections[sec][0].actions.forEach((a) => { thead += `<th class="col-action">${actionLabels[a] || a}</th>`; });
+          thead += `</tr></thead>`;
+
+          let tbody = `<tbody>`;
+          sections[sec].forEach((f) => {
+            const perm = r.perms[f.key];
+            tbody += `<tr><td class="feat"><div class="feat-name">${f.name}</div><div class="feat-desc">${f.desc}</div></td>`;
+            
+            if (f.hasScope) {
+              const scopePill = perm.scope || "none";
+              tbody += `<td class="scope-cell"><button class="scope-pill ${scopePill}" onclick="cycleScope('${f.key}',this)" ${!editing ? "disabled" : ""}>${scopePill}</button></td>`;
+            } else {
+              tbody += `<td></td>`;
+            }
+
+            f.actions.forEach((a) => {
+              const checked = perm.actions[a] === true;
+              const disabledByScope = f.hasScope && (perm.scope === "none" || !perm.scope);
+              const cls = "check-cell" + (checked ? " checked" : "") + (disabledByScope ? " locked" : "") + (!editing && !disabledByScope ? " disabled" : "");
+              tbody += `<td><span class="${cls}" data-fkey="${f.key}" data-action="${a}" onclick="toggleAction('${f.key}','${a}',this)">✓</span></td>`;
+            });
+            tbody += `</tr>`;
+          });
+          tbody += `</tbody>`;
+          tbl.innerHTML = thead + tbody;
+        });
+      }
+
+      function renderAll() {
+        renderRoleList();
+        renderDetail();
+        renderMatrix();
+        document.querySelectorAll("input,textarea").forEach((el) => {
+          if (el.id.startsWith("rl-")) el.disabled = !editing;
+        });
+      }
+
+      // ============ INTERACTION ============
+      function selectRole(id) {
+        if (editing && dirty) { openModal("discard-modal"); return; }
+        currentRoleId = id;
+        renderAll();
+      }
+
+      function cycleScope(fkey, btn) {
+        if (!editing) return;
+        const r = roles.find((x) => x.id === currentRoleId);
+        const cur = r.perms[fkey].scope || "none";
+        const next = cur === "none" ? "own" : cur === "own" ? "agency" : "none";
+        r.perms[fkey].scope = next === "none" ? "none" : next;
+        if (next === "none") {
+          Object.keys(r.perms[fkey].actions).forEach((a) => (r.perms[fkey].actions[a] = false));
+        }
+        dirty = true;
+        renderMatrix();
+      }
+
+      function toggleAction(fkey, action, el) {
+        if (!editing) return;
+        if (el.classList.contains("locked")) return;
+        const r = roles.find((x) => x.id === currentRoleId);
+        r.perms[fkey].actions[action] = !r.perms[fkey].actions[action];
+        el.classList.toggle("checked");
+        dirty = true;
+      }
+
+      // ============ MODE ============
+      function enterEdit() {
+        const r = roles.find((x) => x.id === currentRoleId);
+        if (r.system) { toast("System roles are read-only. Duplicate it to create a custom role.", "error"); return; }
+        editing = true;
+        dirty = false;
+        snapshot = JSON.parse(JSON.stringify(r));
+        document.getElementById("edit-btn").style.display = "none";
+        document.getElementById("save-btn").style.display = "";
+        document.getElementById("cancel-btn").style.display = "";
+        document.getElementById("mode-pill").textContent = "Editing…";
+        document.getElementById("mode-pill").classList.add("editing");
+        renderAll();
+        ["rl-name-input", "rl-desc-input"].forEach((id) => {
+          document.getElementById(id).addEventListener("input", () => { dirty = true; });
+        });
+      }
+
+      function exitEdit() {
+        editing = false;
+        dirty = false;
+        snapshot = null;
+        document.getElementById("edit-btn").style.display = "";
+        document.getElementById("save-btn").style.display = "none";
+        document.getElementById("cancel-btn").style.display = "none";
+        document.getElementById("mode-pill").textContent = "View mode";
+        document.getElementById("mode-pill").classList.remove("editing");
+        renderAll();
+      }
+
+      function askCancel() {
+        if (dirty) openModal("discard-modal");
+        else exitEdit();
+      }
+
+      function confirmDiscard() {
+        closeModal("discard-modal");
+        if (snapshot) {
+          const idx = roles.findIndex((x) => x.id === currentRoleId);
+          roles[idx] = { ...roles[idx], ...snapshot };
+        }
+        exitEdit();
+        toast("Changes discarded.");
+      }
+
+      function saveRole() {
+        const r = roles.find((x) => x.id === currentRoleId);
+        const newName = document.getElementById("rl-name-input").value.trim();
+        if (!newName) { toast("Role name is required.", "error"); return; }
+        if (roles.some((x) => x.id !== r.id && x.name.toLowerCase() === newName.toLowerCase())) {
+          toast("A role with this name already exists.", "error");
+          return;
+        }
+        r.name = newName;
+        r.desc = document.getElementById("rl-desc-input").value.trim();
+        exitEdit();
+        toast("Role saved.");
+      }
+
+      function openAddRole() {
+        document.getElementById("new-name").value = "";
+        document.getElementById("new-desc").value = "";
+        document.getElementById("new-base").value = "Service Consultant";
+        document.getElementById("err-new-name").classList.remove("show");
+        openModal("add-modal");
+      }
+
+      function confirmAddRole() {
+        const nm = document.getElementById("new-name").value.trim();
+        if (!nm || roles.some((r) => r.name.toLowerCase() === nm.toLowerCase())) {
+          document.getElementById("err-new-name").classList.add("show");
+          return;
+        }
+        const desc = document.getElementById("new-desc").value.trim();
+        const base = document.getElementById("new-base").value;
+        let perms = base ? JSON.parse(JSON.stringify(roles.find((r) => r.name === base).perms)) : blankAccess();
+        const id = "custom_" + Date.now();
+        roles.push({ id, name: nm, desc: desc || "Custom role", system: false, members: 0, perms });
+        currentRoleId = id;
+        closeModal("add-modal");
+        renderAll();
+        enterEdit();
+        toast("Custom role created. Tune its permissions below.");
+      }
+
+      function blankAccess() {
+        const p = {};
+        Object.keys(sections).forEach((s) => sections[s].forEach((f) => {
+          p[f.key] = { scope: f.hasScope ? "none" : null, actions: {} };
+          f.actions.forEach((a) => (p[f.key].actions[a] = false));
+        }));
+        return p;
+      }
+
+      function duplicateRole() {
+        const r = roles.find((x) => x.id === currentRoleId);
+        const base = "Copy of " + r.name;
+        let nm = base, i = 1;
+        while (roles.some((x) => x.name === nm)) { i++; nm = base + " (" + i + ")"; }
+        const id = "custom_" + Date.now();
+        roles.push({ id, name: nm, desc: r.desc, system: false, members: 0, perms: JSON.parse(JSON.stringify(r.perms)) });
+        currentRoleId = id;
+        renderAll();
+        enterEdit();
+        toast("Role duplicated. Edit the permissions as needed.");
+      }
+
+      function askDeleteRole() {
+        const r = roles.find((x) => x.id === currentRoleId);
+        if (r.system) { toast("System roles cannot be deleted.", "error"); return; }
+        if (r.members > 0) {
+          document.getElementById("del-msg").innerHTML = `<b>${r.members} member(s)</b> are currently assigned to <b>${r.name}</b>. Removing the role will reassign them to <b>Service Consultant</b> automatically. This cannot be undone.`;
+        } else {
+          document.getElementById("del-msg").innerHTML = `Removing <b>${r.name}</b> cannot be undone. No staff are currently assigned to it.`;
+        }
+        openModal("del-modal");
+      }
+
+      function confirmDeleteRole() {
+        const idx = roles.findIndex((x) => x.id === currentRoleId);
+        if (idx < 0) return;
+        const removed = roles.splice(idx, 1)[0];
+        currentRoleId = "consultant";
+        closeModal("del-modal");
+        exitEdit();
+        renderAll();
+        toast(removed.name + " deleted.");
+      }
+
+      // ============ MODAL ============
+      function openModal(id) { document.getElementById(id).classList.add("open"); }
+      function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") document.querySelectorAll(".modal-backdrop.open").forEach((m) => m.classList.remove("open"));
+      });
+
+      // TOAST
+      function toast(msg, type = "ok") {
+        const t = document.createElement("div");
+        t.className = "toast" + (type === "error" ? " error" : "");
+        t.textContent = msg;
+        document.getElementById("toasts").appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+      }
+
+      // INIT
+      renderAll();
+    </script>
+  </body>
+</html>
