@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lead Management — YUUSHI Support Portal</title>
+    <title>Lead Pipeline — YUUSHI Support Portal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <style>
       :root {
@@ -12,198 +12,278 @@
         --border: #e9e2d6; --border-soft: #f0ece4;
         --text-main: #333; --text-head: #222; --text-muted: #8a8178; --text-dim: #aaa094;
         --pink: #e74c7a; --grey-pill: #eceae4; --grey-pill-dark: #ddd8cf;
+        --green: #2f855a; --red: #c53030; --amber: #b7791f;
       }
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      html, body { height: 100%; }
-      body { font-family: Arial, Helvetica, system-ui, sans-serif; background: var(--bg-body); color: var(--text-main); font-size: 13px; line-height: 1.5; display: flex; -webkit-font-smoothing: antialiased; }
+      html, body { height: 100%; background: transparent; }
+      body { font-family: Arial, Helvetica, system-ui, sans-serif; background: var(--bg-body); color: var(--text-main); font-size: 13px; line-height: 1.5; -webkit-font-smoothing: antialiased; padding: 24px; }
       a { color: var(--accent); text-decoration: none; cursor: pointer; }
 
-      .main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-      .content { flex: 1; overflow-y: auto; padding: 24px; }
-
-      /* ===== Buttons ===== */
       .btn { border-radius: 6px; border: 1px solid var(--border); padding: 8px 16px; font-size: 13px; background: #fff; cursor: pointer; display: inline-flex; gap: 7px; align-items: center; justify-content: center; color: var(--text-main); font-family: inherit; font-weight: 600; }
       .btn:hover { background: var(--bg-alt); }
       .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
       .btn-primary:hover { background: var(--accent-dark); }
       .btn-pill { border-radius: 20px; }
 
-      /* ===== Page header ===== */
       .page-title { font-size: 24px; font-weight: 800; color: var(--text-head); }
-      .page-subtitle { font-size: 12.5px; color: var(--accent); font-style: italic; margin-top: 2px; }
+      .page-subtitle { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
       .list-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
 
-      /* ===== Filter bar ===== */
       .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
-      .pill-toggle { display: inline-flex; border-radius: 20px; overflow: hidden; border: 1px solid var(--accent); }
-      .pill-toggle button { border: 0; background: #fff; color: var(--accent); padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
-      .pill-toggle button.active { background: var(--accent); color: #fff; }
       .filter-field { position: relative; }
       .filter-field input, .filter-field select { height: 38px; border-radius: 8px; border: 1px solid var(--border); padding: 0 32px 0 12px; font-size: 13px; background: #fff; outline: none; min-width: 150px; color: var(--text-main); appearance: none; cursor: pointer; }
       .filter-field.has-icon input { padding-left: 34px; }
       .filter-field .fi-left { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; }
 
-      /* ===== Card ===== */
       .card { background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 1px 3px rgba(60,41,28,0.04); overflow: hidden; }
 
-      /* ===== Table ===== */
       table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
       .data thead { background: #f6f3ec; }
-      .data th { padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 700; color: #555; white-space: nowrap; cursor: pointer; user-select: none; }
-      .data th .sort { color: var(--text-dim); margin-left: 5px; font-size: 10px; }
-      .data th.asc .sort, .data th.desc .sort { color: var(--accent); }
+      .data th { padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 700; color: #555; }
       .data td { padding: 11px 14px; border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
       .data tbody tr { cursor: pointer; }
-      .data tbody tr:nth-child(even) { background: var(--bg-alt); }
       .data tbody tr:hover { background: var(--accent-tint); }
-      .circle-check { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--border-soft); display: inline-block; cursor: pointer; background: #fff; }
-      .circle-check.checked { background: var(--accent); border-color: var(--accent); position: relative; }
-      .circle-check.checked::after { content: "✓"; color: #fff; font-size: 11px; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+
       .name-cell { display: flex; align-items: center; gap: 10px; }
       .ini-avatar { width: 30px; height: 30px; border-radius: 50%; background: #e7e2d8; color: #6b6256; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
-      .act-icons { display: flex; gap: 10px; color: #b3a89c; }
-      .act-icons i { cursor: pointer; }
-      .act-icons i:hover { color: var(--accent); }
 
-      /* ===== Badges ===== */
-      .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
-      .badge-grey { background: var(--grey-pill); color: #6b6256; }
+      .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+      .badge-manual { background: #e0f2fe; color: #0284c7; }
+      .badge-system { background: #fef3c7; color: #b45309; }
+      .badge-new { background: #e0f2fe; color: #0284c7; }
+      .badge-assigned { background: #f3e8ff; color: #7e22ce; }
+      .badge-contacted { background: #e0e7ff; color: #4338ca; }
+      .badge-viewing { background: #fef9c3; color: #a16207; }
+      .badge-proposal { background: #fef3c7; color: #b45309; }
+      .badge-negotiation { background: #ffedd5; color: #c2410c; }
+      .badge-asleep { background: #eceae4; color: #6b6256; }
+      .badge-won { background: #dcfce7; color: #15803d; }
+      .badge-lost { background: #fee2e2; color: #b91c1c; }
 
-      /* ===== Modal ===== */
+      .pagination { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; }
+      .pg-left { font-size: 12.5px; color: var(--text-muted); }
+      .pg-right { display: flex; gap: 4px; }
+      .pg-btn { min-width: 28px; height: 28px; border-radius: 50%; border: 0; background: 0; cursor: pointer; font-size: 13px; color: var(--text-main); display: inline-flex; align-items: center; justify-content: center; font-family: inherit; }
+      .pg-btn:hover { background: var(--bg-alt); }
+      .pg-btn.active { background: var(--accent); color: #fff; }
+
+      .hidden { display: none !important; }
+
+      /* Detail View */
+      .detail-top { position: sticky; top: 0; background: var(--bg-body); z-index: 10; padding-bottom: 12px; }
+      .dt-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+      .back-arrow { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: #fff; cursor: pointer; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+      .back-arrow:hover { background: var(--bg-alt); }
+      .dt-name { font-size: 22px; font-weight: 800; color: var(--text-head); line-height: 1.1; }
+      .dt-created { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+      .dt-stats { margin-left: auto; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+      .dt-stat { display: flex; align-items: center; gap: 8px; }
+      .dt-stat i { color: var(--accent); font-size: 16px; }
+      .dt-stat .l { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+      .dt-stat .v { font-size: 13px; color: var(--accent); font-weight: 700; }
+
+      .pipeline { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 14px; }
+      .pipe-step { padding: 6px 13px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--grey-pill); color: #8a8178; cursor: pointer; white-space: nowrap; transition: 0.2s; }
+      .pipe-step:hover { background: var(--grey-pill-dark); }
+      .pipe-step.past { background: var(--grey-pill-dark); color: #6b6256; }
+      .pipe-step.active { background: var(--accent); color: #fff; }
+      .pipe-sep { color: var(--text-dim); font-size: 11px; }
+
+      .detail-layout { display: grid; grid-template-columns: 1fr 300px; gap: 18px; margin-top: 16px; align-items: start; }
+      @media (max-width: 1100px) { .detail-layout { grid-template-columns: 1fr; } }
+
+      .sec { padding: 18px 0; border-bottom: 1px solid var(--border-soft); }
+      .sec:first-child { padding-top: 4px; }
+      .sec:last-child { border-bottom: 0; }
+      .sec-title { font-size: 15px; font-weight: 700; color: var(--text-head); margin-bottom: 14px; }
+      .kv-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 18px; }
+      @media (max-width: 760px) { .kv-grid { grid-template-columns: 1fr; } }
+      .kv-l { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px; font-weight: 600; }
+      .kv-v { font-size: 13px; color: var(--text-main); }
+      .kv-v.link { color: var(--accent); }
+
+      /* Right panel */
+      .rp-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+      .rp-title { font-size: 15px; font-weight: 700; color: var(--text-head); margin-bottom: 14px; display: flex; align-items: center; gap: 7px; }
+      .activity { position: relative; padding-left: 18px; margin-bottom: 14px; }
+      .activity::before { content: ""; position: absolute; left: 0; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--pink); }
+      .activity .a-title { font-weight: 700; font-size: 13px; }
+      .activity .a-time { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+      .comment-input { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 13px; font-family: inherit; resize: vertical; min-height: 60px; outline: none; }
+      .comment-input:focus { border-color: var(--accent); }
+      .press-enter { text-align: right; font-size: 11px; color: var(--text-dim); margin: 4px 0 12px; }
+      .comment { border-top: 1px solid var(--border-soft); padding-top: 12px; margin-top: 12px; }
+      .comment .c-body { font-size: 12.5px; color: var(--text-main); }
+      .comment .c-attr { font-size: 11px; margin-top: 4px; color: var(--text-muted); }
+      .comment .c-attr .who { color: var(--accent); font-weight: 600; }
+
+      /* Modal */
       .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 999; }
       .modal-backdrop.open { display: flex; }
-      .modal-box { width: 500px; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); overflow: hidden; }
-      .modal-header { padding: 18px 22px; border-bottom: 1px solid var(--border-soft); font-weight: 700; font-size: 16px; display: flex; justify-content: space-between; }
-      .modal-body { padding: 20px 22px; }
-      .modal-footer { padding: 14px 22px; border-top: 1px solid var(--border-soft); display: flex; justify-content: flex-end; gap: 8px; background: #faf8f5; }
-      
-      /* ===== Toast ===== */
+      .modal-box { width: 450px; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
+      .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border-soft); font-weight: 700; font-size: 15px; display: flex; justify-content: space-between; }
+      .modal-body { padding: 20px; }
+      .modal-footer { padding: 14px 20px; border-top: 1px solid var(--border-soft); display: flex; justify-content: flex-end; gap: 8px; background: #faf8f5; }
+      .form-field { margin-bottom: 14px; }
+      .form-field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+      .form-field input, .form-field select, .form-field textarea { width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-size: 13px; font-family: inherit; }
+      .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--accent); outline: none; }
+      .form-field textarea { min-height: 60px; resize: vertical; }
+
       .toast-wrap { position: fixed; bottom: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
-      .toast { background: #2f855a; color: #fff; padding: 12px 16px; border-radius: 8px; font-size: 13px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+      .toast { background: var(--green); color: #fff; padding: 12px 16px; border-radius: 8px; font-size: 13px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
     </style>
   </head>
   <body>
-    <div class="main">
-      <div class="content">
 
-        <div class="list-head">
-          <div>
-            <div class="page-title">Lead Management</div>
-            <div class="page-subtitle">Track prospects through your sales pipeline</div>
-          </div>
-          <div>
-            <button class="btn btn-primary" onclick="openNewLead()"><i class="fas fa-plus"></i> New Lead</button>
-          </div>
+    <!-- ===== LIST VIEW ===== -->
+    <div id="screenList">
+      <div class="list-head">
+        <div>
+          <div class="page-title">Lead Pipeline</div>
+          <div class="page-subtitle">Unified pipeline: System-generated requests + Manual prospects</div>
         </div>
+        <button class="btn btn-primary" onclick="openNewLead()"><i class="fas fa-plus"></i> New Manual Lead</button>
+      </div>
 
-        <!-- Filter Bar -->
-        <div class="filter-bar">
-          <div class="pill-toggle">
-            <button class="active" onclick="filterStatus('all')">All</button>
-            <button onclick="filterStatus('active')">Active</button>
-            <button onclick="filterStatus('closed')">Closed</button>
-          </div>
-          <div class="filter-field has-icon"><i class="fas fa-search fi-left"></i><input id="searchInput" placeholder="Search lead name or company..." /></div>
-          <div class="filter-field">
-            <select id="statusFilter"><option value="">Any Pipeline Status</option><option value="new">New</option><option value="assigned">Assigned</option><option value="contacted">Contacted</option><option value="viewing">Viewing</option><option value="proposal">Proposal</option><option value="negotiation">Negotiation</option><option value="asleep">Asleep</option><option value="closed_won">Closed Won</option><option value="closed_lost">Closed Lost</option></select>
-          </div>
+      <div class="filter-bar">
+        <div class="filter-field has-icon"><i class="fas fa-search fi-left"></i><input id="searchInput" placeholder="Search name, company..." oninput="renderList()" /></div>
+        <div class="filter-field">
+          <select id="sourceFilter" onchange="renderList()">
+            <option value="">All Sources</option>
+            <option value="Manual">Manual</option>
+            <option value="System">System</option>
+          </select>
         </div>
-
-        <!-- Leads Table -->
-        <div class="card">
-          <table class="data">
-            <thead>
-              <tr>
-                <th><input type="checkbox" class="circle-check" /></th>
-                <th>Lead Name <span class="sort">↕</span></th>
-                <th>Company / Contact</th>
-                <th>Pipeline Status</th>
-                <th>Last Activity</th>
-                <th>Created</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr onclick="viewLead(1)">
-                <td><input type="checkbox" class="circle-check" /></td>
-                <td><div class="name-cell"><span class="ini-avatar">SA</span><span><strong>Santi Argo</strong></span></div></td>
-                <td>Argo Consulting Group</td>
-                <td><span class="badge badge-grey">Proposal</span></td>
-                <td>2 days ago</td>
-                <td>2026-08-15</td>
-                <td><i class="fas fa-eye" style="cursor:pointer"></i></td>
-              </tr>
-              <tr onclick="viewLead(2)">
-                <td><input type="checkbox" class="circle-check" /></td>
-                <td><div class="name-cell"><span class="ini-avatar">YT</span><span><strong>Yui Tanaka</strong></span></div></td>
-                <td>Tanaka Real Estate</td>
-                <td><span class="badge badge-grey">Contacted</span></td>
-                <td>Today</td>
-                <td>2026-08-22</td>
-                <td><i class="fas fa-eye" style="cursor:pointer"></i></td>
-              </tr>
-              <tr onclick="viewLead(3)">
-                <td><input type="checkbox" class="circle-check" /></td>
-                <td><div class="name-cell"><span class="ini-avatar">KI</span><span><strong>Kenji Ito</strong></span></div></td>
-                <td>Ito Mortgage Solutions</td>
-                <td><span class="badge badge-grey">New</span></td>
-                <td>—</td>
-                <td>2026-08-24</td>
-                <td><i class="fas fa-eye" style="cursor:pointer"></i></td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="filter-field">
+          <select id="statusFilter" onchange="renderList()">
+            <option value="">All Statuses</option>
+            <option value="New">New</option>
+            <option value="Assigned">Assigned</option>
+            <option value="Contact Made">Contact Made</option>
+            <option value="Viewing">Viewing</option>
+            <option value="Proposal">Proposal</option>
+            <option value="Negotiation">Negotiation</option>
+            <option value="Asleep">Asleep</option>
+            <option value="Closed Won">Closed Won</option>
+            <option value="Closed Lost">Closed Lost</option>
+          </select>
         </div>
+      </div>
 
+      <div class="card">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>Lead / Request Name</th>
+              <th>Contact</th>
+              <th>Source</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Last Activity</th>
+            </tr>
+          </thead>
+          <tbody id="listBody"></tbody>
+        </table>
+        <div class="pagination">
+          <div class="pg-left" id="entriesLabel">Showing 0 of 0</div>
+          <div class="pg-right" id="pgRight"></div>
+        </div>
       </div>
     </div>
 
-    <!-- New/Edit Lead Modal -->
-    <div class="modal-backdrop" id="leadModal">
+    <!-- ===== DETAIL VIEW ===== -->
+    <div id="screenDetail" class="hidden">
+      <div class="detail-top">
+        <div class="dt-bar">
+          <button class="back-arrow" onclick="showList()"><i class="fas fa-arrow-left"></i></button>
+          <div>
+            <div class="dt-name" id="dtName">—</div>
+            <div class="dt-created" id="dtCreated">—</div>
+          </div>
+          <div class="dt-stats">
+            <div class="dt-stat">
+              <i class="fas fa-tag"></i>
+              <div><div class="l">Source</div><div class="v" id="dtSourceVal">—</div></div>
+            </div>
+            <div class="dt-stat">
+              <i class="fas fa-flag"></i>
+              <div><div class="l">Status</div><div class="v" id="dtStatusVal">—</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="pipeline" id="pipeline"></div>
+      </div>
+
+      <div class="detail-layout">
+        <div class="card" style="padding:0 22px">
+          <div class="sec">
+            <div class="sec-title">Lead Information</div>
+            <div class="kv-grid">
+              <div><div class="kv-l">ID</div><div class="kv-v" id="ldId">—</div></div>
+              <div><div class="kv-l">Name</div><div class="kv-v" id="ldName">—</div></div>
+              <div><div class="kv-l">Email</div><div class="kv-v link" id="ldEmail">—</div></div>
+              <div><div class="kv-l">Phone</div><div class="kv-v" id="ldPhone">—</div></div>
+            </div>
+          </div>
+
+          <div class="sec">
+            <div class="sec-title">Service Details</div>
+            <div class="kv-grid">
+              <div><div class="kv-l">Company / Organization</div><div class="kv-v" id="ldCompany">—</div></div>
+              <div><div class="kv-l">Category</div><div class="kv-v" id="ldCategory">—</div></div>
+              <div><div class="kv-l">Sub-Service</div><div class="kv-v" id="ldSubService">—</div></div>
+              <div><div class="kv-l">Source Type</div><div class="kv-v"><span class="badge" id="ldSourceBadge">—</span></div></div>
+            </div>
+          </div>
+
+          <div class="sec" style="border-bottom:0">
+            <div class="sec-title">Description</div>
+            <div id="ldDescription" style="font-size:13px;line-height:1.6;color:var(--text-main)">—</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="rp-card">
+            <div class="rp-title"><i class="fas fa-pen-clip" style="color:var(--accent)"></i> Internal Notes</div>
+            <textarea class="comment-input" id="noteInput" placeholder="Add internal note..." onkeydown="noteKeydown(event)"></textarea>
+            <div class="press-enter">Press Enter to save</div>
+            <div id="notesList"></div>
+          </div>
+
+          <div class="rp-card">
+            <div class="rp-title"><i class="fas fa-timeline" style="color:var(--accent)"></i> Activity Timeline</div>
+            <div id="activityList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- New Lead Modal -->
+    <div class="modal-backdrop" id="newLeadModal">
       <div class="modal-box">
         <div class="modal-header">
-          <div><i class="fas fa-user-plus" style="color:var(--accent)"></i> <span id="leadModalTitle">New Lead</span></div>
-          <button style="border:0;background:0;cursor:pointer;color:var(--text-muted);font-size:16px;" onclick="closeModal('leadModal')"><i class="fas fa-times"></i></button>
+          <div><i class="fas fa-user-plus" style="color:var(--accent)"></i> New Manual Lead</div>
+          <button style="border:0;background:0;cursor:pointer;color:var(--text-muted);font-size:16px;" onclick="closeM('newLeadModal')"><i class="fas fa-times"></i></button>
         </div>
         <div class="modal-body">
-          <div style="margin-bottom:14px">
-            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:6px">Lead Name</label>
-            <input type="text" id="f_leadName" style="width:100%; height:38px; border:1px solid var(--border); border-radius:6px; padding:9px 12px; font-size:13px; outline:none" placeholder="Full name" />
-          </div>
-          <div style="margin-bottom:14px">
-            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:6px">Company / Organization</label>
-            <input type="text" id="f_company" style="width:100%; height:38px; border:1px solid var(--border); border-radius:6px; padding:9px 12px; font-size:13px; outline:none" placeholder="Company name" />
-          </div>
-          <div style="margin-bottom:14px">
-            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:6px">Pipeline Status</label>
-            <select id="f_status" style="width:100%; height:38px; border:1px solid var(--border); border-radius:6px; padding:9px 12px; font-size:13px; outline:none">
-              <option value="new">New</option>
-              <option value="assigned">Assigned</option>
-              <option value="contacted">Contacted</option>
-              <option value="viewing">Viewing</option>
-              <option value="proposal">Proposal</option>
-              <option value="negotiation">Negotiation</option>
-              <option value="asleep">Asleep</option>
-              <option value="closed_won">Closed Won</option>
-              <option value="closed_lost">Closed Lost</option>
+          <div class="form-field"><label>Lead Name *</label><input type="text" id="f_name" placeholder="Full name"></div>
+          <div class="form-field"><label>Company / Contact</label><input type="text" id="f_company" placeholder="Company name"></div>
+          <div class="form-field"><label>Email</label><input type="email" id="f_email" placeholder="email@example.com"></div>
+          <div class="form-field"><label>Phone</label><input type="tel" id="f_phone" placeholder="+81 90 1234 5678"></div>
+          <div class="form-field"><label>Initial Status</label>
+            <select id="f_status">
+              <option value="New">New</option>
+              <option value="Assigned">Assigned</option>
+              <option value="Contact Made">Contact Made</option>
+              <option value="Viewing">Viewing</option>
             </select>
           </div>
-          <div style="margin-bottom:14px">
-            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:6px">Email</label>
-            <input type="email" id="f_email" style="width:100%; height:38px; border:1px solid var(--border); border-radius:6px; padding:9px 12px; font-size:13px; outline:none" placeholder="email@example.com" />
-          </div>
-          <div style="margin-bottom:14px">
-            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:6px">Phone</label>
-            <input type="tel" id="f_phone" style="width:100%; height:38px; border:1px solid var(--border); border-radius:6px; padding:9px 12px; font-size:13px; outline:none" placeholder="+81 90 1234 5678" />
-          </div>
-          <div style="margin-bottom:14px">
-            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:6px">Notes</label>
-            <textarea id="f_notes" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:9px 12px; font-size:13px; outline:none; resize:vertical; min-height:60px" placeholder="Internal notes..."></textarea>
-          </div>
+          <div class="form-field"><label>Notes</label><textarea id="f_notes" placeholder="Initial notes..."></textarea></div>
         </div>
         <div class="modal-footer">
-          <button class="btn" onclick="closeModal('leadModal')">Cancel</button>
-          <button class="btn btn-primary" onclick="saveLead()">Save Lead</button>
+          <button class="btn" onclick="closeM('newLeadModal')">Cancel</button>
+          <button class="btn btn-primary" onclick="saveLead()">Create Lead</button>
         </div>
       </div>
     </div>
@@ -212,23 +292,191 @@
 
     <script>
       const $ = (id) => document.getElementById(id);
-      function openNewLead() { $("leadModalTitle").textContent = "New Lead"; $("leadModal").classList.add("open"); }
-      function viewLead(id) { toast("Viewing lead " + id); }
-      function closeModal(id) { $(id).classList.remove("open"); }
-      function filterStatus(s) { /* implement filtering */ }
+      const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":" &#39;"}[c]));
+
+      // ===== UNIFIED DATA =====
+      const LEADS = [
+        { id: "LD-001", name: "Santi Argo", company: "Argo Consulting", email: "santi@gmail.com", phone: "+34-655-5231", desc: "Need to calculate inheritance tax for a property in Tokyo.", category: "Tax Accountants", subService: "Inheritance Tax", status: "Proposal", source: "Manual", created: "2026-05-22", notes: [], activities: ["Lead created", "Contacted - scheduled meeting"] },
+        { id: "LD-002", name: "Yui Tanaka", company: "Tanaka Real Estate", email: "yui.t@example.com", phone: "+81-90-1234-5678", desc: "Please review the annual property tax assessment for my new rental unit.", category: "Tax Accountants", subService: "Property Tax Assessment", status: "Contact Made", source: "Manual", created: "2026-06-01", notes: [], activities: ["Lead created", "First call today"] },
+        { id: "LD-003", name: "Marco Bellini", company: "", email: "marco.b@example.com", phone: "+39-347-555-1122", desc: "Meeting on-site before estimating capital gains tax on a planned sale.", category: "Tax Accountants", subService: "Capital Gains Tax", status: "Viewing", source: "Manual", created: "2026-06-10", notes: [], activities: ["Lead created", "Site visit scheduled"] },
+        { id: "SYS-3001", name: "Inheritance Tax Consultation", company: "Client Service Request", email: "tanaka.yui@example.com", phone: "+81-90-1122-3344", desc: "I recently inherited land from a family member and need help calculating and filing the inheritance tax before the deadline.", category: "Tax Accountants", subService: "Inheritance Tax Consultation", status: "Contact Made", source: "System", created: "2026-06-18", notes: [], activities: ["System routed request", "Initial consultation scheduled"] },
+        { id: "SYS-3002", name: "Capital Gains Tax", company: "Client Service Request", email: "santi-argo@gmail.com", phone: "+34-655-5231", desc: "Sold an investment property this year and need help estimating capital gains tax liability before filing.", category: "Tax Accountants", subService: "Capital Gains Tax", status: "New", source: "System", created: "2026-07-02", notes: [], activities: ["Client submitted request via service package"] },
+      ];
+
+      let currentLead = null, rowsPerPage = 10, page = 1;
+
+      const STATUSES = ["New", "Assigned", "Contact Made", "Viewing", "Proposal", "Negotiation", "Asleep", "Closed Won", "Closed Lost"];
+      const STAGE_CLS = {
+        "New": "badge-new", "Assigned": "badge-assigned", "Contact Made": "badge-contacted",
+        "Viewing": "badge-viewing", "Proposal": "badge-proposal", "Negotiation": "badge-negotiation",
+        "Asleep": "badge-asleep", "Closed Won": "badge-won", "Closed Lost": "badge-lost"
+      };
+
+      function statusBadgeClass(status) { return STAGE_CLS[status] || "badge-new"; }
+
+      function renderList() {
+        const q = ($("searchInput").value || "").toLowerCase();
+        const src = $("sourceFilter").value;
+        const st = $("statusFilter").value;
+
+        const filtered = LEADS.filter(l => {
+          if (q && !(l.name + " " + l.company + " " + l.email).toLowerCase().includes(q)) return false;
+          if (src && l.source !== src) return false;
+          if (st && l.status !== st) return false;
+          return true;
+        });
+
+        const total = filtered.length;
+        const shown = filtered.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+
+        $("listBody").innerHTML = shown.map(l => `
+          <tr onclick="showDetail('${l.id}')">
+            <td><strong>${esc(l.name)}</strong></td>
+            <td><div class="name-cell"><span class="ini-avatar">${l.name.substring(0,2).toUpperCase()}</span><div><div>${esc(l.company || "—")}</div><div style="font-size:11px;color:var(--text-muted)">${esc(l.email)}</div></div></div></td>
+            <td><span class="badge ${l.source === "System" ? "badge-system" : "badge-manual"}">${l.source}</span></td>
+            <td><span class="badge ${statusBadgeClass(l.status)}">${l.status}</span></td>
+            <td>${l.created}</td>
+            <td style="color:var(--text-muted);font-size:11px">${l.activities.length ? l.activities[l.activities.length - 1] : "—"}</td>
+          </tr>
+        `).join("") || `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)">No leads found.</td></tr>`;
+
+        $("entriesLabel").textContent = `Showing ${total ? (page - 1) * rowsPerPage + 1 : 0} to ${Math.min(page * rowsPerPage, total)} of ${total}`;
+        renderPagination(total);
+      }
+
+      function renderPagination(total) {
+        const pages = Math.max(1, Math.ceil(total / rowsPerPage));
+        let h = `<button class="pg-btn" onclick="goPage(${page - 1})" ${page <= 1 ? 'disabled' : ''}>‹</button>`;
+        for (let i = 1; i <= pages; i++) h += `<button class="pg-btn ${i === page ? "active" : ""}" onclick="goPage(${i})">${i}</button>`;
+        h += `<button class="pg-btn" onclick="goPage(${page + 1})" ${page >= pages ? 'disabled' : ''}>›</button>`;
+        $("pgRight").innerHTML = h;
+      }
+      window.goPage = (p) => { page = p; renderList(); };
+
+      function showDetail(id) {
+        currentLead = LEADS.find(l => l.id === id);
+        if (!currentLead) return;
+
+        $("screenList").classList.add("hidden");
+        $("screenDetail").classList.remove("hidden");
+
+        $("dtName").textContent = currentLead.name;
+        $("dtCreated").textContent = `Created: ${currentLead.created}`;
+        $("dtSourceVal").textContent = currentLead.source;
+        $("dtStatusVal").textContent = currentLead.status;
+
+        $("ldId").textContent = currentLead.id;
+        $("ldName").textContent = currentLead.name;
+        $("ldEmail").textContent = currentLead.email;
+        $("ldPhone").textContent = currentLead.phone;
+        $("ldCompany").textContent = currentLead.company || "—";
+        $("ldCategory").textContent = currentLead.category;
+        $("ldSubService").textContent = currentLead.subService;
+        $("ldDescription").textContent = currentLead.desc;
+
+        const srcBadge = $("ldSourceBadge");
+        srcBadge.textContent = currentLead.source;
+        srcBadge.className = `badge ${currentLead.source === "System" ? "badge-system" : "badge-manual"}`;
+
+        renderPipeline();
+        
+        $("notesList").innerHTML = currentLead.notes.map((n, i) => `
+          <div class="comment">
+            <div class="c-body">${esc(n.text)}</div>
+            <div class="c-attr"><span class="who">You</span> • ${n.time}</div>
+          </div>
+        `).join("") || "<div style='font-size:12px;color:var(--text-dim)'>No notes yet.</div>";
+
+        $("activityList").innerHTML = currentLead.activities.map((a, i) => `
+          <div class="activity">
+            <div class="a-title">${esc(a)}</div>
+            <div class="a-time">${i === 0 ? "Today" : i + " days ago"}</div>
+          </div>
+        `).join("");
+
+        $("noteInput").value = "";
+        window.scrollTo(0, 0);
+      }
+
+      function renderPipeline() {
+        const idx = STATUSES.indexOf(currentLead.status);
+        $("pipeline").innerHTML = STATUSES.map((s, i) => {
+          const cls = i === idx ? "active" : i < idx ? "past" : "";
+          return `<span class="pipe-step ${cls}" onclick="setStatus(${i})">${s}</span>` + (i < STATUSES.length - 1 ? '<span class="pipe-sep"><i class="fas fa-angle-right"></i></span>' : "");
+        }).join("");
+      }
+      window.renderPipeline = renderPipeline;
+
+      function setStatus(idx) {
+        currentLead.status = STATUSES[idx];
+        currentLead.activities.unshift(`Status advanced to ${currentLead.status}`);
+        renderPipeline();
+        showDetail(currentLead.id);
+        toast(`Status advanced to ${currentLead.status}`);
+      }
+      window.setStatus = setStatus;
+
+      function noteKeydown(e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          const v = e.target.value.trim();
+          if (!v) return;
+          if (!currentLead.notes) currentLead.notes = [];
+          currentLead.notes.push({ text: v, time: new Date().toLocaleString("en-GB", {day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}) });
+          e.target.value = "";
+          showDetail(currentLead.id);
+          toast("Note saved");
+        }
+      }
+      window.noteKeydown = noteKeydown;
+
+      function showList() {
+        $("screenDetail").classList.add("hidden");
+        $("screenList").classList.remove("hidden");
+        renderList();
+      }
+      window.showList = showList;
+
+      function openNewLead() { $("newLeadModal").classList.add("open"); }
+      window.openNewLead = openNewLead;
+
       function saveLead() {
-        const name = $("f_leadName").value.trim();
-        if (!name) { toast("Lead name is required"); return; }
-        closeModal('leadModal');
-        toast("Lead saved successfully");
+        const name = $("f_name").value.trim();
+        if (!name) { toast("Lead name required"); return; }
+        const newLead = {
+          id: "LD-" + (Math.floor(Math.random() * 10000)).toString().padStart(3, "0"),
+          name: name,
+          company: $("f_company").value.trim() || "—",
+          email: $("f_email").value.trim() || "—",
+          phone: $("f_phone").value.trim() || "—",
+          desc: "—",
+          category: "Tax Accountants",
+          subService: "—",
+          status: $("f_status").value,
+          source: "Manual",
+          created: new Date().toISOString().split("T")[0],
+          notes: [],
+          activities: ["Lead created"]
+        };
+        LEADS.unshift(newLead);
+        closeM("newLeadModal");
+        renderList();
+        toast("Lead created successfully");
       }
+      window.saveLead = saveLead;
+
+      function closeM(id) { $(id).classList.remove("open"); }
+      window.closeM = closeM;
+
       function toast(msg) {
-        const el = document.createElement("div");
-        el.className = "toast";
-        el.textContent = msg;
-        $("toastWrap").appendChild(el);
-        setTimeout(() => el.remove(), 2600);
+        const t = document.createElement("div");
+        t.className = "toast";
+        t.textContent = msg;
+        $("toastWrap").appendChild(t);
+        setTimeout(() => t.remove(), 2600);
       }
+
+      renderList();
     </script>
   </body>
 </html>
