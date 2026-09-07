@@ -172,7 +172,7 @@
         color: var(--soft);
         transition: transform 0.2s, color 0.15s;
       }
-      .menu-toggle.active .toggle-caret,
+      .menu-toggle[aria-expanded="true"] .toggle-caret,
       .menu-group.open .toggle-caret {
         transform: rotate(180deg);
         color: var(--accent);
@@ -540,9 +540,16 @@
 
         <div class="menu-section">
           <div class="section-title">Workspace</div>
-          <a class="menu-item active" data-content="dashboard.html"
-            ><i class="fas fa-gauge-high"></i><span>Dashboard</span></a
-          >
+          <div class="menu-group open" id="dashboardGroup">
+            <button class="menu-item menu-toggle active" type="button" id="dashboardToggle" aria-expanded="true" aria-controls="dashboardSubmenu" onclick="toggleDashboardMenu(event)">
+              <i class="fas fa-gauge-high"></i><span>Dashboard</span>
+              <i class="fas fa-chevron-down toggle-caret"></i>
+            </button>
+            <div class="submenu open" id="dashboardSubmenu">
+              <a class="menu-item active" data-content="dashboard.html#overview"><i class="fas fa-chart-line"></i><span>Overview</span></a>
+              <a class="menu-item" data-content="dashboard.html#subscriptions"><i class="fas fa-layer-group"></i><span>Ads &amp; Subscriptions</span></a>
+            </div>
+          </div>
           <a class="menu-item" data-content="property-list-oversight.html"
             ><i class="fas fa-house-chimney"></i><span>Properties</span></a
           >
@@ -627,11 +634,24 @@
           <a class="menu-item" data-content="profile.html"
             ><i class="fas fa-id-badge"></i><span>Agency Profile</span></a
           >
-          <a class="menu-item" data-content="ad-monetisation.html"
-            ><i class="fas fa-rectangle-ad"></i><span>Advertising</span></a
+        </div>
+
+        <div class="menu-section">
+          <div class="section-title">Ads & Subscriptions</div>
+          <a class="menu-item" data-content="book-ad.html"
+            ><i class="fas fa-rectangle-ad"></i><span>Book Ad</span></a
           >
-          <a class="menu-item" data-content="billing.html"
-            ><i class="fas fa-credit-card"></i><span>Subscription</span></a
+          <a class="menu-item" data-content="my-campaigns.html"
+            ><i class="fas fa-bullhorn"></i><span>My Campaigns</span></a
+          >
+          <a class="menu-item" data-content="plans.html"
+            ><i class="fas fa-layer-group"></i><span>Plans</span></a
+          >
+          <a class="menu-item" data-content="cart.html"
+            ><i class="fas fa-shopping-cart"></i><span>Cart</span></a
+          >
+          <a class="menu-item" data-content="billing-payments.html"
+            ><i class="fas fa-credit-card"></i><span>Billing & Payments</span></a
           >
         </div>
       </aside>
@@ -739,7 +759,27 @@
     </div>
 
     <script>
+      function toggleDashboardMenu(event) {
+        event.stopPropagation();
+        const submenu = document.getElementById('dashboardSubmenu');
+        const open = !submenu.classList.contains('open');
+        if (open) {
+          const frame = document.getElementById('contentFrame');
+          const current = frame.getAttribute('src') || '';
+          if (current.split('#')[0] !== 'dashboard.html') frame.src = 'dashboard.html#overview';
+          setActiveMenu(frame.getAttribute('src'));
+        }
+        submenu.classList.toggle('open', open);
+        document.getElementById('dashboardGroup').classList.toggle('open', open);
+        document.getElementById('dashboardToggle').setAttribute('aria-expanded', String(open));
+      }
+
       function setActiveMenu(target) {
+        if (target === 'dashboard.html') target = 'dashboard.html#overview';
+        const isDashboard = target.split('#')[0] === 'dashboard.html';
+        document.getElementById('dashboardSubmenu').classList.toggle('open', isDashboard);
+        document.getElementById('dashboardGroup').classList.toggle('open', isDashboard);
+        document.getElementById('dashboardToggle').setAttribute('aria-expanded', String(isDashboard));
         document
           .querySelectorAll(".menu-item")
           .forEach((el) => el.classList.remove("active"));
@@ -764,6 +804,7 @@
             if (toggle) toggle.classList.remove("active");
           }
         }
+        document.getElementById("dashboardToggle").classList.toggle("active", isDashboard);
         updateTopSearch(target);
       }
 
@@ -792,7 +833,7 @@
           "role-and-permission.html": "Search roles…",
           "profile.html": "Search profile…",
         };
-        input.placeholder = map[target] || "Search…";
+        input.placeholder = map[target] || map[target.split("#")[0]] || "Search…";
       }
 
       function toggleCrmActivitiesMenu(e) {

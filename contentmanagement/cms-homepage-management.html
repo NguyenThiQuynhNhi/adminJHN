@@ -7,7 +7,6 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
       :root {
         --bg-page: #f4efe7;
@@ -1019,6 +1018,7 @@
         background: linear-gradient(180deg, #b23b3b, #8f2626);
       }
     </style>
+    <link rel="stylesheet" href="cms-land-price-management.css" />
   </head>
   <body>
     <div class="cms-shell">
@@ -1542,86 +1542,210 @@
             </div>
           </div>
 
-          <!-- Popular Estates -->
-          <div class="settings-card">
-            <div class="setting-row">
-              <div class="setting-info">
-                <div class="setting-name">Popular Estates</div>
-                <div class="setting-desc">
-                  Show/hide section on Area Guide page and upload source Excel
-                  file.
-                </div>
+          <!-- Popular Neighbourhoods, Land Prices and Auto-Sync -->
+<div class="cms-land-data" id="cms-land-data">
+
+          <!-- ===================== 1. POPULAR NEIGHBOURHOODS ===================== -->
+          <div class="card">
+            <div class="card-title-row">
+              <div class="card-title"><i class="fas fa-map-location-dot"></i> Popular Neighbourhoods</div>
+              <div class="cms-land-visibility"><span>Section visibility</span><label class="toggle"><input type="checkbox" id="toggle-popular" aria-label="Show Popular Neighbourhoods" checked /><span class="toggle-slider"></span></label></div>
+            </div>
+
+            <div class="source-strip">
+              <span class="lbl">Data source mode:</span>
+              <div class="mode-switch">
+                <button class="mode-opt" id="pn-mode-auto" onclick="cmsLandData.setMode('pn','auto')">Auto Mode</button>
+                <button class="mode-opt" id="pn-mode-manual" onclick="cmsLandData.setMode('pn','manual')">Manual Mode (CSV)</button>
               </div>
-              <div class="setting-control">
-                <div class="cms-inline-actions">
-                  <label class="toggle"
-                    ><input type="checkbox" id="toggle-popular" checked /><span
-                      class="toggle-slider"
-                    ></span
-                  ></label>
-                  <button
-                    class="btn btn-secondary"
-                    type="button"
-                    onclick="
-                      document.getElementById('popularExcelFile').click()
-                    "
-                  >
-                    <i class="fas fa-file-excel"></i> Upload Excel
-                  </button>
-                  <button
-                    class="btn btn-secondary"
-                    onclick="saveOtherSection('popular')"
-                  >
-                    Save
-                  </button>
+              <span id="pn-active-badge"></span>
+            </div>
+
+            <div class="fallback-chain" id="pn-fallback-chain"></div>
+
+            <!-- Manual mode block -->
+            <div id="pn-manual-block">
+              <div class="subhead">CSV upload</div>
+              <div class="kv-note">
+                Required columns: <code>City Name, Area Name, Average Price per m2, Change (%)</code>.
+                </div>
+                <div class="upload-zone">
+                <input type="file" id="pn-csv-file" accept=".csv" style="display:none" />
+                <div>
+                    <label class="fld-label" style="display:inline-block; margin-right:8px;">Valid Until <span class="req">*</span></label>
+                    <input type="date" class="fld" id="pn-valid-date" style="width:140px; display:inline-block; margin-right:12px;" />
+                </div>
+                <button class="btn btn-secondary" onclick="document.getElementById('pn-csv-file').click()">
+                    <i class="fas fa-file-csv"></i> Upload CSV
+                </button>
+                <div class="info">
+                  <div class="fname" id="pn-file-name">No file uploaded yet</div>
                 </div>
               </div>
             </div>
-            <div class="settings-card-title" style="margin-top: 6px">
-              Live display preview
+
+            <div class="divider"></div>
+
+            <div class="card-title-row">
+              <div class="subhead" style="margin:0">Preview</div>
+              <button class="btn btn-primary" onclick="cmsLandData.openAssignModal('pn')"><i class="fas fa-plus"></i> Add Areas</button>
             </div>
-            <div class="estates-grid" id="estates-inline"></div>
+            <div id="pn-preview" class="city-grid"></div>
           </div>
 
-          <!-- Land Prices -->
-          <div class="settings-card">
-            <div class="setting-row">
-              <div class="setting-info">
-                <div class="setting-name">Land Prices</div>
-                <div class="setting-desc">
-                  Show/hide section on Area Guide page and upload source Excel
-                  file.
-                </div>
+          <!-- ===================== 3. LAND PRICES ===================== -->
+          <div class="card">
+            <div class="card-title-row">
+              <div class="card-title"><i class="fas fa-coins"></i> Land Prices</div>
+              <div class="cms-land-visibility"><span>Section visibility</span><label class="toggle"><input type="checkbox" id="toggle-land" aria-label="Show Land Prices" checked /><span class="toggle-slider"></span></label></div>
+            </div>
+
+            <div class="source-strip">
+              <span class="lbl">Data source mode:</span>
+              <div class="mode-switch">
+                <button class="mode-opt" id="lp-mode-auto" onclick="cmsLandData.setMode('lp','auto')">Auto Mode</button>
+                <button class="mode-opt" id="lp-mode-manual" onclick="cmsLandData.setMode('lp','manual')">Manual Mode (CSV)</button>
               </div>
-              <div class="setting-control">
-                <div class="cms-inline-actions">
-                  <label class="toggle"
-                    ><input type="checkbox" id="toggle-land" checked /><span
-                      class="toggle-slider"
-                    ></span
-                  ></label>
-                  <button
-                    class="btn btn-secondary"
-                    type="button"
-                    onclick="document.getElementById('landExcelFile').click()"
-                  >
-                    <i class="fas fa-file-excel"></i> Upload Excel
-                  </button>
-                  <button
-                    class="btn btn-secondary"
-                    onclick="saveOtherSection('land')"
-                  >
-                    Save
-                  </button>
+              <span id="lp-active-badge"></span>
+            </div>
+
+            <div class="fallback-chain" id="lp-fallback-chain"></div>
+
+            <!-- Manual mode block -->
+            <div id="lp-manual-block">
+              <div class="subhead">CSV upload</div>
+              <div class="kv-note">
+                Required columns: <code>City Name, Rank, Station/Ward Name, Average Price per m2, Change (%)</code>.
+                </div>
+                <div class="upload-zone">
+                <input type="file" id="lp-csv-file" accept=".csv" style="display:none" />
+                <div>
+                    <label class="fld-label" style="display:inline-block; margin-right:8px;">Valid Until <span class="req">*</span></label>
+                    <input type="date" class="fld" id="lp-valid-date" style="width:140px; display:inline-block; margin-right:12px;" />
+                </div>
+                <button class="btn btn-secondary" onclick="document.getElementById('lp-csv-file').click()">
+                    <i class="fas fa-file-csv"></i> Upload CSV
+                </button>
+                <div class="info">
+                  <div class="fname" id="lp-file-name">No file uploaded yet</div>
                 </div>
               </div>
             </div>
-            <div class="settings-card-title" style="margin-top: 6px">
-              Live display preview
+
+            <div class="divider"></div>
+
+            <div class="card-title-row">
+              <div class="subhead" style="margin:0">Preview</div>
+              <button class="btn btn-primary" onclick="cmsLandData.openAssignModal('lp')"><i class="fas fa-plus"></i> Add Stations</button>
             </div>
-            <div class="land-tabs" id="land-inline-tabs"></div>
-            <div id="land-inline-table"></div>
+            <div class="land-tabs" id="lp-tabs"></div>
+            <div id="lp-preview"></div>
           </div>
+
+          <!-- ===================== 4. AUTO-SYNC SOURCE SETTINGS ===================== -->
+          <div class="card">
+            <div class="card-title-row">
+              <div class="card-title"><i class="fas fa-sliders"></i> Auto-Sync Source Settings</div>
+            </div>
+            <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+              <div>
+                <label class="fld-label">Minimum transactions to trust Platform Data (N) <span class="req">*</span></label>
+                <input type="number" min="1" class="fld" id="cfg-threshold-n" value="5" />
+                <div class="fld-hint">
+                  If completed transactions/listings for an Area or Station in the current period are fewer than N,
+                  the system falls back to MLIT API data instead of Platform Data.
+                </div>
+              </div>
+              <div>
+                <label class="fld-label">MLIT Station search radius R (meters) <span class="req">*</span></label>
+                <input type="number" min="50" step="50" class="fld" id="cfg-radius-r" value="5000" />
+              </div>
+            </div>
+
+            <div class="save-btn-row" style="text-align:right;margin-top:6px">
+              <button class="btn btn-primary" onclick="cmsLandData.saveSourceConfig()">
+                <i class="fas fa-floppy-disk"></i> Save configuration
+              </button>
+            </div>
+          </div>
+
+    <div id="modal-assign" class="modal-backdrop">
+      <div class="modal-shell" style="width:560px">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" id="assign-modal-title">Assign to City</div>
+            <div class="modal-subtitle" id="assign-modal-subtitle">Choose a city, then pick items to add.</div>
+          </div>
+          <button class="modal-close-btn" onclick="cmsLandData.closeModal('modal-assign')">×</button>
+        </div>
+        <div class="modal-body">
+          <div style="margin-bottom:12px">
+            <label class="fld-label">City <span class="req">*</span></label>
+            <div class="city-search-wrap">
+              <input
+                type="text"
+                class="fld"
+                id="assign-city-search"
+                placeholder="Type to search a city…"
+                autocomplete="off"
+                oninput="cmsLandData.onCitySearchInput()"
+                onfocus="cmsLandData.onCitySearchInput()"
+              />
+              <input type="hidden" id="assign-city-select" value="" />
+              <div id="assign-city-dropdown" class="city-search-dropdown" style="display:none"></div>
+            </div>
+          </div>
+          <div id="assign-items-block" style="display:none">
+            <label class="fld-label" id="assign-items-label">Items</label>
+            <div class="item-list">
+              <div class="item-list-body" id="assign-items-body"></div>
+            </div>
+          </div>
+          <div id="assign-empty-hint" class="fld-hint" style="display:none">
+            Everything is already assigned to this city.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="cmsLandData.closeModal('modal-assign')">Cancel</button>
+          <button class="btn btn-primary" onclick="cmsLandData.confirmAssign()">Add selected</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Resolve Errors Modal ============ -->
+    <div id="modal-resolve" class="modal-backdrop">
+      <div class="modal-shell" style="width: 800px;">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">Resolve Data Errors</div>
+            <div class="modal-subtitle">Geographical data mismatch detected. Please confirm suggestions, select manually, or discard invalid rows.</div>
+          </div>
+          <button class="modal-close-btn" onclick="cmsLandData.closeModal('modal-resolve')">×</button>
+        </div>
+        <div class="modal-body" style="padding: 0;">
+          <table class="tbl" id="resolve-table">
+            <thead>
+              <tr>
+                <th style="width: 60px;">Row</th>
+                <th>Invalid Data</th>
+                <th>System Suggestion (Editable)</th>
+                <th style="width: 60px; text-align: center;">Discard</th>
+              </tr>
+            </thead>
+            <tbody id="resolve-body"></tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="cmsLandData.closeModal('modal-resolve')">Cancel Upload</button>
+          <button class="btn btn-primary" onclick="cmsLandData.confirmResolvedData()">Confirm & Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-wrap" id="landDataToastWrap"></div>
+
+
+</div>
 
           <!-- FAQ Sell Page -->
           <div class="settings-card">
@@ -2110,95 +2234,6 @@
       </div>
     </div>
 
-    <!-- ============ Excel preview modals ============ -->
-    <input
-      type="file"
-      id="popularExcelFile"
-      accept=".xlsx,.xls"
-      style="display: none"
-    />
-    <input
-      type="file"
-      id="landExcelFile"
-      accept=".xlsx,.xls"
-      style="display: none"
-    />
-
-    <div class="ex-backdrop" id="estatesModal" role="dialog" aria-modal="true">
-      <div class="ex-modal">
-        <div class="ex-header">
-          <div class="ex-title">Preview — Popular Estates</div>
-          <button
-            type="button"
-            class="ex-close"
-            onclick="closeExcelModal('estatesModal')"
-          >
-            ×
-          </button>
-        </div>
-        <div class="ex-body">
-          <div class="estates-grid" id="estatesGrid"></div>
-          <div class="ex-note">
-            Review the parsed data, then Save to commit it to the live display.
-          </div>
-        </div>
-        <div class="ex-footer">
-          <button
-            type="button"
-            class="ex-btn"
-            onclick="closeExcelModal('estatesModal')"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            class="ex-btn ex-btn-primary"
-            onclick="commitEstates()"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="ex-backdrop" id="landModal" role="dialog" aria-modal="true">
-      <div class="ex-modal">
-        <div class="ex-header">
-          <div class="ex-title">Preview — Land Prices</div>
-          <button
-            type="button"
-            class="ex-close"
-            onclick="closeExcelModal('landModal')"
-          >
-            ×
-          </button>
-        </div>
-        <div class="ex-body">
-          <div class="land-tabs" id="landTabs"></div>
-          <div id="landTableWrap"></div>
-          <div class="ex-note">
-            Review the parsed data, then Save to commit it to the live display.
-          </div>
-        </div>
-        <div class="ex-footer">
-          <button
-            type="button"
-            class="ex-btn"
-            onclick="closeExcelModal('landModal')"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            class="ex-btn ex-btn-primary"
-            onclick="commitLand()"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    </div>
-
     <div class="toast-wrap" id="toastWrap"></div>
 
     <script>
@@ -2238,8 +2273,6 @@
         articles: "yuushi.cmsHome.articles",
         faqHome: "yuushi.cmsHome.faqHome",
         faqSell: "yuushi.cmsHome.faqSell",
-        estates: "yuushi.cmsHome.popularEstates",
-        land: "yuushi.cmsHome.landPrices",
         toggles: "yuushi.cmsHome.toggles",
       };
       function toast(msg, kind) {
@@ -3998,7 +4031,7 @@
         persistToggles();
         const names = {
           price: "Average Property Price",
-          popular: "Popular Estates",
+          popular: "Popular Neighbourhoods",
           land: "Land Prices",
           testimonial: "Testimonials",
           video: "Video Article",
@@ -4009,298 +4042,7 @@
         toast((names[section] || "Section") + " saved.");
       }
 
-      // ===================== Excel: Popular Estates & Land Prices =====================
-      const SAMPLE_ESTATES = (() => {
-        const rows = [
-          { estate: "Taikoo Shing", indices: 123456, change: -8.74 },
-          { estate: "South Horizons", indices: 134200, change: 8.74 },
-          { estate: "Dynasty Court", indices: 118900, change: -3.12 },
-          { estate: "Island Resort", indices: 142000, change: 5.4 },
-          { estate: "Park Vale", indices: 99800, change: -1.9 },
-        ];
-        return { Tokyo: rows, Osaka: rows, Sapporo: rows };
-      })();
-      const SAMPLE_LAND = (() => {
-        const stations = [
-          "Toranomon Station",
-          "National Diet Bldg Station",
-          "Uchisaiwaicho Station",
-          "Shimbashi Station",
-          "Kamiyacho Station",
-        ];
-        const flucts = [8.74, 6.2, 4.1, -3.5, 2.9];
-        const rows = stations.map((s, i) => ({
-          rank: i + 1,
-          station: s,
-          avgLand: "12,800,000 yen/m²",
-          avgTsubo: "42,314,049 yen/tsubo",
-          fluct: flucts[i],
-        }));
-        return {
-          Tokyo: rows,
-          Osaka: rows,
-          Kyoto: rows,
-          Fukuoka: rows,
-          Nagoya: rows,
-          Hokkaido: rows,
-        };
-      })();
-
-      let estatesData = LS.get(K.estates, SAMPLE_ESTATES);
-      let landData = LS.get(K.land, SAMPLE_LAND);
-      let pendingEstates = null,
-        pendingLand = null;
-      let landActiveCity = null; // for preview modal
-      let landInlineCity = null; // for inline display
-
-      function ordinalPlace(n) {
-        const s = ["th", "st", "nd", "rd"],
-          v = n % 100;
-        return n + (s[(v - 20) % 10] || s[v] || s[0]);
-      }
-
-      function estatesHtml(data) {
-        const cities = Object.keys(data || {});
-        if (!cities.length)
-          return '<div style="grid-column:1/-1;text-align:center;color:#6b7280;padding:24px">No data.</div>';
-        return cities
-          .map((city) => {
-            const rows = (data[city] || []).slice(0, 5);
-            return `<div class="estate-card"><div class="estate-city-name">${esc(city)}</div>
-            <table class="estate-table"><thead><tr><th>Estate</th><th>Indices</th><th>Change</th></tr></thead><tbody>
-            ${rows
-              .map((r) => {
-                const up = Number(r.change) >= 0,
-                  v = Math.abs(Number(r.change) || 0);
-                return `<tr><td>${esc(r.estate)}</td><td>¥${Number(r.indices || 0).toLocaleString("en-US")}</td>
-                <td class="${up ? "estate-change-up" : "estate-change-down"}">${up ? "↑ +" : "↓ -"}${v.toFixed(2)}%</td></tr>`;
-              })
-              .join("")}</tbody></table></div>`;
-          })
-          .join("");
-      }
-      function renderEstatesInline() {
-        $("estates-inline").innerHTML = estatesHtml(estatesData);
-      }
-      function renderEstatesPreview(data) {
-        $("estatesGrid").innerHTML = estatesHtml(data);
-      }
-
-      function landTableHtml(data, city) {
-        const rows = (data[city] || []).slice(0, 5);
-        if (!rows.length)
-          return '<div style="color:#6b7280;text-align:center;padding:24px">No data for this city.</div>';
-        return `<h4 class="land-heading">${esc(city)} – Ward Station Land Price Ranking</h4>
-          <table class="land-table"><thead><tr>
-            <th style="text-align:center">Rank</th><th>Station</th><th>Average land price (yen/m²)</th><th>Average price per tsubo (yen/tsubo)</th><th>Fluctuation rate</th>
-          </tr></thead><tbody>
-          ${rows
-            .map((r) => {
-              const up = Number(r.fluct) >= 0,
-                v = Math.abs(Number(r.fluct) || 0);
-              return `<tr>
-              <td class="land-rank"><span class="num">${Number(r.rank) || ""}</span><span class="place">${ordinalPlace(Number(r.rank) || 0).replace(/^\d+/, "")} place</span></td>
-              <td><span class="land-station">${esc(r.station)}</span></td>
-              <td>${esc(r.avgLand)}</td><td>${esc(r.avgTsubo)}</td>
-              <td><span class="land-fluct ${up ? "up" : "down"}">${up ? "↑ +" : "↓ -"}${v.toFixed(2)}%</span></td>
-            </tr>`;
-            })
-            .join("")}</tbody></table>`;
-      }
-      function landTabsHtml(data, active, onclickName) {
-        return Object.keys(data || {})
-          .map(
-            (city) =>
-              `<button type="button" class="land-tab ${city === active ? "active" : ""}" onclick="${onclickName}('${esc(city).replace(/'/g, "\\'")}')">${esc(city)}</button>`,
-          )
-          .join("");
-      }
-      function renderLandInline() {
-        if (!landInlineCity || !landData[landInlineCity])
-          landInlineCity = Object.keys(landData)[0] || null;
-        $("land-inline-tabs").innerHTML = landTabsHtml(
-          landData,
-          landInlineCity,
-          "setLandInlineTab",
-        );
-        $("land-inline-table").innerHTML = landInlineCity
-          ? landTableHtml(landData, landInlineCity)
-          : "";
-      }
-      function setLandInlineTab(city) {
-        landInlineCity = city;
-        renderLandInline();
-      }
-      // preview modal land
-      function renderLandPreview() {
-        $("landTabs").innerHTML = landTabsHtml(
-          pendingLand,
-          landActiveCity,
-          "setLandTab",
-        );
-        $("landTableWrap").innerHTML = landActiveCity
-          ? landTableHtml(pendingLand, landActiveCity)
-          : "";
-      }
-      function setLandTab(city) {
-        landActiveCity = city;
-        renderLandPreview();
-      }
-
-      // file parsing
-      function exErr(msg) {
-        toast(msg, "err");
-      }
-      function validateExcelFile(file) {
-        const name = (file.name || "").toLowerCase();
-        if (!name.endsWith(".xlsx") && !name.endsWith(".xls"))
-          return { ok: false, error: "Only .xlsx or .xls files are accepted." };
-        if (file.size > 10 * 1024 * 1024)
-          return { ok: false, error: "File size must not exceed 10MB." };
-        return { ok: true };
-      }
-      function parseExcelFile(file, cb) {
-        if (typeof XLSX === "undefined") {
-          cb(null);
-          return;
-        }
-        const r = new FileReader();
-        r.onload = (e) => {
-          try {
-            cb(XLSX.read(e.target.result, { type: "array" }));
-          } catch (err) {
-            cb(null);
-          }
-        };
-        r.onerror = () => cb(null);
-        r.readAsArrayBuffer(file);
-      }
-      function pickKey(row, cands) {
-        const keys = Object.keys(row);
-        for (const want of cands) {
-          const k = keys.find(
-            (k) => k.toLowerCase().trim() === want.toLowerCase(),
-          );
-          if (k) return row[k];
-        }
-        return "";
-      }
-      function workbookToEstates(wb) {
-        const res = {};
-        wb.SheetNames.forEach((name) => {
-          const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {
-            defval: "",
-          });
-          res[name] = rows.slice(0, 5).map((r) => ({
-            estate: pickKey(r, ["Estate", "Name", "Property"]),
-            indices: Number(pickKey(r, ["Indices", "Index", "Price"]) || 0),
-            change: Number(
-              String(pickKey(r, ["Change", "Change %", "Fluctuation"])).replace(
-                /[%+\s]/g,
-                "",
-              ),
-            ),
-          }));
-        });
-        return res;
-      }
-      function workbookToLand(wb) {
-        const res = {};
-        wb.SheetNames.forEach((name) => {
-          const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {
-            defval: "",
-          });
-          res[name] = rows.slice(0, 5).map((r, idx) => ({
-            rank: Number(pickKey(r, ["Rank"])) || idx + 1,
-            station: pickKey(r, ["Station", "Name"]),
-            avgLand: pickKey(r, [
-              "Average land price",
-              "Avg land price",
-              "Land price",
-            ]),
-            avgTsubo: pickKey(r, [
-              "Average price per tsubo",
-              "Avg tsubo",
-              "Tsubo price",
-            ]),
-            fluct: Number(
-              String(
-                pickKey(r, ["Fluctuation rate", "Fluctuation", "Change"]),
-              ).replace(/[%+\s]/g, ""),
-            ),
-          }));
-        });
-        return res;
-      }
-      function onPopularFileChange(e) {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-        const v = validateExcelFile(file);
-        if (!v.ok) {
-          exErr(v.error);
-          e.target.value = "";
-          return;
-        }
-        parseExcelFile(file, (wb) => {
-          pendingEstates = wb
-            ? workbookToEstates(wb)
-            : JSON.parse(JSON.stringify(SAMPLE_ESTATES));
-          renderEstatesPreview(pendingEstates);
-          $("estatesModal").classList.add("open");
-        });
-        e.target.value = "";
-      }
-      function onLandFileChange(e) {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-        const v = validateExcelFile(file);
-        if (!v.ok) {
-          exErr(v.error);
-          e.target.value = "";
-          return;
-        }
-        parseExcelFile(file, (wb) => {
-          pendingLand = wb
-            ? workbookToLand(wb)
-            : JSON.parse(JSON.stringify(SAMPLE_LAND));
-          landActiveCity = Object.keys(pendingLand)[0] || null;
-          renderLandPreview();
-          $("landModal").classList.add("open");
-        });
-        e.target.value = "";
-      }
-      function closeExcelModal(id) {
-        const m = $(id);
-        if (m) m.classList.remove("open");
-      }
-      function commitEstates() {
-        if (pendingEstates) {
-          estatesData = pendingEstates;
-          LS.set(K.estates, estatesData);
-          renderEstatesInline();
-        }
-        closeExcelModal("estatesModal");
-        toast("Popular Estates data saved.");
-      }
-      function commitLand() {
-        if (pendingLand) {
-          landData = pendingLand;
-          LS.set(K.land, landData);
-          landInlineCity = Object.keys(landData)[0] || null;
-          renderLandInline();
-        }
-        closeExcelModal("landModal");
-        toast("Land Prices data saved.");
-      }
-
       // ===================== init =====================
-      $("popularExcelFile").addEventListener("change", onPopularFileChange);
-      $("landExcelFile").addEventListener("change", onLandFileChange);
-      document.querySelectorAll(".ex-backdrop").forEach((bd) =>
-        bd.addEventListener("click", (e) => {
-          if (e.target === bd) bd.classList.remove("open");
-        }),
-      );
       document.querySelectorAll(".modal-backdrop").forEach((bd) =>
         bd.addEventListener("click", (e) => {
           if (e.target === bd) bd.classList.remove("open");
@@ -4309,7 +4051,7 @@
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape")
           document
-            .querySelectorAll(".ex-backdrop.open, .modal-backdrop.open")
+            .querySelectorAll(".modal-backdrop.open")
             .forEach((m) => m.classList.remove("open"));
       });
       TOGGLE_IDS.forEach((id) => {
@@ -4325,10 +4067,9 @@
       cleanupStaleFaqs();
       renderFaq("home");
       renderFaq("sell");
-      renderEstatesInline();
-      renderLandInline();
       renderFamousPrefectures();
       renderFamousCities();
     </script>
+    <script src="cms-land-price-management.js"></script>
   </body>
 </html>

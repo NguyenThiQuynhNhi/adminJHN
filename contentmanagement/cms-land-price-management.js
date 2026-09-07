@@ -1,0 +1,923 @@
+// Popular Neighbourhoods and Land Prices: adapted from ../PopularLandPrice.html.
+(() => {
+  const root = document.getElementById('cms-land-data');
+  if (!root) return;
+  window.cmsLandData = {toast, openModal, closeModal, fmtInt, todayStr, daysUntil, hasSufficientData, getEditDistance, findBestMatch, persistPnAssign, persistLpAssign, seededNumber, platformTransactionCount, platformAvgPrice, platformChange, mlitAvgPrice, mlitChange, removePnAssignment, removeLpAssignment, clearCityAssignments, fillAssignCitySelect, positionCityDropdown, onCitySearchInput, selectAssignCity, openAssignModal, openAssignModalForCity, onAssignCityChange, confirmAssign, getMode, setModeSilently, setMode, getCsv, setCsv, csvStatus, renderModeUI, parseCsvText, normalizePnRows, normalizeLpRows, onCsvSelected, renderResolveModal, discardErrorRow, confirmResolvedData, saveFinalCsv, pnRowsForCity, renderPnPreview, lpRowsForCity, renderLpTabs, setLpTab, renderLpTable, renderAllPreviews, saveSourceConfig, checkExpiryWarnings};
+
+      // ===================== helpers =====================
+      const $ = (id) => root.querySelector("#" + id);
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+        );
+      const MEM_STORE = {};
+      const LS = {
+        get(k, def) {
+          return Object.prototype.hasOwnProperty.call(MEM_STORE, k) ? MEM_STORE[k] : def;
+        },
+        set(k, v) {
+          MEM_STORE[k] = v;
+        },
+      };
+      function toast(msg, kind) {
+        const el = document.createElement("div");
+        el.className = "toast " + (kind || "ok");
+        const icon = kind === "err" ? "circle-exclamation" : kind === "warn" ? "triangle-exclamation" : "circle-check";
+        el.innerHTML = `<i class="fas fa-${icon}"></i> ${esc(msg)}`;
+        $("landDataToastWrap").appendChild(el);
+        setTimeout(() => el.remove(), 3200);
+      }
+      function openModal(id) {
+        $(id).classList.add("open");
+      }
+      function closeModal(id) {
+        $(id).classList.remove("open");
+      }
+      function fmtInt(n) {
+        return Math.round(Number(n) || 0).toLocaleString("en-US");
+      }
+      function todayStr() {
+        return new Date().toISOString().slice(0, 10);
+      }
+      function daysUntil(dateStr) {
+        const d1 = new Date(todayStr() + "T00:00:00");
+        const d2 = new Date(dateStr + "T00:00:00");
+        return Math.round((d2 - d1) / 86400000);
+      }
+      const TSUBO_FACTOR = 3.305785;
+
+      // Giả lập Backend kiểm tra 4 lớp dữ liệu (CSV -> Platform Sold -> MLIT 5km -> Platform Active Listing)
+      // Trả về false nếu địa điểm đó cạn kiệt hoàn toàn dữ liệu ở cả 4 nguồn.
+      // Check theo TÊN thay vì ID để không bị vỡ khi cấu trúc ID thay đổi.
+      function hasSufficientData(item) {
+        const noDataNames = new Set(["Minato", "Namba", "Shibuya Station", "Hakata Station"]);
+        return !noDataNames.has(item.name);
+      }
+
+      // Thuật toán Levenshtein Distance để tìm gợi ý gần giống nhất
+      function getEditDistance(a, b) {
+        if(a.length === 0) return b.length;
+        if(b.length === 0) return a.length;
+        const matrix = [];
+        for(let i = 0; i <= b.length; i++){ matrix[i] = [i]; }
+        for(let j = 0; j <= a.length; j++){ matrix[0][j] = j; }
+        for(let i = 1; i <= b.length; i++){
+          for(let j = 1; j <= a.length; j++){
+            if(b.charAt(i-1) === a.charAt(j-1)) {
+              matrix[i][j] = matrix[i-1][j-1];
+            } else {
+              matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, Math.min(matrix[i][j-1] + 1, matrix[i-1][j] + 1));
+            }
+          }
+        }
+        return matrix[b.length][a.length];
+      }
+      function findBestMatch(input, pool) {
+        if (!input) return null;
+        let best = null; let minD = Infinity;
+        const lowerInput = input.toLowerCase();
+        pool.forEach(item => {
+          const d = getEditDistance(lowerInput, item.name.toLowerCase());
+          if (d < minD) { minD = d; best = item; }
+        });
+        return minD <= 3 ? best : null; // Chỉ gợi ý nếu sai tối đa 3 ký tự
+      }
+
+      // ===================== storage keys =====================
+      const K = {
+        cities: "landata.cities", // [{id,name}] — system data
+        areas: "landata.areas", // [{id,name}] — system data
+        stations: "landata.stations", // [{id,name}] — system data
+        pnAssign: "landata.pn.assign", // [{id,cityId,areaId}]
+        lpAssign: "landata.lp.assign", // [{id,cityId,stationId}]
+        pnMode: "landata.pn.mode",
+        pnCsv: "landata.pn.csv",
+        lpMode: "landata.lp.mode",
+        lpCsv: "landata.lp.csv",
+        config: "landata.config",
+      };
+
+      // ===================== seed system data =====================
+      // Mỗi city có 2 danh sách riêng biệt:
+      //  - pool: TOÀN BỘ area/station có thể chọn (nguồn cho dropdown "Add Areas/Stations")
+      //  - seed: tập con được gán sẵn mặc định khi mới load trang
+      // Tách riêng để "Add Areas" luôn còn option để chọn thêm, không bị rỗng ngay từ đầu.
+      const CITY_SEED = {
+        Tokyo: {
+          areaPool: ["Shibuya","Shinjuku","Minato","Chiyoda","Setagaya","Meguro","Kita","Chuo","Taito","Bunkyo"],
+          areaSeed: ["Shibuya","Shinjuku","Minato"],
+          stationPool: ["Tokyo Station","Shinjuku Station","Shibuya Station","Ikebukuro Station","Ueno Station","Shinagawa Station","Akihabara Station","Ginza Station","Roppongi Station","Nakano Station"],
+          stationSeed: ["Tokyo Station","Shinjuku Station","Shibuya Station","Ikebukuro Station","Ueno Station"],
+        },
+        Osaka: {
+          areaPool: ["Namba","Umeda","Tennoji","Kita","Chuo","Nishi","Naniwa","Fukushima","Yodogawa","Higashinari"],
+          areaSeed: ["Namba","Umeda","Tennoji"],
+          stationPool: ["Osaka Station","Namba Station","Shin-Osaka Station","Tennoji Station","Umeda Station","Kyobashi Station","Tsuruhashi Station","Nakatsu Station","Fukushima Station","Nipponbashi Station"],
+          stationSeed: ["Osaka Station","Namba Station","Shin-Osaka Station","Tennoji Station","Umeda Station"],
+        },
+        Yokohama: {
+          areaPool: ["Minato Mirai","Naka","Nishi","Kohoku","Tsurumi","Isogo","Kanazawa","Totsuka","Aoba","Kanagawa"],
+          areaSeed: ["Minato Mirai","Naka","Nishi"],
+          stationPool: ["Yokohama Station","Sakuragicho Station","Kannai Station","Shin-Yokohama Station","Tsurumi Station","Totsuka Station","Kamiooka Station","Hiyoshi Station","Kikuna Station","Higashi-Kanagawa Station"],
+          stationSeed: ["Yokohama Station","Sakuragicho Station","Kannai Station","Shin-Yokohama Station","Tsurumi Station"],
+        },
+        Nagoya: {
+          areaPool: ["Naka","Nakamura","Higashi","Chikusa","Showa","Mizuho","Atsuta","Minato","Moriyama","Meito"],
+          areaSeed: ["Naka","Nakamura","Higashi"],
+          stationPool: ["Nagoya Station","Sakae Station","Kanayama Station","Fushimi Station","Motoyama Station","Ozone Station","Chikusa Station","Imaike Station","Atsuta-Jingumae Station","Kachigawa Station"],
+          stationSeed: ["Nagoya Station","Sakae Station","Kanayama Station","Fushimi Station","Motoyama Station"],
+        },
+        Sapporo: {
+          areaPool: ["Chuo","Kita","Higashi","Shiroishi","Toyohira","Nishi","Atsubetsu","Minami","Teine","Kiyota"],
+          areaSeed: ["Chuo","Kita","Higashi"],
+          stationPool: ["Sapporo Station","Odori Station","Susukino Station","Shin-Sapporo Station","Kikusui Station","Maruyama-koen Station","Kotoni Station","Shiroishi Station","Nakanoshima Station","Fukuzumi Station"],
+          stationSeed: ["Sapporo Station","Odori Station","Susukino Station","Shin-Sapporo Station","Kikusui Station"],
+        },
+        Fukuoka: {
+          areaPool: ["Tenjin","Hakata","Chuo","Sawara","Minami","Higashi","Nishi","Jonan","Hakozaki","Momochi"],
+          areaSeed: ["Tenjin","Hakata","Chuo"],
+          stationPool: ["Hakata Station","Tenjin Station","Tenjin-Minami Station","Gion Station","Nishitetsu Fukuoka Station","Yakuin Station","Fukuoka Airport Station","Nanakuma Station","Hashimoto Station","Meinohama Station"],
+          stationSeed: ["Hakata Station","Tenjin Station","Tenjin-Minami Station","Gion Station","Nishitetsu Fukuoka Station"],
+        },
+      };
+
+      // Các city còn lại: pool 10 area/10 station (placeholder), seed sẵn 3 area / 5 station đầu.
+      const OTHER_CITY_NAMES = [
+        "Kawasaki", "Kobe", "Kyoto", "Saitama", "Hiroshima", "Sendai",
+        "Chiba", "Kitakyushu", "Niigata", "Hamamatsu",
+        "Kumamoto", "Sagamihara", "Shizuoka", "Okayama",
+        "Kagoshima", "Utsunomiya", "Matsuyama", "Himeji",
+        "Kanazawa", "Nagasaki", "Oita", "Nara", "Morioka",
+        "Akita", "Aomori", "Yamagata", "Fukushima", "Mito",
+        "Maebashi", "Nagano", "Kofu", "Toyama", "Fukui",
+        "Gifu", "Takamatsu", "Tokushima", "Kochi", "Miyazaki",
+        "Saga", "Tottori", "Matsue", "Yamaguchi", "Hakodate",
+      ];
+      OTHER_CITY_NAMES.forEach((name) => {
+        const areaPool = Array.from({ length: 10 }, (_, i) => `${name} Area ${i + 1}`);
+        const stationPool = Array.from({ length: 10 }, (_, i) => `${name} Station ${i + 1}`);
+        CITY_SEED[name] = {
+          areaPool,
+          areaSeed: [], // không tự gán sẵn — city này sẽ KHÔNG hiện ở preview cho tới khi Admin tự "Add Areas"
+          stationPool,
+          stationSeed: [], // tương tự cho Land Prices
+        };
+      });
+
+      // ===== Build cities / areas / stations / assignments từ CITY_SEED =====
+      const DEFAULT_CITIES = [];
+      const DEFAULT_AREAS = [];
+      const DEFAULT_STATIONS = [];
+      const DEFAULT_PN_ASSIGN = [];
+      const DEFAULT_LP_ASSIGN = [];
+      Object.keys(CITY_SEED).forEach((cityName, ci) => {
+        const cityId = "city-" + (ci + 1);
+        const seed = CITY_SEED[cityName];
+        DEFAULT_CITIES.push({ id: cityId, name: cityName });
+
+        // Toàn bộ pool -> DEFAULT_AREAS/STATIONS (option cho dropdown/checklist)
+        seed.areaPool.forEach((areaName, ai) => {
+          DEFAULT_AREAS.push({ id: "area-" + cityId + "-" + (ai + 1), name: areaName });
+        });
+        seed.stationPool.forEach((stName, si) => {
+          DEFAULT_STATIONS.push({ id: "st-" + cityId + "-" + (si + 1), name: stName });
+        });
+
+        // Chỉ phần seed (tập con) -> assignment mặc định
+        seed.areaSeed.forEach((areaName) => {
+          const idx = seed.areaPool.indexOf(areaName);
+          const areaId = "area-" + cityId + "-" + (idx + 1);
+          DEFAULT_PN_ASSIGN.push({ id: "pna-" + areaId, cityId, areaId });
+        });
+        seed.stationSeed.forEach((stName) => {
+          const idx = seed.stationPool.indexOf(stName);
+          const stId = "st-" + cityId + "-" + (idx + 1);
+          DEFAULT_LP_ASSIGN.push({ id: "lpa-" + stId, cityId, stationId: stId });
+        });
+      });
+
+      let areas = LS.get(K.areas, DEFAULT_AREAS);
+      let stations = LS.get(K.stations, DEFAULT_STATIONS);
+      let cities = LS.get(K.cities, DEFAULT_CITIES); // system data — City, Area, Station are all predefined, not managed here
+      let pnAssign = LS.get(K.pnAssign, DEFAULT_PN_ASSIGN);
+      let lpAssign = LS.get(K.lpAssign, DEFAULT_LP_ASSIGN);
+      let config = LS.get(K.config, { n: 15, r: 5000, poll: "daily" });
+
+      const areaById = (id) => areas.find((a) => a.id === id);
+      const stationById = (id) => stations.find((s) => s.id === id);
+      const cityById = (id) => cities.find((c) => c.id === id);
+
+      function persistPnAssign() {
+        LS.set(K.pnAssign, pnAssign);
+      }
+      function persistLpAssign() {
+        LS.set(K.lpAssign, lpAssign);
+      }
+
+      // ===================== simulated Platform data (Auto Mode) =====================
+      function seededNumber(seed, min, max) {
+        let h = 0;
+        for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+        return min + (h % (max - min));
+      }
+      function platformTransactionCount(key) {
+        return seededNumber(key + "-txn", 1, 12);
+      }
+      function platformAvgPrice(key) {
+        return seededNumber(key + "-price", 480000, 1450000);
+      }
+      function platformChange(key) {
+        const v = seededNumber(key + "-chg", -900, 900) / 100;
+        return Math.round(v * 100) / 100;
+      }
+      function mlitAvgPrice(key) {
+        return seededNumber(key + "-mlit", 420000, 1300000);
+      }
+      function mlitChange(key) {
+        const v = seededNumber(key + "-mlitchg", -700, 700) / 100;
+        return Math.round(v * 100) / 100;
+      }
+
+      // ===================== Popular Neighbourhoods: remove one assignment =====================
+      function removePnAssignment(id) {
+        pnAssign = pnAssign.filter((a) => a.id !== id);
+        persistPnAssign();
+        renderAllPreviews();
+        toast("Area removed from city.");
+      }
+
+      // ===================== Land Prices: remove one assignment =====================
+      function removeLpAssignment(id) {
+        lpAssign = lpAssign.filter((a) => a.id !== id);
+        persistLpAssign();
+        renderAllPreviews();
+        toast("Station removed from city.");
+      }
+
+      // ===================== Clear all assignments for a city (city disappears from preview) =====================
+      function clearCityAssignments(section, cityId) {
+        const c = cityById(cityId);
+        const label = section === "pn" ? "areas" : "stations";
+        if (!confirm(`Remove all ${label} assigned to ${c ? c.name : "this city"}? The city will no longer appear in this preview.`)) {
+          return;
+        }
+        if (section === "pn") {
+          pnAssign = pnAssign.filter((a) => a.cityId !== cityId);
+          persistPnAssign();
+        } else {
+          lpAssign = lpAssign.filter((a) => a.cityId !== cityId);
+          persistLpAssign();
+          if (lpActiveCity === cityId) lpActiveCity = null; // force tab re-pick since this city is gone
+        }
+        renderAllPreviews();
+        toast((c ? c.name : "City") + " removed from the " + (section === "pn" ? "Popular Neighbourhoods" : "Land Prices") + " preview.");
+      }
+
+      // ===================== Assign modal: pick a City, then multi-select Areas/Stations =====================
+      let assignSection = null; // 'pn' | 'lp'
+      function fillAssignCitySelect(lockedCityId) {
+        const hiddenInput = $("assign-city-select");
+        const searchInput = $("assign-city-search");
+        $("assign-city-dropdown").style.display = "none";
+        if (lockedCityId) {
+          const c = cityById(lockedCityId);
+          hiddenInput.value = lockedCityId;
+          searchInput.value = c ? c.name : "";
+        } else {
+          hiddenInput.value = "";
+          searchInput.value = "";
+        }
+      }
+      function positionCityDropdown() {
+        const input = $("assign-city-search");
+        const dropdown = $("assign-city-dropdown");
+        const rect = input.getBoundingClientRect();
+        dropdown.style.left = rect.left + "px";
+        dropdown.style.top = rect.bottom + 4 + "px";
+        dropdown.style.width = rect.width + "px";
+      }
+      function onCitySearchInput() {
+        const q = $("assign-city-search").value.trim().toLowerCase();
+        const dropdown = $("assign-city-dropdown");
+        const matches = (q ? cities.filter((c) => c.name.toLowerCase().includes(q)) : cities).slice(0, 80);
+        dropdown.innerHTML = matches.length
+          ? matches
+              .map(
+                (c) =>
+                  `<div class="city-search-option" onmousedown="event.preventDefault();cmsLandData.selectAssignCity('${esc(c.id)}','${esc(c.name)}')">${esc(c.name)}</div>`,
+              )
+              .join("")
+          : `<div class="city-search-empty">No matching city.</div>`;
+        positionCityDropdown();
+        dropdown.style.display = "";
+      }
+      window.addEventListener("resize", () => {
+        const dropdown = $("assign-city-dropdown");
+        if (dropdown && dropdown.style.display !== "none") positionCityDropdown();
+      });
+      function selectAssignCity(cityId, cityName) {
+        $("assign-city-select").value = cityId;
+        $("assign-city-search").value = cityName;
+        $("assign-city-dropdown").style.display = "none";
+        onAssignCityChange();
+      }
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest(".city-search-wrap")) {
+          const dd = $("assign-city-dropdown");
+          if (dd) dd.style.display = "none";
+        }
+      });
+      function openAssignModal(section) {
+        assignSection = section;
+        $("assign-modal-title").textContent = section === "pn" ? "Assign Areas to a City" : "Assign Stations to a City";
+        $("assign-modal-subtitle").textContent =
+          section === "pn" ? "Pick a city, then check the areas to add." : "Pick a city, then check the stations to add.";
+        $("assign-items-label").textContent = section === "pn" ? "Areas" : "Stations";
+        fillAssignCitySelect(null);
+        $("assign-items-block").style.display = "none";
+        $("assign-empty-hint").style.display = "none";
+        openModal("modal-assign");
+      }
+      // Opened from the pencil icon on a preview row — jumps straight to the checklist for that city.
+      function openAssignModalForCity(section, cityId) {
+        const c = cityById(cityId);
+        assignSection = section;
+        $("assign-modal-title").textContent = (section === "pn" ? "Assign Areas — " : "Assign Stations — ") + (c ? c.name : "");
+        $("assign-modal-subtitle").textContent =
+          section === "pn" ? "Check the areas to add for this city." : "Check the stations to add for this city.";
+        $("assign-items-label").textContent = section === "pn" ? "Areas" : "Stations";
+        fillAssignCitySelect(cityId);
+        openModal("modal-assign");
+        onAssignCityChange();
+      }
+      function onAssignCityChange() {
+        const cityId = $("assign-city-select").value;
+        const itemsBlock = $("assign-items-block");
+        const emptyHint = $("assign-empty-hint");
+        const body = $("assign-items-body");
+        if (!cityId) {
+          itemsBlock.style.display = "none";
+          emptyHint.style.display = "none";
+          return;
+        }
+        const pool = assignSection === "pn" ? areas : stations;
+        const existing = new Set(
+          (assignSection === "pn" ? pnAssign : lpAssign)
+            .filter((a) => a.cityId === cityId)
+            .map((a) => (assignSection === "pn" ? a.areaId : a.stationId)),
+        );
+        if (!pool.length) {
+          itemsBlock.style.display = "none";
+          emptyHint.style.display = "";
+          emptyHint.textContent = "No areas/stations available for this city.";
+          return;
+        }
+        itemsBlock.style.display = "";
+        emptyHint.style.display = "none";
+        // Hiện TOÀN BỘ pool — item nào đã gán cho city này thì tick sẵn (checked),
+        // item nào thiếu dữ liệu thì disable + hiện badge cảnh báo (trừ khi nó đã được gán từ trước).
+        body.innerHTML = pool
+          .map((it) => {
+            const isChecked = existing.has(it.id);
+            const hasData = hasSufficientData(it);
+            if (hasData || isChecked) {
+              return `<label class="item-list-row">
+                <input type="checkbox" value="${esc(it.id)}" ${isChecked ? "checked" : ""} />
+                <span>${esc(it.name)}</span>
+              </label>`;
+            }
+            return `<label class="item-list-row" style="opacity:0.55;cursor:not-allowed;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:9px">
+                <input type="checkbox" value="${esc(it.id)}" disabled />
+                <span>${esc(it.name)}</span>
+              </div>
+              <span style="font-size:10px;color:var(--status-warning-text);background:var(--status-warning-bg);padding:3px 8px;border-radius:4px;border:1px solid rgba(163,93,20,0.2);font-weight:600;white-space:nowrap">
+                <i class="fas fa-triangle-exclamation"></i> Insufficient Data
+              </span>
+            </label>`;
+          })
+          .join("");
+      }
+      function confirmAssign() {
+        const cityId = $("assign-city-select").value;
+        if (!cityId) {
+          toast("Please choose a city first.", "err");
+          return;
+        }
+        const checkboxes = Array.from($("assign-items-body").querySelectorAll('input[type="checkbox"]:not(:disabled)'));
+        const checkedIds = new Set(checkboxes.filter((el) => el.checked).map((el) => el.value));
+        const uncheckedIds = new Set(checkboxes.filter((el) => !el.checked).map((el) => el.value));
+
+        const key = assignSection === "pn" ? "areaId" : "stationId";
+        const list = assignSection === "pn" ? pnAssign : lpAssign;
+        const existingIds = new Set(list.filter((a) => a.cityId === cityId).map((a) => a[key]));
+
+        const toAdd = [...checkedIds].filter((id) => !existingIds.has(id));
+        const toRemove = list.filter((a) => a.cityId === cityId && uncheckedIds.has(a[key]));
+
+        if (!toAdd.length && !toRemove.length) {
+          toast("No changes to save.", "err");
+          return;
+        }
+
+        if (assignSection === "pn") {
+          toAdd.forEach((areaId) => pnAssign.push({ id: "pna-" + Date.now() + "-" + areaId, cityId, areaId }));
+          pnAssign = pnAssign.filter((a) => !toRemove.includes(a));
+          persistPnAssign();
+        } else {
+          toAdd.forEach((stationId) => lpAssign.push({ id: "lpa-" + Date.now() + "-" + stationId, cityId, stationId }));
+          lpAssign = lpAssign.filter((a) => !toRemove.includes(a));
+          persistLpAssign();
+        }
+
+        renderAllPreviews();
+        closeModal("modal-assign");
+        const parts = [];
+        if (toAdd.length) parts.push(toAdd.length + " added");
+        if (toRemove.length) parts.push(toRemove.length + " removed");
+        toast(parts.join(", ") + ".");
+      }
+
+      // ===================== Mode switch (Auto / Manual) =====================
+      function getMode(section) {
+        return LS.get(section === "pn" ? K.pnMode : K.lpMode, "auto");
+      }
+      function setModeSilently(section, mode) {
+        LS.set(section === "pn" ? K.pnMode : K.lpMode, mode);
+      }
+      function setMode(section, mode) {
+        setModeSilently(section, mode);
+        renderModeUI(section);
+        renderAllPreviews();
+        toast((section === "pn" ? "Popular Neighbourhoods" : "Land Prices") + " switched to " + (mode === "auto" ? "Auto Mode" : "Manual Mode (CSV)") + ".");
+      }
+      function getCsv(section) {
+        return LS.get(section === "pn" ? K.pnCsv : K.lpCsv, null);
+      }
+      function setCsv(section, data) {
+        LS.set(section === "pn" ? K.pnCsv : K.lpCsv, data);
+      }
+      function csvStatus(section) {
+        const csv = getCsv(section);
+        if (!csv) return { state: "none" };
+        const d = daysUntil(csv.validUntil);
+        if (d < 0) return { state: "expired", days: d };
+        if (d <= 3) return { state: "expiring", days: d };
+        return { state: "active", days: d };
+      }
+
+      function renderModeUI(section) {
+        const mode = getMode(section);
+        const btnAuto = $(section + "-mode-auto");
+        const btnManual = $(section + "-mode-manual");
+        const manualBlock = $(section + "-manual-block");
+
+        if (btnAuto) btnAuto.classList.toggle("on", mode === "auto");
+        if (btnManual) btnManual.classList.toggle("on", mode === "manual");
+        if (manualBlock) manualBlock.style.display = mode === "manual" ? "" : "none";
+
+        const csv = getCsv(section);
+        const fileNameEl = $(section + "-file-name");
+        const revertBtn = $(section + "-revert-btn");
+
+        if (csv) {
+          if (fileNameEl) fileNameEl.textContent = csv.fileName + " · " + csv.rows.length + " rows";
+          if (revertBtn) revertBtn.disabled = false;
+        } else {
+          if (fileNameEl) fileNameEl.textContent = "No file uploaded yet";
+        }
+      }
+
+      // ===================== CSV parsing =====================
+      function parseCsvText(text) {
+        const lines = text.split(/\r?\n/).filter((l) => l.trim().length);
+        if (!lines.length) return [];
+        const header = lines[0].split(",").map((h) => h.trim().toLowerCase());
+        return lines.slice(1).map((line) => {
+          const cells = line.split(",").map((c) => c.trim());
+          const row = {};
+          header.forEach((h, i) => (row[h] = cells[i] ?? ""));
+          return row;
+        });
+      }
+      function normalizePnRows(rawRows) {
+        return rawRows
+          .map((r) => ({
+            city: r["city name"] || r.city || "",
+            area: r["ward/estate name"] || r["area name"] || r.area || "",
+            avgPrice: Number(r["indices value"] || r["average price per m2"] || r.avgprice || 0),
+            change: Number(r["change percentage"] || r["change (%)"] || r.change || 0),
+          }))
+          .filter((r) => r.city && r.area);
+      }
+      function normalizeLpRows(rawRows) {
+        return rawRows
+          .map((r) => ({
+            city: r["city name"] || r.city || "",
+            rank: Number(r.rank || 0),
+            station: r["station/ward name"] || r.station || "",
+            avgPrice: Number(r["average price m2"] || r["average price per m2"] || r.avgprice || 0),
+            change: Number(r["fluctuation rate %"] || r["change (%)"] || r.change || 0),
+          }))
+          .filter((r) => r.city && r.station);
+      }
+
+      $("pn-csv-file").addEventListener("change", (e) => onCsvSelected("pn", e));
+      $("lp-csv-file").addEventListener("change", (e) => onCsvSelected("lp", e));
+
+      let pendingCsvData = null;
+
+      function onCsvSelected(section, e) {
+        const validUntil = $(section + "-valid-date").value;
+        if (!validUntil) {
+          toast("Please select a Valid Until date before uploading.", "err");
+          e.target.value = "";
+          return;
+        }
+
+        const file = e.target.files && e.target.files[0];
+        e.target.value = "";
+        if (!file) return;
+        if (!file.name.toLowerCase().endsWith(".csv")) {
+          toast("Only .csv files are accepted.", "err");
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const text = String(ev.target.result || "");
+
+          // TẦNG 1: Validate Cấu trúc Cột (Macro)
+          const headerLine = text.split(/\r?\n/)[0].toLowerCase();
+          const reqPn = ["city name", "area name", "average price per m2", "change (%)"];
+          const reqLp = ["city name", "rank", "station/ward name", "average price per m2", "change (%)"];
+          const reqCols = section === "pn" ? reqPn : reqLp;
+
+          const missingCols = reqCols.filter(c => !headerLine.includes(c));
+          if (missingCols.length > 0) {
+            toast("File format error! Missing columns: " + missingCols.join(", "), "err");
+            return;
+          }
+
+          const raw = parseCsvText(text);
+          const rows = section === "pn" ? normalizePnRows(raw) : normalizeLpRows(raw);
+          if (!rows.length) {
+            toast("The CSV file contains no data.", "err"); return;
+          }
+
+          // TẦNG 2: Validate Dữ liệu Master Data (Micro)
+          const errors = [];
+          const validRows = [];
+          const pool = section === "pn" ? areas : stations;
+          const subKey = section === "pn" ? "area" : "station";
+
+          rows.forEach((r, idx) => {
+             const cMatch = cities.find(c => c.name.toLowerCase() === r.city.toLowerCase());
+             let subMatch = null;
+
+             if (cMatch) {
+                subMatch = pool.find(x => x.name.toLowerCase() === r[subKey].toLowerCase());
+             }
+
+             if (!cMatch || !subMatch) {
+                errors.push({
+                   originalIndex: idx,
+                   row: r,
+                   errCity: !cMatch,
+                   errSub: !subMatch,
+                   sugCity: !cMatch ? findBestMatch(r.city, cities) : cMatch,
+                   sugSub: (!subMatch && r[subKey]) ? findBestMatch(r[subKey], pool) : subMatch
+                });
+             } else {
+                validRows.push({ ...r, city: cMatch.name, [subKey]: subMatch.name });
+             }
+          });
+
+          if (errors.length > 0) {
+             pendingCsvData = { section, file, validUntil, validRows, errors };
+             renderResolveModal();
+             openModal("modal-resolve");
+          } else {
+             saveFinalCsv(section, file.name, validUntil, validRows);
+          }
+        };
+        reader.onerror = () => toast("Could not read the file.", "err");
+        reader.readAsText(file);
+      }
+
+      function renderResolveModal() {
+         const tbody = $("resolve-body");
+         const section = pendingCsvData.section;
+         const pool = section === "pn" ? areas : stations;
+         const subLabel = section === "pn" ? "Area" : "Station";
+         const subKey = section === "pn" ? "area" : "station";
+
+         let html = "";
+         pendingCsvData.errors.forEach((err, i) => {
+            const r = err.row;
+            const subValue = r[subKey];
+
+            let cityDrop = `<select id="res-city-${i}" class="fld" style="margin-bottom:6px">
+                <option value="">-- Select City --</option>
+                ${cities.map(c => `<option value="${esc(c.name)}" ${err.sugCity && err.sugCity.name === c.name ? "selected" : ""}>${esc(c.name)}</option>`).join("")}
+            </select>`;
+
+            let subDrop = `<select id="res-sub-${i}" class="fld">
+                <option value="">-- Select ${subLabel} --</option>
+                ${pool.map(p => `<option value="${esc(p.name)}" ${err.sugSub && err.sugSub.name === p.name ? "selected" : ""}>${esc(p.name)}</option>`).join("")}
+            </select>`;
+
+            html += `<tr id="err-row-${i}">
+               <td style="font-weight:bold; color:var(--text-muted)">#${err.originalIndex + 2}</td>
+               <td>
+                  <div style="color: ${err.errCity ? 'var(--status-danger-text)' : 'inherit'}; margin-bottom:4px">City: <strong>${esc(r.city)}</strong></div>
+                  <div style="color: ${err.errSub ? 'var(--status-danger-text)' : 'inherit'};">${subLabel}: <strong>${esc(subValue)}</strong></div>
+               </td>
+               <td>
+                  ${err.errCity ? cityDrop : `<div style="margin-bottom:6px; padding:6px; background:var(--bg-row-hover); border-radius:4px; font-size:12px; color:var(--status-success-text)">City: ${esc(r.city)} ✓</div><input type="hidden" id="res-city-${i}" value="${esc(r.city)}"/>`}
+                  ${err.errSub ? subDrop : `<div style="padding:6px; background:var(--bg-row-hover); border-radius:4px; font-size:12px; color:var(--status-success-text)">${subLabel}: ${esc(subValue)} ✓</div><input type="hidden" id="res-sub-${i}" value="${esc(subValue)}"/>`}
+               </td>
+               <td style="text-align:center;">
+                  <button class="icon-btn icon-btn--danger" onclick="cmsLandData.discardErrorRow(${i})" title="Discard this row"><i class="fas fa-trash"></i></button>
+               </td>
+            </tr>`;
+         });
+         tbody.innerHTML = html;
+      }
+
+      function discardErrorRow(idx) {
+         $("err-row-" + idx).style.display = 'none';
+         $("err-row-" + idx).classList.add('discarded');
+      }
+
+      function confirmResolvedData() {
+         const section = pendingCsvData.section;
+         const subKey = section === "pn" ? "area" : "station";
+
+         try {
+           pendingCsvData.errors.forEach((err, i) => {
+              const tr = $("err-row-" + i);
+              if (!tr.classList.contains('discarded')) {
+                 const cityVal = $("res-city-" + i).value;
+                 const subVal = $("res-sub-" + i).value;
+                 if(!cityVal || !subVal) {
+                    toast(`Row #${err.originalIndex + 2} does not have a valid selection.`, "warn");
+                    throw new Error("Validation failed");
+                 }
+                 const r = { ...err.row };
+                 r.city = cityVal;
+                 r[subKey] = subVal;
+                 pendingCsvData.validRows.push(r);
+              }
+           });
+         } catch(e) { return; }
+
+         if (pendingCsvData.validRows.length === 0) {
+            toast("No valid data remaining to save.", "err");
+            closeModal("modal-resolve");
+            return;
+         }
+
+         saveFinalCsv(section, pendingCsvData.file.name, pendingCsvData.validUntil, pendingCsvData.validRows);
+         closeModal("modal-resolve");
+      }
+
+      function saveFinalCsv(section, fileName, validUntil, rows) {
+         setCsv(section, { fileName, validUntil, rows });
+         setModeSilently(section, "manual");
+         renderModeUI(section);
+         renderAllPreviews();
+         toast(`CSV activated successfully (Valid until: ${validUntil})`);
+      }
+
+      // ===================== Popular Neighbourhoods preview =====================
+      function pnRowsForCity(cityName, cityId) {
+        const mode = getMode("pn");
+        const csv = getCsv("pn");
+        const st = csvStatus("pn");
+        if (mode === "manual" && csv && st.state !== "expired") {
+          return csv.rows
+            .filter((r) => r.city.toLowerCase() === cityName.toLowerCase())
+            .map((r) => ({ area: r.area, avgPrice: r.avgPrice, change: r.change }));
+        }
+        return pnAssign
+          .filter((a) => a.cityId === cityId)
+          .map((a) => {
+            const ar = areaById(a.areaId);
+            if (!ar) return null;
+            const key = "pn-" + ar.id;
+            const txn = platformTransactionCount(key);
+            if (txn >= config.n) {
+              return { area: ar.name, avgPrice: platformAvgPrice(key), change: platformChange(key), assignId: a.id };
+            }
+            return { area: ar.name, avgPrice: mlitAvgPrice(key), change: mlitChange(key), assignId: a.id };
+          })
+          .filter(Boolean);
+      }
+      function renderPnPreview() {
+        const wrap = $("pn-preview");
+        const pnMode = getMode("pn");
+        const pnCsv = getCsv("pn");
+        const pnCsvSt = csvStatus("pn");
+        const editable = !(pnMode === "manual" && pnCsv && pnCsvSt.state !== "expired");
+
+        // Only show cities that actually have data — a city with no assignment (or no CSV rows) doesn't render.
+        const visibleCities = editable
+          ? cities.filter((c) => pnAssign.some((a) => a.cityId === c.id))
+          : cities.filter((c) => pnCsv.rows.some((r) => r.city.toLowerCase() === c.name.toLowerCase()));
+
+        if (!visibleCities.length) {
+          wrap.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:24px">
+            No cities assigned yet.${editable ? ` <a href="#" onclick="event.preventDefault();cmsLandData.openAssignModal('pn')">Add areas</a>.` : ""}
+          </div>`;
+          return;
+        }
+
+        wrap.innerHTML = visibleCities
+          .map((c) => {
+            const rows = pnRowsForCity(c.name, c.id).slice(0, 6);
+            return `<div class="city-card">
+            <div class="city-card-head">
+              <span>${esc(c.name)}</span>
+              ${
+                editable
+                  ? `<span class="city-card-head-actions">
+                      <button class="icon-btn" title="Edit areas" onclick="cmsLandData.openAssignModalForCity('pn','${esc(c.id)}')"><i class="fas fa-pen"></i></button>
+                      <button class="icon-btn icon-btn--danger" title="Remove all areas" onclick="cmsLandData.clearCityAssignments('pn','${esc(c.id)}')"><i class="fas fa-trash"></i></button>
+                    </span>`
+                  : ""
+              }
+            </div>
+            <table class="area-table"><thead><tr><th>Area</th><th>Average Price per m2</th><th>Change</th></tr></thead><tbody>
+            ${rows
+              .map((r) => {
+                const up = Number(r.change) >= 0;
+                return `<tr>
+                    <td class="link-cell">${esc(r.area)}</td>
+                    <td>¥${fmtInt(r.avgPrice)}</td>
+                    <td class="${up ? "change-up" : "change-down"}">${up ? "↑ +" : "↓ -"}${Math.abs(r.change).toFixed(2)}%</td>
+                  </tr>`;
+              })
+              .join("")}
+            </tbody></table>
+          </div>`;
+          })
+          .join("");
+      }
+
+      // ===================== Land Prices preview =====================
+      let lpActiveCity = null;
+      function lpRowsForCity(cityName, cityId) {
+        const mode = getMode("lp");
+        const csv = getCsv("lp");
+        const st = csvStatus("lp");
+        if (mode === "manual" && csv && st.state !== "expired") {
+          return csv.rows
+            .filter((r) => r.city.toLowerCase() === cityName.toLowerCase())
+            .sort((a, b) => a.rank - b.rank)
+            .map((r) => ({ rank: r.rank, station: r.station, avgPrice: r.avgPrice, change: r.change }));
+        }
+        return lpAssign
+          .filter((a) => a.cityId === cityId)
+          .map((a, i) => {
+            const s = stationById(a.stationId);
+            if (!s) return null;
+            const key = "lp-" + s.id;
+            const txn = platformTransactionCount(key);
+            const avgPrice = txn >= config.n ? platformAvgPrice(key) : mlitAvgPrice(key);
+            const change = txn >= config.n ? platformChange(key) : mlitChange(key);
+            return { rank: i + 1, station: s.name, avgPrice, change, assignId: a.id };
+          })
+          .filter(Boolean);
+      }
+      function renderLpTabs() {
+        const enabledCities = cities.filter((c) => lpAssign.some((a) => a.cityId === c.id));
+        if (!lpActiveCity || !enabledCities.some((c) => c.id === lpActiveCity)) {
+          lpActiveCity = enabledCities[0]?.id || null;
+        }
+        $("lp-tabs").innerHTML = enabledCities
+          .map((c) => `<button class="land-tab ${c.id === lpActiveCity ? "active" : ""}" onclick="cmsLandData.setLpTab('${esc(c.id)}')">${esc(c.name)}</button>`)
+          .join("");
+      }
+      function setLpTab(id) {
+        lpActiveCity = id;
+        renderLpTabs();
+        renderLpTable();
+      }
+      function renderLpTable() {
+        const wrap = $("lp-preview");
+        const c = lpActiveCity ? cityById(lpActiveCity) : null;
+        if (!c) {
+          wrap.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:24px">No city with stations yet.</div>';
+          return;
+        }
+        const lpMode = getMode("lp");
+        const lpCsv = getCsv("lp");
+        const lpCsvSt = csvStatus("lp");
+        const editable = !(lpMode === "manual" && lpCsv && lpCsvSt.state !== "expired");
+        const rows = lpRowsForCity(c.name, c.id).slice(0, 8);
+        const headHtml = `<div class="city-card-head" style="border-radius:var(--r-md);margin-bottom:10px">
+          <span>${esc(c.name)}</span>
+          ${
+            editable
+              ? `<span class="city-card-head-actions">
+                  <button class="icon-btn" title="Edit stations" onclick="cmsLandData.openAssignModalForCity('lp','${esc(c.id)}')"><i class="fas fa-pen"></i></button>
+                  <button class="icon-btn icon-btn--danger" title="Remove all stations" onclick="cmsLandData.clearCityAssignments('lp','${esc(c.id)}')"><i class="fas fa-trash"></i></button>
+                </span>`
+              : ""
+          }
+        </div>`;
+        if (!rows.length) {
+          wrap.innerHTML =
+            headHtml +
+            `<div style="text-align:center;color:var(--text-muted);padding:24px">No stations assigned for this city.${
+              editable ? ` <a href="#" onclick="event.preventDefault();cmsLandData.openAssignModalForCity('lp','${esc(c.id)}')">Add one</a>.` : ""
+            }</div>`;
+          return;
+        }
+        wrap.innerHTML =
+          headHtml +
+          `<div class="table-wrap"><table class="tbl">
+          <thead><tr>
+            <th style="width:60px">Rank</th><th>Station Name</th>
+            <th>Average Price per m2</th><th>Average Price per Tsubo (yen/tsubo)</th><th>Change</th>
+          </tr></thead><tbody>
+          ${rows
+            .map((r) => {
+              const tsubo = r.avgPrice * TSUBO_FACTOR;
+              const up = Number(r.change) >= 0;
+              return `<tr>
+              <td class="rank-cell">${r.rank}</td>
+              <td class="link-cell">${esc(r.station)}</td>
+              <td>¥${fmtInt(r.avgPrice)}</td>
+              <td>¥${fmtInt(tsubo)}</td>
+              <td class="${up ? "change-up" : "change-down"}">${up ? "↑ +" : "↓ -"}${Math.abs(r.change).toFixed(2)}%</td>
+            </tr>`;
+            })
+            .join("")}
+          </tbody></table></div>`;
+      }
+
+      function renderAllPreviews() {
+        renderPnPreview();
+        renderLpTabs();
+        renderLpTable();
+      }
+
+      // ===================== source config =====================
+      function saveSourceConfig() {
+        const n = parseInt($("cfg-threshold-n").value, 10);
+        const r = parseInt($("cfg-radius-r").value, 10);
+        if (!Number.isFinite(n) || n < 1) {
+          toast("Threshold N must be at least 1.", "err");
+          return;
+        }
+        if (!Number.isFinite(r) || r < 50) {
+          toast("Radius R must be at least 50 meters.", "err");
+          return;
+        }
+        config = { n, r };
+        LS.set(K.config, config);
+        renderAllPreviews();
+        toast("Auto-sync source settings saved.");
+      }
+
+      // ===================== expiry watcher =====================
+      function checkExpiryWarnings() {
+        ["pn", "lp"].forEach((section) => {
+          const st = csvStatus(section);
+          if (st.state === "expiring") {
+            toast(
+              (section === "pn" ? "Popular Neighbourhoods" : "Land Prices") +
+                " CSV expires in " + st.days + " day(s) — upload a new file before it lapses.",
+              "warn",
+            );
+          } else if (st.state === "expired") {
+            toast(
+              (section === "pn" ? "Popular Neighbourhoods" : "Land Prices") +
+                " CSV has expired — now showing Auto fallback data.",
+              "warn",
+            );
+          }
+        });
+      }
+
+      // ===================== init =====================
+      root.querySelectorAll(".modal-backdrop").forEach((bd) =>
+        bd.addEventListener("click", (e) => {
+          if (e.target === bd) bd.classList.remove("open");
+        }),
+      );
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") root.querySelectorAll(".modal-backdrop.open").forEach((m) => m.classList.remove("open"));
+      });
+      $("cfg-threshold-n").value = config.n;
+      $("cfg-radius-r").value = config.r;
+
+      renderModeUI("pn");
+      renderModeUI("lp");
+      renderAllPreviews();
+      checkExpiryWarnings();
+
+})();
