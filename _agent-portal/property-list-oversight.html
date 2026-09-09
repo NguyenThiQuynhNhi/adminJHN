@@ -6956,7 +6956,7 @@
             ? '<span class="draft-status" id="draftStatus"></span>'
             : "";
         return `
-          <section class="card${fullCls === " kv-full" ? '" style="grid-column:1/-1' : ""}">
+          <section data-section="${escAttr(secKey)}" class="card${fullCls === " kv-full" ? '" style="grid-column:1/-1' : ""}">
             <div class="card-title"><i class="fas ${sec.icon}"></i> ${esc(sec.title)}${draftStatusHtml}</div>
             ${inner}
           </section>`;
@@ -7425,6 +7425,10 @@
       }
 
       function renderPerformance(prop) {
+        // Prototype-wide setting; connected dashboard reads authoritative provider policy.
+        let hideAdDetails = true;
+        try { hideAdDetails = JSON.parse(localStorage.getItem('yuushi.ads.performanceSuppressed')) !== false; } catch {}
+
         const perf = prop.performance || {};
         const sl   = perf.standardListing || {};
         const ads  = Array.isArray(perf.ads) ? perf.ads : [];
@@ -7533,6 +7537,7 @@
             </div>
           </div>
 
+          ${hideAdDetails ? '<div class="perf-block" style="padding:16px">Detailed advertising performance is hidden by platform settings.</div>' : `
           <!-- 2. Per Ad -->
           <div class="perf-block">
             <div class="perf-block-head">
@@ -7568,7 +7573,8 @@
                 </tbody>
               </table>
             </div>
-          </div>`;
+          </div>`}
+          `;
       }
 
       (function seedPerformance() {
@@ -10708,5 +10714,6 @@
       applyFilters(); // initial filter/sort pass + chips + badges
       setPropView(propView); // applies persisted Table/Grid view + renders
     </script>
+    <script src="agency-dashboard-source.js" data-source="properties"></script>
   </body>
 </html>

@@ -30,7 +30,7 @@ The Agent Portal now uses an **iframe shell exactly like the Admin Portal**.
 **Workspace**
 | Label | `data-content` | Doc |
 |---|---|---|
-| Dashboard | `dashboard.html` | `agent-portal__dashboard.md` |
+| Dashboard | `dashboard.html` | [Agency Dashboard implementation](AGENCY_DASHBOARD_IMPLEMENTATION.md) |
 | Properties | `property-list-oversight.html` | `agent-portal__property-list-oversight.md` |
 | Projects | `project-management.html` | `agent-portal__project-management.md` |
 | Leads | `lead-management.html` | `agent-portal__lead-management.md` |
@@ -76,7 +76,7 @@ These exist on disk and are reachable only programmatically or as lighter siblin
 1. `agent-portal__index.md` — the shell (sidebar map, header chat + avatar dropdown, iframe loader, logout target).
 2. `agent-portal__agent_signin.md` — standalone sign-in (credentials → 2FA).
 3. `agent-portal__agent_signup.md` — standalone agency registration → verify-email success.
-4. `agent-portal__dashboard.md` — agent home/overview.
+4. [Agency Dashboard implementation](AGENCY_DASHBOARD_IMPLEMENTATION.md) — agent home/overview.
 5. `agent-portal__property-list-oversight.md` — property listings (copy of admin screen).
 6. `agent-portal__project-management.md` — new-development projects (copy of admin screen).
 7. `agent-portal__property-detail-view.md` — read-only property detail (copy of admin screen).
@@ -100,11 +100,13 @@ These exist on disk and are reachable only programmatically or as lighter siblin
 
 ## Conventions & cross-cutting notes
 
+- Dashboard uses shared JS/CSS assets and persists saved layouts; see the current Dashboard handoff for its runtime and test setup.
 - **No persistence except where noted.** Almost every page keeps state in memory only and resets on reload. The exceptions that touch `localStorage`:
+  - `dashboard.html` saves layouts under `yuushi.agency.dashboard.mock.v2`.
   - `admin-messages.html` and `message-center.html` share the Lead Management store via keys `yuushiLeadGroups` / `yuushiLeads`.
   - `automation-catalog.js` (used by `message-center.html`) persists per-trigger drafts under `yuushi.automations`.
   - The copied property list/project pages read/write parent-window state via `window.parent.localStorage` for in-shell navigation.
-- **Toasts** appear bottom-right and auto-dismiss (~2.4–3s), with success (gold/green) and error (red) variants. A few pages still use native `alert()`/`confirm()` (e.g. `dashboard.html` uses `alert()`).
+- **Toasts** appear bottom-right and auto-dismiss (~2.4–3s), with success (gold/green) and error (red) variants. A few pages still use native `alert()`/`confirm()`.
 - **Known drift to flag for the BA / next maintainer:**
   - In `message-center.html` the audience radio `value` attributes are legacy (`all_users`/`all_agents`/`all_leads`) even though the labels/model are Client / Admin.
   - Several "save" flows show a success toast without actually reverting/persisting (e.g. `profile.html`'s discard does not restore field values).
