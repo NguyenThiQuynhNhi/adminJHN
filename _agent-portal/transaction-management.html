@@ -343,7 +343,8 @@
       .toast.success { background: var(--green); }
       .toast.info { background: var(--blue); }
     </style>
-  </head>
+  <script src="../mock-workflows.js"></script>
+</head>
   <body>
     <!-- ===== MAIN CONTENT ONLY ===== -->
     <main class="main">
@@ -365,11 +366,11 @@
               <button id="pillClosed" onclick="setTypeFilter('closed')">Sold</button>
               <button id="pillSusp" onclick="setTypeFilter('suspended')">Suspended</button>
             </div>
-            <div class="filter-field has-icon"><i class="fas fa-search fi-left"></i><input placeholder="Search property…" /></div>
-            <div class="filter-field"><select><option value="">Reason</option><option>Sold</option><option>Sold by others</option><option>Seller withdrew</option><option>Expired</option><option>Legal hold</option></select><i class="fas fa-chevron-down fi-right"></i></div>
-            <div class="filter-field"><select><option value="">Price Publish</option><option>Public</option><option>Private</option></select><i class="fas fa-chevron-down fi-right"></i></div>
-            <div class="filter-field"><select><option value="">Agent</option><option>Chris Sales</option><option>Maria Sales</option><option>Tony Sales</option></select><i class="fas fa-chevron-down fi-right"></i></div>
-            <div class="filter-field has-icon"><i class="fas fa-calendar fi-left"></i><input placeholder="Date range" /></div>
+            <div class="filter-field has-icon"><i class="fas fa-search fi-left"></i><input id="txSearch" placeholder="Search property…" oninput="page=1;renderList()" /></div>
+            <div class="filter-field"><select id="txReason" onchange="page=1;renderList()"><option value="">Reason</option><option>Sold</option><option>Sold by others</option><option>Seller withdrew</option><option>Expired</option><option>Legal hold</option></select><i class="fas fa-chevron-down fi-right"></i></div>
+            <div class="filter-field"><select id="txPublish" onchange="page=1;renderList()"><option value="">Price Publish</option><option>Public</option><option>Private</option></select><i class="fas fa-chevron-down fi-right"></i></div>
+            <div class="filter-field"><select id="txAgent" onchange="page=1;renderList()"><option value="">Agent</option><option>Chris Sales</option><option>Maria Sales</option><option>Tony Sales</option></select><i class="fas fa-chevron-down fi-right"></i></div>
+            <div class="filter-field has-icon"><i class="fas fa-calendar fi-left"></i><input id="txFrom" type="date" aria-label="Sold from" onchange="page=1;renderList()" /><input id="txTo" type="date" aria-label="Sold to" onchange="page=1;renderList()" /></div>
           </div>
 
           <div class="card">
@@ -383,7 +384,7 @@
                 <th>Reason <span class="sort">↕</span></th>
                 <th>Price Publish <span class="sort">↕</span></th>
                 <th>Agent <span class="sort">↕</span></th>
-                <th>Actions</th>
+                <th>Verification Status</th><th>Actions</th>
               </tr></thead>
               <tbody id="listBody"></tbody>
             </table>
@@ -965,28 +966,29 @@
       }
 
       function renderList() {
-        const allRows = getTransactionRows();
-        const rows = allRows.slice(0, rowsPerPage);
-        const total = allRows.length;
+        const allRows = filteredTransactions();
+        const total = allRows.length;page=Math.max(1,Math.min(page,Math.ceil(total/rowsPerPage)||1));
+        const rows = allRows.slice((page-1)*rowsPerPage, page*rowsPerPage);
         document.getElementById("listBody").innerHTML = rows.map(t => `
-          <tr onclick="${t.type==='closed'?'showDetailClosed()':'showDetailSuspended()'}">
-            <td><div class="name-cell"><span class="prop-avatar">${t.property.slice(0,2).toUpperCase()}</span><div><div>${t.property}</div><div style="font-size:11px;color:var(--text-dim)">${t.ref}</div></div></div></td>
+          <tr data-txref="${YuushiWorkflow.esc(t.ref)}" onclick="openTransaction(this.dataset.txref)">
+            <td><div class="name-cell"><span class="prop-avatar">${YuushiWorkflow.esc(t.property.slice(0,2).toUpperCase())}</span><div><div>${YuushiWorkflow.esc(t.property)}</div><div style="font-size:11px;color:var(--text-dim)">${t.ref}</div></div></div></td>
             <td><span class="badge ${t.type==='closed'?'badge-closed':'badge-suspended'}">${t.type==='closed'?'Sold':'Suspended'}</span></td>
-            <td>${t.client !== '—' ? `<div class="name-cell"><span class="ini-avatar">${t.client.split(' ').map(w=>w[0]).join('').slice(0,2)}</span>${t.client}</div>` : '<span style="color:var(--text-dim)">—</span>'}</td>
+            <td>${t.client !== '—' ? `<div class="name-cell"><span class="ini-avatar">${t.client.split(' ').map(w=>w[0]).join('').slice(0,2)}</span>${YuushiWorkflow.esc(t.client)}</div>` : '<span style="color:var(--text-dim)">—</span>'}</td>
             <td>${t.date}</td>
             <td class="${t.price==='—'?'price-cell hidden-price':'price-cell'}">${t.price==='—'?'No sale':t.price}</td>
             <td>${reasonBadge(t.reason)}</td>
             <td>
               <div class="toggle-wrap">
-                <label class="toggle" onclick="event.stopPropagation()"><input type="checkbox" ${t.pub?'checked':''} onchange="toast('Price Publish updated')"><span class="toggle-slider"></span></label>
+                <label class="toggle" onclick="event.stopPropagation()"><input type="checkbox" ${t.pub?'checked':''} data-ref="${YuushiWorkflow.esc(t.ref)}" onchange="publishTransaction(this.dataset.ref,this.checked)"><span class="toggle-slider"></span></label>
                 <span class="toggle-label">${t.pub?'Public':'Private'}</span>
               </div>
             </td>
-            <td><div class="name-cell"><span class="owner-avatar">${ownerInitials(t.owner)}</span>${ownerLabel(t.owner)}</div></td>
-            <td onclick="event.stopPropagation()"><div class="act-icons">
+            <td><div class="name-cell"><span class="owner-avatar">${ownerInitials(t.owner)}</span>${YuushiWorkflow.esc(ownerLabel(t.owner))}</div></td>
+            <td>${t.verificationStatus?YuushiWorkflow.statusBadge(t.verificationStatus)+YuushiWorkflow.outlier(t):"—"}</td><td onclick="event.stopPropagation()"><div class="act-icons">
               <i class="fas fa-arrow-up-right-from-square" onclick="toast('View property')" title="View property"></i>
             </div></td>
           </tr>`).join("");
+        if(!rows.length)document.getElementById("listBody").innerHTML='<tr><td colspan="10">No transactions match your filters.</td></tr>';
         const start = total ? (page - 1) * rowsPerPage + 1 : 0;
         const end = Math.min(page * rowsPerPage, total);
         document.getElementById("entriesLabel").textContent = `Showing ${start} to ${end} of ${total} entries`;
@@ -995,9 +997,9 @@
 
       function renderPagination(total) {
         const pages = Math.ceil(total / rowsPerPage) || 1;
-        let h = `<button class="pg-btn pg-arrow">‹</button>`;
-        for (let i = 1; i <= Math.min(5, pages); i++) h += `<button class="pg-btn ${i===page?'active':''}">${i}</button>`;
-        h += `<button class="pg-btn pg-arrow">›</button>`;
+        let h = `<button class="pg-btn pg-arrow" onclick="transactionPage(${page-1})" ${page<=1?"disabled":""}>‹</button>`;
+        for (let i = 1; i <= pages; i++) h += `<button onclick="transactionPage(${i})" class="pg-btn ${i===page?'active':''}">${i}</button>`;
+        h += `<button class="pg-btn pg-arrow" onclick="transactionPage(${page+1})" ${page>=pages?"disabled":""}>›</button>`;
         document.getElementById("pgRight").innerHTML = h;
       }
 
@@ -1008,7 +1010,7 @@
         typeFilter = f;
         document.getElementById("pillAll").classList.toggle("active", f==="all");
         document.getElementById("pillClosed").classList.toggle("active", f==="closed");
-        document.getElementById("pillSusp").classList.toggle("active", f==="suspended");
+        document.getElementById("pillSusp").classList.toggle("active", f==="suspended");page=1;renderList();
       }
       window.setTypeFilter = setTypeFilter;
 
@@ -1017,6 +1019,10 @@
         document.querySelectorAll("#screenDetailClosed .btab").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         const body = document.getElementById("detailTabBodyClosed");
+        if(currentVerificationId&&currentVerificationId!=='TXN-100012'){
+          const tx=W.read(W.keys.transactions).find(x=>x.transactionId===currentVerificationId);
+          body.innerHTML=t==='timeline'?W.timeline(tx?.timeline):t==='offer'?'<p class="wf-card">No linked offers for this transaction.</p>':`<div class="wf-card">Client: ${W.esc(tx?.clientName||'Not linked')}<p>Lead: ${W.esc(tx?.leadId||'Not linked')}</p></div>`;return;
+        }
         if (t==="offer") {
           body.innerHTML = `<table class="data"><thead><tr><th>Property <span class="sort">↕</span></th><th>Offer Price <span class="sort">↕</span></th><th>Date Sent <span class="sort">↕</span></th><th>Counteroffer <span class="sort">↕</span></th><th>Counteroffer Date <span class="sort">↕</span></th><th>Status</th></tr></thead>
             <tbody><tr><td>Minami Hills — Unit 4B</td><td>¥3,600,000</td><td>16 May 2025</td><td>¥3,800,000</td><td>18 May 2025</td><td><span class="badge badge-closed">Accepted</span></td></tr></tbody></table>
@@ -1131,6 +1137,7 @@
 
       /* Price visibility toggle */
       function togglePriceVis(cb) {
+        if(currentVerificationId){publishTransaction(currentVerificationId,cb.checked);renderVerification();return;}
         const lbl = document.getElementById("visLabel");
         const ppPrice = document.getElementById("profilePrice");
         if (cb.checked) { lbl.textContent="Public"; ppPrice.textContent="¥3,800,000"; ppPrice.className="pp-prop-price"; }
@@ -1174,8 +1181,8 @@
         window.scrollTo(0,0);
       }
       function showList() { showOnly("screenList"); }
-      function showDetailClosed() { showOnly("screenDetailClosed"); renderPipelineClosed(); detailTab("offer", document.querySelector("#screenDetailClosed .btab")); }
-      function showDetailSuspended() { showOnly("screenDetailSuspended"); renderPipelineSuspended(); }
+      function showDetailClosed() { showOnly("screenDetailClosed"); if(typeof renderPipelineClosed==='function')renderPipelineClosed(); detailTab("offer", document.querySelector("#screenDetailClosed .btab")); }
+      function showDetailSuspended() { showOnly("screenDetailSuspended"); if(typeof renderPipelineSuspended==='function')renderPipelineSuspended(); }
       function showEdit(type) {
         showOnly(type==="closed"?"screenEditClosed":"screenEditSuspended");
         if (type === "suspended") populateSuspendedForm(selectedSuspensionProperty);
@@ -1240,6 +1247,23 @@
       window.toast=toast;
 
       /* Init */
+
+const W=YuushiWorkflow;W.initUI();
+W.merge(W.keys.transactions,TRANSACTIONS.filter(t=>t.reason==='Sold').map(t=>W.transaction({transactionId:t.ref,propertyId:t.ref==='TXN-100012'?'PROP-2041':'PROPERTY-'+t.ref,propertyName:t.property,listingOwnerId:({CS:'AGT-001',MS:'AGT-002',TS:'AGT-003'})[t.owner]||'OWNER-'+t.owner,listingOwnerName:ownerLabel(t.owner),clientId:'CLIENT-'+t.ref,clientName:t.client,listedPrice:t.ref==='TXN-100012'?4200000:null,agentSubmittedPrice:Number(t.price.replace(/[^0-9.]/g,'')),finalSalePrice:Number(t.price.replace(/[^0-9.]/g,'')),soldDate:t.date,publishPrice:t.pub})), 'transactionId');
+W.merge(W.keys.transactions,W.read('yuushi.suspensionTx').filter(t=>t.reason==='sold'&&Number(t.transactionPrice)>0).map(t=>W.transaction({transactionId:t.ref,propertyId:t.propertyId,propertyName:t.propertyName,listingOwnerName:t.agent,agentSubmittedPrice:Number(t.transactionPrice),finalSalePrice:Number(t.transactionPrice),soldDate:t.suspensionDate,publishPrice:!!t.publicPrice})), 'transactionId');
+let currentVerificationId=null;
+function filteredTransactions(){const verification=W.read(W.keys.transactions);const base=getTransactionRows().filter(t=>!verification.some(v=>v.transactionId===t.ref));const rows=base.concat(verification.map(v=>({...v,ref:v.transactionId,property:v.propertyName,type:'closed',client:v.clientName,date:v.soldDate,price:W.money(v.finalSalePrice),reason:'Sold',pub:v.publishPrice,owner:v.listingOwnerName,sortDate:v.updatedAt})));const q=document.getElementById('txSearch').value.toLowerCase(),reason=document.getElementById('txReason').value.toLowerCase(),pub=document.getElementById('txPublish').value,agent=document.getElementById('txAgent').value,from=document.getElementById('txFrom').value,to=document.getElementById('txTo').value;return rows.filter(t=>(typeFilter==='all'||t.type===typeFilter)&&(!q||(t.property+' '+t.ref).toLowerCase().includes(q))&&(!reason||t.reason.toLowerCase()===reason)&&(!pub||t.pub===(pub==='Public'))&&(!agent||ownerLabel(t.owner)===agent)&&(!from||t.date>=from)&&(!to||t.date<=to)).sort((a,b)=>String(b.sortDate).localeCompare(String(a.sortDate)));}
+function transactionPage(n){page=n;renderList();}
+function publishTransaction(id,on){const t=W.read(W.keys.transactions).find(t=>t.transactionId===id);if(t)W.updateTransaction(id,'Price publication updated',{publishPrice:on},t.listingOwnerName);else {const seed=TRANSACTIONS.find(t=>t.ref===id);if(seed)seed.pub=on;const rows=W.read('yuushi.suspensionTx');const raw=rows.find(t=>t.ref===id);if(raw){raw.publicPrice=on;W.write('yuushi.suspensionTx',rows);}}renderList();toast('Price publication updated.');}
+function openTransaction(id){const t=W.read(W.keys.transactions).find(t=>t.transactionId===id);currentVerificationId=t?id:null;document.querySelectorAll('.transaction-verification').forEach(e=>e.remove());if(!t){const row=getTransactionRows().find(t=>t.ref===id);if(row?.type==='closed')showDetailClosed();else showDetailSuspended();return;}showDetailClosed();document.querySelector('#screenDetailClosed .dt-name').textContent=t.propertyName;renderVerification();}
+function renderVerification(){const t=W.read(W.keys.transactions).find(t=>t.transactionId===currentVerificationId);if(!t)return;syncTransactionDetail(t);document.querySelectorAll('.transaction-verification').forEach(e=>e.remove());const box=document.createElement('section');box.className='wf-card transaction-verification';box.innerHTML=`<h3>Transaction Verification · ${W.esc(t.transactionId)}</h3><div class="wf-grid">${[['Listed Price',W.money(t.listedPrice)],['Agent Submitted Price',W.money(t.agentSubmittedPrice)],['Client Submitted Price',W.money(t.clientSubmittedPrice)],['Final Sale Price',W.money(t.finalSalePrice)],['Difference',t.clientSubmittedPrice==null?'—':W.money(Math.abs(t.clientSubmittedPrice-t.agentSubmittedPrice))+' ('+W.discrepancy(t).toFixed(2)+'%)']].map(([k,v])=>`<div><small>${k}</small><p>${v}</p></div>`).join('')}<div><small>Verification Status</small><p>${W.statusBadge(t.verificationStatus)} ${W.outlier(t)}</p></div></div><p>Related Dispute Ticket: ${t.disputeTicketId?W.esc(t.disputeTicketId):'—'}</p><p>Outlier alert: difference ≥20% versus Agent price; warning only.</p>${t.verificationStatus==='Pending Client Confirmation'?'<button class="btn btn-primary" onclick="simulateClientConfirmation()">Simulate Client Confirmation</button>':''} ${t.verificationStatus==='Disputed'?'<button class="btn btn-primary" onclick="raisePriceDispute()">Raise Price Dispute</button>':''}<h4>Verification timeline</h4>${W.timeline(t.timeline)}`;document.querySelector('#screenDetailClosed .detail-top').insertAdjacentElement('afterend',box);}
+function syncTransactionDetail(t){const screen=document.getElementById('screenDetailClosed');const values={'Property':t.propertyName,'Client':t.clientName,'Agent':t.listingOwnerName,'Transaction Date':t.soldDate,'Listing Price':W.money(t.listedPrice),'Transaction Price':W.money(t.finalSalePrice),'Ref':t.transactionId,'Lead Ref':t.leadId||'—','Created':t.soldDate,'Modified':t.updatedAt};screen.querySelectorAll('.kv-grid>div').forEach(el=>{const label=el.querySelector('.kv-l')?.textContent;if(Object.hasOwn(values,label))el.querySelector('.kv-v').textContent=values[label];});screen.querySelector('.banner-sub').textContent='Property ID: '+t.propertyId;
+const sidebar=screen.querySelector('.detail-layout>div:last-child');
+if(sidebar){if(!sidebar.dataset.seedHtml)sidebar.dataset.seedHtml=sidebar.innerHTML;if(t.transactionId==='TXN-100012')sidebar.innerHTML=sidebar.dataset.seedHtml;else sidebar.innerHTML='<section class="sec"><div class="sec-title">Activities</div>'+W.timeline(t.timeline)+'</section><section class="sec"><div class="sec-title">Comments</div><p>No comments for this transaction.</p></section>';}
+screen.querySelectorAll('.dt-stat').forEach(el=>{const label=el.querySelector('.l')?.textContent;if(label==='Price')el.querySelector('.v').textContent=W.money(t.finalSalePrice);if(label==='Price Publish')el.querySelector('.v').textContent=t.publishPrice?'Public':'Private';});screen.querySelector('.price-visibility input').checked=t.publishPrice;screen.querySelector('.price-visibility strong').textContent=t.publishPrice?'Public':'Private';document.getElementById('visLabel').textContent=t.publishPrice?'Public':'Private';}
+function simulateClientConfirmation(){const id=currentVerificationId,t=W.read(W.keys.transactions).find(t=>t.transactionId===id);if(!t||t.verificationStatus!=='Pending Client Confirmation')return;W.modal('Simulate Client Confirmation',W.field('Client Transaction Price','clientPrice',t.agentSubmittedPrice,'number','min="1" step="1" required')+'<label><input type="checkbox" id="clientCompleted" required> Confirm Transaction Completed</label>',d=>{const price=Number(d.querySelector('#clientPrice').value);if(!Number.isSafeInteger(price)||price<=0)throw Error('Enter a positive whole JPY amount.');const fresh=W.read(W.keys.transactions).find(t=>t.transactionId===id);if(fresh.verificationStatus!=='Pending Client Confirmation')throw Error('Transaction status has changed. Refresh the detail.');W.updateTransaction(id,'Client confirmed completion',{clientSubmittedPrice:price,finalSalePrice:price,verificationStatus:price===fresh.agentSubmittedPrice?'Matched':'Disputed'},fresh.clientName);renderVerification();renderList();toast('Client confirmation saved.');},'Submit');}
+function raisePriceDispute(){const id=currentVerificationId,t=W.read(W.keys.transactions).find(t=>t.transactionId===id);if(t?.verificationStatus!=='Disputed')return;W.modal('Raise Price Dispute','<label>Dispute reason<textarea id="disputeReason" required maxlength="1000"></textarea></label>'+W.field('Proposed correct price','proposedPrice',t.agentSubmittedPrice,'number','min="1" step="1" required')+'<label>Evidence file<input type="file" id="disputeEvidence" required></label><label>Note<textarea id="disputeNote" maxlength="1000"></textarea></label>',d=>{const reason=d.querySelector('#disputeReason').value.trim(),price=Number(d.querySelector('#proposedPrice').value),file=d.querySelector('#disputeEvidence').files[0];if(!reason||!file||!Number.isSafeInteger(price)||price<=0)throw Error('Reason, positive price and evidence file are required.');const fresh=W.read(W.keys.transactions).find(t=>t.transactionId===id);if(fresh.verificationStatus!=='Disputed')throw Error('Transaction status has changed.');const ticketId=W.next(W.read(W.keys.tickets),'TK-DISPUTE-'),at=W.now(),evidence={filename:file.name,size:file.size,type:file.type,lastModified:file.lastModified,receivedAt:at};const ticket={...W.unassigned(),id:ticketId,name:t.agencyName,email:'agency@example.test',phone:'',category:'Transaction Price Dispute',status:'Open',created:at.slice(0,10),title:'Transaction Price Dispute · '+t.propertyName,transactionId:id,propertyId:t.propertyId,agencyId:t.agencyId,disputeReason:reason,proposedCorrectPrice:price,note:d.querySelector('#disputeNote').value.trim(),evidence,messages:[{from:'customer',name:t.agencyName,time:at,text:reason}]};W.upsert(W.keys.tickets,ticket);W.updateTransaction(id,'Agency submitted price dispute',{verificationStatus:'Evidence Submitted',disputeTicketId:ticketId,disputeReason:reason,proposedCorrectPrice:price,evidence,agencyNote:ticket.note},t.agencyName);renderVerification();renderList();toast('Price dispute ticket created.');},'Submit dispute');}
+addEventListener('storage',e=>{if(e.key===W.keys.transactions){renderList();renderVerification();}});
       renderList();
     </script>
     <script src="agency-dashboard-source.js" data-source="transactions"></script>

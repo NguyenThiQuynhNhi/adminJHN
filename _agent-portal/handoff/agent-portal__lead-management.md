@@ -1,74 +1,27 @@
-# Leads (Lead Management CRM) (`lead-management.html`)
+# Leads
 
-**Purpose:** A lead-management CRM for the agent: browse the lead list, open a lead's detail (pipeline + read-only sections + activities/comments), and edit a lead through a full form. Three views swap in place (List / Detail / Edit). All data is hardcoded demo content; nothing persists.
+Source: [lead-management.html](../lead-management.html), current working-tree implementation.
 
-**Access:** Sidebar → Workspace → Leads.
+Access: Workspace → Leads.
 
----
+## List and pipeline
 
-## Layout & structure
+`STAGES` exactly: **New, Assigned, Contact, Viewing, Proposal, Negotiation, Asleep, Sold, Closed Lost**. The pipeline uses Sold; rental closing uses the same stage with rental-specific wording.
 
-A top nav strip (search "Search leads, properties, contacts…" + icon buttons: Add → Edit screen, Notifications, Profile, Settings, Apps) and three screens toggled via a `.hidden` class:
+Intent keys are `buy`, `rent`, `project` (purchase, rental, new development). Search/filter/sort and 10/25/50 row controls operate on the seeded list. Detail is selected with `showDetail(id)` and includes related property/project target, offers, activity and comments. Listing Owner and operational assignee are separate; `assignEnquiry()` checks the demo role permissions and records assignment history using `YuushiWorkflow` without changing Listing Owner.
 
-- **Screen 1 — List** (default).
-- **Screen 2 — Detail.**
-- **Screen 3 — Edit.**
+## Editor
 
-(The file carries sidebar `.sb-*` CSS but does not render its own sidebar; only the `.main` column is shown.)
+Visible editable controls: Lead Name, Contact Name, Status, Owner, Created, Next Follow Up Date, Property Type; location input method and locations; Transaction Type (To Buy / To Rent), Properties, Projects, price range and Description; New Build, Construction Stage, bedroom/bathroom ranges, area ranges, Air Condition and Furnished.
 
----
+The editor Status dropdown contains only **New, Assigned, Proposal, Negotiation, Sold**. It is a subset of the pipeline. `saveLead()` only toasts and returns to detail; it does not persist these form values. Required markers are not comprehensive validation.
 
-## List screen
+## Closing and lock
 
-**Filter bar:**
-- Intent pill toggle **To Buy / To Rent** (`setIntent`).
-- Location text input.
-- **Status** select: (blank) / New / Assigned / Converted / In Progress.
-- **Price Range** select: ¥0 – ¥2M / ¥2M – ¥5M / ¥5M+.
-- **Property Type** select: House / Apartment / Office.
+Selecting Sold opens `openLeadSoldModal()`: sale price + Sold Date for purchase; monthly rent, duration and Lease Start Date for rental; fixed related Type/Lot + sale price/date for project. `confirmLeadSold()` checks presence of price/date and project target, sets local closing state. Group 6 updates the selected lot; Group 5 appends a local transaction log without marking the whole floor-plan type sold. Purchase/rental closure displays local totals; this handler does not write shared verification records. The pipeline blocks further stage changes when `leadIsSold` is true. This is a status lock, not a blanket disabling of the editor, and does not apply to Closed Lost.
 
-(The location/select filters are visual only — not wired to the render.)
+## Activity and messaging
 
-**Table columns:** checkbox · **Contact Name** · **Property Type** · **Enquiry Date** · **Net Follow Up Date** · **Status** · **Owner** · **Actions**. Headers are sortable (`sortBy` on name/type/enquiry/follow/status/owner, asc/desc toggle). Row actions: edit (pen) and delete (trash → confirm → toast). Row click opens Detail.
+Offer creation is available from the detail Offers tab. Activity additions and Enter-to-post comments update the local detail UI; they do not establish synchronized CRM records. File/image controls are mock interactions. Send to Client Chat confirmation describes sending a property and automatically creating a lead, but `confirmSendToChat()` is toast feedback; no delivered chat or new Inquiry is created by that handler.
 
-**Pagination:** rows-per-page cycles 10 → 25 → 50 (`cycleRows`); "Showing X to Y of 100 entries"; up to 5 numbered page buttons + prev/next. (`TOTAL = 100`, but only 10 demo leads exist in `LEADS`.)
-
----
-
-## Detail screen
-
-- Header stat blocks: "Looking for" = House, "Interest" = To Buy, "Budget" = ¥2,000,000.
-- **Pipeline stages** (clickable, set current stage + toast): New, Assigned, Contact, Viewing, Proposal, Negotiation, Asleep, Closed Won, Closed Lost (default active = Proposal).
-- Read-only KV sections: **Details**, **Source Details**, **Locations**, **Budget & Necessities** (with doc counts Leads Files / KYC Documents / VIP Documents = 0), **Main Features**, **Say Hello** (contact info).
-- Right panel: **Activities** list ("View All") and **Comments** (textarea "Press Enter to Submit", sample comment, "View All").
-- Bottom tab tables (`detailTab`): **Matching Properties** (filters + empty state "No entries were found"), **Offers** (columns: Property, Offer Price, Offer Date Sent, Counteroffer Price, Counteroffer Date Sent, Actions; 1 sample row), **Agreements** (Ref, Property, List Selling Price, Final Selling Price, Assigned To; empty), **Related Leads** (Contact Name, Enquiry Date, Created, Status, Owner, Budget from, Budget to; empty).
-- **"More" menu** (dropdown popover): Duplicate, Archive, Delete (Delete confirms then toast).
-- **"Add activity"** popover: Arrange Viewing, Log Call, Add Note.
-
----
-
-## Edit screen
-
-Cancel / Save buttons; sections and fields:
-
-- **Details:** Contact Name\* (combo), Status\* (New/Assigned/Proposal/Negotiation/Closed Won), Owner, Enquiry Date, Next Follow Up Date, Enquiry Type (House/Apartment/Office), Enquiry Subtypes (Villa/Townhouse).
-- **Source Details:** Source (Direct/Website/Referral), Direct Source (Walk-In/Phone/Email), Website URL, Campaign, Broker/External Agent, Source Description.
-- **Locations:** Location input method (From list / Draw on map / Post code), Locations.
-- **Budget & Necessities:** Transaction Type (To Buy/To Rent), Properties, Projects, List Selling Price From/To, Leads Files / KYC Documents / VIP Documents, Description.
-- **Main Features:** New Build, Construction Stage, Bedrooms From/To, Bathrooms From/To, Internal/Covered/Plot/Total Area From/To, Air Condition, Furnished, Elevator, Pets Allowed, Private Swimming Pool, Title Deeds.
-
-Save → toast "Lead saved successfully" then returns to Detail (~400ms).
-
----
-
-## Modals / popovers
-
-No backdrop modals; uses dropdown popovers (More menu, Add-activity). Deletes use the toast confirm flow.
-
-## Notifications (toasts, bottom-right, ~2.6s)
-
-"Duplicate lead (demo)", "Archive lead (demo)", "Deleted (demo)", "Status: {Stage}", "{ActivityType} added", "Comment added", "Showing all activities (demo)", "Showing all comments (demo)", "Add offer (demo)", "Lead saved successfully" (success).
-
-## Persistence
-
-None. In-memory arrays only (`OWNERS`, `LEADS`, `STAGES`); resets on reload. No `parent.frame` navigation and no external page links — navigation is internal screen switching.
+Inquiry is client-initiated Chat-with-Agency. The assignment terminology used here does not add an Agency-created Inquiry workflow. Evidence: `STAGES`, `setStage`, `confirmLeadSold`, `assignEnquiry`, `saveLead`, `addActivityType`, `commentKey`, `confirmSendToChat`; shared `../mock-workflows.js` and Dashboard source adapter.

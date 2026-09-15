@@ -1,66 +1,15 @@
-# Admin Messages — 1:1 Chat (Agent perspective) (`admin-messages.html`)
+# Messages Box
 
-**Purpose:** A three-panel 1:1 chat built for the **agent**. The logged-in user is the agent ("me" = Taro Tanaka), so the platform side appears as a pinned "Platform Admin / Support" thread, and the people the agent chats with are **Clients** (end users). Demo data; mutations are in-memory (except lead-group writes, which use localStorage).
+Source: [admin-messages.html](../admin-messages.html), current working-tree implementation.
 
-**Access:** Sidebar → Messages → Admin Messages, or the header chat button in the shell.
+Access: Messages → Messages Box, or shell chat shortcut. The filename remains `admin-messages.html`.
 
----
+Three panels: conversation list, chat/composer, contact/info panel. Default demo role is CEO (`currentUserRole = "ceo"`), with **Agency Message / Agents Message** tabs. Agency Message shows pinned Platform Admin plus client conversations; Agents Message groups client conversations by staff. CEO review threads marked `ceoReadOnly` disable composing; the header identifies CEO View.
 
-## Layout & structure
+Messages support local sending, failed-message retry, pin/unpin/clear, copy feedback, emoji/templates, attachments and manual translation controls. `pseudoTranslate()` returns the original text. The plus menu includes a property picker with search/filter/grid/table selection; property and appraisal cards are rendered in chat. Appraisal detail and PDF controls are mock interactions.
 
-Three panels: conversation list (left) · chat thread (center) · info panel (right).
+CEO Suggest Agent on eligible appraisal cards opens the staff picker; `confirmSuggestAgent()` creates/selects a local staff/client conversation marked read-only for CEO. This does not implement a server assignment or create an Agency-owned Inquiry entity.
 
-## Conversation list (left)
+Save Client uses the legacy `yuushiLeadGroups` / `yuushiLeads` localStorage store; the Platform Admin thread cannot be saved as a client. This store is not the page-local data in Contacts or Groups. Client info includes name/email/phone and Media / Files / Links. Message delivery, attachment upload and translation are simulated; conversation changes reset on reload.
 
-- Header is just a search box ("Search messages, people"). **The old End User / Agent tabs do NOT exist** (the tab CSS remains in the stylesheet as dead styles, but no tab markup is rendered).
-- `renderList()` builds two parts:
-  1. **A single pinned "Platform Admin / Support" thread at the top** (sticky, gold left-border, headset icon, a thumbtack pin-flag, online dot, time "10:25 AM", unread badge 1). Always first unless filtered out by search.
-  2. **A "Clients" section** (a `Clients` label) listing 8 client conversations: Liam Anderson, Lucas Williams, Grace Miller, Sophia Chen, Benjamin Knight, Olivia Foster, Jackson Adams, Ethan Sullivan.
-- Empty state: "No conversations found."
-
-## "Me" identity
-
-"Me" is **Taro Tanaka** — outgoing message sender name is hardcoded "Taro Tanaka"; seeded client messages address the agent as "Hi Taro!".
-
-## Pinned Admin thread (data)
-
-`adminThread`: name "Platform Admin / Support", company "YUUSHI Platform Administration – SUPPORT", address "YUUSHI Operations Center, Chiyoda, Tokyo 100-0001", response "Within 15 min", 4 seeded messages (verification-approved flow). When offline it shows a system message: "Platform Admin support hours are 08:00 – 16:00." / "They will get back to you as soon as possible." This thread is the default opened on init.
-
----
-
-## Chat header (center, top)
-
-Avatar, name, online/offline. Actions:
-- **Save Client** (heart, becomes "Saved Client") — opens the "Add to lead group" popup. **Hidden for the Admin thread** (support can't be saved as a lead).
-- **Language** (default "English") — opens a 15-language dropdown for per-message manual translation.
-- **Toggle info panel** icon.
-
-## Save → Lead Group popup
-
-Header "Add to lead group". Integrates with Lead Management via `localStorage` keys `yuushiLeadGroups` / `yuushiLeads` (only end-user/client lead groups are shown). Picking a group → toast 'Client added to "{group}"'; removing → toast "Removed from saved". Empty state "No Client lead groups yet. Create one in Lead Management."
-
-## Messages & composer
-
-- Bubbles render as `me` / `them` with per-message meta (name · time). Failed messages show "Message failed to send. Tap to retry" (Grace Miller has one seeded); retry → toast "Message sent".
-- **Pin bar** ("PIN MESSAGE") above the thread shows pinned messages with VIEW MORE / VIEW LESS and a clear-all (×). Grace Miller's chat has 3 demo pins.
-- **Manual translation only:** when the target language differs, a "Translate to {Lang}" / "Show original" link appears; `pseudoTranslate()` is a no-op placeholder (returns the original). Translated bubble tag "Translated · {src} → {target}".
-- **Composer:** emoji button (18 emojis), text input ("Type message...", Enter sends), paperclip attach (toast "Attached: {filename}"), a **Message Templates** button, and **Send**. Sending appends a "me" message with time "Now".
-- **Message Templates** popup (4): "Initial greeting", "Viewing confirmation", "Follow up", "Out of office" — each with a "Use" button that fills the composer.
-- **Context menu** (right-click a bubble): "Pin message" / "Unpin message", and "Copy message" (toast "Message copied").
-
-## Info panel (right)
-
-- **Client view:** Full Name, Email, Phone, then tabs **Media / Files / Links** (default Media), each with "View all >".
-- **Admin view:** company, address, "Usual response time: Within 15 min", same tabs (default Links).
-
----
-
-## Notifications (toasts)
-
-"Message sent", "Message copied", "Attached: {filename}", 'Client added to "{group}"', "Removed from saved".
-
-## Persistence
-
-Lead-group saves use shared `localStorage` keys `yuushiLeadGroups` / `yuushiLeads` (shared with Lead Management and Message Center). All chat/message state is in-memory and resets on reload.
-
-> **Note:** the file references `property-card.js` (`renderPropertyCard`) and has property-card CSS, but no property card is actually mounted in the current rendered info panels.
+Evidence: `renderList`, `renderStaffView`, `selectConvo`, `renderHeader`, `sendMessage`, `renderMessages`, `openPropertyPicker`, `renderAppraisalCard`, `confirmSuggestAgent`.

@@ -50,7 +50,7 @@ Card titled **"Two-factor authentication"**, subtitle "We sent a 6-digit code to
 - **Resend code** (`#resend-btn`) → `resendOtp()`: toast "A new code has been sent." and a 30-second cooldown ("Resend in Ns").
 - **← Back to sign in** → returns to Step 1.
 
-**`verifyOtp()`** requires all 6 digits filled (no value check — any 6 digits pass). On success: toast "Signed in successfully." then after ~900ms `window.location.href = "dashboard.html"`. (Note: lands on the bare content page, not the `index.html` shell.)
+**`verifyOtp()`** requires all 6 digits filled (no value check — any 6 digits pass). On success: toast "Signed in successfully." then after ~900ms `window.location.href = "index.html"` (the iframe shell).
 
 ---
 

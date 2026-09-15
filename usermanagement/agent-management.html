@@ -969,7 +969,8 @@
       .btn-primary-success:hover { filter: brightness(0.94); }
       .modal-message { font-size: 13px; color: var(--text-main); line-height: 1.5; margin: 0; }
     </style>
-  </head>
+  <script src="../mock-workflows.js"></script>
+</head>
   <body>
     <div id="listView">
       <div class="page-header">
@@ -1424,11 +1425,7 @@
                   flex-wrap: wrap;
                 "
               >
-                <select id="grantBadgeSel" style="max-width: 200px">
-                  <option value="Top Agency">Top Agency</option>
-                  <option value="Premium Agency">Premium Agency</option>
-                  <option value="Other">Other</option>
-                </select>
+                <select id="grantBadgeSel" style="max-width:200px"></select><a class="btn btn-sm" href="badge-management.html">Manage Badge Catalog</a>
                 <button
                   class="btn btn-sm btn-primary"
                   type="button"
@@ -3036,6 +3033,9 @@
         }
       })();
 
+      YuushiWorkflow.syncAgencies(agents);
+      YuushiWorkflow.initUI();
+      addEventListener('storage',e=>{if([YuushiWorkflow.keys.badges,YuushiWorkflow.keys.assignments].includes(e.key)){YuushiWorkflow.syncAgencies(agents);renderList();if(currentAgent)renderDetail();}});
       let filtered = agents.slice();
       const PAGE_SIZE = 50;
       let pageNum = 1;
@@ -3091,8 +3091,8 @@
       function getSelectedAgents() { return agents.filter((a) => selectedIds.has(a.id)); }
       function updateBulkBar() {
         const n = selectedIds.size;
-        $("bulkBar").classList.toggle("hidden", n === 0);
-        $("bulkCount").textContent = n;
+        $("bulkBar")?.classList.toggle("hidden", n === 0);
+        if($("bulkCount"))$("bulkCount").textContent = n;
       }
       function onRowCheck(id, checked) {
         if (checked) selectedIds.add(id); else selectedIds.delete(id);
@@ -3512,6 +3512,9 @@
       }
 
       function renderDetail() {
+        YuushiWorkflow.syncAgencies(agents);
+        const activeBadges=YuushiWorkflow.read(YuushiWorkflow.keys.badges).filter(b=>b.status==='Active');
+        $('grantBadgeSel').innerHTML=activeBadges.length?YuushiWorkflow.options(activeBadges):'<option value="">No active badges</option>';
         const a = currentAgent;
         if (!a) return;
         $("toolbarView").classList.toggle("hidden", editMode);
@@ -3565,7 +3568,7 @@
           .join("");
 
         $("dBadges").innerHTML = a.badges.length
-          ? a.badges.map((b) => `<span class="chip">${esc(b)}</span>`).join("")
+          ? a.badges.map((name) => {const b=YuushiWorkflow.read(YuushiWorkflow.keys.badges).find(b=>b.name===name);return b?YuushiWorkflow.badgeHTML(b):`<span class="chip">${esc(name)}</span>`;}).join("")
           : '<em style="color:var(--text-muted)">None</em>';
         $("dRemoveBadges").innerHTML = a.badges.length
           ? a.badges
@@ -4176,7 +4179,7 @@
       }
       function grantBadge() {
         if (!currentAgent) return;
-        const b = $("grantBadgeSel").value;
+        const badgeId=$('grantBadgeSel').value, badge=YuushiWorkflow.read(YuushiWorkflow.keys.badges).find(b=>b.id===badgeId&&b.status==='Active');if(!badge)return toast('Select an active badge.',true);const b=badge.name;
         if (currentAgent.badges.includes(b)) { toast(`${b} already granted.`, true); return; }
         openConfirm({
           title: "Grant badge?",
@@ -4185,7 +4188,8 @@
           confirmLabel: '<i class="fas fa-award"></i> Grant',
           confirmClass: "btn-primary",
           onConfirm: () => {
-            currentAgent.badges.push(b);
+            YuushiWorkflow.grant(currentAgent.id,badgeId,true);
+            YuushiWorkflow.syncAgencies(agents);
             originalAgent.badges = [...currentAgent.badges];
             renderDetail(); renderList();
             toast("Badge granted successfully.");
@@ -4202,7 +4206,8 @@
           confirmLabel: '<i class="fas fa-trash"></i> Remove',
           confirmClass: "btn-primary-danger",
           onConfirm: () => {
-            currentAgent.badges.splice(idx, 1);
+            const badge=YuushiWorkflow.read(YuushiWorkflow.keys.badges).find(x=>x.name===b);if(badge)YuushiWorkflow.grant(currentAgent.id,badge.id,false);
+            YuushiWorkflow.syncAgencies(agents);
             originalAgent.badges = [...currentAgent.badges];
             renderDetail(); renderList();
             toast("Badge removed successfully.");
@@ -4556,7 +4561,7 @@
       }
 
       // Wire modal close (backdrop + ESC)
-      (function wireModals() {
+      document.addEventListener('DOMContentLoaded', function () {
         ["confirmModal","pwdResetModal","leadModal"].forEach(id => {
           const el = $(id);
           if (!el) return;
@@ -4568,7 +4573,7 @@
             const el = $(id); if (el && el.classList.contains("open")) el.classList.remove("open");
           });
         });
-      })();
+      });
 
       renderList();
     </script>

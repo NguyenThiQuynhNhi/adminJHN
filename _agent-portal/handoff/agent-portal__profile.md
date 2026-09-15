@@ -60,3 +60,7 @@ Required-field non-empty check on save; chip limits (max 15 cities / 5 languages
 ## Persistence
 
 None. All state is in-memory; no saved snapshot or storage. Resets on reload.
+
+## Current implementation review
+
+Source: [profile.html](../profile.html). `saveProfile()` validates enabled required fields only. Password-strength indicators and future-expiry hints do not establish enforced password changes or date validation. `confirmDiscard()` exits editing without restoring a saved snapshot.

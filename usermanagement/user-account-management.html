@@ -1205,7 +1205,8 @@
           color: var(--accent);
         }
       </style>
-    </head>
+    <script src="../mock-workflows.js"></script>
+</head>
     <body>
       <div id="listView">
         <div class="page-header">
@@ -1223,7 +1224,7 @@
           <div class="card-title"><i class="fas fa-filter"></i> Filters</div>
           <div class="filter-bar">
             <div class="field-group">
-              <label class="field-label" for="fStatus">Status</label
+              <label class="field-label" for="fMobileVerification">Mobile Verification</label><select id="fMobileVerification"><option value="">All</option><option>Verified</option><option>Not Verified</option></select><label class="field-label" for="fStatus">Status</label
               ><select id="fStatus" multiple size="3">
                 <option value="All">All</option>
                 <option value="Active">Active</option>
@@ -1363,7 +1364,7 @@
                   <th>User</th>
                   <th>Buyer status</th>
                   <th>Country</th>
-                  <th>Status</th>
+                  <th>Status</th><th>Mobile Verification</th>
                   <th>Last active</th>
                   <th class="num">Logins</th>
                   <th class="num">Avg session (min)</th>
@@ -1714,7 +1715,7 @@
                 ><span class="kv-value" id="dFailedLogins">—</span>
               </div>
               <div class="kv">
-                <span class="kv-label">Identity Verification</span>
+                <span class="kv-label">Mobile Phone Verification</span>
                 <span class="kv-value" id="dIdVerify">—</span>
               </div>
               <div class="kv kv-full">
@@ -1970,7 +1971,7 @@
             lastPwd: "2026-04-01 08:00 JST",
             lastDevice: "Desktop",
             failedLogins: 0,
-            idVerify: "Unverified",
+            idVerify: "Not Verified",
             loginHistory: [
               {
                 at: "2026-05-10 22:00",
@@ -2422,7 +2423,7 @@
               lastPwd: `2026-${pad2(loginMonth)}-01 10:00 JST`,
               lastDevice: i % 2 === 0 ? "Mobile" : "Desktop",
               failedLogins: failed,
-              idVerify: phone ? "Verified" : "Unverified",
+              idVerify: phone ? "Verified" : "Not Verified",
               loginHistory: [],
               lastSupport: `2026-${pad2(loginMonth)}-${pad2(loginDay)} 10:00 JST`,
               supportTickets: [],
@@ -2481,6 +2482,8 @@
           renderList();
         }
 
+        const removedPhones=YuushiWorkflow.read(YuushiWorkflow.keys.phones,{});
+        users.forEach(u=>{if(removedPhones[u.id])u.phone='';u.idVerify=u.phone&&String(u.phone).trim()?'Verified':'Not Verified';});
         let filtered = users.slice();
         let currentUser = null;
         let originalUser = null;
@@ -2491,8 +2494,8 @@
         function getSelectedUsers() { return users.filter(u => selectedIds.has(u.id)); }
         function updateBulkBar() {
           const n = selectedIds.size;
-          $("bulkBar").classList.toggle("hidden", n === 0);
-          $("bulkCount").textContent = n;
+          $("bulkBar")?.classList.toggle("hidden", n === 0);
+          if($("bulkCount"))$("bulkCount").textContent = n;
         }
         function onRowCheck(id, checked) {
           if (checked) selectedIds.add(id); else selectedIds.delete(id);
@@ -2616,19 +2619,19 @@
         const badgeIdVerify = (s) =>
           s === "Verified"
             ? '<span class="badge badge-verified">Verified</span>'
-            : '<span class="badge badge-unverified">Unverified</span>';
-        // Identity Verification is derived from Phone Number presence.
-        // Verified = phone has non-empty value; Unverified = phone is blank/whitespace.
+            : '<span class="badge badge-unverified">Not Verified</span>';
+        // Mobile Phone Verification is derived from Phone Number presence.
+        // Verified = phone has non-empty value; Not Verified = phone is blank/whitespace.
         // This is the single source of truth — do not read u.idVerify directly anywhere.
         const computeIdVerify = (u) =>
           u && u.phone && String(u.phone).trim() !== ""
             ? "Verified"
-            : "Unverified";
+            : "Not Verified";
 
         function alertCount(u) {
           let n = 0;
           if (u.failedLogins > 0) n++;
-          if (computeIdVerify(u) === "Unverified") n++;
+          if (computeIdVerify(u) === "Not Verified") n++;
           if (u.lockStatus === "Locked") n++;
           if (u.outstanding > 0) n++;
           return n;
@@ -2639,7 +2642,7 @@
             return '<span class="alert-dot none" title="No alerts"><i class="fas fa-check"></i></span>';
           const issues = [];
           if (u.failedLogins > 0) issues.push(`${u.failedLogins} failed logins`);
-          if (computeIdVerify(u) === "Unverified") issues.push("ID unverified");
+          if (computeIdVerify(u) === "Not Verified") issues.push("Mobile phone not verified");
           if (u.lockStatus === "Locked") issues.push("Account locked");
           if (u.outstanding > 0)
             issues.push(fmtYen(u.outstanding) + " outstanding");
@@ -2671,7 +2674,7 @@
               <td><div style="display:flex;align-items:center;gap:10px">${avatarImg(u.fullName, 36, 8)}<div><strong>${esc(u.fullName)}</strong><br><span style="font-size:11px;color:var(--text-muted)">${u.id} · ${esc(u.email)}</span></div></div></td>
               <td>${esc(Array.isArray(u.buyerStatus) ? u.buyerStatus.join(", ") : u.buyerStatus)}</td>
               <td>${esc(u.residentCountry)}</td>
-              <td>${badgeStatus(u.status)}</td>
+              <td>${badgeStatus(u.status)}</td><td>${badgeIdVerify(computeIdVerify(u))}</td>
               <td>${esc(u.lastLogin || "—")}</td>
               <td class="num">${u.totalLogins.toLocaleString()}</td>
               <td class="num">${parseSession(u.avgSession).toFixed(1)}</td>
@@ -2713,6 +2716,7 @@
             return true;
           };
           filtered = users.filter((u) => {
+            if($("fMobileVerification").value && computeIdVerify(u)!==$("fMobileVerification").value)return false;
             if (st.length && !st.includes(u.status)) return false;
             if (bs.length) {
               const _bsa = Array.isArray(u.buyerStatus)
@@ -2737,6 +2741,7 @@
         }
 
         function resetFilters() {
+          $("fMobileVerification").value="";
           [
             "fStatus",
             "fBuyerStatus",
@@ -3223,7 +3228,7 @@
             kv("Email Address", vField(u.email, "email", "text")),
             kv("Date of Birth", vField(u.dob, "dob", "date")),
             kv("Country Code", vField(u.countryCode, "countryCode")),
-            kv("Phone Number", vField(u.phone, "phone")),
+            kv("Phone Number", `${esc(u.phone||"—")} ${u.phone&&!editMode?'<button class="btn btn-sm" onclick="removePhoneNumber()">Remove Phone Number</button>':''}`),
             kv(
               "Status",
               vField(u.status, "status", editMode ? "select" : "badge-status", [
@@ -3514,6 +3519,8 @@
           doShowList();
         }
 
+        function removePhoneNumber(){if(!currentUser?.phone||editMode)return;openConfirm({title:'Remove phone number?',body:'The saved phone number will be removed. Mobile Phone Verification will become Not Verified.',confirmLabel:'Remove Phone Number',confirmClass:'btn-primary-danger',onConfirm:()=>{currentUser.phone='';currentUser.idVerify=computeIdVerify(currentUser);const removed=YuushiWorkflow.read(YuushiWorkflow.keys.phones,{});removed[currentUser.id]=true;YuushiWorkflow.write(YuushiWorkflow.keys.phones,removed);originalUser=JSON.parse(JSON.stringify(currentUser));renderDetail();applyFilters();showToast('Phone number removed.','success');}});}
+        window.removePhoneNumber=removePhoneNumber;
         function enterEditMode() {
           editMode = true;
           renderDetail();
@@ -3564,6 +3571,7 @@
 
           document.querySelectorAll("[data-field]").forEach((el) => {
             const f = el.dataset.field;
+            if(f === "phone")return;
             const t = el.dataset.type;
             if (el.type === "file") {
               if (currentUser._pendingAvatarFile) {
@@ -3583,7 +3591,7 @@
               currentUser[f] = el.value;
             }
           });
-          // Identity Verification is derived from Phone Number — keep stored field synced for any legacy reads.
+          // Mobile Phone Verification is derived from Phone Number — keep stored field synced for any legacy reads.
           currentUser.idVerify = computeIdVerify(currentUser);
 
           originalUser = JSON.parse(JSON.stringify(currentUser));
@@ -3971,7 +3979,7 @@
         }
 
         // ===== Modal close wiring: backdrop click + ESC for all modals =====
-        (function wireModalClose() {
+        document.addEventListener('DOMContentLoaded', function () {
           const modals = [
             { id: "pwdResetModal", close: closePwdResetModal },
             { id: "confirmModal", close: closeConfirmModal },
@@ -3991,7 +3999,7 @@
               if (el && el.classList.contains("open")) m.close();
             });
           });
-        })();
+        });
 
         function previewAvatar(input) {
           if (!input.files || !input.files[0]) return;

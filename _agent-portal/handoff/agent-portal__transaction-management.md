@@ -1,21 +1,17 @@
-# Transactions (`transaction-management.html`)
+# Transactions
 
-**Purpose:** Transaction management workspace for the agent portal. The page is a standalone static HTML document with inline CSS/JS, covering closed deals and suspended listings, along with detail screens, edit flows, and pricing visibility controls. All data is demo-only.
+Source: [transaction-management.html](../transaction-management.html), current working-tree implementation.
 
-**Access:** Sidebar → Workspace → Transactions.
+Access: Workspace → Transactions.
 
-## Layout & structure
+List combines closed deals, suspended-listing records and shared verification records. Filters include type, search by property/reference, reason, price publication, agent and date range; pagination and row counts are implemented. Detail/edit screens differ for closed deals and suspended listings; comments/activity panels remain demo content.
 
-The page contains:
+Suspended-listing edit selects a property and removal reason, transaction price (required for Sold), date, agent and public-price option. `saveTransaction('suspended')` writes `yuushi.suspensionTx`. Other general edit saves remain toast-only. `publishTransaction()` updates price visibility in the corresponding local record.
 
-- A list view with filters, stats cards, table rows, and row actions.
-- A closed-deal detail screen with price visibility toggle, profile preview, activity rail, and comments.
-- A suspended-listing detail screen with removal reason, visibility toggle, and comments.
-- Separate edit screens for closed deals and suspended listings.
+## Current verification integration
 
-State is in memory only. The page switches between screens with inline JS (`showList()`, `showDetailClosed()`, `showDetailSuspended()`, `showEdit()`).
+`../mock-workflows.js` supplies localStorage-backed records in `yuushi.transactionVerificationRecords`; tickets use `yuushi.adminTickets`. Detail shows Listed Price, Agent Submitted Price, Client Submitted Price, Final Sale Price, difference, verification status, dispute ticket and timeline.
 
-## Notes
+Shared exact verification statuses: **Pending Client Confirmation, Matched, Disputed, Evidence Submitted, Admin Resolved, Rejected**. The Agency UI simulates client confirmation from Pending Client Confirmation: positive whole-JPY price and completion checkbox; equal prices become Matched, differing prices become Disputed, and final price becomes the client price. A difference of at least 20% is a warning only.
 
-- Closed-deal prices can be made public or private for agent profile display.
-- Suspended listings are modeled separately so they can stay private and show removal reasons.
+From Disputed, Raise Price Dispute requires reason, proposed positive whole-JPY price and evidence file, plus optional note. It creates a local ticket and advances to Evidence Submitted. The file is stored as metadata, not an uploaded attachment. Admin resolution is not an Agency action here. Storage events refresh verification data. This is a local demonstration, not a client verification or support service.

@@ -1,3 +1,5 @@
+> HISTORICAL SOURCE REFERENCE — excluded from the current client-review handoff. Use [Agency Dashboard implementation](../AGENCY_DASHBOARD_IMPLEMENTATION.md) for current scope.
+
 in a# Agency Dashboard — Corrective Business-Scope Report
 
 Ngày 2026-09-09. Căn cứ chính: yêu cầu corrective pass `f5a1676b-9f98-4c3c-a90c-8574d2ec2327`. Không coi việc có mặt trong V2 workbook, có dữ liệu module hoặc có code tính toán là bằng chứng được duyệt.

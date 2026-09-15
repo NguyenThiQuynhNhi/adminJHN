@@ -1,112 +1,70 @@
-# YUUSHI Agent Portal — Handoff Documentation
+# YUUSHI Agency Portal — current client-review handoff
 
-This folder documents the **YUUSHI Agent Portal** (the `_agent-portal/` directory) — the agency-facing side of the YUUSHI real-estate platform, distinct from the back-office Admin Portal. It is a static HTML mockup: standalone `.html` files with inline `<style>` and inline vanilla `<script>`, no build system, no backend. The only external dependencies are Font Awesome 6.5 (CDN) and, on a couple of pages, Chart.js (CDN). All data is hardcoded demo content; destructive/save actions are stubbed with `confirm()` + toasts ending in "(demo)" or success toasts.
+The current working-tree HTML and referenced JavaScript are the implementation source of truth. This is a frontend mockup; a success message does not establish a backend operation. Page-specific documents identify simulations and persistence limits. `agency-dashboard-source.js` exposes read-only previews of module records; it does not persist business data or synchronize every module to the Dashboard store.
 
----
+The shell is [index.html](../index.html); see [shell behavior](agent-portal__index.md). The following map is derived from its `data-content` links. Dashboard and CRM Activities are expandable groups, not additional standalone pages.
 
-## Architecture — the iframe shell
+## Workspace
 
-The Agent Portal now uses an **iframe shell exactly like the Admin Portal**.
-
-- **`index.html` is the ONLY page with navigation.** It hosts a left sidebar and a global top header, and an `<iframe id="contentFrame">` that fills the rest of the page. Default content = `dashboard.html`.
-- **Every other `.html` file is CONTENT ONLY** — no sidebar, no header — designed to render inside the iframe. (This was just refactored: the per-page sidebars/headers were removed. A few content pages still carry dead sidebar CSS in their stylesheets, but no sidebar markup is emitted in their bodies.)
-- **Sidebar navigation:** each `<a class="menu-item" data-content="<file>.html">`. A small inline script intercepts clicks, sets `iframe#contentFrame.src` to the `data-content` value, and toggles the `.active` class. There is no router, no history API, no hash routing — the URL bar never changes.
-- **Top header (right-aligned):**
-  - A round **chat button** (`#chatBtn`, comment-dots icon, red unread badge "5") → `openInbox()` loads `admin-messages.html` into the iframe and highlights the Admin Messages sidebar item.
-  - A global **account / avatar dropdown** showing **Taro Tanaka / Senior Sales Agent** (avatar "TT", email `taro.tanaka@anna-fudosan.co.jp`). The dropdown has **My Profile** (`acctOpenMyProfile()` → loads `profile.html`, highlights Agency Profile) and **Log out** (`acctLogout()` → native confirm "Log out of the Agent Portal?…" then `window.location.href = "agent_signin.html"`).
-- **Palette:** white sidebar, gold accent `#8B7340` / hover `#6F5C33` / light `#c9a85c`, warm off-white `#fffaf2`, `#f5f5f5` page background. Responsive: below 860px the sidebar collapses to icons.
-
-### Auth pages are standalone (not in the shell)
-
-`agent_signin.html` and `agent_signup.html` are full-page documents, **not** loaded in the iframe:
-
-- **Sign-in:** credentials → 2FA OTP step → redirects to `index.html` (the shell).
-- **Sign-up:** registers a new agency, then swaps to a "Verify your email" success state.
-
----
-
-## Sidebar menu map (`index.html`)
-
-**Workspace**
-| Label | `data-content` | Doc |
+| Navigation | Current page | Handoff |
 |---|---|---|
-| Dashboard | `dashboard.html` | [Agency Dashboard implementation](AGENCY_DASHBOARD_IMPLEMENTATION.md) |
-| Properties | `property-list-oversight.html` | `agent-portal__property-list-oversight.md` |
-| Projects | `project-management.html` | `agent-portal__project-management.md` |
-| Leads | `lead-management.html` | `agent-portal__lead-management.md` |
-| Transactions | `transaction-management.html` | `agent-portal__transaction-management.md` |
-| Offers | `offer-management.html` | `agent-portal__offer-management.md` |
-| Agreement Management | `agreement-management.html` | `agent-portal__agreement-management.md` |
-| CRM Activities | `crm-activities.html#viewing` / `#task` / `#jobs` / `#calls` / `#emails` / `#sms` / `#comments` | `agent-portal__crm-activities.md` |
+| Dashboard → Overview | [dashboard.html#overview](../dashboard.html#overview) | [Dashboard → Overview](AGENCY_DASHBOARD_IMPLEMENTATION.md) |
+| Dashboard → Ads & Subscriptions | [dashboard.html#subscriptions](../dashboard.html#subscriptions) | [Dashboard → Ads & Subscriptions](AGENCY_DASHBOARD_IMPLEMENTATION.md) |
+| Properties | [property-list-oversight.html](../property-list-oversight.html) | [Properties](agent-portal__property-list-oversight.md) |
+| Projects | [project-management.html](../project-management.html) | [Projects](agent-portal__project-management.md) |
+| Appraisals | [appraisal-management.html](../appraisal-management.html) | [Appraisals](agent-portal__appraisal-management.md) |
+| Leads | [lead-management.html](../lead-management.html) | [Leads](agent-portal__lead-management.md) |
+| Transactions | [transaction-management.html](../transaction-management.html) | [Transactions](agent-portal__transaction-management.md) |
+| Offers | [offer-management.html](../offer-management.html) | [Offers](agent-portal__offer-management.md) |
+| Agreement | [agreement-management.html](../agreement-management.html) | [Agreement](agent-portal__agreement-management.md) |
+| CRM Activities → Calendar | [calendar.html](../calendar.html) | [CRM Activities → Calendar](agent-portal__calendar.md) |
+| CRM Activities → Viewing | [crm-activities.html#viewing](../crm-activities.html#viewing) | [CRM Activities → Viewing](agent-portal__crm-activities.md) |
+| CRM Activities → Task | [crm-activities.html#task](../crm-activities.html#task) | [CRM Activities → Task](agent-portal__crm-activities.md) |
+| CRM Activities → Jobs | [crm-activities.html#jobs](../crm-activities.html#jobs) | [CRM Activities → Jobs](agent-portal__crm-activities.md) |
+| CRM Activities → Calls | [crm-activities.html#calls](../crm-activities.html#calls) | [CRM Activities → Calls](agent-portal__crm-activities.md) |
+| CRM Activities → Emails | [crm-activities.html#emails](../crm-activities.html#emails) | [CRM Activities → Emails](agent-portal__crm-activities.md) |
+| CRM Activities → SMS | [crm-activities.html#sms](../crm-activities.html#sms) | [CRM Activities → SMS](agent-portal__crm-activities.md) |
+| CRM Activities → Comments | [crm-activities.html#comments](../crm-activities.html#comments) | [CRM Activities → Comments](agent-portal__crm-activities.md) |
 
-**Messages**
-| Label | `data-content` | Doc |
+## Messages
+
+| Navigation | Current page | Handoff |
 |---|---|---|
-| Inquiries | `leads-inquiries.html` | `agent-portal__leads-inquiries.md` |
-| Admin Messages | `admin-messages.html` | `agent-portal__admin-messages.md` |
-| Message Center | `message-center.html` | `agent-portal__message-center.md` |
+| Contacts | [contact-management.html](../contact-management.html) | [Contacts](agent-portal__contact-management.md) |
+| Groups | [group-management.html](../group-management.html) | [Groups](agent-portal__group-management.md) |
+| Messages Box | [admin-messages.html](../admin-messages.html) | [Messages Box](agent-portal__admin-messages.md) |
+| Message Center | [message-center.html](../message-center.html) | [Message Center](agent-portal__message-center.md) |
 
-**Agency**
-| Label | `data-content` | Doc |
+## Agency
+
+| Navigation | Current page | Handoff |
 |---|---|---|
-| Staff Management | `staff-management.html` | `agent-portal__staff-management.md` |
-| Roles & Permissions | `role-and-permission.html` | `agent-portal__role-and-permission.md` |
-| Agency Profile | `profile.html` | `agent-portal__profile.md` |
-| Advertising | `ad-monetisation.html` | `agent-portal__ad-monetisation.md` |
-| Subscription | `billing.html` | `agent-portal__billing.md` |
+| Staff Management | [staff-management.html](../staff-management.html) | [Staff Management](agent-portal__staff-management.md) |
+| Roles & Permissions | [role-and-permission.html](../role-and-permission.html) | [Roles & Permissions](agent-portal__role-and-permission.md) |
+| Agency Profile | [profile.html](../profile.html) | [Agency Profile](agent-portal__profile.md) |
 
-### Files present but NOT linked in the sidebar
+## Ads & Subscriptions
 
-These exist on disk and are reachable only programmatically or as lighter siblings — they are **not** wired into the shell sidebar:
+| Navigation | Current page | Handoff |
+|---|---|---|
+| Book Ad | [book-ad.html](../book-ad.html) | [Book Ad](agent-portal__book-ad.md) |
+| My Campaigns | [my-campaigns.html](../my-campaigns.html) | [My Campaigns](agent-portal__my-campaigns.md) |
+| Plans | [plans.html](../plans.html) | [Plans](agent-portal__plans.md) |
+| Cart | [cart.html](../cart.html) | [Cart](agent-portal__cart.md) |
+| Billing & Payments | [billing-payments.html](../billing-payments.html) | [Billing & Payments](agent-portal__billing-payments.md) |
 
-- `crm.html` — a lighter, tab-based CRM (sibling of `crm-activities.html`). Doc: `agent-portal__crm.md`.
-- `advertising.html` — a lighter, tab-based advertising page (sibling of `ad-monetisation.html`). Doc: `agent-portal__advertising.md`.
-- `property-detail-view.html` — read-only property detail, opened from the property list. Doc: `agent-portal__property-detail-view.md`.
-- `agent_signin.html`, `agent_signup.html` — standalone auth. Docs: `agent-portal__agent_signin.md`, `agent-portal__agent_signup.md`.
+## Additional current screens
 
-### Shared assets
+- [Sign-in](agent-portal__agent_signin.md) — [agent_signin.html](../agent_signin.html), standalone.
+- [Sign-up](agent-portal__agent_signup.md) — [agent_signup.html](../agent_signup.html), standalone.
+- [Property detail / editor](agent-portal__property-detail-view.md) — [property-detail-view.html](../property-detail-view.html), supplementary screen outside the sidebar; the Properties list has its own inline detail.
 
-- `property-card.js` — property-card renderer used by the property list/project pages (referenced as `../property-card.js` in those copied files).
-- `automation-catalog.js` — shared automation-trigger catalog + `AutoStore` (localStorage `yuushi.automations`); used by `message-center.html` only.
+## Review boundaries
 
----
+[AGENCY_DASHBOARD_IMPLEMENTATION.md](AGENCY_DASHBOARD_IMPLEMENTATION.md) is the Dashboard handoff: 29 selectable metrics, existing System Widgets and Supporting Fields, and three unchanged BA questions. Historical scope-correction material is outside this client-review package.
 
-## Per-screen documents in this folder
+Monetization comprises Subscription, Cart & Add-on, and Advertising with direct Stripe payment flows represented by the UI; there is no wallet or stored balance. Actual payment calls are simulated.
 
-1. `agent-portal__index.md` — the shell (sidebar map, header chat + avatar dropdown, iframe loader, logout target).
-2. `agent-portal__agent_signin.md` — standalone sign-in (credentials → 2FA).
-3. `agent-portal__agent_signup.md` — standalone agency registration → verify-email success.
-4. [Agency Dashboard implementation](AGENCY_DASHBOARD_IMPLEMENTATION.md) — agent home/overview.
-5. `agent-portal__property-list-oversight.md` — property listings (copy of admin screen).
-6. `agent-portal__project-management.md` — new-development projects (copy of admin screen).
-7. `agent-portal__property-detail-view.md` — read-only property detail (copy of admin screen).
-8. `agent-portal__lead-management.md` — lead CRM (list / detail / edit).
-9. `agent-portal__crm-activities.md` — full CRM activities (7 modules, now hash-navigated from the shell sidebar).
-10. `agent-portal__crm.md` — lighter CRM (Tasks kanban / Viewings / Activity Log).
-11. `agent-portal__transaction-management.md` — transactions list, closed-deal detail, and suspended-listing detail/editor.
-12. `agent-portal__offer-management.md` — offers list/detail/editor with lead-linked negotiation flow.
-13. `agent-portal__agreement-management.md` — agreement management shell entry; current file is an empty placeholder.
-14. `agent-portal__ad-monetisation.md` — full advertising/monetisation console.
-15. `agent-portal__advertising.md` — lighter advertising page.
-16. `agent-portal__billing.md` — subscription & billing.
-17. `agent-portal__leads-inquiries.md` — inquiry inbox + users who saved properties.
-18. `agent-portal__admin-messages.md` — 1:1 chat (agent perspective; pinned Admin/Support + Clients).
-19. `agent-portal__message-center.md` — broadcast/campaign center (Admin/Client audiences).
-20. `agent-portal__staff-management.md` — staff table + add/edit drawer.
-21. `agent-portal__role-and-permission.md` — roles list + permission matrix.
-22. `agent-portal__profile.md` — Agency Profile + My Profile.
+Inquiry remains a client-initiated Chat-with-Agency business concept. Contacts and Groups organize existing relationships; they do not introduce an Agency-created Inquiry entity.
 
----
-
-## Conventions & cross-cutting notes
-
-- Dashboard uses shared JS/CSS assets and persists saved layouts; see the current Dashboard handoff for its runtime and test setup.
-- **No persistence except where noted.** Almost every page keeps state in memory only and resets on reload. The exceptions that touch `localStorage`:
-  - `dashboard.html` saves layouts under `yuushi.agency.dashboard.mock.v2`.
-  - `admin-messages.html` and `message-center.html` share the Lead Management store via keys `yuushiLeadGroups` / `yuushiLeads`.
-  - `automation-catalog.js` (used by `message-center.html`) persists per-trigger drafts under `yuushi.automations`.
-  - The copied property list/project pages read/write parent-window state via `window.parent.localStorage` for in-shell navigation.
-- **Toasts** appear bottom-right and auto-dismiss (~2.4–3s), with success (gold/green) and error (red) variants. A few pages still use native `alert()`/`confirm()`.
-- **Known drift to flag for the BA / next maintainer:**
-  - In `message-center.html` the audience radio `value` attributes are legacy (`all_users`/`all_agents`/`all_leads`) even though the labels/model are Client / Admin.
-  - Several "save" flows show a success toast without actually reverting/persisting (e.g. `profile.html`'s discard does not restore field values).
+[Review limitations](CLIENT_REVIEW_READINESS.md) records observed inconsistencies in the implementation. Legacy shell alternatives are not current navigation or current requirements.

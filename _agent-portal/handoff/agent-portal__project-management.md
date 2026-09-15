@@ -2,11 +2,7 @@
 
 **Purpose:** The agent's new-development project management screen (list + grid, filters, sale-status / mark-as-sold).
 
-> **The base interface mirrors the Admin Portal screen `property/project-management.html`** (same list/grid views, filters, columns, badges, detail view, mark-as-sold flow). **For the full field-level specification of that base refer to the root handoff doc `handoff/property__project-management.md`.** The agent copy drops the `property/` prefix from its one navigation-path string.
->
-> **The base has since been substantially EXTENDED (~2,400 added lines) with two capability groups that do NOT exist in the admin copy:** an **Alerts subsystem** (Part 1) and a set of **Edit refinements** (Part 2). Those are documented in full below; everything else still matches the root doc.
->
-> **Base sync note:** the **"Next Update Schedule" (`nextUpdate`) field has been removed entirely** from the base — it is no longer an editable field, no longer appears in the change-history field list, and was removed from seed data.
+Source: [project-management.html](../project-management.html), the current Agent implementation. Admin documentation is not the source of truth for this screen; no file-equivalence claim is made.
 
 **Access:** Sidebar → Workspace → Projects.
 
@@ -25,7 +21,7 @@
 
 Per-project **alert detectors** are pure functions `(project) => alert | null`; each alert is `{ key, id, entityId, severity, title, desc, actionLabel, actionFn }`. `computeAlerts(p)` runs all detectors, drops nulls and muted non-critical alerts; aggregation/active-id helpers mirror the Properties screen.
 
-**12 detector types** (`ALERT_DETECTORS` array) — the 8 base property detectors (where applicable) PLUS 4 project-specific:
+**12 detector types** (`ALERT_DETECTORS` array) — eight general detectors (including Sold but not closed) plus four project-specific:
 
 | Detector | Severity | Trigger |
 |---|---|---|
@@ -44,7 +40,7 @@ Per-project **alert detectors** are pure functions `(project) => alert | null`; 
 
 Alert keys are namespaced per project (e.g. `"{id}:phase"`). **Severity → existing badge classes**: critical → danger, warning → warning, info → neutral/info.
 
-**UI surfaces** (single refresh entry point **`refreshAlerts()`**): the same **banner stack** (top 3 critical + "Show all alerts (N)"), **bell** with unread count + red dot on critical opening a Critical/Warning/Info dropdown, **"Needs attention" filter pill** in the toolbar (filters the list to entities with an active alert), and per-project alerts in the detail view's `#dAlerts`.
+**UI surfaces** (single refresh entry point **`refreshAlerts()`**): a **banner stack** (top 3 critical + "Show all alerts (N)"), **shell bell** fed by `renderAlertBell()` through `yuushi.notif.project`, **Alerts filter pill** in the toolbar (filters the list to entities with an active alert), and per-project alerts in the detail view's `#dAlerts`.
 
 **Dismiss = 7-day mute** stored in localStorage **`yuushi.prjAlertMutes`** as `{ alertKey: expiryMs }` (expired mutes pruned lazily on read). **Critical alerts cannot be dismissed** — only resolved by their action. Each alert's **primary action** reuses an existing flow: edit mode (`showDetail` + `enterEditMode`), the Mark-as-Sold modal for sold-not-closed, and **`showConfirm({ title, body, confirmLabel, danger, onConfirm })`** confirmations (archive-all-sold, review pricing, escalate pending, upload renewed document, compare duplicates); feedback via `toast()`.
 
@@ -63,7 +59,7 @@ Alert keys are namespaced per project (e.g. `"{id}:phase"`). **Severity → exis
 
 **(C) Inline cell edit on the list** (`startInlineEdit`). Double-click **Price / Status / Assigned Agent** → inline editor; Enter saves, Esc/blur cancels; brief spinner then toast **"Updated."** (revert + error path on failure); appends a `changeHistory` entry. Other columns read-only.
 
-**(D) Change-history drawer** (`openHistoryDrawer`/`renderHistory`). Last **50** entries (`HIST_PAGE = 50`) with an **Actor filter** (All actors / **Admin** / **Agency**) and a field filter (including a "Reports" option when the project has report events). Behaviour matching the admin base (see the root doc):
+**(D) Change-history drawer** (`openHistoryDrawer`/`renderHistory`). **50 entries per page** (`HIST_PAGE = 50`) with an **Actor filter** (All actors / **Admin** / **Agency**) and a field filter (including a "Reports" option when the project has report events). Current history behavior:
 - The **actor** is shown only as **Admin** or **Agency** — individual agent names are not shown; every non-admin edit collapses to **Agency**. The Actor filter options are All actors / Admin / Agency (Agency = all non-admin roles).
 - A project's **report history** is merged into the same timeline as "**Reported — {reason}**" rows (flag icon, danger accent, "Report" actor label; reasons: Inappropriate content / Suspected duplicate / Misleading price / Wrong photos), and is selectable via the "Reports" field-filter option.
 - **Long values** (Description, Notes, or any value over ~60 chars) now render in an **expandable "View change" panel** revealing the full **Before → After** (replacing the old "(Text modified)" placeholder); short values show inline old→new.
@@ -79,17 +75,20 @@ Alert keys are namespaced per project (e.g. `"{id}:phase"`). **Severity → exis
 
 ## Navigation (agent-portal specific)
 
-Same in-shell pattern as the Properties page: manipulates `window.parent`'s `contentFrame`, updates the parent sidebar `.active` item, and persists state via `window.parent.localStorage`. Fallback `window.location.href = "property-list-oversight.html"` for standalone use (admin copy used `property/property-list-oversight.html`).
+`gotoPropertyManagement()` loads `property-list-oversight.html` into the parent `contentFrame` and highlights its menu item; standalone fallback sets `window.location.href` to that same Agent-relative path. Project rows open inline detail. `yuushi.autoCreateGroup` opens Group 5/6 creation after navigation from Properties.
 
 ---
 
 ## Persistence
 
-In-shell view/filter state via `window.parent.localStorage`; project data is hardcoded demo content (bulk/inline edits are in-memory/demo).
+Table/Grid choice uses sessionStorage `prj.view`; project data and bulk/inline edits are in-memory demo state. `yuushi.notif.project` supplies shell alert snapshots. There is no general persisted filter store.
 
 **localStorage keys used by this screen:**
 - **`yuushi.prjAlertMutes`** — 7-day alert mutes, `{ alertKey: expiryMs }` (Part 1).
 - **`yuushi.prjDrafts`** — auto-saved long-field drafts, keyed by project id (Part 2E).
 - `yuushi.autoCreateGroup` — pre-existing; read on load to auto-open the create flow for a Group 5/6 project when navigated in from the Properties screen.
 
-See `handoff/property__project-management.md` for the authoritative details of the base interface.
+
+## Project-specific structure
+
+Group 5 contains floor-plan types and aggregate quantities; Group 6 contains individual lots. `renderFpTypes()`/`renderLots()` provide their own edit controls, and `processSoldQueue()` captures final price/date for newly sold entries. Create/clone, CSV export, filters and inline detail remain in this Agent page. A paid extra-floor-plan-type modal is present; its upgrade handler is a local mock action, not an integrated Cart or Stripe purchase.

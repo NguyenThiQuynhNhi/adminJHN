@@ -1,28 +1,11 @@
-# Property Detail (Read-only) (`property-detail-view.html`)
+# Property detail and Edit / Add
 
-**Purpose:** Read-only detail view for a single property — gallery, map, video/360 tour, and all listing fields including Sale Status.
+Source: [property-detail-view.html](../property-detail-view.html), current working-tree implementation.
 
-> **This file is byte-for-byte identical to the Admin Portal screen `property/property-detail-view.html`** (zero differences). The title reads "Admin - Property Detail (Read-only)". For the authoritative field-level spec, refer to the admin property handoff docs; this is the same read-only detail screen reused in the agent portal.
+Supplementary screen outside the sidebar. Source has a read-only title, but the actual `buildActionRow()` adds **Edit / Add** and status-dependent controls. It must not be treated as read-only throughout or as an identical Admin file.
 
-**Access:** Opened from the Properties list (`property-list-oversight.html`); not directly linked in the sidebar.
+`renderProperty()` displays seeded property data: metadata, gallery/lightbox, basic and price fields, property/building/land details, restricted owner fields, features, project/plans, POIs/map, media and description. `enterEditMode()` builds a multi-section editor with floor-plan editing, media input UI, validation and review summary.
 
----
+`saveDraft()` stores FormData under `property-draft-{id}` (or `new`); autosave/restoration are local. `publishListing()` validates, asks for publish-preview confirmation, clears the local draft and reports “Listing published (demo)”; this is not a server publish.
 
-## Key features (summary)
-
-- **Photo gallery** — main image + thumbnails.
-- **Embedded map** iframe (`mapEmbedUrl`).
-- **Video** and **360 tour** iframes (`videoUrl`, `tourUrl`).
-- **Sale Status** shown read-only.
-- Read-only throughout — no edit/save controls.
-- Does **not** load `property-card.js`.
-
----
-
-## Navigation
-
-Simple back link via `window.location.href = "property-list-oversight.html"`. It does not manipulate the parent window / iframe (unlike the list and project pages).
-
-## Persistence
-
-None of its own; displays hardcoded demo property data.
+`goBackToList()` navigates the current document to `property-list-oversight.html`; it does not update the parent menu. The Properties list normally uses its own inline `showDetail()` screen rather than linking here. Admin-oriented title text remains a mockup labeling inconsistency.

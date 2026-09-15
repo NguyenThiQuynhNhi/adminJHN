@@ -82,3 +82,7 @@ Toasts: "Please correct the highlighted fields." (error), "Verification email re
 ## Persistence
 
 None. No account is actually created; no localStorage. Reload returns to the empty form.
+
+## Current implementation review
+
+Source: [agent_signup.html](../agent_signup.html). The validation and success-state behavior above remain current; verification email and account creation are simulated.

@@ -2,11 +2,7 @@
 
 **Purpose:** The agent's property-listing management screen (list + grid views, filters, sale-status / mark-as-sold, navigation to detail/project pages).
 
-> **The base interface mirrors the Admin Portal screen `property/property-list-oversight.html`** (same list/grid views, filters, columns, badges, detail view, mark-as-sold flow). **For the full field-level specification of that base (every filter, column, badge, modal, validation rule) refer to the root handoff doc `handoff/property__property-list-oversight.md`.** The agent copy drops the `property/` prefix from its one navigation-path string so it works at the portal root.
->
-> **The base has since been substantially EXTENDED (~2,400 added lines) with two capability groups that do NOT exist in the admin copy:** an **Alerts subsystem** (Part 1) and a set of **Edit refinements** (Part 2). Those are documented in full below; everything else still matches the root doc.
->
-> **Base sync note:** the **"Next Update Schedule" (`nextUpdate`) field has been removed entirely** from the base — it is no longer an editable field, no longer appears in the change-history field list, and was removed from seed data.
+Source: [property-list-oversight.html](../property-list-oversight.html), the current Agent implementation. Admin documentation is not the source of truth for this screen; no file-equivalence claim is made.
 
 **Access:** Sidebar → Workspace → Properties.
 
@@ -14,7 +10,7 @@
 
 ## Key features (summary)
 
-- **List view + grid/card view toggle** (`view-toggle`, "LIST VIEW" / card grid).
+- **List view + grid/card view toggle** (Table / Grid).
 - **Sale Status** column/field and a **Mark as Sold** action.
 - **Filter bar** for narrowing the listings.
 - Loads the shared **`../property-card.js`** renderer.
@@ -25,7 +21,7 @@
 
 Per-listing **alert detectors** are pure functions `(listing) => alert | null`; each alert is `{ key, id, entityId, severity, title, desc, actionLabel, actionFn }`. `computeAlerts(p)` runs all detectors, drops nulls and muted non-critical alerts, and sorts by severity; `computeAllAlerts()` aggregates across every listing; `activeAlertIdSet()` returns the ids that have ≥1 active alert (used by the filter pill).
 
-**8 detector types** (`ALERT_DETECTORS` array):
+**7 detector types** (`ALERT_DETECTORS` array):
 
 | Detector | Severity | Trigger |
 |---|---|---|
@@ -35,18 +31,17 @@ Per-listing **alert detectors** are pure functions `(listing) => alert | null`; 
 | `detPendingTooLong` — Pending approval too long | critical | `publishStatus === "Pending Review"` for > 48 hours. |
 | `detFlagged` — Flagged for rectification | critical | `flagged` truthy (shows `flagNote`). |
 | `detPriceAnomaly` — Price anomaly | warning | `priceBuy` more than ±25% vs the same-`propType` average in the same prefecture (`areaAverageFor`). |
-| `detSoldNotClosed` — Sold but not closed | warning | `saleStatus === "Sold Out"` but missing transaction date and/or `finalSalePrice`. |
 | `detDuplicate` — Duplicate detected | warning | Another listing with the same `chome` + `houseNo` and area within ±2㎡. |
 
 **Severity → existing badge classes** (`alertSeverityBadge`): critical → `badge-rejected`, warning → `badge-pending`, info → `badge-gray`.
 
 **UI surfaces** (single refresh entry point `refreshAlertsUI()` → banner + bell + pill):
 - **Banner stack** — `#alertBanner` at the top of the list shows the top 3 (sorted critical-first) plus a "Show all alerts (N)" / "Show fewer alerts" toggle (`renderAlertBanner` / `toggleBanner`). Clicking a row jumps to the listing detail.
-- **Bell** — `#alertBellWrap` in the list header shows an unread count (`#bellCnt`, "99+" cap) and a red dot (`#bellDot`) when any alert is critical; opens a dropdown grouped **Critical / Warning / Info** (`renderBell` / `bellPanelHtml` / `toggleBell`).
+- **Shell bell** — `renderBell()` publishes `yuushi.notif.property`; the shell header displays Property/Project notifications. Legacy dropdown helper functions remain but are not the current list-header bell UI.
 - **Filter pill** — `#alertPill` ("Needs attention", count `#alertPillCnt`) in the toolbar toggles `alertFilterOn`, narrowing the list to entities in `activeAlertIdSet()` (`toggleAlertFilter`).
 - **Detail view** — per-listing alerts render into `#dAlerts`.
 
-**Dismiss = 7-day mute** (`muteAlert` / `isAlertMuted`), stored in localStorage **`yuushi.ploAlertMutes`** as `{ alertKey: expiryMs }`; expired mutes are pruned lazily. **Critical alerts cannot be dismissed** (no × button) — only resolved by their action. Each alert's **primary action** reuses an existing flow: edit mode (`showDetail` + `enterEditMode`) for stale/missing/price/flagged, the **Mark-as-Sold modal** (`openSoldModal`) for sold-not-closed, and `openConfirm(...)` confirmations for pending-escalation / duplicate compare; feedback via `toast()`.
+**Dismiss = 7-day mute** (`muteAlert` / `isAlertMuted`), stored in localStorage **`yuushi.ploAlertMutes`** as `{ alertKey: expiryMs }`; expired mutes are pruned lazily. **Critical alerts cannot be dismissed** (no × button) — only resolved by their action. Each alert's **primary action** reuses an existing flow: edit mode (`showDetail` + `enterEditMode`) for stale/missing/price/flagged, `openConfirm(...)` confirmations for pending-escalation / duplicate compare; feedback via `toast()`.
 
 ---
 
@@ -68,7 +63,7 @@ Per-listing **alert detectors** are pure functions `(listing) => alert | null`; 
 
 **(C) Inline cell edit on the list** (`startInlineEdit`). Double-click **Price / Status / Assigned Agent** → inline editor; **Enter saves, Esc/blur cancels**; brief spinner ("Saving…") then toast **"Updated."** (revert + "Update failed." error path retained though the demo always succeeds); appends a `changeHistory` entry. Other columns are read-only.
 
-**(D) Change-history drawer** (`openHistoryDrawer`/`renderHistory`). Shows the last **50** entries (`HIST_PAGE = 50`) with an **Actor filter** (All actors / **Admin** / **Agency**) and a **field filter** (`#histField`, including a "Reports" option when the listing has report events). Behaviour matching the admin base (see the root doc):
+**(D) Change-history drawer** (`openHistoryDrawer`/`renderHistory`). Shows **50 entries per page** (`HIST_PAGE = 50`) with an **Actor filter** (All actors / **Admin** / **Agency**) and a **field filter** (including a Reports option when the listing has report events). Current history behavior:
 - The **actor** is shown only as **Admin** or **Agency** — individual agent names are not shown; every non-admin edit collapses to **Agency**. The Actor filter options are All actors / Admin / Agency (Agency = all non-admin roles).
 - A listing's **report history** is merged into the same timeline as "**Reported — {reason}**" rows (flag icon, danger accent, "Report" actor label; reasons: Inappropriate content / Suspected duplicate / Misleading price / Wrong photos), and is selectable via the "Reports" field-filter option.
 - **Long values** (Description, Sold Notes, or any value over ~60 chars) now render in an **expandable "View change" panel** revealing the full **Before → After** (replacing the old "(Text modified)" placeholder); short values show inline old→new.
@@ -84,20 +79,25 @@ Per-listing **alert detectors** are pure functions `(listing) => alert | null`; 
 
 ## Navigation (agent-portal specific)
 
-In-shell navigation is done by reaching into the parent window: it controls `window.parent.document.getElementById("contentFrame")`, sets `frame.src` to the target, updates the parent sidebar's `.active` menu item, and persists view/filter state via `window.parent.localStorage`. There is a standalone fallback `window.location.href`.
+In-shell navigation is done by reaching into the parent window: it controls `window.parent.document.getElementById("contentFrame")`, sets `frame.src` to the target, updates the parent sidebar's `.active` menu item. There is a standalone fallback `window.location.href`.
 
-- "Projects" navigation target is `project-management.html` (admin copy used `property/project-management.html`).
-- Opening a listing navigates to `property-detail-view.html`.
+- "Projects" navigation target is `project-management.html`.
+- Opening a listing calls `showDetail(id)` within this page. The supplementary [property detail/editor](agent-portal__property-detail-view.md) is not the list row destination.
 
 ---
 
 ## Persistence
 
-In-shell view/filter state is persisted through `window.parent.localStorage`. The underlying property data is hardcoded demo content; mutations (e.g. mark-as-sold, bulk/inline edits) are in-memory/demo.
+Table/Grid choice uses sessionStorage `plo.view`. Bulk/inline edits are local demo state. Sale records and drafts have separate persistence below; there is no general persisted filter store.
 
 **localStorage keys used by this screen:**
 - **`yuushi.ploAlertMutes`** — 7-day alert mutes, `{ alertKey: expiryMs }` (Part 1).
 - **`yuushi.ploDrafts`** — auto-saved long-field drafts, keyed by listing id (Part 2E).
 - `yuushi.autoCreateGroup` — pre-existing; hand-off value read by `project-management.html` when navigating to create a Group 5/6 project.
 
-See `handoff/property__property-list-oversight.md` for the authoritative details of the base interface.
+
+## Current sale and suspension integration
+
+`markPropertySold()` requires exiting edit mode, then captures final price/date and price publication. It marks the listing Sold Out/Suspended and calls `persistSale()` to record Pending Client Confirmation via `../mock-workflows.js`. Local keys: `yuushi.agency.propertySaleState`, `yuushi.transactionVerificationRecords`. Suspension captures reason (Sold / Sold by Others / Seller Withdrew / Listing Expired / Legal Hold), date, price when Sold, public-price flag and notes into `yuushi.suspensionTx`.
+
+`yuushi.ploPropertyPicker` stores a snapshot for property selection elsewhere; `yuushi.notif.property` supplies shell alerts. Performance detail respects `yuushi.ads.performanceSuppressed`. These are demo records, not server mutations.

@@ -2093,7 +2093,8 @@
         font-family: ui-monospace, monospace;
       }
     </style>
-  </head>
+  <script src="../mock-workflows.js"></script>
+</head>
   <body>
     <!-- ================== LIST VIEW ================== -->
     <div id="listView">
@@ -3042,7 +3043,7 @@
             <label class="field-label" for="soldDate"
               >Sold Date <span class="required">*</span></label
             >
-            <input id="soldDate" type="date" />
+            <input id="soldDate" type="date" /><p class="small-note">Verification Status: Pending Client Confirmation. Evidence is only required if you later raise a price dispute.</p>
             <div
               id="soldDateErr"
               class="hidden"
@@ -6612,6 +6613,7 @@
           _suspTxProp.finalSalePrice = payload.transactionPrice;
           _suspTxProp.soldDate = payload.suspensionDate;
           _suspTxProp.publishPrice = payload.publicPrice;
+          persistSale(_suspTxProp,payload.ref);
         }
         pushHistory(_suspTxProp, "publishStatus", "Published", "Suspended");
         if (currentProp && currentProp.id === _suspTxProp.id) {
@@ -6636,7 +6638,7 @@
           expired: "Listing Expired",
           legal: "Legal Hold",
         };
-        toast(`Listing suspended (${reasonLabels[_suspTxReason]}). Transaction logged.`);
+        toast(`Listing suspended (${reasonLabels[payload.reason]}). Transaction logged.`);
       }
 
       (function wireSuspTxModal() {
@@ -6725,9 +6727,9 @@
           const dateRaw = $("soldDate").value;
           let ok = true;
           // Final Sale Price required
-          if (priceRaw === "") {
+          if (!Number.isFinite(Number(priceRaw)) || Number(priceRaw)<=0) {
             $("soldPriceErr").textContent =
-              "Please enter the final sale price.";
+              "Please enter a positive final sale price.";
             $("soldPriceErr").classList.remove("hidden");
             $("soldPrice").classList.add("invalid");
             ok = false;
@@ -6736,8 +6738,8 @@
             $("soldPrice").classList.remove("invalid");
           }
           // Sold Date required
-          if (!dateRaw) {
-            $("soldDateErr").textContent = "Please select the sold date.";
+          if (!dateRaw || dateRaw>new Date().toISOString().slice(0,10) || (currentProp?.datePublished && dateRaw<currentProp.datePublished)) {
+            $("soldDateErr").textContent = "Select a sold date between publication and today.";
             $("soldDateErr").classList.remove("hidden");
             $("soldDate").classList.add("invalid");
             ok = false;
@@ -8677,7 +8679,7 @@
               (p.rejectNotes ? ". " + esc(p.rejectNotes) : ""),
           });
         // Prominent Sold-Out record card (shown ABOVE the section cards).
-        let soldCardHtml = "";
+        let soldCardHtml = p.publishStatus==='Published'&&p.saleStatus!=='Sold Out'&&Number(p.priceBuy)>0?'<div style="grid-column:1/-1"><button class="btn btn-primary" onclick="markPropertySold()">Mark as Sold</button></div>':'';
         if (p.saleStatus === "Sold Out") {
           const saleLine = `Sold at ${fmtYen(p.finalSalePrice)} on ${fmtDate(p.soldDate)}`;
           soldCardHtml = `
@@ -8686,7 +8688,7 @@
                 <i class="fas fa-circle-check"></i> Sold — sale record
               </div>
               <div style="font-size:15px;font-weight:700;color:var(--status-danger-text)">
-                ${saleLine}
+                ${saleLine}<p>${YuushiWorkflow.statusBadge(YuushiWorkflow.read(YuushiWorkflow.keys.transactions).find(t=>t.transactionId===p.verificationTransactionId)?.verificationStatus||"Pending Client Confirmation")}</p>
               </div>
               <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:10px 12px">
                 <div>
@@ -9224,6 +9226,9 @@
           }
           return;
         }
+        if(currentProp.saleStatus==='Sold Out'&&originalProp.saleStatus!=='Sold Out'){
+          openSoldModal(payload=>{Object.assign(currentProp,payload,{publishStatus:'Suspended',suspensionReason:'sold'});persistSale(currentProp);commitSave();});return;
+        }
         commitSave();
       }
 
@@ -9231,6 +9236,8 @@
         if (!currentProp) return;
         currentProp.publishPrice = cb.checked;
         if (originalProp) originalProp.publishPrice = cb.checked;
+        savePropertySaleState(currentProp);
+        const verification=YuushiWorkflow.read(YuushiWorkflow.keys.transactions).find(t=>t.transactionId===currentProp.verificationTransactionId);if(verification)YuushiWorkflow.updateTransaction(verification.transactionId,'Price publication updated',{publishPrice:cb.checked},currentProp.agent);
         renderDetail();
         toast(cb.checked ? "Final sale price is now public." : "Final sale price is now hidden.");
       }
@@ -9259,6 +9266,7 @@
                 currentProp.soldDate = undefined;
                 currentProp.publishPrice = undefined;
                 currentProp.publishStatus = "Published";
+                currentProp.verificationTransactionId=null;savePropertySaleState(currentProp);
                 originalProp = JSON.parse(JSON.stringify(currentProp));
                 renderDetail();
                 renderList();
@@ -9318,7 +9326,7 @@
         closeCreateModal();
         const today = new Date().toISOString().slice(0, 10);
         const newP = {
-          id: "PROP-" + Math.floor(Math.random() * 90000 + 10000),
+          id: YuushiWorkflow.next(properties, "PROP-"),
           group: g,
           agent: "(unassigned)",
           propType: GROUP_META[g].propTypes[0],
@@ -9419,7 +9427,7 @@
         const today = new Date().toISOString().slice(0, 10);
         // Deep copy then strip the excluded fields + identity/history/media.
         const clone = JSON.parse(JSON.stringify(src));
-        clone.id = "PROP-" + Math.floor(Math.random() * 90000 + 10000);
+        clone.id = YuushiWorkflow.next(properties, "PROP-");
         CLONE_CLEAR_FIELDS.forEach((k) => {
           clone[k] = "";
         });
@@ -10715,5 +10723,16 @@
       setPropView(propView); // applies persisted Table/Grid view + renders
     </script>
     <script src="agency-dashboard-source.js" data-source="properties"></script>
-  </body>
+
+<script>
+YuushiWorkflow.initUI();
+function savePropertySaleState(p){const states=YuushiWorkflow.read('yuushi.agency.propertySaleState',{});states[p.id]=Object.fromEntries(['saleStatus','publishStatus','finalSalePrice','soldDate','publishPrice','verificationTransactionId'].map(k=>[k,p[k]??null]));YuushiWorkflow.write('yuushi.agency.propertySaleState',states);}
+function persistSale(p,ref){const t=YuushiWorkflow.recordSale(p,p.finalSalePrice,p.soldDate,p.publishPrice,ref);p.verificationTransactionId=t.transactionId;savePropertySaleState(p);return t;}
+function markPropertySold(){if(!currentProp||editMode)return toast('Save or discard property edits before marking Sold.');openSoldModal(payload=>{Object.assign(currentProp,payload,{saleStatus:'Sold Out',publishStatus:'Suspended',suspensionReason:'sold'});persistSale(currentProp);originalProp=JSON.parse(JSON.stringify(currentProp));renderDetail();renderList();toast('Sold transaction recorded. Pending Client Confirmation.');});}
+const savedSaleStates=YuushiWorkflow.read('yuushi.agency.propertySaleState',{});
+const verificationRows=YuushiWorkflow.read(YuushiWorkflow.keys.transactions);
+properties.forEach(p=>{if(savedSaleStates[p.id])Object.assign(p,savedSaleStates[p.id]);if(p.saleStatus==='Sold Out'&&p.finalSalePrice&&!p.verificationTransactionId){const id='SEED-'+p.id;const found=verificationRows.find(t=>t.transactionId===id);p.verificationTransactionId=id;if(!found)YuushiWorkflow.upsert(YuushiWorkflow.keys.transactions,YuushiWorkflow.transaction({transactionId:id,propertyId:p.id,propertyName:p.name,listingOwnerName:p.agent,listingOwnerId:'OWNER-'+p.id,listedPrice:Number(p.priceBuy)||null,agentSubmittedPrice:p.finalSalePrice,finalSalePrice:p.finalSalePrice,soldDate:p.soldDate,publishPrice:!!p.publishPrice}),'transactionId');}const t=verificationRows.find(t=>t.transactionId===p.verificationTransactionId);if(t){p.finalSalePrice=t.finalSalePrice;p.publishPrice=t.publishPrice;}});
+renderList();
+</script>
+</body>
 </html>

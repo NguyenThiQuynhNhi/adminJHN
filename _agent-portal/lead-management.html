@@ -249,7 +249,8 @@
       .match-prop-name { font-weight: 700; font-size: 13px; color: var(--text-head); }
       .match-prop-sub { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
     </style>
-  </head>
+  <script src="../mock-workflows.js"></script>
+</head>
   <body>
     <main class="main">
         <div class="content">
@@ -265,7 +266,7 @@
             </div>
           </div>
 
-          <div class="filter-bar">
+          <div class="filter-bar"><label>Assignment Type <select id="enquiryType" onchange="page=1;renderList()"><option value="">All</option><option>Agent Individual</option><option>Agency Team</option><option>Unassigned</option></select></label><label>Assigned To <select id="enquiryPerson" onchange="page=1;renderList()"><option value="">All assignees</option><option value="AGT-001">Chris Sales</option><option value="AGT-002">Maria Sales</option><option value="AGT-003">Tony Sales</option><option value="TEAM-TOKYO">Tokyo Sales Team</option><option value="TEAM-OSAKA">Osaka Sales Team</option></select></label>
             <div class="pill-toggle">
               <button class="active" id="pillBuy" onclick="setIntent('buy')">To Buy</button>
               <button id="pillRent" onclick="setIntent('rent')">To Rent</button>
@@ -314,7 +315,7 @@
                 <th onclick="sortBy('enquiry')">Created Date <span class="sort">↕</span></th>
                 <th onclick="sortBy('follow')">Next Follow Up Date <span class="sort">↕</span></th>
                 <th onclick="sortBy('status')">Status <span class="sort">↕</span></th>
-                <th onclick="sortBy('owner')">Owner <span class="sort">↕</span></th>
+                <th onclick="sortBy('owner')">Listing Owner <span class="sort">↕</span></th><th onclick="sortBy('assigneeName')">Assigned To <span class="sort">↕</span></th><th>Actions</th>
               </tr></thead>
               <tbody id="listBody"></tbody>
             </table>
@@ -762,6 +763,16 @@
           price: 35000000 }
       ];
 
+      YuushiWorkflow.initUI();
+      const ENQUIRY_ROLE = {name:'Agency Admin',staffId:'AGT-001',teamId:'TEAM-TOKYO'};
+      const ENQUIRY_PERMISSIONS = {'Sales Agent':{scope:'own',assign:false},'Property Manager':{scope:'agency',assign:true},'Reception':{scope:'agency',assign:true},'Agency Admin':{scope:'agency',assign:true}};
+      const W=YuushiWorkflow;
+      const storedAssignments=W.read(W.keys.enquiries);
+      LEADS.forEach(l=>{const owner=W.AGENCY_SUB_ACCOUNTS.find(a=>a.name===(OWNERS[l.owner]||l.owner));const saved=storedAssignments.find(a=>a.id===l.id);Object.assign(l,{...W.unassigned(),listingOwnerId:owner?.id||'OWNER-'+l.owner,listingOwnerName:OWNERS[l.owner]||l.owner});if(owner?.status==='Active')Object.assign(l,{assigneeType:'Agent Individual',assigneeId:owner.id,assigneeName:owner.name,assignedAt:l.enquiry,assignedBy:'Listing owner default'});if(saved)Object.assign(l,saved);});
+      function assignmentRecord(l){return Object.fromEntries(['id','listingOwnerId','listingOwnerName','assigneeType','assigneeId','assigneeName','assignedAt','assignedBy','assignmentHistory'].map(k=>[k,l[k]]));}
+      W.merge(W.keys.enquiries,LEADS.map(assignmentRecord));
+      function assignEnquiry(id){if(!ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name]?.assign)return toast('You do not have permission to assign enquiries.');const l=LEADS.find(l=>l.id===id);if(!l)return;W.assignmentModal(l,true,(type,person,note)=>{if(!ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name]?.assign)throw Error('Assignment is not permitted.');W.assign(l,type,person,note,ENQUIRY_ROLE.name);W.upsert(W.keys.enquiries,assignmentRecord(l));renderList();if(currentLead?.id===id)renderDetailScreen(l);toast('Enquiry assignment updated. Listing Owner unchanged.','success');});}
+      window.assignEnquiry=assignEnquiry;
       // ===== LEAD_PROJECT_INTERESTS =====
       let TRANSACTIONS = []; 
 
@@ -783,6 +794,9 @@
       function renderList() {
         // 1. Filter by Intent (To Buy / To Rent / New Development)
         let rows = LEADS.filter(l => !intent || l.intent === intent);
+        const permissions=ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name];
+        if(permissions.scope==='own')rows=rows.filter(l=>l.assigneeId===ENQUIRY_ROLE.staffId||(l.assigneeType==='Agency Team'&&l.assigneeId===ENQUIRY_ROLE.teamId));
+        rows=rows.filter(l=>(!document.getElementById('enquiryType').value||l.assigneeType===document.getElementById('enquiryType').value)&&(!document.getElementById('enquiryPerson').value||l.assigneeId===document.getElementById('enquiryPerson').value));
 
         // 2. Filter by Price range popover
         const pMin = parseFloat(document.getElementById("fPriceMin")?.value) || null;
@@ -800,7 +814,7 @@
           return (va < vb ? -1 : va > vb ? 1 : 0) * (sortDir === "asc" ? 1 : -1);
         });
 
-        const totalFiltered = rows.length;
+        const totalFiltered = rows.length; page=Math.max(1,Math.min(page,Math.ceil(totalFiltered/rowsPerPage)||1));
         const start = totalFiltered === 0 ? 0 : (page - 1) * rowsPerPage + 1;
         const end = Math.min(page * rowsPerPage, totalFiltered);
         const shown = rows.slice((page - 1) * rowsPerPage, page * rowsPerPage);
@@ -821,7 +835,7 @@
           const label = intent === "buy" ? "Buy" : intent === "rent" ? "Rent" : "New Development";
           document.getElementById("listBody").innerHTML = `
             <tr>
-              <td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">
+              <td colspan="9" style="text-align:center;color:var(--text-muted);padding:24px">
                 No ${label} leads found matching criteria.
               </td>
             </tr>`;
@@ -839,12 +853,12 @@
               <td>${l.enquiry}</td>
               <td>${l.follow}</td>
               <td><span class="mc-pill ${l.status === 'Sold' ? 'mc-ok' : 'mc-miss'}" style="background:var(--grey-pill);color:var(--text-main)">${l.status}</span></td>
-              <td><div class="owner-cell"><span class="owner-avatar">${l.owner}</span> ${OWNERS[l.owner] || l.owner}</div></td>
+              <td><div class="owner-cell"><span class="owner-avatar">${l.owner}</span> ${W.esc(l.listingOwnerName)}</div></td><td>${W.esc(l.assigneeName)}<br><small>${W.esc(l.assigneeType)}</small></td><td onclick="event.stopPropagation()">${ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name].assign?`<button class="btn" onclick="assignEnquiry(${l.id})">Assign/Reassign</button>`:"—"}</td>
             </tr>`).join("");
         }
 
         document.querySelectorAll(".data thead th").forEach(th => th.classList.remove("asc", "desc"));
-        const colIdx = { leadname: 0, name: 1, type: 2, enquiry: 3, follow: 4, status: 5, owner: 6 }[sortKey];
+        const colIdx = { leadname: 0, name: 1, type: 2, enquiry: 3, follow: 4, status: 5, owner: 6, assigneeName:7 }[sortKey];
         if (colIdx !== undefined) document.querySelectorAll("#screenList .data thead th")[colIdx].classList.add(sortDir);
 
         document.getElementById("entriesLabel").textContent = `Showing ${start} to ${end} of ${totalFiltered} entries`;
@@ -1428,6 +1442,7 @@
         }
         if (!currentLead) currentLead = LEADS[0]; // fallback an toàn
 
+        if(ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name].scope==='own'&&currentLead.assigneeId!==ENQUIRY_ROLE.staffId&&!(currentLead.assigneeType==='Agency Team'&&currentLead.assigneeId===ENQUIRY_ROLE.teamId)){toast('This enquiry is outside your scope.');return;}
         renderDetailScreen(currentLead);
 
         document.getElementById("screenList").classList.add("hidden");
@@ -1503,7 +1518,7 @@
           <div><div class="kv-l">Id</div><div class="kv-v">${100000 + lead.id}</div></div>
           <div><div class="kv-l">Lead Name</div><div class="kv-v">${lead.leadname}</div></div>
           <div><div class="kv-l">Status</div><div class="kv-v">${lead.status}</div></div>
-          <div><div class="kv-l">Owner</div><div class="kv-v">${OWNERS[lead.owner] || lead.owner}</div></div>
+          <div><div class="kv-l">Listing Owner</div><div class="kv-v">${W.esc(lead.listingOwnerName)}</div></div><div><div class="kv-l">Current Assignee</div><div class="kv-v">${W.esc(lead.assigneeName)} · ${W.esc(lead.assigneeType)}</div>${ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name].assign?`<button class="btn" onclick="assignEnquiry(${lead.id})">Assign/Reassign</button>`:''}</div><div style="grid-column:1/-1"><div class="kv-l">Assignment History</div>${W.timeline(lead.assignmentHistory)}</div>
           <div><div class="kv-l">Created</div><div class="kv-v">${lead.enquiry}</div></div>
           <div><div class="kv-l">Next Follow Up Date</div><div class="kv-v">${lead.follow}</div></div>
           <div><div class="kv-l">Property Type</div><div class="kv-v">${lead.type}</div></div>`;

@@ -1,14 +1,11 @@
-# Agreement Management (`agreement-management.html`)
+# Agreement — accepted agreements
 
-**Purpose:** Shell entry for agreement management in the agent portal.
+Source: [agreement-management.html](../agreement-management.html), current working-tree implementation.
 
-**Access:** Sidebar → Workspace → Agreement Management.
+Access: Workspace → Agreement.
 
-## Current state
-
-The file currently exists as an empty placeholder. No UI, layout, or behavior is implemented yet.
-
-## Notes
-
-- The sidebar entry is added so the screen can be reached from the shell.
-- Once the page is implemented, this note should be expanded to match the actual flow and controls.
+- Accepted-only list: Agreement name, accepted status (`ACCEPTED`), Published, Accepted On, and view action. Rows and eye icons open the selected agreement.
+- `getFiltered()` searches titles case-insensitively; sort selects newest/oldest acceptance date or title. Ten rows per page with previous/numbered/next controls and count.
+- `showDetail(id)` renders that record's title, published date, acceptance date, accepting user and agreement body; Back returns to the list.
+- Read-only review of already accepted documents. There is no create/edit/accept/approval flow or Agency pending state here. The empty result message means no accepted agreements match, not an unimplemented page.
+- Evidence: `agreements`, `getFiltered`, `renderList`, `showDetail`. Records are seeded; `agency-dashboard-source.js` exposes a read-only preview of these page records.

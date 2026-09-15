@@ -71,3 +71,7 @@ Left info ("{name} · System role — read-only" / "· Custom role"); right butt
 ## Persistence
 
 None. Edits mutate the in-memory `roles` array; a deep-clone `snapshot` is used only for in-session discard/revert. Resets on reload.
+
+## Current implementation review
+
+Source: [role-and-permission.html](../role-and-permission.html). The matrix is a local role editor, not an enforcement layer wired into every module. Legacy feature names (including Appraisal budget and Lead group / saved searches) remain visible in the matrix; they do not establish additional monetization or Inquiry-management workflows. Deleting a role removes the local role; the described staff reassignment is not a mutation of the separate Staff page.

@@ -1,61 +1,66 @@
-# Agent Portal Shell (`index.html`)
+# Agency Portal shell
 
-**Purpose:** The single navigation host for the YUUSHI Agent Portal. It provides the left sidebar, the global top header (chat shortcut + account dropdown), and an iframe that renders every other content page. No content of its own beyond chrome.
+Source: [index.html](../index.html), current working-tree implementation.
 
-**Access:** Opened directly (`index.html`). Sign-in (`agent_signin.html`) redirects here after a successful OTP, so the agent always lands on the full shell.
+The iframe shell owns navigation, header and account controls. Initial `contentFrame.src` is `dashboard.html`; active-menu normalization treats this as `dashboard.html#overview`. The browser's outer URL does not route with sidebar changes.
 
----
+## Navigation
 
-## Design system
 
-Warm gold/white palette via CSS custom properties in `:root`: `--accent #8B7340`, `--accent-hover #6F5C33`, `--accent-light #c9a85c`, `--bg #f5f5f5`, `--card #fff`, `--warm #fffaf2`, `--border #e0e0e0`, `--danger #c53030`. Font Awesome 6.5 from CDN. Vanilla JS, no build.
+## Workspace
 
----
+| Navigation | Current page | Handoff |
+|---|---|---|
+| Dashboard → Overview | [dashboard.html#overview](../dashboard.html#overview) | [Dashboard → Overview](AGENCY_DASHBOARD_IMPLEMENTATION.md) |
+| Dashboard → Ads & Subscriptions | [dashboard.html#subscriptions](../dashboard.html#subscriptions) | [Dashboard → Ads & Subscriptions](AGENCY_DASHBOARD_IMPLEMENTATION.md) |
+| Properties | [property-list-oversight.html](../property-list-oversight.html) | [Properties](agent-portal__property-list-oversight.md) |
+| Projects | [project-management.html](../project-management.html) | [Projects](agent-portal__project-management.md) |
+| Appraisals | [appraisal-management.html](../appraisal-management.html) | [Appraisals](agent-portal__appraisal-management.md) |
+| Leads | [lead-management.html](../lead-management.html) | [Leads](agent-portal__lead-management.md) |
+| Transactions | [transaction-management.html](../transaction-management.html) | [Transactions](agent-portal__transaction-management.md) |
+| Offers | [offer-management.html](../offer-management.html) | [Offers](agent-portal__offer-management.md) |
+| Agreement | [agreement-management.html](../agreement-management.html) | [Agreement](agent-portal__agreement-management.md) |
+| CRM Activities → Calendar | [calendar.html](../calendar.html) | [CRM Activities → Calendar](agent-portal__calendar.md) |
+| CRM Activities → Viewing | [crm-activities.html#viewing](../crm-activities.html#viewing) | [CRM Activities → Viewing](agent-portal__crm-activities.md) |
+| CRM Activities → Task | [crm-activities.html#task](../crm-activities.html#task) | [CRM Activities → Task](agent-portal__crm-activities.md) |
+| CRM Activities → Jobs | [crm-activities.html#jobs](../crm-activities.html#jobs) | [CRM Activities → Jobs](agent-portal__crm-activities.md) |
+| CRM Activities → Calls | [crm-activities.html#calls](../crm-activities.html#calls) | [CRM Activities → Calls](agent-portal__crm-activities.md) |
+| CRM Activities → Emails | [crm-activities.html#emails](../crm-activities.html#emails) | [CRM Activities → Emails](agent-portal__crm-activities.md) |
+| CRM Activities → SMS | [crm-activities.html#sms](../crm-activities.html#sms) | [CRM Activities → SMS](agent-portal__crm-activities.md) |
+| CRM Activities → Comments | [crm-activities.html#comments](../crm-activities.html#comments) | [CRM Activities → Comments](agent-portal__crm-activities.md) |
 
-## Layout & structure
+## Messages
 
-A flex `.layout` filling the viewport:
+| Navigation | Current page | Handoff |
+|---|---|---|
+| Contacts | [contact-management.html](../contact-management.html) | [Contacts](agent-portal__contact-management.md) |
+| Groups | [group-management.html](../group-management.html) | [Groups](agent-portal__group-management.md) |
+| Messages Box | [admin-messages.html](../admin-messages.html) | [Messages Box](agent-portal__admin-messages.md) |
+| Message Center | [message-center.html](../message-center.html) | [Message Center](agent-portal__message-center.md) |
 
-- **Sidebar** (`aside.sidebar`, 248px, white, scrollable). Top: logo ("Y" mark + "YUUSHI" + a gold "AGENT" badge). Then three `.menu-section` groups, each with a `.section-title` and `.menu-item[data-content]` links.
-- **Content area** (`.content-area`, flex column): a 56px `.top-bar` (right-aligned) + a full-bleed `<iframe id="contentFrame">` (default `src="dashboard.html"`).
-- Responsive: below 860px the sidebar shrinks to 64px and hides labels/badges.
+## Agency
 
----
+| Navigation | Current page | Handoff |
+|---|---|---|
+| Staff Management | [staff-management.html](../staff-management.html) | [Staff Management](agent-portal__staff-management.md) |
+| Roles & Permissions | [role-and-permission.html](../role-and-permission.html) | [Roles & Permissions](agent-portal__role-and-permission.md) |
+| Agency Profile | [profile.html](../profile.html) | [Agency Profile](agent-portal__profile.md) |
 
-## Sidebar menu map
+## Ads & Subscriptions
 
-**Workspace:** Dashboard → `dashboard.html` (active by default) · Properties → `property-list-oversight.html` · Projects → `project-management.html` · Leads → `lead-management.html` · CRM Activities → `crm-activities.html` · Advertising → `ad-monetisation.html` · Subscription → `billing.html`
+| Navigation | Current page | Handoff |
+|---|---|---|
+| Book Ad | [book-ad.html](../book-ad.html) | [Book Ad](agent-portal__book-ad.md) |
+| My Campaigns | [my-campaigns.html](../my-campaigns.html) | [My Campaigns](agent-portal__my-campaigns.md) |
+| Plans | [plans.html](../plans.html) | [Plans](agent-portal__plans.md) |
+| Cart | [cart.html](../cart.html) | [Cart](agent-portal__cart.md) |
+| Billing & Payments | [billing-payments.html](../billing-payments.html) | [Billing & Payments](agent-portal__billing-payments.md) |
 
-**Messages:** Inquiries → `leads-inquiries.html` · Admin Messages → `admin-messages.html` · Message Center → `message-center.html`
+## Header and navigation behavior
 
-**Agency:** Staff Management → `staff-management.html` · Roles & Permissions → `role-and-permission.html` · Agency Profile → `profile.html`
-
-Each item has a Font Awesome icon. The clicked item gets `.active` (gold left-border + warm background); all others lose it.
-
----
-
-## Top header
-
-- **Chat button** (`#chatBtn`, round, `fa-comment-dots`) with a red unread badge (`#chatBadge`, static "5"). `onclick="openInbox()"` → sets the iframe to `admin-messages.html` and calls `setActiveMenu("admin-messages.html")`.
-- **Account dropdown** (`#acctMenu`):
-  - Trigger: avatar "TT" + name **Taro Tanaka** + role **Senior Sales Agent** + caret. `toggleAcctMenu()` toggles `.open`.
-  - Dropdown header card: avatar "TT", name **Taro Tanaka**, email **taro.tanaka@anna-fudosan.co.jp**, role pill **Senior Sales Agent**.
-  - **My Profile** item → `acctOpenMyProfile()`: closes menu, loads `profile.html`, `setActiveMenu("profile.html")`.
-  - Divider.
-  - **Log out** item (danger) → `acctLogout()`: closes menu, native `confirm("Log out of the Agent Portal?\nAll unsaved changes will be lost.")`; on OK, `window.location.href = "agent_signin.html"`.
-
----
-
-## Scripts / behavior
-
-- On `DOMContentLoaded`, wires every `.menu-item[data-content]` click to set `frame.src` and toggle `.active`.
-- `setActiveMenu(target)` — highlights the sidebar item whose `data-content` matches `target` (used by `openInbox` and `acctOpenMyProfile`).
-- Account menu closes on outside click and on **Esc**.
-
----
-
-## Navigation & persistence
-
-- Pure iframe swapping; the browser URL never changes; no history/back integration.
-- The shell itself stores nothing. (Content pages may read/write `window.parent.localStorage` — e.g. the property pages persist their view/filter state there.)
-- Logout is the only action that leaves the shell (to `agent_signin.html`).
+- `setActiveMenu()` highlights the exact target and expands the Dashboard or CRM Activities group. Calendar belongs to CRM Activities.
+- Sidebar click handlers call `dashboardAllowsNavigation()` before changing the iframe; it consults the Dashboard's `AgencyDashboardCanLeave()` guard when available. This is not a universal unsaved-change guard for all modules.
+- `updateTopSearch()` changes the header search placeholder by module; this alone does not filter the iframe's records.
+- Notification dropdown displays module alerts and routes through `openNotifTarget()`; chat shortcut `openInbox()` opens Messages Box (`admin-messages.html`).
+- Account menu shows Taro Tanaka / Senior Sales Agent. `acctOpenMyProfile()` opens Agency Profile; `acctLogout()` confirms before navigating to standalone `agent_signin.html`. Outside click closes account/notification dropdowns; Escape closes the account menu.
+- Dashboard's Ads & Subscriptions submenu is separate from the Ads & Subscriptions sidebar section containing the five monetization pages.

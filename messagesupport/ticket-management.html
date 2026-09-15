@@ -611,8 +611,12 @@
         gap: 9px;
         align-items: center;
       }
+      #listView .fb-field { min-width:0; max-width:100%; }
+      #listView .fb-daterange { flex-wrap:wrap; }
+      #listView .wf-scroll { max-width:100%; overflow-x:auto; }
     </style>
-  </head>
+  <script src="../mock-workflows.js"></script>
+</head>
   <body>
     <!-- ================= LIST VIEW ================= -->
     <section id="listView">
@@ -624,7 +628,7 @@
 
       <div class="card">
         <div class="filter-bar">
-          <div class="fb-field fb-search">
+          <div class="fb-field"><span class="fb-label">Assignment</span><select id="assignmentType" onchange="onFilter()"><option value="">All</option><option>Unassigned</option><option>Admin Individual</option><option>Admin Team</option></select></div><div class="fb-field"><span class="fb-label">Assignee</span><select id="assignmentPerson" onchange="onFilter()"><option value="">All assignees</option></select></div><div class="fb-field fb-search">
             <span class="fb-label">Search</span>
             <i class="fas fa-magnifying-glass"></i>
             <input
@@ -638,7 +642,7 @@
             <span class="fb-label">Category</span>
             <select id="fCategory" onchange="onFilter()">
               <option value="">All Categories</option>
-              <option>Property Inquiry</option>
+              <option>Transaction Price Dispute</option><option>Property Inquiry</option>
               <option>Booking Issue</option>
               <option>Payment Issue</option>
               <option>Technical Issue</option>
@@ -676,7 +680,7 @@
 
         <div class="result-count" id="resultCount">Showing 0–0 of 0 tickets</div>
 
-        <table>
+        <div class="wf-scroll"><table>
           <thead>
             <tr>
               <th data-key="id" onclick="toggleSort('id')">
@@ -694,13 +698,13 @@
               <th data-key="status" onclick="toggleSort('status')">
                 Status <span class="si"></span>
               </th>
-              <th data-key="created" onclick="toggleSort('created')">
+              <th data-key="assigneeName" onclick="toggleSort('assigneeName')">Assigned To <span class="si"></span></th><th data-key="created" onclick="toggleSort('created')">
                 Created Date <span class="si"></span>
               </th>
             </tr>
           </thead>
           <tbody id="tkBody"></tbody>
-        </table>
+        </table></div>
 
         <div class="pager" id="pager">
           <div class="pager-pages" id="pagerPages"></div>
@@ -1080,7 +1084,9 @@
         return out;
       }
 
-      let tickets = buildSeed();  
+      let tickets = YuushiWorkflow.merge(YuushiWorkflow.keys.tickets, buildSeed().map(t=>({...YuushiWorkflow.unassigned(),...t})));
+      tickets.forEach(t=>Object.assign(t,{...YuushiWorkflow.unassigned(),...t}));
+      YuushiWorkflow.write(YuushiWorkflow.keys.tickets,tickets);
 
       // ---------- nav badge (open count) in parent shell ----------
       function openCount() {
@@ -1114,6 +1120,8 @@
         const from = $("fFrom").value;
         const to = $("fTo").value;
         let rows = tickets.filter((t) => {
+          if ($('assignmentType').value && t.assigneeType !== $('assignmentType').value) return false;
+          if ($('assignmentPerson').value && t.assigneeId !== $('assignmentPerson').value) return false;
           if (cat && t.category !== cat) return false;
           if (st && t.status !== st) return false;
           if (from && t.created < from) return false;
@@ -1190,7 +1198,7 @@
         const tb = $("tkBody");
         if (!pageRows.length) {
           tb.innerHTML =
-            '<tr><td colspan="6" class="tk-empty">No tickets match your filters.</td></tr>';
+            '<tr><td colspan="7" class="tk-empty">No tickets match your filters.</td></tr>';
         } else {
           tb.innerHTML = pageRows
             .map(
@@ -1201,7 +1209,7 @@
               <td>${esc(t.email)}</td>
               <td>${esc(t.category)}</td>
               <td>${esc(t.status)}</td>
-              <td>${esc(t.created)}</td>
+              <td>${esc(t.assigneeName||"Unassigned")}</td><td>${esc(t.created)}</td>
             </tr>`,
             )
             .join("");
@@ -1307,6 +1315,7 @@
         $("dStatus").value = t.status;
         $("reBody").innerHTML = "";
         renderThread(t);
+        renderAssignment(t);
         $("listView").classList.add("hidden");
         $("detailView").classList.remove("hidden");
         window.scrollTo(0, 0);
@@ -1398,6 +1407,7 @@
         });
         renderThread(t);
         body.innerHTML = "";
+        YuushiWorkflow.upsert(YuushiWorkflow.keys.tickets,t);
         toast("Reply sent successfully.");
       }
       function discardReply() {
@@ -1419,13 +1429,27 @@
         const t = tickets.find((x) => x.id === currentId);
         if (!t) return;
         t.status = val;
+        YuushiWorkflow.upsert(YuushiWorkflow.keys.tickets,t);
+        renderTable();
         updateNavBadge();
         toast("Status updated to " + val + ".");
       }
 
+
+      function renderAssignment(t){
+        const W=YuushiWorkflow;
+        let box=$('ticketAssignment');if(!box){box=document.createElement('section');box.id='ticketAssignment';box.className='wf-card';$('dStatus').closest('.card').append(box);}
+        box.innerHTML=`<h3>Assignment</h3><p>Assignment Type: ${esc(t.assigneeType)}</p><p>Assignee: ${esc(t.assigneeName)}</p><p>Assigned At: ${esc(t.assignedAt||'—')}</p><p>Assigned By: ${esc(t.assignedBy||'—')}</p><button class="wf-btn" id="assignTicket">Assign/Reassign</button><h4>Assignment History</h4>${W.timeline(t.assignmentHistory)}${t.transactionId?`<h4>Transaction Price Dispute</h4><a href="../property/transaction-verification-management.html?id=${encodeURIComponent(t.transactionId)}">${esc(t.transactionId)}</a><p>Property: ${esc(t.propertyId)}</p><p>Evidence: ${esc(t.evidence?.filename||'—')}</p>`:''}`;
+        $('assignTicket').onclick=()=>W.assignmentModal(t,false,(type,person,note)=>{const fresh=W.read(W.keys.tickets).find(x=>x.id===t.id)||t;W.assign(fresh,type,person,note,'Admin Tanaka');if(fresh.status==='Open')fresh.status='In Progress';W.upsert(W.keys.tickets,fresh);Object.assign(t,fresh);renderAssignment(t);$('dStatus').value=t.status;renderTable();updateNavBadge();toast('Ticket assignment updated.');});
+      }
+      YuushiWorkflow.initUI();
+      $('assignmentPerson').innerHTML='<option value="">All assignees</option>'+YuushiWorkflow.options([...YuushiWorkflow.ADMIN_INDIVIDUALS,...YuushiWorkflow.ADMIN_TEAMS]);
+      addEventListener('storage',e=>{if(e.key===YuushiWorkflow.keys.tickets){tickets=YuushiWorkflow.read(e.key);renderTable();updateNavBadge();if(currentId){const t=tickets.find(t=>t.id===currentId);if(t)renderAssignment(t);}}});
+
       // ---------- init ----------
       renderTable();
       updateNavBadge();
+      const requestedTicket=new URLSearchParams(location.search).get('id');if(requestedTicket)openDetail(requestedTicket);
     </script>
   </body>
 </html>
