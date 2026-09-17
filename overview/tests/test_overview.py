@@ -44,6 +44,46 @@ class OverviewTests(unittest.TestCase):
             ctx.eval((ROOT/name).read_text())
         return ctx
 
+    def test_business_account_scope_and_queues(self):
+        ctx=self.context()
+        self.assertTrue(ctx.eval("OverviewDemo.data.agencies.every(a=>a.type==='Agency')"))
+        self.assertEqual(ctx.eval("OverviewModel.pendingAgencies()"),11)
+        self.assertEqual(ctx.eval("OverviewModel.unrespondedMessages()"),14)
+        self.assertEqual(ctx.eval("OverviewModel.unrespondedMessages([{recipient:'Agency',status:'unresponded'}])"),0)
+        self.assertEqual(ctx.eval("OverviewModel.pendingAgencies([{type:'Staff',status:'Pending'}])"),0)
+        self.assertEqual(ctx.eval("""(()=>{const a={id:'A',type:'Agency',registeredAt:'2026-01-01',logins:['2026-09-07']};return OverviewModel.activity([a,a,{...a,id:'B',type:'Admin'},{...a,id:'C',type:'Support'},{...a,id:'D',type:'Staff'}],'2026-09-07',30)})()"""),1)
+        self.assertTrue(ctx.eval("OverviewDemo.data.facts.every(r=>r.agencyId===r.agentId&&r.inquiryTo==='Agency')"))
+
+    def test_mrr_monthly_equivalent_and_active_only(self):
+        ctx=self.context()
+        ctx.eval("var sub={agencyId:OverviewDemo.data.agencies[0].id,status:'Active',recurring:true,start:'2020-01-01',end:null,billingCycle:'Annual',fee:120000}")
+        self.assertEqual(ctx.eval("OverviewModel.mrr('2026-09-07',[sub])"),10000)
+        self.assertEqual(ctx.eval("OverviewModel.mrr('2026-09-07',[sub,{...sub,billingCycle:'Monthly',fee:5000},{...sub,status:'Cancelled'},{...sub,recurring:false},{...sub,start:'2027-01-01'},{...sub,end:'2026-09-07'}])"),15000)
+
+    def test_operational_export_uses_corrected_queues(self):
+        ctx=self.app_context('reports')
+        ctx.eval("document.handlers.click({target:{closest(){return {dataset:{export:'report-operations'}}}}})")
+        csv=ctx.eval('lastCSV')
+        self.assertIn('Unresponded Messages',csv)
+        self.assertIn('Pending Agency Reviews',csv)
+        self.assertNotIn('Unresponded Inquiries',csv)
+        self.assertNotIn('Pending Agent Reviews',csv)
+
+    def test_target_validation_and_progress(self):
+        ctx=self.app_context('kpi')
+        ctx.eval("var t={metric:'users',start:'2026-09-07',end:'2026-09-07',value:2}")
+        self.assertTrue(ctx.eval("OverviewModel.validateTarget(t)"))
+        self.assertTrue(ctx.eval("OverviewModel.validateTarget({...t,metric:'subscription',value:1.5})"))
+        self.assertTrue(ctx.eval("[ {...t,start:''},{...t,end:''},{...t,end:'2026-09-06'},{...t,value:0},{...t,value:-1},{...t,value:Infinity},{...t,value:NaN},{...t,value:1.5},{...t,metric:'invented'},{...t,start:'2026-02-30'} ].every(t=>!OverviewModel.validateTarget(t))"))
+        ctx.eval("document.getElementById('targetSettings').click()")
+        html=ctx.eval("document.getElementById('dialogBody').innerHTML")
+        for label in ['Target Metric','Start Date','End Date','Target Value']:self.assertIn(label,html)
+        for label in ['Daily','Monthly','Yearly']:self.assertNotIn(label,html)
+        ctx.eval("document.getElementById('targetMetric').value='totalRevenue';document.getElementById('targetValue').value='100';document.getElementById('targetForm').onsubmit({preventDefault(){}})")
+        self.assertEqual(len(json.loads(ctx.eval("savedStorage['yuushi.overview.targets']"))),1)
+        self.assertIn('%',ctx.eval("document.getElementById('targetCards').innerHTML"))
+        self.assertEqual(ctx.eval('OverviewModel.ratio(25,100)'),25)
+
     def test_all_javascript_parses(self):
         ctx=quickjs.Context()
         for path in ROOT.glob('*.js'):
@@ -54,7 +94,7 @@ class OverviewTests(unittest.TestCase):
         ctx=self.context()
         actual=json.loads(ctx.eval('''JSON.stringify((()=>{
           const M=OverviewModel;
-          const base={type:'Customer',registeredAt:'2025-01-01',logins:['2026-06-09'],withdrawnAt:null,withdrawalReason:''};
+          const base={type:'Client',registeredAt:'2025-01-01',logins:['2026-06-09'],withdrawnAt:null,withdrawalReason:''};
           const users=[base,{...base,withdrawnAt:'2026-09-02',withdrawalReason:'Moved away'},{...base,withdrawnAt:'2026-09-03',withdrawalReason:''},{...base,logins:['2026-06-10','2026-09-07']},{...base,logins:['2026-06-09','2026-09-07']}];
           return {events:M.inactivityEvents(base,'2026-09-07'),stats:M.withdrawalStats(users,'2026-09-01','2026-09-07'),stock:M.inactiveCount(users,'2026-09-07')};
         })())'''))
@@ -175,7 +215,7 @@ class OverviewTests(unittest.TestCase):
             for link in parser.links:
                 if link and not link.startswith(('http:', 'https:')):
                     self.assertTrue((path.parent/link).exists(),str(path)+': '+link)
-        for url in ['messagesupport/admin-messages.html','property/property-report-management.html','monetisation ads/admin-booking-approvals.html','usermanagement/agent-management.html']:
+        for url in ['messagesupport/admin-messages.html','property/property-report-management.html','monetisation ads/05-booking-approvals.html','usermanagement/agent-management.html']:
             self.assertTrue((ROOT.parent/url).exists(),url)
 
     def test_every_page_initializes(self):

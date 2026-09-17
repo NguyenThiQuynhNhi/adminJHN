@@ -676,7 +676,8 @@
         box-shadow: 0 0 0 2px rgba(178, 59, 59, 0.16);
       }
     </style>
-  </head>
+  <link rel="stylesheet" href="../dropdown-indicators.css">
+</head>
   <body>
     <div id="listView">
       <div class="page-header">
@@ -1139,7 +1140,7 @@
             <div class="kv">
               <label class="kv-label" for="cvRole">Role Assignment *</label>
               <select id="cvRole" class="edit-input">
-                <option value="All">All</option>
+                <option value="">Select one role</option>
                 <option value="Super Admin">Super Admin</option>
                 <option value="Admin">Admin</option>
                 <option value="Operator">Operator</option>
@@ -1170,64 +1171,7 @@
               </select>
             </div>
 
-            <div class="kv kv-full">
-              <label class="kv-label" for="cvPwd">Password *</label>
-              <div class="pwd-wrapper">
-                <input
-                  id="cvPwd"
-                  type="password"
-                  class="edit-input"
-                  placeholder="Min 12 characters"
-                  oninput="
-                    updatePwChecklist(
-                      this.value,
-                      document.getElementById('cvPwdChecklist'),
-                    )
-                  "
-                />
-                <i
-                  class="fas fa-eye pwd-toggle"
-                  onclick="togglePwd('cvPwd', this)"
-                ></i>
-              </div>
-              <div class="field-error"></div>
-              <ul class="pw-checklist" id="cvPwdChecklist">
-                <li data-rule="len">
-                  <i class="fas fa-circle"></i> At least 12 characters
-                </li>
-                <li data-rule="upper">
-                  <i class="fas fa-circle"></i> One uppercase letter (A–Z)
-                </li>
-                <li data-rule="lower">
-                  <i class="fas fa-circle"></i> One lowercase letter (a–z)
-                </li>
-                <li data-rule="num">
-                  <i class="fas fa-circle"></i> One number (0–9)
-                </li>
-                <li data-rule="special">
-                  <i class="fas fa-circle"></i> One special character
-                  (!@#$%^&amp;*)
-                </li>
-              </ul>
-            </div>
-            <div class="kv kv-full">
-              <label class="kv-label" for="cvPwdConfirm"
-                >Confirm Password *</label
-              >
-              <div class="pwd-wrapper">
-                <input
-                  id="cvPwdConfirm"
-                  type="password"
-                  class="edit-input"
-                  placeholder="Confirm your password"
-                />
-                <i
-                  class="fas fa-eye pwd-toggle"
-                  onclick="togglePwd('cvPwdConfirm', this)"
-                ></i>
-              </div>
-              <div class="field-error"></div>
-            </div>
+            <div class="kv kv-full"><p>The platform generates a random temporary password and emails it directly to this staff member. Administrators cannot view it. The staff member must change it at first sign-in.</p></div>
           </div>
         </section>
 
@@ -1261,74 +1205,8 @@
           </button>
         </div>
         <div class="modal-body">
-          <div class="warning-banner">
-            <i class="fas fa-triangle-exclamation"></i>
-            <div>
-              <strong>Force-reset password without email verification.</strong
-              ><br />
-              The account owner must use the new password to log in next time.
-              This action is recorded in Audit Logs.
-            </div>
-          </div>
-          <div class="kv" style="margin-top: 14px">
-            <span class="kv-label">Subject account</span
-            ><span class="kv-value" id="pwdSubject">—</span>
-          </div>
-          <div class="modal-field">
-            <label class="field-label" for="pwdNew">New password</label>
-            <div class="pwd-wrapper">
-              <input
-                id="pwdNew"
-                type="password"
-                autocomplete="new-password"
-                placeholder="Min 12 characters"
-                oninput="
-                  updatePwChecklist(
-                    this.value,
-                    document.getElementById('pwdChecklist'),
-                  )
-                "
-              />
-              <i
-                class="fas fa-eye pwd-toggle"
-                onclick="togglePwd('pwdNew', this)"
-              ></i>
-            </div>
-            <ul class="pw-checklist" id="pwdChecklist">
-              <li data-rule="len">
-                <i class="fas fa-circle"></i> At least 12 characters
-              </li>
-              <li data-rule="upper">
-                <i class="fas fa-circle"></i> One uppercase letter (A–Z)
-              </li>
-              <li data-rule="lower">
-                <i class="fas fa-circle"></i> One lowercase letter (a–z)
-              </li>
-              <li data-rule="num">
-                <i class="fas fa-circle"></i> One number (0–9)
-              </li>
-              <li data-rule="special">
-                <i class="fas fa-circle"></i> One special character
-                (!@#$%^&amp;*)
-              </li>
-            </ul>
-          </div>
-          <div class="modal-field">
-            <label class="field-label" for="pwdConfirm"
-              >Confirm new password</label
-            >
-            <div class="pwd-wrapper">
-              <input
-                id="pwdConfirm"
-                type="password"
-                autocomplete="new-password"
-              />
-              <i
-                class="fas fa-eye pwd-toggle"
-                onclick="togglePwd('pwdConfirm', this)"
-              ></i>
-            </div>
-          </div>
+          <p>The platform generates a random temporary password and emails it directly to the staff member. It is never displayed to administrators. The staff member must set a new password at next sign-in.</p>
+          <div class="kv"><span class="kv-label">Staff account and delivery email</span><span class="kv-value" id="pwdSubject">—</span></div>
           <div class="modal-error" id="pwdError"></div>
         </div>
         <div class="modal-footer">
@@ -1778,7 +1656,8 @@
 
       function renderEditableSections(a) {
         $("dProfileGrid").innerHTML = [
-          kv("Employee ID", vField(a.employeeId, "employeeId")),
+          kv("Staff ID", esc(a.id)),
+          kv("Employee ID", esc(a.employeeId)),
           kv(
             "Avatar Image",
             editMode
@@ -1990,6 +1869,7 @@
         }
 
         document.querySelectorAll("#detailView [data-field]").forEach((el) => {
+          if (["id", "staffId", "employeeId"].includes(el.dataset.field)) return;
           if (el.dataset.field === "twoFa") {
             currentAdmin.twoFa = el.value === "true";
           } else if (el.dataset.field === "avatarFile") {
@@ -2258,49 +2138,17 @@
       /* ---------- Reset Password ---------- */
       function resetPwd() {
         if (!currentAdmin) return;
-        // Role = admin; default minChars 12. Build the checklist dynamically
-        // from the role policy (length + only enabled complexity rules).
-        loadPwPolicy("admin", 12);
-        buildPwChecklist($("pwdChecklist"), PWD_POLICY);
-        const pwdNewEl = $("pwdNew");
-        if (pwdNewEl) pwdNewEl.placeholder = `Min ${PWD_POLICY_MIN} characters`;
-        $("pwdSubject").textContent =
-          `${currentAdmin.id} · ${currentAdmin.fullName} (${currentAdmin.email})`;
-        $("pwdNew").value = "";
-        $("pwdConfirm").value = "";
-        $("pwdError").classList.remove("show");
-        updatePwChecklist("", $("pwdChecklist"));
-        $("pwdResetModal").classList.add("open");
-        setTimeout(() => $("pwdNew").focus(), 50);
+        $('pwdSubject').textContent = `${currentAdmin.id} · ${currentAdmin.fullName} (${currentAdmin.email})`;
+        $('pwdResetModal').classList.add('open');
       }
-      function closePwdResetModal() {
-        $("pwdResetModal").classList.remove("open");
-      }
+      function closePwdResetModal() { $('pwdResetModal').classList.remove('open'); }
       function submitPwdReset() {
-        const np = $("pwdNew").value,
-          cp = $("pwdConfirm").value,
-          err = $("pwdError");
-        err.classList.remove("show");
-        if (!np || !cp) {
-          err.textContent = "This field is required.";
-          err.classList.add("show");
-          return;
-        }
-        if (!pwComplexity(np).all) {
-          err.textContent =
-            "Password does not meet the complexity requirements below.";
-          err.classList.add("show");
-          return;
-        }
-        if (np !== cp) {
-          err.textContent = "Passwords do not match.";
-          err.classList.add("show");
-          return;
-        }
+        if (!currentAdmin) return;
+        // Mock request only; never generate or return plaintext passwords in the Admin client.
+        currentAdmin.passwordResetRequest = {staffId:currentAdmin.id,email:currentAdmin.email,status:'requested',requestedAt:new Date().toISOString()};
+        currentAdmin.requiresPasswordChange = true;
         closePwdResetModal();
-        toast(
-          `Password reset successful for ${currentAdmin.fullName}. The action has been recorded in Audit Logs.`,
-        );
+        toast(`Mock: password reset requested for ${currentAdmin.email}. The platform emails the generated password privately.`);
       }
 
       /* ---------- 3. CREATE VIEW LOGIC ---------- */
@@ -2313,8 +2161,6 @@
           "cvDob",
           "cvAddress",
           "cvPermExpiry",
-          "cvPwd",
-          "cvPwdConfirm",
           "cvMemo",
         ].forEach((id) => ($(id).value = ""));
         $("cvDept").value = "Headquarters";
@@ -2322,19 +2168,12 @@
         $("cvStatus").value = "Active";
         $("cv2FA").value = "Disabled";
         clearScopeErrors("#createFormContainer");
-        // Create view is for an admin account: drive its checklist from the
-        // admin role policy too, so create + reset stay consistent.
-        loadPwPolicy("admin", 12);
-        buildPwChecklist($("cvPwdChecklist"), PWD_POLICY);
-        const cvPwdEl = $("cvPwd");
-        if (cvPwdEl) cvPwdEl.placeholder = `Min ${PWD_POLICY_MIN} characters`;
-        updatePwChecklist("", $("cvPwdChecklist"));
         $("listView").classList.add("hidden");
         $("createView").classList.remove("hidden");
         window.scrollTo(0, 0);
       }
       function cancelCreateView() {
-        let hasData = ["cvFullName", "cvEmail", "cvPhone", "cvDob", "cvPwd"].some(
+        let hasData = ["cvFullName", "cvEmail", "cvPhone", "cvDob"].some(
           (id) => $(id).value.trim() !== "",
         );
         if (
@@ -2351,8 +2190,6 @@
           emailEl = $("cvEmail"),
           phoneEl = $("cvPhone"),
           roleEl = $("cvRole"),
-          pwdEl = $("cvPwd"),
-          pwd2El = $("cvPwdConfirm"),
           avEl = $("cvAvatar");
         let ok = true;
         if (!nameEl.value.trim()) {
@@ -2390,23 +2227,8 @@
           ok = false;
         }
 
-        if (!roleEl.value) {
-          setFieldError(roleEl, "Please select at least 1 role.");
-          ok = false;
-        }
-
-        if (!pwdEl.value) {
-          setFieldError(pwdEl, "This field is required.");
-          ok = false;
-        } else if (!pwComplexity(pwdEl.value).all) {
-          setFieldError(
-            pwdEl,
-            "Password does not meet the complexity requirements below.",
-          );
-          ok = false;
-        }
-        if (pwdEl.value && pwdEl.value !== pwd2El.value) {
-          setFieldError(pwd2El, "Passwords do not match.");
+        if (!["Super Admin","Admin","Operator","Viewer"].includes(roleEl.value)) {
+          setFieldError(roleEl, "Please select one role.");
           ok = false;
         }
 
@@ -2436,6 +2258,7 @@
           new Date().toISOString().slice(0, 16).replace("T", " ") + " JST";
         const newAdmin = {
           id: "ADM-" + String(nextNum).padStart(3, "0"),
+          requiresPasswordChange: true,
           fullName: nameEl.value.trim(),
           email,
           phone,
@@ -2469,7 +2292,7 @@
         renderList();
         $("createView").classList.add("hidden");
         $("listView").classList.remove("hidden");
-        toast("Admin account created successfully.");
+        toast("Mock: admin account created; platform-generated credentials requested for " + email + ". No password is shown.");
       }
       function exportCsv() {
         alert(`Export ${filtered.length} filtered admin records as CSV (demo)`);

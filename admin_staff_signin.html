@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Staff Sign In — YUUSHI Admin Portal</title>
+    <style>
+      :root { --accent:#8b7340; --border:#ded8d0; --text:#191818; --muted:#746d65; --danger:#b23b3b; --success:#2f7d4f; --warm:#fffaf2; --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; }
+      * { box-sizing:border-box; }
+      html,body { margin:0; min-height:100%; font-family:var(--font); color:var(--text); }
+      .auth-shell { width:100%; max-width:440px; }
+      .step { display:none; }
+      .step.active { display:block; }
+      h1 { margin:0 0 8px; }
+      .subtitle { margin:0 0 26px; line-height:1.55; }
+      .notice { margin:0 0 22px; padding:12px 14px; background:var(--warm); border:1px solid #eadfc9; color:var(--muted); font-size:13px; line-height:1.5; }
+      #step-login h1 { margin-bottom:24px; }
+      .staff-signin-help { margin:16px 0 0; text-align:center; color:var(--muted); font-size:12px; line-height:1.6; }
+      .staff-signin-help strong { font-size:inherit; font-weight:500; }
+      .field { margin-bottom:18px; }
+      label { display:block; margin-bottom:6px; font-size:13px; font-weight:500; }
+      .req { color:var(--danger); }
+      .pw-wrap { position:relative; }
+      .pw-toggle { position:absolute; right:10px; top:50%; transform:translateY(-50%); border:0; background:none; color:var(--muted); cursor:pointer; }
+      .err { display:none; margin-top:6px; color:var(--danger); font-size:12px; }
+      .err.show { display:block; }
+      input.invalid { border-color:var(--danger) !important; }
+      .btn { width:100%; border:0; font:600 14px var(--font); cursor:pointer; }
+      .back-row { margin-top:20px; text-align:center; font-size:13px; }
+      .pw-rules { display:grid; grid-template-columns:1fr 1fr; gap:7px 12px; margin:10px 0 20px; padding:12px; background:var(--warm); border:1px solid #eadfc9; }
+      .pw-rule { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:12px; }
+      .dot { width:6px; height:6px; border-radius:50%; background:#aaa; }
+      .pw-rule.ok { color:var(--text); }
+      .pw-rule.ok .dot { background:var(--accent); }
+      .success { text-align:center; }
+      .success-icon { width:64px; height:64px; margin:0 auto 18px; display:grid; place-items:center; border-radius:50%; background:#e8f3ec; color:var(--success); font-size:30px; }
+      @media(max-width:480px){ .pw-rules{grid-template-columns:1fr;} }
+    </style>
+    <link rel="stylesheet" href="admin-auth.css" />
+  </head>
+  <body>
+    <header class="auth-site-header">
+      <div class="auth-utility"><span>Tokyo, Japan</span><div class="auth-utility-right"><span>English</span><span>+81 3 0000 0000</span></div></div>
+      <nav class="auth-nav">
+        <a class="auth-logo" href="index.html"><span class="auth-wordmark">YUUSHI</span><span class="auth-portal-name">Admin Portal</span></a>
+      </nav>
+    </header>
+
+    <main class="auth-shell">
+      <section class="step active" id="step-login">
+        <h1>Admin Staff Sign In</h1>
+        <div class="field">
+          <label for="staff-id">Staff ID <span class="req">*</span></label>
+          <input id="staff-id" type="text" autocomplete="username" placeholder="Enter your Staff ID" />
+          <div class="err" id="err-staff-id">Staff ID is required.</div>
+        </div>
+        <div class="field">
+          <label for="staff-password">Password <span class="req">*</span></label>
+          <div class="pw-wrap"><input id="staff-password" type="password" autocomplete="current-password" placeholder="Enter your password" /><button class="pw-toggle" type="button" onclick="togglePw('staff-password',this)">Show</button></div>
+          <div class="err" id="err-staff-password">Password is required.</div>
+        </div>
+        <div id="password-change-fields">
+        <div class="field">
+          <label for="new-password">New Password <span class="req">*</span></label>
+          <div class="pw-wrap"><input id="new-password" type="password" autocomplete="new-password" placeholder="At least 8 characters" /><button class="pw-toggle" type="button" onclick="togglePw('new-password',this)">Show</button></div>
+        </div>
+        <div class="field">
+          <label for="confirm-password">Confirm Password <span class="req">*</span></label>
+          <div class="pw-wrap"><input id="confirm-password" type="password" autocomplete="new-password" placeholder="Re-enter your password" /><button class="pw-toggle" type="button" onclick="togglePw('confirm-password',this)">Show</button></div>
+        </div>
+        <div class="pw-rules">
+          <div class="pw-rule" data-rule="len"><span class="dot"></span>8+ characters</div>
+          <div class="pw-rule" data-rule="upper"><span class="dot"></span>Uppercase</div>
+          <div class="pw-rule" data-rule="lower"><span class="dot"></span>Lowercase</div>
+          <div class="pw-rule" data-rule="num"><span class="dot"></span>Number</div>
+          <div class="pw-rule" data-rule="sym"><span class="dot"></span>Symbol</div>
+          <div class="pw-rule" data-rule="match"><span class="dot"></span>Passwords match</div>
+        </div>
+        <div class="err" id="err-new-password" style="margin-bottom:14px">Password does not meet all requirements.</div>
+        </div>
+        <button class="btn btn-primary" type="button" onclick="staffSignIn()">Sign in</button>
+        <div class="back-row"><a class="link" href="admin_signin.html">YUUSHI Administrator sign in</a></div>
+      </section>
+
+
+
+      <section class="step success modal-step" id="step-success">
+        <div class="success-icon">✓</div>
+        <h1>Password Updated</h1>
+        <p class="subtitle">The temporary password is no longer valid. Sign in again using your new private password.</p>
+        <a class="btn btn-primary" href="admin_staff_signin.html?scenario=regular">Return to staff sign in</a>
+      </section>
+    </main>
+
+    <script>
+      function togglePw(id, button) {
+        const input = document.getElementById(id);
+        input.type = input.type === 'password' ? 'text' : 'password';
+        button.textContent = input.type === 'password' ? 'Show' : 'Hide';
+      }
+      function validEmail(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value); }
+      function fieldError(id, show) {
+        document.getElementById('err-' + id).classList.toggle('show', show);
+        document.getElementById(id).classList.toggle('invalid', show);
+      }
+      function showStep(id) {
+        document.querySelectorAll('.step').forEach((step) => step.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        window.scrollTo({top:0, behavior:'smooth'});
+      }
+      // Default preview shows first sign-in / reissued-password fields inline.
+      // Production uses the verified authentication response for this state.
+      const requiresPasswordChange = new URLSearchParams(window.location.search).get('scenario') !== 'regular';
+      document.getElementById('password-change-fields').hidden = !requiresPasswordChange;
+      function staffSignIn() {
+        const staffId = document.getElementById('staff-id').value.trim();
+        const password = document.getElementById('staff-password').value;
+        fieldError('staff-id', !staffId);
+        fieldError('staff-password', !password);
+        if (!staffId || !password) return;
+        if (requiresPasswordChange) setPassword();
+        else window.location.href = 'index.html';
+      }
+      const password = document.getElementById('new-password');
+      const confirmation = document.getElementById('confirm-password');
+      function rules() {
+        const value = password.value;
+        const state = { len:value.length >= 8, upper:/[A-Z]/.test(value), lower:/[a-z]/.test(value), num:/\d/.test(value), sym:/[^A-Za-z0-9]/.test(value), match:value.length > 0 && value === confirmation.value };
+        Object.entries(state).forEach(([name, ok]) => document.querySelector('[data-rule="' + name + '"]').classList.toggle('ok', ok));
+        return Object.values(state).every(Boolean);
+      }
+      password.addEventListener('input', rules);
+      confirmation.addEventListener('input', rules);
+      function setPassword() {
+        const valid = rules();
+        document.getElementById('err-new-password').classList.toggle('show', !valid);
+        if (valid) showStep('step-success');
+      }
+    </script>
+  </body>
+</html>

@@ -1,6 +1,6 @@
 # Overview — đối chiếu triển khai
 
-Nguồn: [`OVERVIEW.xlsx`](OVERVIEW.xlsx), sheet **SVC AnalyticsReports**, cột I “Out of scope”. Theo lựa chọn của người dùng, sheet SVC được ưu tiên hơn Q5AnalyticsReports. `Ad Type Usage Breakdown` (r75) và `Appraisal Request – Sent to Agents` (r84) thuộc scope. Workbook gốc không thay đổi.
+Nguồn: [`OVERVIEW.xlsx`](OVERVIEW.xlsx), sheet **SVC AnalyticsReports**, cột I “Out of scope”. Theo lựa chọn của người dùng, sheet SVC được ưu tiên hơn Q5AnalyticsReports. `Ad Type Usage Breakdown` (r75) và `Appraisal Request – Sent to Agencies` (r84) thuộc scope. Workbook gốc không thay đổi.
 
 Có 165 dòng có tên Metric / Feature: 114 dòng không tick (110 định nghĩa tính năng và 4 tiêu đề nhóm), 51 dòng tick được loại khỏi giao diện. Các dòng chỉ chứa tên section không tính vào số này.
 
@@ -9,7 +9,7 @@ Có 165 dòng có tên Metric / Feature: 114 dòng không tick (110 định ngh�
 Đây là bộ giao diện HTML/JavaScript chạy trong repository tĩnh hiện có. 13 trang dùng chung bộ lọc, nguồn dữ liệu mẫu, phép tính và renderer. Các thao tác xem chi tiết, đổi biểu đồ, bật/tắt Fraud KPI, thiết lập target, xuất CSV, tạo báo cáo và lưu cấu hình thực hiện trong trình duyệt. Các trang dùng nhãn giao diện nghiệp vụ, không hiển thị banner Demo hoặc thanh điều hướng ngang giữa 13 trang; điều hướng chính nằm ở sidebar Admin.
 
 - Dữ liệu mẫu được sinh theo ngày hiện tại tại Nhật Bản; không gắn cứng tháng. Các xu hướng dùng lịch sử mẫu, không phải dữ liệu vận hành thật.
-- `overview-spec.js`: định nghĩa theo workbook và danh sách Automated Alert.
+- `overview-spec.js`: định nghĩa theo workbook, đã sửa theo business model hiện tại và danh sách Automated Alert.
 - `overview-data.js`: fixture tài khoản, lịch sử đăng nhập, nhận diện guest, tài sản, hành vi, chat, thanh toán và log.
 - `overview-model.js`: bộ lọc, tổng hợp, tính tỷ lệ, phân loại lỗi và mốc inactivity.
 - `overview-charts.js`: SVG, bảng dữ liệu có sắp xếp, biểu đồ kết hợp và tooltip.
@@ -20,9 +20,9 @@ Có 165 dòng có tên Metric / Feature: 114 dòng không tick (110 định ngh�
 
 - Payment Errors: đúng 5 nhóm Card declined, Authentication failure, Card expired, System/network error, Other. Đếm lỗi chưa giải quyết theo ID duy nhất; loại chưa biết chuyển vào Other.
 - Fraud: chỉ đếm flag có status `unhandled` và thuộc loại được bật trong cấu hình KPI. 6 loại có đánh dấu Fraud trong sheet Automated Alert: High Volume Inquiries, Multi-Device Login, Consecutive Failed Logins, Report Received, Consecutive Payment Failure, Mass Reporting. Tắt một loại chỉ thay đổi KPI, không xóa flag hay tắt phát hiện.
-- Error Log Count: cửa sổ `(now − 24 giờ, now]`, mức FATAL / ERROR / WARN; loại frontend và validation. Dialog hướng dẫn kiểm tra rồi liên hệ server operations / SVC. Nguồn log production còn cần xác nhận với Ito.
-- Withdrawals this month: tài khoản Customer rút trong tháng và có lý do.
-- Newly inactive users this month: Customer vừa vượt 90 ngày không đăng nhập trong tháng, tính một lần mỗi tài khoản trong tháng. Dùng lịch sử các khoảng không đăng nhập, vẫn giữ sự kiện lịch sử sau khi người dùng quay lại; không tính người đã rút trước mốc.
+- Error Log Count: cửa sổ `(now − 24 giờ, now]`, mức FATAL / ERROR / WARN; loại frontend và validation. Dialog hướng dẫn kiểm tra rồi liên hệ server operations / SVC.
+- Withdrawals this month: tài khoản Client rút trong tháng và có lý do.
+- Newly inactive users this month: Client vừa vượt 90 ngày không đăng nhập trong tháng, tính một lần mỗi tài khoản trong tháng. Dùng lịch sử các khoảng không đăng nhập, vẫn giữ sự kiện lịch sử sau khi người dùng quay lại; không tính người đã rút trước mốc.
 - Hai card độc lập, từ ngày 1 đến ngày xem; tháng hiện tại là provisional. Biểu đồ Withdrawal Trend hiển thị hai chuỗi hàng tháng trong 12 tháng. Dormant User Count cũng dùng 90 ngày theo yêu cầu mới, thay cho 30 ngày trong workbook.
 - Guest DAU / WAU / MAU dùng cookie identity mẫu riêng, không cộng gộp với tài khoản thành số người duy nhất.
 - Tỷ lệ tổng hợp từ tổng tử số / tổng mẫu số. CPA không có chuyển đổi hiển thị “—”. Giá bán, giá thuê tháng và giá development được tách theo transaction type; không trộn vào một mức giá trung bình.
@@ -40,12 +40,12 @@ Fraud settings, targets, report shortcuts và schedules được lưu ở localS
 | Dòng SVC | Metric / Feature | Giao diện |
 | --- | --- | --- |
 | 5 | Alert Bar (Real-time) | KPI Dashboard |
-| 6 | Unresponded Inquiries | KPI Dashboard |
+| 6 | Unresponded Messages | KPI Dashboard |
 | 7 | Property Complaints (Unprocessed) | KPI Dashboard |
 | 8 | Pending Ad Approvals | KPI Dashboard |
 | 9 | Fraud Detections | KPI Dashboard |
 | 10 | Payment Errors | KPI Dashboard |
-| 11 | Pending Agent Reviews | KPI Dashboard |
+| 11 | Pending Agency Reviews | KPI Dashboard |
 | 12 | System Status (Real-time) | KPI Dashboard |
 | 13 | API Status | KPI Dashboard |
 | 14 | DB Status | KPI Dashboard |
@@ -91,24 +91,24 @@ Fraud settings, targets, report shortcuts và schedules được lưu ở localS
 | 56 | Withdrawal Trend | End User Statistics |
 | 57 | Chat Message Statistics - End User | End User Statistics |
 | 58 | Chat Message Statistics - End User | End User Statistics |
-| 59 | Chat Message Statistics - Agents | End User Statistics |
+| 59 | Chat Message Statistics - Agencies | End User Statistics |
 | 60 | Chat Message Statistics - Response Time | End User Statistics |
-| 69 | New Registration Trend | Agent Statistics; Agent League cho r80 |
-| 70 | DAU/WAU/MAU | Agent Statistics; Agent League cho r80 |
-| 71 | Subscription Plan Distribution | Agent Statistics; Agent League cho r80 |
-| 72 | Subscription Plan Listings Utilisation | Agent Statistics; Agent League cho r80 |
-| 73 | Ad Adoption Rate | Agent Statistics; Agent League cho r80 |
-| 74 | Ad Adoption Rate per agent | Agent Statistics; Agent League cho r80 |
-| 75 | Ad Type Usage Breakdown | Agent Statistics; Agent League cho r80 |
-| 76 | Option Product Usage Breakdown | Agent Statistics; Agent League cho r80 |
-| 77 | Listing Count Distribution | Agent Statistics; Agent League cho r80 |
-| 78 | Response Rate / Speed Distribution | Agent Statistics; Agent League cho r80 |
-| 79 | Deal Count Trend | Agent Statistics; Agent League cho r80 |
-| 80 | Agent League Table | Agent Statistics; Agent League cho r80 |
-| 81 | Revenue Breakdown by Plan | Agent Statistics; Agent League cho r80 |
-| 82 | Appraisal Request - Distribution Statistics | Agent Statistics; Agent League cho r80 |
-| 83 | Appraisal Request - Agents Registered | Agent Statistics; Agent League cho r80 |
-| 84 | Appraisal Request - Sent to Agents | Agent Statistics; Agent League cho r80 |
+| 69 | New Registration Trend | Agency Statistics; Agency League cho r80 |
+| 70 | DAU/WAU/MAU | Agency Statistics; Agency League cho r80 |
+| 71 | Subscription Plan Distribution | Agency Statistics; Agency League cho r80 |
+| 72 | Subscription Plan Listings Utilisation | Agency Statistics; Agency League cho r80 |
+| 73 | Ad Adoption Rate | Agency Statistics; Agency League cho r80 |
+| 74 | Ad Adoption Rate per Agency | Agency Statistics; Agency League cho r80 |
+| 75 | Ad Type Usage Breakdown | Agency Statistics; Agency League cho r80 |
+| 76 | Option Product Usage Breakdown | Agency Statistics; Agency League cho r80 |
+| 77 | Listing Count Distribution | Agency Statistics; Agency League cho r80 |
+| 78 | Response Rate / Speed Distribution | Agency Statistics; Agency League cho r80 |
+| 79 | Deal Count Trend | Agency Statistics; Agency League cho r80 |
+| 80 | Agency League Table | Agency Statistics; Agency League cho r80 |
+| 81 | Revenue Breakdown by Plan | Agency Statistics; Agency League cho r80 |
+| 82 | Appraisal Request - Distribution Statistics | Agency Statistics; Agency League cho r80 |
+| 83 | Appraisal Request - Agencies Registered | Agency Statistics; Agency League cho r80 |
+| 84 | Appraisal Request - Sent to Agencies | Agency Statistics; Agency League cho r80 |
 | 91 | Listing Trend (by Type) | Property Statistics |
 | 92 | Listings by Area | Property Statistics |
 | 93 | Price Range Distribution | Property Statistics |
@@ -134,7 +134,7 @@ Fraud settings, targets, report shortcuts và schedules được lưu ở localS
 | 114 | CPA by Placement / Page | Revenue & Ad Performance |
 | 115 | IMP / CL / CTR / CV / CVR | Revenue & Ad Performance |
 | 116 | Overall CPA (Ad-based) | Revenue & Ad Performance |
-| 117 | Ad Effectiveness by Agent | Revenue & Ad Performance |
+| 117 | Ad Effectiveness by Agency | Revenue & Ad Performance |
 | 118 | Appraisal Referral Analysis by Area | Revenue & Ad Performance |
 | 120 | Avg Price Trend by Area and Property Type | Market Analysis |
 | 121 | Area × Property Type × Performance | Market Analysis |
@@ -164,18 +164,18 @@ Fraud settings, targets, report shortcuts và schedules được lưu ở localS
 | 64 | Chat Message Statistics - Attachments |
 | 65 | Chat Message Statistics - Videos |
 | 66 | Chat Message Statistics - blocks by End-Users |
-| 67 | Chat Message Statistics - blocks by Agents |
-| 85 | Appraisal Request - Submitted by Agents |
+| 67 | Chat Message Statistics - blocks by Agencies |
+| 85 | Appraisal Request - Submitted by Agencies |
 | 86 | Appraisal Request - JPY Value of Appraisals |
 | 126 | Popularity by Keyword |
-| 131 | ROAS (Agent × Revenue) |
+| 131 | ROAS (Agency × Revenue) |
 | 132 | Listing Completeness × Conversion Rate |
 | 133 | Plan × LTV (Retention Rate) |
 | 134 | Response Speed / Rate × Conversion Rate |
-| 135 | Agent Rating × Conversion Rate |
+| 135 | Agency Rating × Conversion Rate |
 | 136 | Risk Analysis |
 | 146 | User Registration Month Retention Rate |
-| 147 | Agent Registration Month Retention Rate |
+| 147 | Agency Registration Month Retention Rate |
 | 148 | Post-Plan Change Retention Rate |
 | 149 | Post-First Inquiry Retention Rate |
 | 150 | Post-Ad Usage Retention Rate |
@@ -219,3 +219,20 @@ PYTHONPATH=/tmp/overview-js-runtime python3 -m unittest discover -s overview/tes
 ```
 
 Các kiểm tra bao gồm: parse toàn bộ JavaScript, khởi tạo 13 trang với DOM mock, tính và render mọi metric analytics trong scope, mốc 90 ngày / 24 giờ, lỗi thanh toán, toggle Fraud, đối chiếu chat totals, guest activity, slot capacity, option theo kỳ, đơn vị giá, xuất CSV / lưu cấu hình và đường dẫn tài nguyên. DOM mock không thay thế kiểm tra hình ảnh và thao tác trên trình duyệt thật.
+
+## Admin Overview business-model corrections
+
+- Agency is the registered business account. Total Users, DAU/WAU/MAU and User Trend count Client / End User and Agency accounts, once per account ID, excluding withdrawn accounts, Agency staff and YUUSHI Admin/Support. Session averages use the same account scope and session-weighted durations; guests remain separate.
+- Unresponded Messages counts `adminChats` addressed to YUUSHI Admin with status `unresponded`. Pending Agency Reviews counts Agency accounts with status `Pending`. KPI and Operational Report use the same functions.
+- Today's Inquiries and Inquiry & Deal Trend use daily Property Inquiry aggregates (`facts.inquiries`, property and Agency ownership) for Client → Agency via Chat with Agency from Property Detail. They never count Admin support chats. Deals remain Agency-recorded Transactions. Repeat-Inquiry handling is not resolved or implemented here.
+- MRR sums active recurring Agency subscriptions: monthly fee + annual fee ÷ 12. The mock includes both billing cycles and excludes pending/cancelled subscriptions. ¥120,000 annually contributes ¥10,000. This follows the requested final rule; the client clarification below is internal follow-up, not a runtime setting or a new production workflow. Prior-month comparison uses the mock subscription records at that date; this fixture is not a billing event ledger.
+- Target Setting contains only Target Metric, Start Date, End Date and Target Value. Both dates and a positive finite value are required, End Date ≥ Start Date, and account/subscription/listing counts require whole numbers. Existing supported metrics and actual ÷ target × 100 progress are retained. Revenue values may be fractional. No period presets or recurrence.
+- Compatibility: existing `agent-stats-dashboard.html`, `agent-league-dashboard.html`, page/alert key `agents`, `D.agents`, local variable `agents`, `agentId`, `messagesAgent` and User Trend column key `agents` are retained. They refer to Agency businesses, not staff. `D.agencies` and `agencyId` expose the normalized semantics. `customerId` and `customers` remain legacy Client keys. Row IDs and the original workbook remain unchanged. Chart renderer consumes the corrected model labels without changes.
+
+## Open BA questions — JHN
+
+Q1: "For Admin Dashboard metrics such as “Today’s Inquiries” and “Inquiry & Deal Trend”, should “Inquiry” refer to property-related inquiries submitted by Clients to Agencies through “Chat with Agency”, rather than messages sent to Yuushi Admin?"
+
+Q2: "For MRR, if an Agency subscribes to an annual plan, should the annual subscription fee be converted to a monthly equivalent by dividing it by 12? For example, an annual plan of ¥120,000 would contribute ¥10,000 to MRR."
+
+Verification after corrections: 20 Python/QuickJS tests passed (including Agency identity exclusions, separate operational queues, annual MRR normalization, target validation/progress, and Operational Report CSV labels). Chrome loaded all 13 pages without uncaught errors or metric-rendering failures. Checked sidebar/rendered links, target form interactions and operational queue destinations; repaired the Overview Pending Ad Approvals destination to the existing `05-booking-approvals.html`. `git diff --check` passed. Fraud alert definitions and metric row IDs were verified unchanged.

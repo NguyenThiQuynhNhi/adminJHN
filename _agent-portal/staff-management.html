@@ -901,7 +901,8 @@
         margin-top: 4px;
       }
     </style>
-  </head>
+  <link rel="stylesheet" href="../dropdown-indicators.css">
+</head>
   <body>
     <!-- MAIN -->
     <main class="main">
@@ -966,7 +967,7 @@
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>Email (login)</th>
+                  <th>Staff ID</th><th>Email</th>
                   <th>Role</th>
                   <th>Phone</th>
                   <th>Status</th>
@@ -1022,12 +1023,13 @@
         <div class="card">
           <h3>Identity</h3>
           <div class="info-grid">
+            <div class="info-item"><div class="lbl">Staff ID</div><div class="val" id="v-staff-id"></div></div>
             <div class="info-item">
               <div class="lbl">Full name</div>
               <div class="val" id="v-full-name"></div>
             </div>
             <div class="info-item">
-              <div class="lbl">Email (login)</div>
+              <div class="lbl">Email</div>
               <div class="val" id="v-email"></div>
             </div>
             <div class="info-item">
@@ -1137,6 +1139,7 @@
           </div>
 
           <div class="field-grid">
+            <div class="field full"><label for="d-staff-id">Staff ID <span class="req">*</span></label><input id="d-staff-id" type="text" placeholder="Assign a unique Staff ID" /><small>Assigned once by the Agency Administrator. Cannot be changed after creation.</small><div class="err" id="err-d-staff-id">Enter a unique Staff ID using letters, numbers, hyphens or underscores.</div></div>
             <div class="field full">
               <label>Full Name <span class="req">*</span></label>
               <input
@@ -1148,7 +1151,7 @@
               <div class="err" id="err-d-name">Full name is required.</div>
             </div>
             <div class="field full">
-              <label>Email (login) <span class="req">*</span></label>
+              <label>Email <span class="req">*</span></label>
               <input
                 id="d-email"
                 type="email"
@@ -1220,12 +1223,11 @@
               <div class="text">
                 <strong>Send invitation email</strong>
                 <small
-                  >An email will be sent with a sign-in link. The agent sets
-                  their own password on first sign-in.</small
+                  >The platform generates a random temporary password and emails it directly to the staff member. It is never shown to the Agency Administrator. Staff must change it on first sign-in.</small
                 >
               </div>
               <label class="switch"
-                ><input type="checkbox" id="d-invite" checked /><span
+                ><input type="checkbox" id="d-invite" checked disabled /><span
                   class="slider"
                 ></span
               ></label>
@@ -1242,71 +1244,14 @@
                 ><input type="checkbox" id="d-2fa" /><span class="slider"></span
               ></label>
             </div>
-            <div
-              class="hint"
-              style="
-                padding: 10px 12px;
-                background: var(--info-bg);
-                border: 1px solid #dce0e8;
-                border-radius: 7px;
-                color: var(--muted);
-                margin-top: 8px;
-              "
-            >
-              Set a temporary password manually only if the agent cannot receive
-              email. Toggle "Send invitation" off to reveal the field.
-            </div>
-            <div id="d-temp-pw-wrap" style="display: none; margin-top: 14px">
-              <div class="field full">
-                <label>Temporary password <span class="req">*</span></label>
-                <input
-                  id="d-temp-pw"
-                  type="password"
-                  autocomplete="new-password"
-                  oninput="checkAddPwRules()"
-                />
-                <div class="pw-rules" id="add-pw-rules">
-                  <div class="pw-rule" data-rule="len">
-                    <span class="dot"></span>At least 12 characters
-                  </div>
-                  <div class="pw-rule" data-rule="upper">
-                    <span class="dot"></span>One uppercase letter
-                  </div>
-                  <div class="pw-rule" data-rule="lower">
-                    <span class="dot"></span>One lowercase letter
-                  </div>
-                  <div class="pw-rule" data-rule="num">
-                    <span class="dot"></span>One number
-                  </div>
-                  <div class="pw-rule" data-rule="sym">
-                    <span class="dot"></span>One symbol
-                  </div>
-                  <div class="pw-rule" data-rule="force">
-                    <span
-                      class="dot ok-static"
-                      style="background: var(--accent)"
-                    ></span
-                    >Force change on first sign-in
-                  </div>
-                </div>
-                <div class="hint" style="margin-top: 8px">
-                  The agent will be forced to change this password the first
-                  time they sign in.
-                </div>
-              </div>
-            </div>
+
           </div>
 
           <!-- Edit mode: account controls -->
           <div id="account-edit" style="display: none">
             <div class="field full">
-              <label>Reset password</label>
-              <div class="toggle-row">
-                <div class="text">
-                  <strong>Reset password</strong>
-                </div>
-                
-              </div>
+              <button type="button" class="btn btn-ghost" onclick="sendResetFor(editingId)">Reset password</button>
+              <p class="hint">The platform generates a random temporary password and emails it to the saved staff email. The password is never shown to administrators. Staff must change it at next sign-in.</p>
             </div>
             <div class="toggle-row">
               <div class="text">
@@ -1547,6 +1492,8 @@
           hours: "",
         },
       ];
+      staff.forEach(s => Object.defineProperty(s, 'staffId', {value:'STF-'+String(s.id).padStart(4,'0'), enumerable:true}));
+      const issuedStaffIds = new Set(staff.map(s=>s.staffId.toLowerCase()));
       let editingId = null,
         currentId = null,
         currentRemoveId = null;
@@ -1572,7 +1519,7 @@
           if (fRole && s.role !== fRole) return false;
           if (fStat && s.status !== fStat) return false;
           if (q) {
-            const hay = (s.name + " " + s.email + " " + s.role).toLowerCase();
+            const hay = (s.staffId + " " + s.name + " " + s.email + " " + s.role).toLowerCase();
             if (!hay.includes(q)) return false;
           }
           return true;
@@ -1580,7 +1527,7 @@
         tbody.innerHTML = "";
         if (filtered.length === 0) {
           tbody.innerHTML =
-            '<tr><td colspan="7" style="text-align:center;color:var(--soft);padding:36px;font-style:italic">No staff match your search or filters.</td></tr>';
+            '<tr><td colspan="8" style="text-align:center;color:var(--soft);padding:36px;font-style:italic">No staff match your search or filters.</td></tr>';
           document.getElementById("pager-info").textContent =
             "Showing 0 of " + staff.length;
           return;
@@ -1594,7 +1541,7 @@
         <div class="avatar-md">${s.initials}</div>
         <div><div class="name">${s.name}${s.isYou ? ' <small style="font-weight:400;color:var(--soft)">(You)</small>' : ""}</div></div>
       </div></td>
-      <td>${s.email}</td>
+      <td>${s.staffId}</td><td>${s.email}</td>
       <td><span class="role-badge">${s.role}</span></td>
       <td>${s.phone}</td>
       <td><span class="badge badge-${s.status}"><span class="badge-dot"></span>${s.statusLabel}</span></td>
@@ -1663,6 +1610,7 @@
           .classList.add("badge-" + s.status);
         document.getElementById("v-status-text").textContent = s.statusLabel;
         document.getElementById("v-full-name").textContent = s.name;
+        document.getElementById("v-staff-id").textContent = s.staffId;
         document.getElementById("v-email").textContent = s.email;
         setVal("v-phone", s.phone && s.phone !== "—" ? s.phone : "");
         document.getElementById("v-role").textContent = s.role;
@@ -1693,6 +1641,8 @@
       // === EDIT / ADD VIEW ===
       function openAdd() {
         editingId = null;
+        document.getElementById("d-staff-id").readOnly = false;
+        document.getElementById("d-staff-id").value = "";
         document.getElementById("edit-title").textContent = "Add agent";
         document.getElementById("edit-save").textContent = "Send invitation";
         document.getElementById("account-add").style.display = "";
@@ -1703,13 +1653,11 @@
           "d-phone",
           "d-bio",
           "d-hours",
-          "d-temp-pw",
         ].forEach((id) => (document.getElementById(id).value = ""));
         document.getElementById("d-role").value = "Sales Agent";
         document.getElementById("d-inherit-hours").checked = false;
         document.getElementById("d-invite").checked = true;
         document.getElementById("d-2fa").checked = false;
-        document.getElementById("d-temp-pw-wrap").style.display = "none";
         document.getElementById("d-photo").style.backgroundImage = "";
         document.getElementById("d-photo").textContent = "Photo";
         showView("view-edit");
@@ -1719,6 +1667,8 @@
         const s = staff.find((x) => x.id === id);
         if (!s) return;
         editingId = id;
+        document.getElementById("d-staff-id").value = s.staffId;
+        document.getElementById("d-staff-id").readOnly = true;
         document.getElementById("edit-title").textContent = "Edit " + s.name;
         document.getElementById("edit-save").textContent = "Save changes";
         document.getElementById("account-add").style.display = "none";
@@ -1760,33 +1710,6 @@
           .forEach((p) => p.classList.toggle("active", p.id === id));
       }
 
-      // === INVITE TOGGLE ===
-      document.getElementById("d-invite").addEventListener("change", (e) => {
-        document.getElementById("d-temp-pw-wrap").style.display = e.target
-          .checked
-          ? "none"
-          : "";
-      });
-
-      // === PASSWORD RULES (add mode) ===
-      function checkAddPwRules() {
-        const v = document.getElementById("d-temp-pw").value;
-        const rules = {
-          len: v.length >= 12,
-          upper: /[A-Z]/.test(v),
-          lower: /[a-z]/.test(v),
-          num: /\d/.test(v),
-          sym: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(v),
-        };
-        Object.keys(rules).forEach((k) => {
-          const el = document.querySelector('.pw-rule[data-rule="' + k + '"]');
-          if (el) el.classList.toggle("ok", rules[k]);
-        });
-        document
-          .querySelector('.pw-rule[data-rule="force"]')
-          ?.classList.add("ok");
-      }
-
       // === IMAGE UPLOAD ===
       function previewDPhoto(ev) {
         const f = ev.target.files[0];
@@ -1820,7 +1743,7 @@
         inp("d-name").classList.toggle("invalid", !name);
         showErr("d-name", !name);
         if (!name) ok = false;
-        if (!isValidEmail(email)) {
+        if (!isValidEmail(email) || staff.some(s=>s.id!==editingId&&s.email.toLowerCase()===email.toLowerCase())) {
           inp("d-email").classList.add("invalid");
           showErr("d-email", true);
           ok = false;
@@ -1830,7 +1753,11 @@
         }
         inp("d-role").classList.toggle("invalid", !role);
         showErr("d-role", !role);
-        if (!role) ok = false;
+        if (!['Agency Admin','Sales Agent','Property Manager','Reception'].includes(role)) ok = false;
+        const staffId = editingId===null ? document.getElementById('d-staff-id').value.trim() : staff.find(s=>s.id===editingId).staffId;
+        const invalidId = editingId===null && (!/^[A-Za-z0-9_-]+$/.test(staffId)||issuedStaffIds.has(staffId.toLowerCase()));
+        showErr('d-staff-id', invalidId);
+        if(invalidId) ok=false;
 
         if (!ok) {
           toast("Please complete the required fields on the Identity tab.", "error");
@@ -1863,7 +1790,10 @@
             bio,
             hours,
           });
-          toast("Invitation sent to " + email + ".");
+          Object.defineProperty(staff[staff.length-1], 'staffId', {value:staffId, enumerable:true});
+          issuedStaffIds.add(staffId.toLowerCase());
+          staff[staff.length-1].requiresPasswordChange = true;
+          toast("Mock: invitation requested for " + email + ". Platform-generated credentials are emailed privately.");
           backToList();
         } else {
           const s = staff.find((x) => x.id === editingId);
@@ -1882,12 +1812,15 @@
       }
 
       // === ACCOUNT ACTIONS ===
-      function sendReset() {
-        toast("Password reset link sent.");
-      }
+      function sendReset() { sendResetFor(editingId ?? currentId); }
       function sendResetFor(id) {
-        const s = staff.find((x) => x.id === id);
-        toast("Reset password for " + s.name + ".");
+        const s = staff.find(x=>x.id===id);
+        if(!s)return;
+        if(!confirm('Reset password for '+s.staffId+'? The platform will email a random temporary password to '+s.email+'. Administrators cannot view it.'))return;
+        // Mock request only. Password generation and email delivery belong on the server.
+        s.passwordResetRequest = {staffId:s.staffId, email:s.email, status:'requested', requestedAt:new Date().toISOString()};
+        s.requiresPasswordChange = true;
+        toast('Mock: password reset requested for '+s.email+'. No password is shown to administrators.');
       }
       function sendResetForCurrent() {
         sendResetFor(currentId);
