@@ -2485,14 +2485,14 @@
 
         const removedPhones=YuushiWorkflow.read(YuushiWorkflow.keys.phones,{});
         users.forEach(u=>{if(removedPhones[u.id])u.phone='';u.idVerify=u.phone&&String(u.phone).trim()?'Verified':'Not Verified';});
-        let filtered = users.slice();
+        let filtered = users.filter(account => !account.deletedAt);
         let currentUser = null;
         let originalUser = null;
         let editMode = false;
         const $ = (id) => document.getElementById(id);
 
         let selectedIds = new Set();
-        function getSelectedUsers() { return users.filter(u => selectedIds.has(u.id)); }
+        function getSelectedUsers() { return users.filter(u => !u.deletedAt && selectedIds.has(u.id)); }
         function updateBulkBar() {
           const n = selectedIds.size;
           $("bulkBar")?.classList.toggle("hidden", n === 0);
@@ -2717,6 +2717,7 @@
             return true;
           };
           filtered = users.filter((u) => {
+            if (u.deletedAt) return false;
             if($("fMobileVerification").value && computeIdVerify(u)!==$("fMobileVerification").value)return false;
             if (st.length && !st.includes(u.status)) return false;
             if (bs.length) {
@@ -2764,7 +2765,7 @@
             "fBudgetMin",
             "fBudgetMax",
           ].forEach((id) => ($(id).value = ""));
-          filtered = users.slice();
+          filtered = users.filter(account => !account.deletedAt);
           pageNum = 1;
           renderList();
         }
@@ -3329,7 +3330,7 @@
 
         function showDetail(id) {
           const u = users.find((x) => x.id === id);
-          if (!u) return;
+          if (!u || u.deletedAt) return;
           currentUser = u;
           originalUser = JSON.parse(JSON.stringify(u));
           editMode = false;
@@ -3603,7 +3604,7 @@
         }
 
         function suspendAccount() {
-          if (!currentUser) return;
+          if (!currentUser || currentUser.deletedAt) return;
           const next =
             currentUser.status === "Suspended" ? "Active" : "Suspended";
           const isSuspend = next === "Suspended";
@@ -3635,18 +3636,26 @@
             },
           });
         }
+        // Soft deletion preserves identity/history while releasing login email in this mock.
+        function softDeleteAccount(account) {
+          if (!account || account.deletedAt) return;
+          account.deletedAt = new Date().toISOString();
+          account.status = "Deleted";
+          account.loginBlocked = true;
+          if (account.email) account.email += "_deleted_" + account.id + "_" + Date.now();
+        }
         function deleteAccount() {
           if (!currentUser) return;
           openConfirm({
-            title: "Permanently delete account?",
+            title: "Delete account?",
             icon: "fa-trash title-danger",
-            body: `Permanently delete ${esc(currentUser.id)} (${esc(currentUser.fullName)})?
+            body: `Soft-delete ${esc(currentUser.id)} (${esc(currentUser.fullName)})?
             This action cannot be undone.`,
             confirmLabel: '<i class="fas fa-trash"></i> Delete',
             confirmClass: "btn-primary-danger",
             onConfirm: () => {
               const idx = users.findIndex((u) => u.id === currentUser.id);
-              if (idx >= 0) users.splice(idx, 1);
+              if (idx >= 0) softDeleteAccount(users[idx]);
               filtered = filtered.filter((u) => u.id !== currentUser.id);
               doShowList();
               renderList();
@@ -3816,15 +3825,15 @@
           const sel = getSelectedUsers();
           if (!sel.length) return;
           openConfirm({
-            title: "Permanently delete accounts?",
+            title: "Delete accounts?",
             icon: "fa-trash title-danger",
-            body: `Permanently delete ${sel.length} selected account(s)?
+            body: `Soft-delete ${sel.length} selected account(s)?
             This action cannot be undone.`,
             confirmLabel: '<i class="fas fa-trash"></i> Delete',
             confirmClass: "btn-primary-danger",
             onConfirm: () => {
               const ids = new Set(sel.map(u => u.id));
-              for (let i = users.length - 1; i >= 0; i--) if (ids.has(users[i].id)) users.splice(i, 1);
+              users.forEach(account => { if (ids.has(account.id)) softDeleteAccount(account); });
               filtered = filtered.filter(u => !ids.has(u.id));
               selectedIds.clear();
               renderList();

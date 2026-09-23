@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const homeFile='yuushi_homepage_standalone.html';
-  const contentFiles=new Set(['support_landing.html','supportal_directory.html','supportal_profile.html','supportal_request_form.html','supportal_matching_result.html','customer-billing-payments.html','customer-plans.html']);
+  const contentFiles=new Set(['client-myprofile.html','customer-profile.html','support_landing.html','supportal_directory.html','supportal_profile.html','supportal_request_form.html','supportal_matching_result.html','customer-billing-payments.html','customer-plans.html']);
   if(window.top === window) {
     const route=new URL(homeFile,location.href);
     route.search=location.search;

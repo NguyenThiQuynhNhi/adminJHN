@@ -1598,6 +1598,12 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
         </div>
       </section>
 
+      <div class="card" id="agency-withdrawal-card">
+        <div class="card-head"><div class="card-title">Agency account</div></div>
+        <p class="hint">Voluntary withdrawal is available to the primary Agency account. Active work reassignment is handled separately.</p>
+        <button class="btn btn-danger-ghost" type="button" onclick="openAgencyWithdrawal()">Withdraw from YUUSHI</button>
+      </div>
+
       <!-- BOTTOM ACTION BAR -->
       <div class="action-bar">
         <button
@@ -1649,6 +1655,37 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
       </div>
     </div>
 
+    <dialog id="agency-withdrawal-modal" class="modal" aria-labelledby="agency-withdrawal-title" style="border:1px solid var(--border);max-height:90vh;overflow:auto">
+      <h3 id="agency-withdrawal-title">Withdraw from YUUSHI?</h3>
+      <p>Your Agency account will be closed and you will be signed out. This does not remove staff or reassign active work.</p>
+      <form id="agency-withdrawal-form">
+        <div class="field">
+          <label for="agency-withdrawal-reason">Withdrawal Reason *</label>
+          <select id="agency-withdrawal-reason" required>
+            <option value="">Select a reason...</option>
+            <option>Not enough client enquiries</option>
+            <option>Client enquiries did not match my services or locations</option>
+            <option>Too many low-quality enquiries</option>
+            <option>Listing management was difficult</option>
+            <option>Tools for communicating with clients were insufficient</option>
+            <option>The portal was difficult to use</option>
+            <option>Platform support did not meet my expectations</option>
+            <option>Cost was too high</option>
+            <option>Other — please specify</option>
+          </select>
+        </div>
+        <div class="field" id="agency-withdrawal-other-field" hidden>
+          <label for="agency-withdrawal-other">Please specify *</label>
+          <textarea id="agency-withdrawal-other" maxlength="2000"></textarea>
+        </div>
+        <p id="agency-withdrawal-error" class="err" role="alert"></p>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" type="button" onclick="document.getElementById('agency-withdrawal-modal').close()">Cancel</button>
+          <button class="btn btn-primary" type="submit" style="background:var(--danger)">Confirm withdrawal</button>
+        </div>
+      </form>
+    </dialog>
+
     <div class="toasts" id="toasts"></div>
 
     <script>
@@ -1669,7 +1706,7 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
       // Edit mode
       function enterEdit() {
         editing = true;
-        document.querySelectorAll("input,textarea,select").forEach((el) => {
+        document.querySelectorAll("main input,main textarea,main select").forEach((el) => {
           if (el.id === "photo-input" || el.id === "logo-input") return;
           if (el.readOnly) return; // keep email login locked
           el.disabled = false;
@@ -1685,7 +1722,7 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
         document.getElementById("mode-pill").classList.add("editing");
         dirty = false;
         // Detect dirty on input
-        document.querySelectorAll("input,textarea,select").forEach((el) => {
+        document.querySelectorAll("main input,main textarea,main select").forEach((el) => {
           el.addEventListener("input", () => {
             dirty = true;
           });
@@ -1697,7 +1734,7 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
       function exitEdit() {
         editing = false;
         dirty = false;
-        document.querySelectorAll("input,textarea,select").forEach((el) => {
+        document.querySelectorAll("main input,main textarea,main select").forEach((el) => {
           if (el.id === "photo-input" || el.id === "logo-input") return;
           el.disabled = true;
         });
@@ -1976,7 +2013,7 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
       }
 
       // CHARACTER COUNTS
-      document.querySelectorAll('textarea[maxlength="2000"]').forEach((t) => {
+      document.querySelectorAll('main textarea[maxlength="2000"]').forEach((t) => {
         const cardId = t.closest(".card").id;
         let target = null;
         if (cardId === "sec-basic")
@@ -2005,6 +2042,56 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
           setTimeout(() => el.remove(), 300);
         }, 3000);
       }
+
+      const agencyWithdrawalKey = 'yuushi.agency.primaryAccount';
+      const agencyWithdrawalModal = document.getElementById('agency-withdrawal-modal');
+      const agencyWithdrawalReason = document.getElementById('agency-withdrawal-reason');
+      const agencyWithdrawalOther = document.getElementById('agency-withdrawal-other');
+      function openAgencyWithdrawal() {
+        document.getElementById('agency-withdrawal-form').reset();
+        document.getElementById('agency-withdrawal-other-field').hidden = true;
+        agencyWithdrawalOther.required = false;
+        document.getElementById('agency-withdrawal-error').classList.remove('show');
+        agencyWithdrawalModal.showModal();
+      }
+      agencyWithdrawalReason.addEventListener('change', () => {
+        const other = agencyWithdrawalReason.value === 'Other — please specify';
+        document.getElementById('agency-withdrawal-other-field').hidden = !other;
+        agencyWithdrawalOther.required = other;
+      });
+      document.getElementById('agency-withdrawal-form').addEventListener('submit', event => {
+        event.preventDefault();
+        const reason = agencyWithdrawalReason.value;
+        const other = agencyWithdrawalOther.value.trim();
+        const error = document.getElementById('agency-withdrawal-error');
+        const validReason = Array.from(agencyWithdrawalReason.options).some(option => option.value && option.value === reason);
+        if (!validReason || (reason === 'Other — please specify' && !other)) {
+          error.textContent = 'Select a withdrawal reason and provide details for Other.';
+          error.classList.add('show'); return;
+        }
+        try {
+          // Primary-account preview only. No staff or business records are modified.
+          const login = document.querySelector('#panel-me input[type="email"][readonly]');
+          const account = JSON.parse(localStorage.getItem(agencyWithdrawalKey) || 'null') || {
+            id: 'AGENCY-PRIMARY-PREVIEW', loginEmail: login.value, status: 'Active',
+          };
+          if (!account.deletedAt) {
+            const now = new Date().toISOString();
+            Object.assign(account, { status: 'Withdrawn', deletedAt: now, withdrawnAt: now,
+              withdrawalReason: reason, withdrawalReasonOther: reason === 'Other — please specify' ? other : '',
+              loginEmail: account.loginEmail + '_deleted_' + account.id + '_' + Date.now(),
+              loginBlocked: true, sessionActive: false, sessionTerminatedAt: now });
+            localStorage.setItem(agencyWithdrawalKey, JSON.stringify(account));
+          }
+          login.value = account.loginEmail;
+          agencyWithdrawalModal.close();
+          // Match the existing Agency logout navigation; there is no server session in this prototype.
+          window.top.location.href = new URL('agency_signin.html', location.href).href;
+        } catch (failure) {
+          error.textContent = 'Unable to save withdrawal. Please try again.';
+          error.classList.add('show');
+        }
+      });
     </script>
   </body>
 </html>

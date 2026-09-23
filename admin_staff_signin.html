@@ -78,6 +78,7 @@
         </div>
         <div class="err" id="err-new-password" style="margin-bottom:14px">Password does not meet all requirements.</div>
         </div>
+        <p id="role-access-error" class="err" role="alert">No active role is assigned to this account. Please contact your administrator.</p>
         <button class="btn btn-primary" type="button" onclick="staffSignIn()">Sign in</button>
         <div class="back-row"><a class="link" href="admin_signin.html">YUUSHI Administrator sign in</a></div>
       </section>
@@ -112,12 +113,30 @@
       // Production uses the verified authentication response for this state.
       const requiresPasswordChange = new URLSearchParams(window.location.search).get('scenario') !== 'regular';
       document.getElementById('password-change-fields').hidden = !requiresPasswordChange;
+      function hasActiveRole(staffId) {
+        const scenario = new URLSearchParams(window.location.search).get('scenario');
+        let blocked = scenario === 'expired-role' || scenario === 'no-active-role';
+        let message = 'No active role is assigned to this account. Please contact your administrator.';
+        try {
+          const account = JSON.parse(localStorage.getItem('yuushi.adminStaffAccess.' + staffId.toLowerCase()) || 'null');
+          if (account) {
+            blocked ||= !['Super Admin','Admin','Operator','Viewer'].includes(account.role) || (!!account.permExpiry && account.permExpiry <= new Date().toLocaleDateString('en-CA'));
+            if (account.deletedAt || account.status === 'Suspended' || account.status === 'Deleted') {
+              blocked = true; message = 'This account cannot sign in. Please contact your administrator.';
+            }
+          }
+        } catch (error) { blocked = true; message = 'Unable to read mock access status. Please try again.'; }
+        const alert = document.getElementById('role-access-error');
+        alert.textContent = message;
+        alert.classList.toggle('show', blocked);
+        return !blocked;
+      }
       function staffSignIn() {
         const staffId = document.getElementById('staff-id').value.trim();
         const password = document.getElementById('staff-password').value;
         fieldError('staff-id', !staffId);
         fieldError('staff-password', !password);
-        if (!staffId || !password) return;
+        if (!staffId || !password || !hasActiveRole(staffId)) return;
         if (requiresPasswordChange) setPassword();
         else window.location.href = 'index.html';
       }
@@ -132,6 +151,7 @@
       password.addEventListener('input', rules);
       confirmation.addEventListener('input', rules);
       function setPassword() {
+        if (!hasActiveRole(document.getElementById('staff-id').value.trim())) return;
         const valid = rules();
         document.getElementById('err-new-password').classList.toggle('show', !valid);
         if (valid) showStep('step-success');

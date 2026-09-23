@@ -1168,12 +1168,14 @@
             <div class="field full">
               <label>Role <span class="req">*</span></label>
               <select id="d-role" class="field-select">
+                <option value="">Select a role...</option>
                 <option value="Agency Admin">Agency Admin</option>
                 <option value="Sales Agent">Sales Agent</option>
                 <option value="Property Manager">Property Manager</option>
                 <option value="Reception">Reception</option>
               </select>
               <div class="err" id="err-d-role">Role is required.</div>
+              <small>There is one original Root Admin account and no transfer. Additional Agency Admins use their own staff ID and login.</small>
             </div>
           </div>
         </div>
@@ -1268,9 +1270,9 @@
             </div>
             <div class="toggle-row">
               <div class="text">
-                <strong>Force sign-out everywhere</strong>
+                <strong>Force sign-out</strong>
                 <small
-                  >Ends all active sessions for this agent immediately.</small
+                  >One active session per account; separate staff accounts may sign in simultaneously. Force sign-out requires authentication again. Backend revocation is not simulated.</small
                 >
               </div>
               <button class="btn btn-ghost btn-small" onclick="forceSignOut()">
@@ -1298,9 +1300,7 @@
       <div class="modal">
         <h3><span class="icon">!</span> Remove this agent?</h3>
         <p id="rm-msg">
-          This action cannot be undone. All listings currently assigned to
-          <b id="rm-name">this agent</b> will be transferred to you, the Agency
-          Admin.
+          Offboard <b id="rm-name">this agent</b>: retain the permanent staff ID, block login and clear personal contact data. Active work reassignment is handled separately.
         </p>
         <div class="modal-actions">
           <button class="btn btn-ghost" onclick="closeModal('rm-modal')">
@@ -1320,6 +1320,8 @@
     <div class="toasts" id="toasts"></div>
 
     <script>
+      // Exactly one original primary account is Root; admin-level staff never become Root.
+      // One active session per account; separate staff accounts may sign in simultaneously.
       // ==== SAMPLE STAFF DATA ====
       const staff = [
         {
@@ -1336,6 +1338,7 @@
           bio: "Founder. 25 years in central Tokyo real estate.",
           hours: "Mon–Fri 9:00–19:00",
           isYou: true,
+          isRoot: true,
         },
         {
           id: 2,
@@ -1494,6 +1497,17 @@
       ];
       staff.forEach(s => Object.defineProperty(s, 'staffId', {value:'STF-'+String(s.id).padStart(4,'0'), enumerable:true}));
       const issuedStaffIds = new Set(staff.map(s=>s.staffId.toLowerCase()));
+      // Demo-only offboarding metadata. Actual login denial belongs to the server.
+      function offboardIdentity(s, at) {
+        Object.assign(s, { offboardedAt: at, status: "suspended", statusLabel: "Offboarded", loginBlocked: true,
+          name: "Former Agent", initials: "FA", email: "", phone: "", avatar: "", bio: "", hours: "" });
+        delete s.passwordResetRequest;
+      }
+      try {
+        const former = JSON.parse(localStorage.getItem('yuushi.formerAgencyStaff') || '{}');
+        Object.keys(former).forEach(id => issuedStaffIds.add(id.toLowerCase()));
+        staff.forEach(s => { if (!s.isRoot && former[s.staffId.toLowerCase()]) offboardIdentity(s, former[s.staffId.toLowerCase()]); });
+      } catch (error) { /* The in-memory prototype remains usable. */ }
       let editingId = null,
         currentId = null,
         currentRemoveId = null;
@@ -1541,7 +1555,7 @@
         <div class="avatar-md">${s.initials}</div>
         <div><div class="name">${s.name}${s.isYou ? ' <small style="font-weight:400;color:var(--soft)">(You)</small>' : ""}</div></div>
       </div></td>
-      <td>${s.staffId}</td><td>${s.email}</td>
+      <td>${s.staffId}</td><td>${s.email || "—"}</td>
       <td><span class="role-badge">${s.role}</span></td>
       <td>${s.phone}</td>
       <td><span class="badge badge-${s.status}"><span class="badge-dot"></span>${s.statusLabel}</span></td>
@@ -1611,7 +1625,7 @@
         document.getElementById("v-status-text").textContent = s.statusLabel;
         document.getElementById("v-full-name").textContent = s.name;
         document.getElementById("v-staff-id").textContent = s.staffId;
-        document.getElementById("v-email").textContent = s.email;
+        document.getElementById("v-email").textContent = s.email || "—";
         setVal("v-phone", s.phone && s.phone !== "—" ? s.phone : "");
         document.getElementById("v-role").textContent = s.role;
         setVal("v-bio", s.bio);
@@ -1622,7 +1636,7 @@
           : "Disabled";
         document.getElementById("v-suspend-btn").textContent =
           s.status === "suspended" ? "Reactivate access" : "Suspend access";
-        document.getElementById("v-danger-card").style.display = s.isYou
+        document.getElementById("v-danger-card").style.display = (s.isRoot || s.isYou || s.offboardedAt)
           ? "none"
           : "";
         showView("view-detail");
@@ -1654,7 +1668,7 @@
           "d-bio",
           "d-hours",
         ].forEach((id) => (document.getElementById(id).value = ""));
-        document.getElementById("d-role").value = "Sales Agent";
+        document.getElementById("d-role").value = "";
         document.getElementById("d-inherit-hours").checked = false;
         document.getElementById("d-invite").checked = true;
         document.getElementById("d-2fa").checked = false;
@@ -1664,6 +1678,7 @@
         switchFTab("fp-identity");
       }
       function openEdit(id) {
+        if (staff.find(s => s.id === id)?.offboardedAt) { toast("Former Agent records are read-only.", "error"); return; }
         const s = staff.find((x) => x.id === id);
         if (!s) return;
         editingId = id;
@@ -1733,6 +1748,7 @@
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
       }
       function saveEdit() {
+        if (staff.find(s => s.id === editingId)?.offboardedAt) return;
         let ok = true;
         const name = document.getElementById("d-name").value.trim();
         const email = document.getElementById("d-email").value.trim();
@@ -1815,7 +1831,7 @@
       function sendReset() { sendResetFor(editingId ?? currentId); }
       function sendResetFor(id) {
         const s = staff.find(x=>x.id===id);
-        if(!s)return;
+        if(!s || s.offboardedAt)return;
         if(!confirm('Reset password for '+s.staffId+'? The platform will email a random temporary password to '+s.email+'. Administrators cannot view it.'))return;
         // Mock request only. Password generation and email delivery belong on the server.
         s.passwordResetRequest = {staffId:s.staffId, email:s.email, status:'requested', requestedAt:new Date().toISOString()};
@@ -1825,12 +1841,12 @@
       function sendResetForCurrent() {
         sendResetFor(currentId);
       }
-      function forceSignOut() {
-        toast("All sessions ended.");
-      }
+      function forceSignOut() { forceSignOutFor(editingId ?? currentId); }
       function forceSignOutFor(id) {
         const s = staff.find((x) => x.id === id);
-        toast(s.name + "'s active sessions have been ended.");
+        if (!s || s.isRoot || s.offboardedAt) return;
+        s.sessionRevocation = { requestedAt: new Date().toISOString(), requiresAuthentication: true, status: "mock-requested" };
+        toast("Mock: force sign-out requested for " + s.staffId + ". Authentication is required again; server enforcement is required.");
       }
       function forceSignOutForCurrent() {
         forceSignOutFor(currentId);
@@ -1839,6 +1855,7 @@
       function suspendCurrent() {
         if (currentId === null) return;
         const s = staff.find((x) => x.id === currentId);
+        if (!s || s.isRoot || s.offboardedAt) return;
         if (s.status === "suspended") {
           s.status = "active";
           s.statusLabel = "Active";
@@ -1852,6 +1869,7 @@
       }
       function suspendFor(id) {
         const s = staff.find((x) => x.id === id);
+        if (!s || s.isRoot || s.offboardedAt) return;
         s.status = "suspended";
         s.statusLabel = "Suspended";
         toast(s.name + "'s access suspended.");
@@ -1859,6 +1877,7 @@
       }
       function reactivate(id) {
         const s = staff.find((x) => x.id === id);
+        if (!s || s.isRoot || s.offboardedAt) return;
         s.status = "active";
         s.statusLabel = "Active";
         toast(s.name + "'s access reactivated.");
@@ -1867,8 +1886,8 @@
 
       function askRemoveFor(id) {
         const s = staff.find((x) => x.id === id);
-        if (s.isYou) {
-          toast("You cannot remove yourself.", "error");
+        if (!s || s.isRoot || s.isYou || s.offboardedAt) {
+          toast("The Root Admin, your own account, or an offboarded identity cannot be removed.", "error");
           return;
         }
         currentRemoveId = id;
@@ -1878,11 +1897,19 @@
       function confirmRemove() {
         const idx = staff.findIndex((x) => x.id === currentRemoveId);
         if (idx < 0) return;
-        const removed = staff.splice(idx, 1)[0];
+        const removed = staff[idx];
+        if (removed.isRoot || removed.isYou || removed.offboardedAt) return;
+        const at = new Date().toISOString();
+        try {
+          const former = JSON.parse(localStorage.getItem('yuushi.formerAgencyStaff') || '{}');
+          former[removed.staffId.toLowerCase()] = at;
+          localStorage.setItem('yuushi.formerAgencyStaff', JSON.stringify(former));
+        } catch (error) { toast("Unable to save mock offboarding state. Please try again.", "error"); return; }
+        offboardIdentity(removed, at);
         closeModal("rm-modal");
         toast(
           removed.name +
-            " removed. Their listings have been transferred to you.",
+            " offboarded. Permanent staff ID retained. Active work reassignment is handled separately.",
         );
         backToList();
       }

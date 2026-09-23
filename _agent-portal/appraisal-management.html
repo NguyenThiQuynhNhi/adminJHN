@@ -196,7 +196,7 @@
 
           <div class="filter-bar">
             <div class="filter-field has-icon"><i class="fas fa-search fi-left"></i><input id="searchInput" placeholder="Search client name…" /></div>
-            <div class="filter-field"><select id="statusFilter"><option value="">Status</option><option>In Progress</option><option>Converted</option><option>Declined</option></select><i class="fas fa-chevron-down fi-right"></i></div>
+            <div class="filter-field"><select id="statusFilter"><option value="">Status</option><option>In Progress</option><option>Converted</option><option>Declined by Agency</option><option>Declined by Client</option></select><i class="fas fa-chevron-down fi-right"></i></div>
             <div class="filter-field"><select id="typeFilter"><option value="">Property Type</option><option>House</option><option>Apartment</option><option>Villa</option><option>Office</option></select><i class="fas fa-chevron-down fi-right"></i></div>
           </div>
 
@@ -234,7 +234,8 @@
               <div class="dt-stats">
                 <div class="dt-stat"><i class="fas fa-flag"></i><div><div class="l">Status</div><div class="v" id="dtStatus">—</div></div></div>
                 <button class="btn btn-green btn-pill" id="btnConvert" onclick="markConverted()"><i class="fas fa-circle-check"></i> Mark Converted</button>
-                <button class="btn btn-red btn-pill" id="btnDecline" onclick="declineAppraisal()"><i class="fas fa-ban"></i> Decline</button>
+                <button class="btn btn-red btn-pill" id="btnDeclineAgency" onclick="declineAppraisal('agency')"><i class="fas fa-ban"></i> Decline by Agency</button>
+                <button class="btn btn-red btn-pill" id="btnDeclineClient" onclick="declineAppraisal('client')"><i class="fas fa-user-slash"></i> Record Client Decline</button>
               </div>
             </div>
           </div>
@@ -412,7 +413,7 @@
           comments: [{ body: "Deal closed via chat, property now listed as PROP-2210. Marking converted.", by: "Tony Sales", at: "20 May 2026, 15:40" }],
         },
         {
-          id: "APR-3004", score: 41, status: "Declined",
+          id: "APR-3004", score: 41, status: "Declined by Agency",
           received: "2026-04-28",
           clientInfo: { name: "Andreas Papandreas", phone: "+30-694-000-1122", email: "andreas.p@example.com", address: "9 Near Beach Rd, Chiba", specificRequests: "Wanted an unrealistic price above market — declined." },
           propertyInfo: {
@@ -441,7 +442,7 @@
       let currentId = null;
 
       function statusBadge(s) {
-        const map = { "In Progress": "badge-inprogress", "Converted": "badge-converted", "Declined": "badge-declined" };
+        const map = { "In Progress": "badge-inprogress", "Converted": "badge-converted", "Declined by Agency": "badge-declined", "Declined by Client": "badge-declined" };
         return `<span class="badge ${map[s] || "badge-new"}">${esc(s)}</span>`;
       }
       
@@ -495,8 +496,7 @@
               <td>${esc(a.received)}</td>
               <td onclick="event.stopPropagation()"><div class="act-icons">
                 <i class="fas fa-eye" title="View" onclick="showDetail('${a.id}')"></i>
-                <i class="fas fa-circle-check" title="Mark Converted" onclick="quickAction('${a.id}','Converted')"></i>
-                <i class="fas fa-ban" title="Decline" onclick="quickAction('${a.id}','Declined')"></i>
+                ${a.status === "In Progress" ? `<i class="fas fa-circle-check" title="Mark Converted" onclick="quickAction('${a.id}','Converted')"></i><i class="fas fa-list-check" title="Choose decline outcome in detail" onclick="showDetail('${a.id}')"></i>` : ""}
               </div></td>
             </tr>`).join("");
         }
@@ -680,10 +680,13 @@
         $("dtCreated").textContent = "Received: " + a.received + " · Ref: " + a.id;
         $("dtStatus").innerHTML = statusBadge(a.status);
 
-        $("btnConvert").style.display = a.status === "Converted" ? "none" : "inline-flex";
-        $("btnDecline").style.display = a.status === "Declined" ? "none" : "inline-flex";
+        const isTerminal = a.status === "Converted" || a.status === "Declined by Agency" || a.status === "Declined by Client";
+        $("btnConvert").style.display = isTerminal ? "none" : "inline-flex";
+        $("btnDeclineAgency").style.display = isTerminal ? "none" : "inline-flex";
+        $("btnDeclineClient").style.display = isTerminal ? "none" : "inline-flex";
         $("btnConvert").disabled = false;
-        $("btnDecline").disabled = false;
+        $("btnDeclineAgency").disabled = false;
+        $("btnDeclineClient").disabled = false;
 
         $("clientSection").innerHTML = renderClientSection(a);
         $("propSection").innerHTML = renderPropertySection(a);
@@ -804,7 +807,7 @@
       window.commentKey = commentKey;
 
       /* ============================================================
-         ACTIONS — Mark Converted / Decline
+         ACTIONS — Mark Converted / explicit decline source
       ============================================================ */
       function markConverted() {
         const a = APPRAISALS.find(x => x.id === currentId);
@@ -815,22 +818,25 @@
       }
       window.markConverted = markConverted;
 
-      function declineAppraisal() {
+      function declineAppraisal(source) {
         const a = APPRAISALS.find(x => x.id === currentId);
-        if (!a) return;
-        if (!confirm("Decline this appraisal request?")) return;
-        a.status = "Declined";
-        toast("Appraisal declined");
+        if (!a || a.status !== "In Progress") return;
+        const isClient = source === "client";
+        const message = isClient
+          ? "Record that the client has declined to continue this appraisal? This records the client's communicated decision."
+          : "Decline this appraisal request on behalf of the Agency?";
+        if (!confirm(message)) return;
+        a.status = isClient ? "Declined by Client" : "Declined by Agency";
+        toast(isClient ? "Client decline recorded" : "Appraisal declined by Agency");
         showDetail(currentId);
       }
       window.declineAppraisal = declineAppraisal;
 
       function quickAction(id, status) {
         const a = APPRAISALS.find(x => x.id === id);
-        if (!a) return;
-        if (status === "Declined" && !confirm("Decline this appraisal request?")) return;
+        if (!a || a.status !== "In Progress" || status !== "Converted") return;
         a.status = status;
-        toast(status === "Converted" ? "Marked as Converted" : "Appraisal declined", status === "Converted" ? "success" : "");
+        toast("Marked as Converted", "success");
         renderList();
       }
       window.quickAction = quickAction;

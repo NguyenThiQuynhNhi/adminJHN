@@ -835,13 +835,13 @@
           </div>
           <div class="modal-field">
             <label for="solveEmail" class="req"
-              >Register Email (account login)</label
+              >Registered Account Email</label
             >
             <input id="solveEmail" type="email" required autocomplete="off" />
           </div>
           <div class="modal-field">
-            <label for="solvePassword" class="req">New password</label>
-            <input id="solvePassword" type="text" required autocomplete="off" />
+            <label for="solveRecoveryEmail">Recovery Contact Email</label>
+            <input id="solveRecoveryEmail" type="email" readonly />
           </div>
         </div>
         <div class="modal-footer">
@@ -857,7 +857,7 @@
             class="btn btn-primary btn-sm"
             id="confirmSolveBtn"
           >
-            Confirm &amp; send to recovery email
+            Generate temporary password &amp; send
           </button>
         </div>
       </div>
@@ -977,6 +977,9 @@
           });
         }
       })();
+
+      // Existing request email samples represent the recovery contact, not a verified login.
+      recoveryRequests.forEach((r) => { r.recoveryContactEmail = r.accountEmail; });
 
       // Demo dates of birth for the four hand-authored records.
       ["1990-05-26", "1981-11-02", "1975-07-19", "1993-03-14"].forEach(
@@ -1316,8 +1319,8 @@
         }
         const r = recoveryRequests.find((x) => x.id === selectedRequestId);
         if (!r) return;
-        if (r.status === "Solved") {
-          Toast.err("Solved tickets cannot be modified.");
+        if (r.status !== "Pending") {
+          Toast.err("Closed tickets cannot be modified.");
           return;
         }
         if (r.status === newStatus) return;
@@ -1366,7 +1369,7 @@
         document.getElementById("modalTicketLabel").textContent =
           `${r.id} · ${r.fullName}`;
         document.getElementById("solveEmail").value = "";
-        document.getElementById("solvePassword").value = "";
+        document.getElementById("solveRecoveryEmail").value = r.recoveryContactEmail;
         setTimeout(() => {
           const first = document.getElementById("solveEmail");
           if (first) first.focus();
@@ -1385,32 +1388,60 @@
         }
         const r = recoveryRequests.find((x) => x.id === selectedRequestId);
         if (!r) return;
-        if (r.status === "Solved") {
-          Toast.err("Solved tickets cannot be modified.");
+        if (r.status !== "Pending") {
+          Toast.err("Closed tickets cannot be modified.");
           return;
         }
         const emailEl = document.getElementById("solveEmail");
-        const pwdEl = document.getElementById("solvePassword");
         const email = emailEl.value.trim();
-        const password = pwdEl.value.trim();
-        let bad = false;
-        [emailEl, pwdEl].forEach((el) => el.classList.remove("ux-invalid"));
-        if (!email) {
+        emailEl.classList.remove("ux-invalid");
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           emailEl.classList.add("ux-invalid");
-          bad = true;
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          emailEl.classList.add("ux-invalid");
-          Toast.err("Please enter a valid email address.");
+          Toast.err("Please enter a valid Registered Account Email.");
           emailEl.focus();
           return;
         }
-        if (!password) {
-          pwdEl.classList.add("ux-invalid");
-          bad = true;
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.recoveryContactEmail || "")) {
+          Toast.err("A valid Recovery Contact Email is required.");
+          return;
         }
-        if (bad) {
-          Toast.err("Register email and new password are required.");
-          (document.querySelector(".ux-invalid") || emailEl).focus();
+        try {
+          const role = r.userType === "Agency" ? "agent" : "customer";
+          const settings = JSON.parse(localStorage.getItem("yuushi.basicSecuritySettings") || "{}");
+          const configured = settings.passwordPolicy?.[role]?.minChars;
+          const minimum = Number.isInteger(configured) && configured >= 4 && configured <= 64 ? configured : 8;
+          const groups = ["ABCDEFGHJKLMNPQRSTUVWXYZ", "abcdefghijkmnopqrstuvwxyz", "23456789", "!@#$%&*+-=?"];
+          const randomIndex = (size) => {
+            const value = new Uint32Array(1);
+            const limit = Math.floor(4294967296 / size) * size;
+            do { crypto.getRandomValues(value); } while (value[0] >= limit);
+            return value[0] % size;
+          };
+          const chars = groups.map((group) => group[randomIndex(group.length)]);
+          const alphabet = groups.join("");
+          while (chars.length < Math.max(12, minimum)) chars.push(alphabet[randomIndex(alphabet.length)]);
+          for (let i = chars.length - 1; i > 0; i--) {
+            const j = randomIndex(i + 1);
+            [chars[i], chars[j]] = [chars[j], chars[i]];
+          }
+          // Transient mock email payload only: never rendered, logged or persisted.
+          const recoveryEmail = {
+            to: r.recoveryContactEmail,
+            registeredLoginEmail: email,
+            temporaryPassword: chars.join(""),
+            instruction: "After sign-in, you must change your temporary password. Required 2FA still applies.",
+          };
+          if (r.userType === "Agency") {
+            localStorage.setItem("yuushi.d16.agency." + email.toLowerCase(), JSON.stringify({
+              requiresPasswordChange: true, minChars: minimum,
+            }));
+          }
+          r.recoveryEmail = { to: recoveryEmail.to, status: "simulated", requiresPasswordChange: true };
+          r.registeredLoginEmail = recoveryEmail.registeredLoginEmail;
+          // Represents the requested reset/unlock, not an authentication backend operation.
+          r.recoveryAction = { resetRequested: true, unlockRequested: true, requiresPasswordChange: true };
+        } catch (error) {
+          Toast.err("Unable to prepare the mock recovery. Please try again.");
           return;
         }
 
@@ -1420,14 +1451,14 @@
         r.solvedAt = now;
 
         addLogEntry(
-          `Marked as Solved. Recovery email prepared for ${r.accountEmail || "(missing email)"}.`,
+          `Marked as Solved. Mock reset/unlock requested; temporary-password email simulated to ${r.recoveryContactEmail}. Password change required after sign-in.`,
           r.id,
         );
 
         closeSolveModal();
         selectRequest(r.id);
         Toast.ok(
-          `Ticket ${r.id} solved. Recovery email queued to ${r.accountEmail || "user"}.`,
+          `Ticket ${r.id} solved. Mock temporary-password email prepared for ${r.recoveryContactEmail}; no email sent.`,
         );
       }
 

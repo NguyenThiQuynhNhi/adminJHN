@@ -622,11 +622,22 @@
   </div><!-- /.drawer -->
 </div><!-- /.overlay -->
 
+<dialog id="deleteRoleModal" style="border:1px solid var(--border);border-radius:12px;padding:24px;max-width:440px;width:90%">
+  <h3>Delete custom role?</h3>
+  <p id="deleteRoleMessage"></p>
+  <div id="replacementField"><label for="replacementRole">Replacement Role *</label>
+    <select id="replacementRole" style="width:100%;padding:10px;margin:12px 0"></select></div>
+  <p id="deleteRoleError" style="color:#b23b3b" role="alert"></p>
+  <button class="action-btn" onclick="document.getElementById('deleteRoleModal').close()">Cancel</button>
+  <button class="action-btn" onclick="confirmDeleteRole()">Delete role</button>
+</dialog>
+
 <script>
   /* ── Role data ── */
   const ROLES = {
     'platform-admin': {
       name: 'Platform Admin',
+      system: true,
       description: 'Full platform configuration and operations.',
       permissions: ['view-user-list', 'suspend-delete-account', 'grant-remove-badge', 'change-kyc', 'view-property-list']
     },
@@ -695,6 +706,39 @@
       n++;
     }
   })();
+
+  // No staff assignment data is supplied on this page; retain explicit IDs when available.
+  Object.values(ROLES).forEach(role => { role.assignedStaffIds = []; });
+  let deletingRoleId = null;
+  function askDeleteRole(id) {
+    const role = ROLES[id];
+    if (!role || role.system) return;
+    deletingRoleId = id;
+    document.getElementById('deleteRoleMessage').textContent = role.assignedStaffIds.length
+      ? role.assignedStaffIds.length + ' staff are assigned. Select a replacement role before deletion.'
+      : 'No staff are assigned to this role in this mock. Delete ' + role.name + '?';
+    document.getElementById('replacementField').hidden = !role.assignedStaffIds.length;
+    const select = document.getElementById('replacementRole');
+    select.replaceChildren(new Option('Select a role...', ''));
+    ROLE_LIST.filter(r => r.id !== id).forEach(r => select.add(new Option(r.name, r.id)));
+    document.getElementById('deleteRoleError').textContent = '';
+    document.getElementById('deleteRoleModal').showModal();
+  }
+  function confirmDeleteRole() {
+    const role = ROLES[deletingRoleId];
+    if (!role || role.system) return;
+    const replacementId = document.getElementById('replacementRole').value;
+    const replacement = replacementId !== deletingRoleId && ROLES[replacementId];
+    if (role.assignedStaffIds.length && !replacement) {
+      document.getElementById('deleteRoleError').textContent = 'Select an existing Replacement Role.';
+      return;
+    }
+    if (role.assignedStaffIds.length) replacement.assignedStaffIds.push(...role.assignedStaffIds);
+    ROLE_LIST.splice(ROLE_LIST.findIndex(r => r.id === deletingRoleId), 1);
+    delete ROLES[deletingRoleId];
+    document.getElementById('deleteRoleModal').close();
+    renderRoles(true);
+  }
 
   /* ── Pagination + list state (universal 50/page) ── */
   const PAGE_SIZE = 50;
@@ -774,7 +818,7 @@
             <td>
               <div class="row-actions">
                 <button class="action-btn" title="Edit" onclick="openEditDrawer('${r.id}')">${EDIT_ICON}</button>
-                <button class="action-btn" title="Delete">${DELETE_ICON}</button>
+                <button class="action-btn" title="${ROLES[r.id].system ? 'System role cannot be deleted' : 'Delete custom role'}" ${ROLES[r.id].system ? 'disabled' : ''} onclick="askDeleteRole('${r.id}')">${DELETE_ICON}</button>
               </div>
             </td>
           </tr>`).join('')

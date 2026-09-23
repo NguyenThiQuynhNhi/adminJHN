@@ -154,6 +154,24 @@
     </div>
   </div>
 
+  <div id="step-recovery-password" class="step">
+    <div class="card">
+      <h1>Set your private password</h1>
+      <p class="subtitle">Manual recovery requires a new password before portal access.</p>
+      <div class="field">
+        <label for="new-password">New Password <span class="req">*</span></label>
+        <div class="pw-wrap"><input id="new-password" type="password" autocomplete="new-password"><button type="button" class="pw-toggle" onclick="togglePw('new-password',this)">Show</button></div>
+      </div>
+      <div class="field">
+        <label for="confirm-password">Confirm Password <span class="req">*</span></label>
+        <input id="confirm-password" type="password" autocomplete="new-password">
+      </div>
+      <p class="subtitle" id="recovery-password-rules">At least 8 characters, including uppercase, lowercase, number and symbol. Must differ from your temporary password.</p>
+      <div id="err-new-password" class="err">Meet all password requirements and confirm the same password.</div>
+      <button class="btn btn-primary" onclick="completeRecoveryPassword()">Save password &amp; continue</button>
+    </div>
+  </div>
+
 </div>
 
 <div class="toasts" id="toasts"></div>
@@ -203,8 +221,40 @@ function verifyOtp(){
   const code=Array.from(document.querySelectorAll('.otp')).map(i=>i.value).join('');
   if(code.length<6){document.getElementById('err-otp').classList.add('show');return;}
   document.getElementById('err-otp').classList.remove('show');
+  // D16 demo state is checked only after the existing OTP step succeeds.
+  try {
+    const recovery = JSON.parse(localStorage.getItem(recoveryKey()) || 'null');
+    if (recovery?.requiresPasswordChange) {
+      recoveryAuthenticated = true;
+      recoveryMinimum = Math.max(8, Number(recovery.minChars) || 8);
+      document.getElementById('recovery-password-rules').textContent = 'At least ' + recoveryMinimum + ' characters, including uppercase, lowercase, number and symbol. Must differ from your temporary password.';
+      showStep('step-recovery-password');
+      return;
+    }
+  } catch (error) { toast('Unable to read recovery status. Please try again.', 'error'); return; }
   toast('Signed in successfully.');
   // Enter the portal
+  setTimeout(()=>{window.location.href='index.html';},900);
+}
+
+// Local metadata demonstrates the recovery gate; credentials and OTP remain mock validation.
+let recoveryAuthenticated = false;
+let recoveryMinimum = 8;
+function recoveryKey(){
+  return 'yuushi.d16.agency.' + document.getElementById('email').value.trim().toLowerCase();
+}
+function completeRecoveryPassword(){
+  if (!recoveryAuthenticated) return;
+  const password = document.getElementById('new-password').value;
+  const valid = password.length >= recoveryMinimum && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password) && /[^A-Za-z0-9]/.test(password) && password === document.getElementById('confirm-password').value && password !== document.getElementById('password').value;
+  showErr('new-password', !valid);
+  if (!valid) return;
+  try { localStorage.removeItem(recoveryKey()); }
+  catch (error) { toast('Unable to complete mock recovery. Please try again.', 'error'); return; }
+  recoveryAuthenticated = false;
+  document.getElementById('new-password').value = '';
+  document.getElementById('confirm-password').value = '';
+  toast('Mock password change completed.');
   setTimeout(()=>{window.location.href='index.html';},900);
 }
 

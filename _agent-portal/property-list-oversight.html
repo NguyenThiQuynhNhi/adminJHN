@@ -2095,6 +2095,29 @@
     </style>
   <script src="../mock-workflows.js"></script>
 <link rel="stylesheet" href="../dropdown-indicators.css">
+
+    <script>
+      // C07 shared, Agency-safe demo records only. No reporter PII or raw Customer attachments.
+      // localStorage connects these static pages; it is not an authorization/security boundary.
+      window.C07 = {
+        key: 'yuushi.c07.propertyReports',
+        labels: { awaiting_agency_response:'Awaiting Agency response', pending_admin_review:'Pending Admin review', suspended:'Suspended', dismissed:'Dismissed' },
+        read() { try { return JSON.parse(localStorage.getItem(this.key) || '{}'); } catch { return {}; } },
+        save(record) { const all = this.read(); all[record.id] = record; localStorage.setItem(this.key, JSON.stringify(all)); },
+        unresolved(r) { return ['awaiting_agency_response','pending_admin_review'].includes(r.status); },
+        escape(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); },
+        event(r, action, detail, by) { r.updatedAt = new Date().toISOString(); r.audit.push({at:r.updatedAt, action, detail, by}); },
+        seed(id, propertyId, title, reason, date) {
+          return {id, propertyId, propertyTitle:title, reason, createdAt:date, updatedAt:date,
+            status:'awaiting_agency_response',
+            description:'Please review the reported listing issue: ' + reason + '. Correct the property information where needed and explain the action taken.',
+            evidence:[], responses:[], clarification:'', audit:[
+              {at:date, by:'Customer', action:'submitted', detail:'Report submitted.'},
+              {at:date, by:'System', action:'awaiting_agency_response', detail:'Sent to Agency for response.'}
+            ]};
+        }
+      };
+    </script>
 </head>
   <body>
     <!-- ================== LIST VIEW ================== -->
@@ -2812,6 +2835,9 @@
       <div id="draftBanner"></div>
       <div id="dAlerts"></div>
       <div class="section-grid" id="dSections"></div>
+      <section class="card" id="c07PropertyReports">
+        <iframe id="c07ReportFrame" title="Reports &amp; Resolution" style="width:100%;height:180px;border:0" src="about:blank"></iframe>
+      </section>
     </div>
 
     <!-- Create modal (group picker) -->
@@ -7814,7 +7840,7 @@
           parking: parking,
           area: area,
           units: units,
-          badge: isND ? "New Dev" : p.publishStatus,
+          badge: isND ? "New Dev" : p.publishStatus + (c07Badge(p.id) ? " · " + c07Badge(p.id).replace(/<[^>]*>/g, "") : ""),
           desc: p.description || "",
           onClick: isND
             ? "gotoNewDev(" + p.group + ")"
@@ -7831,7 +7857,37 @@
         return filtered.map((p) => ({ p, isND: false }));
       }
 
+      function c07SyncReports() {
+        const all = C07.read(); let changed = false;
+        properties.forEach(p => {
+          (p.reports || []).forEach((r, i) => {
+            const id = 'C07-' + p.id + '-' + (i + 1);
+            if (!all[id]) { all[id] = C07.seed(id, p.id, p.name, r.reason, r.ts); changed = true; }
+          });
+          if (Object.values(all).some(r => r.propertyId === p.id && r.status === 'suspended')) p.publishStatus = 'Suspended';
+        });
+        if (changed) { try { localStorage.setItem(C07.key, JSON.stringify(all)); } catch { toast('Unable to save report demo state.'); } }
+      }
+      function c07Badge(id) {
+        const rows = Object.values(C07.read()).filter(r => r.propertyId === id && C07.unresolved(r));
+        if (!rows.length) return '';
+        const action = rows.some(r => r.status === 'awaiting_agency_response');
+        return '<span class="badge badge-report">Reported (' + rows.length + ') · ' + (action ? 'Action Required' : 'Admin review') + '</span>';
+      }
+      window.addEventListener('storage', event => {
+        if (event.key !== C07.key) return;
+        c07SyncReports(); applyFilters();
+        if (currentProp && !editMode) renderDetail();
+      });
+      window.addEventListener('message', event => {
+        const frame = document.getElementById('c07ReportFrame');
+        if (!frame || event.source !== frame.contentWindow || event.origin !== location.origin) return;
+        if (event.data?.type === 'c07-height' && Number.isFinite(event.data.height)) frame.style.height = Math.max(160, Math.min(event.data.height,20000)) + 'px';
+        if (event.data?.type === 'c07-edit-property' && currentProp) enterEditMode();
+      });
+
       function renderList() {
+        c07SyncReports();
         const tableWrap = $("listTableWrap");
         const grid = $("listGrid");
         const data = activeDataset();
@@ -7891,7 +7947,7 @@
                   <i class="fas ${thumbIcon(p.group)}"></i>
                 </div>
                 <div>
-                  <strong>${esc(p.name)}</strong><br>
+                  <strong>${esc(p.name)}</strong><br>${c07Badge(p.id) ? c07Badge(p.id) + "<br>" : ""}
                   <span style="font-size:11px;color:var(--text-muted)">${p.id}</span>
                 </div>
               </div>
@@ -8645,6 +8701,9 @@
         $("dThumb").innerHTML = `<i class="fas ${thumbIcon(p.group)}"></i>`;
         $("dName").textContent = p.name || "(Unnamed)";
         $("dId").textContent = p.id;
+        const reportFrame = document.getElementById('c07ReportFrame');
+        const reportUrl = 'property-detail-view.html?reportsOnly=1&reportPropertyId=' + encodeURIComponent(p.id);
+        if (reportFrame.getAttribute('src') !== reportUrl) reportFrame.src = reportUrl;
         
 
         // Suspend / Re-activate toggle button — only meaningful for

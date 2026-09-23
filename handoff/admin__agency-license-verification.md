@@ -109,4 +109,14 @@ Everything is in memory and resets on reload. No backend, cross-file persistence
 
 ## Validation
 
-JavaScript syntax, unique static/dynamic IDs, menu iframe navigation, queue filters, KPI filtering, assignment, document preview/download logs, OCR/external retry, manual decisions, code gate/lifecycle, policy validation/discard, permissions, CSV and responsive layout are checked during handoff. Exact results are recorded after the final verification run.
+Final verification results:
+
+- 82 browser assertions passed, including queue AND filters/empty state, KPI filtering, bulk assignment, manual review decisions, approval gate, code expiry/attempt lock/cooldown/reissue, method-change revocation, OCR review invalidation, original-document access audit, filtered CSV, policy save/discard and permission enforcement. No runtime errors during the run.
+- JavaScript syntax parsed successfully with QuickJS.
+- Static IDs and rendered IDs in queue, detail, rules, audit and approval dialog were checked for duplicates: none found.
+- Admin sidebar menu opens the new module in `contentFrame` and marks the menu item active.
+- Queue, detail, Rules & Thresholds and Audit Log each fit a 375px viewport without page-level horizontal overflow; long tables scroll inside their containers.
+- Standalone page has no external stylesheet or script dependency.
+- `git diff --check` passed.
+- Hash comparison with the task-start snapshot confirms only existing `index.html` changed, plus the two new deliverables. Existing Agency Management and unrelated worktree edits are preserved.
+- No commit or push performed.

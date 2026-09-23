@@ -78,6 +78,7 @@
         </div>
         <div class="err" id="err-new-password" style="margin-bottom:14px">Password does not meet all requirements.</div>
         </div>
+        <p id="offboarded-error" class="err" role="alert">This staff account is offboarded and cannot sign in. Contact your Agency Administrator.</p>
         <button class="btn btn-primary" type="button" onclick="staffSignIn()">Sign in</button>
         <p class="staff-signin-help">Forgot or did not receive the temporary password?<br><strong>Contact your Agency Administrator.</strong></p>
         <div class="back-row"><a class="link" href="agency_signin.html">Agency Administrator sign in</a></div>
@@ -113,12 +114,21 @@
       // Production uses the verified authentication response for this state.
       const requiresPasswordChange = new URLSearchParams(window.location.search).get('scenario') !== 'regular';
       document.getElementById('password-change-fields').hidden = !requiresPasswordChange;
+      function staffAccessAllowed() {
+        let blocked = false;
+        try {
+          const former = JSON.parse(localStorage.getItem('yuushi.formerAgencyStaff') || '{}');
+          blocked = !!former[document.getElementById('staff-id').value.trim().toLowerCase()];
+        } catch (error) { blocked = true; }
+        document.getElementById('offboarded-error').classList.toggle('show', blocked);
+        return !blocked;
+      }
       function staffSignIn() {
         const staffId = document.getElementById('staff-id').value.trim();
         const password = document.getElementById('staff-password').value;
         fieldError('staff-id', !staffId);
         fieldError('staff-password', !password);
-        if (!staffId || !password) return;
+        if (!staffId || !password || !staffAccessAllowed()) return;
         if (requiresPasswordChange) setPassword();
         else window.location.href = 'index.html';
       }
@@ -133,6 +143,7 @@
       password.addEventListener('input', rules);
       confirmation.addEventListener('input', rules);
       function setPassword() {
+        if (!staffAccessAllowed()) return;
         const valid = rules();
         document.getElementById('err-new-password').classList.toggle('show', !valid);
         if (valid) showStep('step-success');

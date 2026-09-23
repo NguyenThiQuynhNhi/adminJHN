@@ -856,6 +856,7 @@
       </div>
 
       <div class="section-grid">
+        <p id="noActiveRoleAlert" class="card" role="alert" hidden>No active role is assigned to this account. Please contact your administrator. Access is blocked; active-session revocation and reauthentication are required (mock state only).</p>
         <section class="card">
           <div class="card-title">
             <i class="fas fa-id-card"></i> Section 1 — Admin Profile
@@ -916,6 +917,8 @@
                 >
                   <i class="fas fa-key"></i> Reset password
                 </button>
+                <button id="forceSignOutBtn" class="btn btn-sm btn-secondary" type="button" onclick="forceSignOut()">Force sign-out</button>
+                <p class="muted">One active session per account. A new login invalidates the previous session; separate staff accounts may sign in simultaneously. Enforcement requires the authentication backend.</p>
               </div>
             </div>
           </div>
@@ -1459,7 +1462,7 @@
 
       const PAGE_SIZE = 50;
       let pageNum = 1;
-      let filtered = admins.slice();
+      let filtered = admins.filter(account => !account.deletedAt);
       let currentAdmin = null;
       let originalAdmin = null;
       let editMode = false;
@@ -1552,7 +1555,34 @@
         renderList();
       }
 
+      function updateRoleAccess(account) {
+        const expired = !!account.permExpiry && account.permExpiry <= new Date().toLocaleDateString('en-CA');
+        const valid = ["Super Admin", "Admin", "Operator", "Viewer"].includes(account.role) && !expired;
+        account.roleAccess = valid ? "active" : expired ? "expired" : "missing";
+        if (!valid) {
+          account.sessionRevocation = account.sessionRevocation || { requestedAt: new Date().toISOString(), status: "mock-requested" };
+          account.sessionRevocation.requiresAuthentication = true;
+        }
+        // Shared demo metadata only; this cannot revoke real server sessions.
+        try {
+          localStorage.setItem("yuushi.adminStaffAccess." + account.id.toLowerCase(), JSON.stringify({
+            role: account.role, permExpiry: account.permExpiry, status: account.status,
+            deletedAt: account.deletedAt || null, requiresAuthentication: !valid,
+          }));
+        } catch (error) { /* UI still displays role state when storage is unavailable. */ }
+        return valid;
+      }
+      function roleAccessLabel(account) {
+        return updateRoleAccess(account) ? account.role : (account.roleAccess === "expired" ? "Expired role — " : "") + "No active role";
+      }
+      function forceSignOut() {
+        if (!currentAdmin || currentAdmin.deletedAt || currentAdmin.id === "ADM-001") return;
+        currentAdmin.sessionRevocation = { requestedAt: new Date().toISOString(), requiresAuthentication: true, status: "mock-requested" };
+        toast("Mock: active-session revocation requested. This staff member must authenticate again; server enforcement is required.");
+      }
+
       function renderList() {
+        admins.forEach(updateRoleAccess);
         const tbody = $("listBody");
         const total = filtered.length;
         const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -1575,7 +1605,7 @@
           <tr onclick="showDetail('${a.id}')">
             <td><div style="display:flex;align-items:center;gap:10px">${avatarImg(a.fullName, 36, 8)}<div><strong>${esc(a.fullName)}</strong><br><span style="font-size:11px;color:var(--text-muted)">${a.id}</span></div></div></td>
             <td>${esc(a.email)}</td>
-            <td>${esc(a.role)}</td>
+            <td>${esc(roleAccessLabel(a))}</td>
             <td>${esc(a.dept)}</td>
             <td>${badgeStatus(a.status)}</td>
             <td>${badge2FA(a.twoFa)}</td>
@@ -1595,6 +1625,7 @@
           from = $("fLoginFrom").value,
           to = $("fLoginTo").value;
         filtered = admins.filter((a) => {
+          if (a.deletedAt) return false;
           if (roles.length && !roles.includes(a.role)) return false;
           if (statuses.length && !statuses.includes(a.status)) return false;
           if (depts.length && !depts.includes(a.dept)) return false;
@@ -1625,7 +1656,7 @@
         $("f2FA").value = "all";
         $("fLoginFrom").value = "";
         $("fLoginTo").value = "";
-        filtered = admins.slice();
+        filtered = admins.filter(account => !account.deletedAt);
         pageNum = 1;
         renderList();
       }
@@ -1723,7 +1754,7 @@
 
       function showDetail(id) {
         const a = admins.find((x) => x.id === id);
-        if (!a) return;
+        if (!a || a.deletedAt) return;
         currentAdmin = a;
         originalAdmin = JSON.parse(JSON.stringify(a));
         editMode = false;
@@ -1754,7 +1785,9 @@
 
         $("dAvatar").textContent = initials(a.fullName);
         $("dName").textContent = a.fullName;
-        $("dMetaRole").textContent = a.role;
+        $("dMetaRole").textContent = roleAccessLabel(a);
+        $("noActiveRoleAlert").hidden = a.roleAccess === "active";
+        $("forceSignOutBtn").disabled = a.id === "ADM-001";
         $("dMetaEmail").textContent = a.email;
         $("dMetaStatus").innerHTML = badgeStatus(a.status);
         renderEditableSections(a);
@@ -1886,7 +1919,7 @@
         toast("Admin account updated successfully.");
       }
       function suspendAccount() {
-        if (!currentAdmin) return;
+        if (!currentAdmin || currentAdmin.deletedAt) return;
         const next =
           currentAdmin.status === "Suspended" ? "Active" : "Suspended";
         if (
@@ -1905,16 +1938,24 @@
             : "Admin reactivated successfully.",
         );
       }
+      // Soft deletion preserves identity/history while releasing login email in this mock.
+      function softDeleteAccount(account) {
+        if (!account || account.deletedAt) return;
+        account.deletedAt = new Date().toISOString();
+        account.status = "Deleted";
+        account.loginBlocked = true;
+        if (account.email) account.email += "_deleted_" + account.id + "_" + Date.now();
+      }
       function deleteAccount() {
         if (
           !currentAdmin ||
           !confirm(
-            `Permanently delete admin ${currentAdmin.fullName}? This action cannot be undone.`,
+            `Soft-delete admin ${currentAdmin.fullName}? This action cannot be undone.`,
           )
         )
           return;
         const idx = admins.findIndex((a) => a.id === currentAdmin.id);
-        if (idx >= 0) admins.splice(idx, 1);
+        if (idx >= 0) softDeleteAccount(admins[idx]);
         filtered = filtered.filter((a) => a.id !== currentAdmin.id);
         editMode = false;
         $("detailView").classList.add("hidden");
@@ -1927,19 +1968,19 @@
         if (
           !a ||
           !confirm(
-            `Permanently delete admin ${a.fullName}? This action cannot be undone.`,
+            `Soft-delete admin ${a.fullName}? This action cannot be undone.`,
           )
         )
           return;
         const idx = admins.findIndex((x) => x.id === id);
-        if (idx >= 0) admins.splice(idx, 1);
+        if (idx >= 0) softDeleteAccount(admins[idx]);
         filtered = filtered.filter((x) => x.id !== id);
         renderList();
         toast("Admin deleted successfully.");
       }
       function suspendFromList(id) {
         const a = admins.find((x) => x.id === id);
-        if (!a) return;
+        if (!a || a.deletedAt) return;
         if (!confirm(`Suspend admin ${a.fullName}?`)) return;
         a.status = "Suspended";
         if (currentAdmin && currentAdmin.id === id) {
@@ -2288,7 +2329,7 @@
           memo: $("cvMemo").value.trim(),
         };
         admins.push(newAdmin);
-        filtered = admins.slice();
+        filtered = admins.filter(account => !account.deletedAt);
         renderList();
         $("createView").classList.add("hidden");
         $("listView").classList.remove("hidden");

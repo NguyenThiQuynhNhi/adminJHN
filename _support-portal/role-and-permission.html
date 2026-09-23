@@ -253,7 +253,11 @@
     <div class="modal-backdrop" id="del-modal" onclick="if (event.target === this) closeModal('del-modal');">
       <div class="modal">
         <h3>Delete this role?</h3>
-        <p id="del-msg">Removing this role cannot be undone. Members currently assigned to it will be reassigned to <b>Service Consultant</b> automatically.</p>
+        <p id="del-msg"></p>
+        <div class="field" id="replacement-field">
+          <label for="replacement-role">Replacement Role *</label>
+          <select id="replacement-role"><option value="">Select a role...</option></select>
+        </div>
         <div class="modal-actions">
           <button class="btn btn-ghost" onclick="closeModal('del-modal')">Cancel</button>
           <button class="btn btn-primary" style="background: var(--danger)" onclick="confirmDeleteRole()">Delete role</button>
@@ -589,24 +593,32 @@
 
       function askDeleteRole() {
         const r = roles.find((x) => x.id === currentRoleId);
-        if (r.system) { toast("System roles cannot be deleted.", "error"); return; }
-        if (r.members > 0) {
-          document.getElementById("del-msg").innerHTML = `<b>${r.members} member(s)</b> are currently assigned to <b>${r.name}</b>. Removing the role will reassign them to <b>Service Consultant</b> automatically. This cannot be undone.`;
-        } else {
-          document.getElementById("del-msg").innerHTML = `Removing <b>${r.name}</b> cannot be undone. No staff are currently assigned to it.`;
-        }
+        if (!r || r.system) { toast("System roles cannot be deleted.", "error"); return; }
+        document.getElementById("del-msg").textContent = r.members > 0
+          ? r.members + " staff are assigned to " + r.name + ". Select their replacement role before deletion."
+          : "Delete " + r.name + "? No staff are currently assigned.";
+        const select = document.getElementById("replacement-role");
+        select.replaceChildren(new Option("Select a role...", ""));
+        roles.filter(x => x.id !== r.id).forEach(x => select.add(new Option(x.name, x.id)));
+        document.getElementById("replacement-field").hidden = !r.members;
         openModal("del-modal");
       }
-
       function confirmDeleteRole() {
         const idx = roles.findIndex((x) => x.id === currentRoleId);
-        if (idx < 0) return;
-        const removed = roles.splice(idx, 1)[0];
-        currentRoleId = "consultant";
+        if (idx < 0 || roles[idx].system) return;
+        const removed = roles[idx];
+        const replacement = roles.find(x => x.id !== removed.id && x.id === document.getElementById("replacement-role").value);
+        if (removed.members > 0 && !replacement) {
+          toast("Select an existing Replacement Role.", "error"); return;
+        }
+        // This page models assigned staff as member counts, not authenticated accounts.
+        if (removed.members > 0) replacement.members += removed.members;
+        roles.splice(idx, 1);
+        currentRoleId = replacement?.id || roles[0]?.id;
         closeModal("del-modal");
         exitEdit();
         renderAll();
-        toast(removed.name + " deleted.");
+        toast(removed.name + " deleted." + (removed.members ? " Staff reassigned to " + replacement.name + " in this mock." : ""));
       }
 
       // ============ MODAL ============

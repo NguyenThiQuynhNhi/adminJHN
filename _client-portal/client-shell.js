@@ -2,6 +2,8 @@
   'use strict';
   const homeFile = 'yuushi_homepage_standalone.html';
   const pageTitles = {
+    'client-myprofile.html':'My Profile',
+    'customer-profile.html':'My Profile',
     'support_landing.html':'Support Services',
     'supportal_directory.html':'Find a Provider',
     'supportal_profile.html':'Provider Profile',
@@ -14,7 +16,13 @@
   const menu = document.getElementById('accountMenu');
   const toggle = document.getElementById('profileToggle');
   let signedIn = false;
-  try { signedIn = sessionStorage.getItem('yuushi.client.previewSignedIn') === 'true'; } catch {}
+  try {
+    signedIn = sessionStorage.getItem('yuushi.client.previewSignedIn') === 'true';
+    if (JSON.parse(localStorage.getItem('yuushi.client.account') || 'null')?.deletedAt) {
+      signedIn = false;
+      sessionStorage.removeItem('yuushi.client.previewSignedIn');
+    }
+  } catch {}
   function closeProfile() { menu.hidden = true; toggle.setAttribute('aria-expanded','false'); }
   function updateAccount() {
     document.body.classList.toggle('cp-signed-in',signedIn);
@@ -24,6 +32,12 @@
   }
   // This static prototype changes the header only; no authentication request is made.
   window.clientLogin = () => {
+    try {
+      if (JSON.parse(localStorage.getItem('yuushi.client.account') || 'null')?.deletedAt) {
+        window.alert('This preview account has been withdrawn and cannot be restored.');
+        return;
+      }
+    } catch { return; }
     signedIn = true;
     try { sessionStorage.setItem('yuushi.client.previewSignedIn','true'); } catch {}
     updateAccount();
@@ -33,9 +47,23 @@
     frame.contentWindow?.postMessage({type:'client-account-state',signedIn},location.origin === 'null' ? '*' : location.origin);
   };
   window.clientIsSignedIn = () => signedIn;
+  window.clientWithdraw = () => {
+    const account = JSON.parse(localStorage.getItem('yuushi.client.account') || 'null');
+    if (!signedIn || account?.status !== 'Withdrawn' || !account.deletedAt) return false;
+    sessionStorage.removeItem('yuushi.client.previewSignedIn');
+    signedIn = false;
+    updateAccount();
+    window.clientNavigate(homeFile);
+    return true;
+  };
   function renderRoute() {
     const url = new URL(location.href);
     const page = url.searchParams.get('page');
+    if (['client-myprofile.html','customer-profile.html'].includes(page) && !signedIn) {
+      url.searchParams.delete('page');
+      history.replaceState(null,'',url);
+      renderRoute(); return;
+    }
     const validPage = Object.hasOwn(pageTitles,page);
     const isSupportPage = validPage && page.startsWith('support');
     document.getElementById('clientHomeContent').hidden = validPage;
@@ -45,7 +73,7 @@
     closeProfile();
     document.querySelectorAll('.cp-insights').forEach(el=>el.open=false);
     if (validPage) {
-      const content = new URL(page,location.href);
+      const content = new URL(page === 'customer-profile.html' ? 'client-myprofile.html' : page,location.href);
       url.searchParams.forEach((value,key)=>{ if(key !== 'page') content.searchParams.append(key,value); });
       content.hash = url.hash;
       if(frame.getAttribute('src') !== content.href) { frame.style.height='800px'; frame.src=content.href; }

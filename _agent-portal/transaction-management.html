@@ -374,6 +374,11 @@
             <div class="filter-field has-icon"><i class="fas fa-calendar fi-left"></i><input id="txFrom" type="date" aria-label="Sold from" onchange="page=1;renderList()" /><input id="txTo" type="date" aria-label="Sold to" onchange="page=1;renderList()" /></div>
           </div>
 
+          <div class="info-callout" style="margin-bottom:16px">
+            <i class="fas fa-circle-info"></i>
+            <div class="ic-text"><strong>Agency Profile performance:</strong> only verified/finalized sales contribute to Agency Sales, and only their verified sale amounts contribute to Total Sales Value. Pending Client Confirmation, Disputed, Evidence Submitted, and Rejected records do not contribute. Rentals are count-only and contribute to Rentals completed in 12 months and Total Rentals.</div>
+          </div>
+
           <div class="card">
             <table class="data">
               <thead><tr>
@@ -454,7 +459,7 @@
                 <div class="price-visibility">
                   <div class="pv-left">
                     <div class="pv-title"><i class="fas fa-eye" style="margin-right:6px"></i>Transaction price is <strong>Public</strong></div>
-                    <!-- <div class="pv-sub">Visible on your Agent Profile and Market Analysis reports</div> -->
+                    <!-- <div class="pv-sub">Visible on your Agency Profile and Market Analysis reports</div> -->
                   </div>
                   <div class="pv-right">
                     <label class="toggle"><input type="checkbox" checked onchange="togglePriceVis(this)"><span class="toggle-slider"></span></label>
@@ -683,27 +688,27 @@
                 <div class="fld"><label>Lead (Closed Won) <span class="req">*</span></label><div class="fld-combo"><select><option>Santi Argo — #100029</option><option>Neil Down — #100031</option></select><button class="mini-add"><i class="fas fa-plus"></i></button></div></div>
                 <div class="fld"><label>Transaction Date <span class="req">*</span></label><input type="date" value="2025-05-22" /></div>
                 <div class="fld"><label>Agent <span class="req">*</span></label><select><option>Chris Sales</option><option>Maria Sales</option><option>Tony Sales</option></select></div>
-                <div class="fld"><label>Transaction Type</label><select><option>To Buy</option><option>To Rent</option></select></div>
+                <div class="fld"><label>Transaction Type</label><select id="closedTransactionType" onchange="updateClosedTransactionType()"><option>To Buy</option><option>To Rent</option></select></div>
                 <div class="fld"><label>Listing Price</label><input placeholder="¥0" /></div>
-                <div class="fld"><label>Transaction Price <span class="req">*</span></label><input placeholder="¥0" value="¥3,800,000" /></div>
+                <div class="fld" id="closedTransactionPriceField"><label>Transaction Price <span class="req">*</span></label><input id="closedTransactionPrice" placeholder="¥0" value="¥3,800,000" required /></div>
                 <div class="fld"><label>Commission (%)</label><input placeholder="e.g. 3.5" /></div>
               </div>
             </div>
 
             <!-- Price publish -->
-            <div class="form-sec">
+            <div class="form-sec" id="closedPricePublishSection">
               <div class="sec-title">Price Publish</div>
               <div class="sec-sub">Control how the transaction price appears publicly</div>
               <div class="price-vis-form">
                 <div class="pvf-left">
                   <div class="pvf-title"><i class="fas fa-eye" style="margin-right:6px"></i>Make transaction price public</div>
-                  <div class="pvf-sub">Visible on Agent Profile (C47) and feeds Market Analysis (A32)</div>
+                  <div class="pvf-sub">Visible on Agency Profile and feeds Market Analysis after verification</div>
                 </div>
                 <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
               </div>
               <div class="info-callout">
                 <i class="fas fa-circle-info"></i>
-                <div class="ic-text">Public prices appear on your <strong>Agent Profile → Sold Properties</strong> and are used in <strong>Admin Market Analysis</strong> for price trend reports. Private prices are stored internally only.</div>
+                <div class="ic-text">Public prices appear on your <strong>Agency Profile → Sold Properties</strong> after the sale is verified and are used in <strong>Admin Market Analysis</strong> for price trend reports. Price visibility does not change verification status or metric eligibility.</div>
               </div>
             </div>
 
@@ -816,7 +821,7 @@
               <div class="price-vis-form">
                 <div class="pvf-left">
                   <div class="pvf-title"><i class="fas fa-eye" style="margin-right:6px"></i>Make transaction price public</div>
-                  <div class="pvf-sub">Show on Agent Profile and include in Market Analysis</div>
+                  <div class="pvf-sub">Show on Agency Profile and include in Market Analysis</div>
                 </div>
                 <label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
               </div>
@@ -1143,14 +1148,14 @@
         const ppPrice = document.getElementById("profilePrice");
         if (cb.checked) { lbl.textContent="Public"; ppPrice.textContent="¥3,800,000"; ppPrice.className="pp-prop-price"; }
         else { lbl.textContent="Private"; ppPrice.textContent="Price hidden"; ppPrice.className="pp-prop-price hidden"; }
-        toast(cb.checked ? "Price is now Public — visible on Agent Profile" : "Price is now Private — hidden from profile", cb.checked?"success":"");
+        toast(cb.checked ? "Price is now Public — visible on Agency Profile after verification" : "Price is now Private — hidden from profile", cb.checked?"success":"");
       }
       window.togglePriceVis = togglePriceVis;
 
       function togglePriceVisSusp(cb) {
         const lbl = document.getElementById("visLabelSusp");
         lbl.textContent = cb.checked ? "Public" : "Private";
-        toast(cb.checked ? "Suspension visible on Agent Profile" : "Set to Private");
+        toast(cb.checked ? "Suspension visible on Agency Profile" : "Set to Private");
       }
       window.togglePriceVisSusp = togglePriceVisSusp;
 
@@ -1165,6 +1170,23 @@
         }
       }
       window.commentKey = commentKey;
+
+      function updateClosedTransactionType() {
+        const isRental = document.getElementById("closedTransactionType").value === "To Rent";
+        const priceField = document.getElementById("closedTransactionPriceField");
+        const priceInput = document.getElementById("closedTransactionPrice");
+        const publishSection = document.getElementById("closedPricePublishSection");
+        priceField.classList.toggle("hidden", isRental);
+        publishSection.classList.toggle("hidden", isRental);
+        priceInput.required = !isRental;
+        priceInput.disabled = isRental;
+        if (isRental) {
+          priceInput.value = "";
+          const publishToggle = publishSection.querySelector('input[type="checkbox"]');
+          if (publishToggle) publishToggle.checked = false;
+        }
+      }
+      window.updateClosedTransactionType = updateClosedTransactionType;
 
       /* Menu toggle */
       function toggleMenu(id) {
@@ -1186,9 +1208,22 @@
       function showDetailSuspended() { showOnly("screenDetailSuspended"); if(typeof renderPipelineSuspended==='function')renderPipelineSuspended(); }
       function showEdit(type) {
         showOnly(type==="closed"?"screenEditClosed":"screenEditSuspended");
+        if (type === "closed") updateClosedTransactionType();
         if (type === "suspended") populateSuspendedForm(selectedSuspensionProperty);
       }
       function saveTransaction(type) {
+        if (type === "closed") {
+          const isRental = document.getElementById("closedTransactionType").value === "To Rent";
+          const priceInput = document.getElementById("closedTransactionPrice");
+          if (!isRental && !priceInput.value.trim()) {
+            toast("Transaction price is required for To Buy", "error");
+            priceInput.focus();
+            return;
+          }
+          toast(isRental ? "Rental saved as a count-only transaction" : "Sale transaction saved for verification", "success");
+          setTimeout(showDetailClosed, 400);
+          return;
+        }
         if (type === "suspended") {
           if (!selectedSuspensionProperty) {
             toast("Select a property first", "error");
@@ -1257,7 +1292,7 @@ function filteredTransactions(){const verification=W.read(W.keys.transactions);c
 function transactionPage(n){page=n;renderList();}
 function publishTransaction(id,on){const t=W.read(W.keys.transactions).find(t=>t.transactionId===id);if(t)W.updateTransaction(id,'Price publication updated',{publishPrice:on},t.listingOwnerName);else {const seed=TRANSACTIONS.find(t=>t.ref===id);if(seed)seed.pub=on;const rows=W.read('yuushi.suspensionTx');const raw=rows.find(t=>t.ref===id);if(raw){raw.publicPrice=on;W.write('yuushi.suspensionTx',rows);}}renderList();toast('Price publication updated.');}
 function openTransaction(id){const t=W.read(W.keys.transactions).find(t=>t.transactionId===id);currentVerificationId=t?id:null;document.querySelectorAll('.transaction-verification').forEach(e=>e.remove());if(!t){const row=getTransactionRows().find(t=>t.ref===id);if(row?.type==='closed')showDetailClosed();else showDetailSuspended();return;}showDetailClosed();document.querySelector('#screenDetailClosed .dt-name').textContent=t.propertyName;renderVerification();}
-function renderVerification(){const t=W.read(W.keys.transactions).find(t=>t.transactionId===currentVerificationId);if(!t)return;syncTransactionDetail(t);document.querySelectorAll('.transaction-verification').forEach(e=>e.remove());const box=document.createElement('section');box.className='wf-card transaction-verification';box.innerHTML=`<h3>Transaction Verification · ${W.esc(t.transactionId)}</h3><div class="wf-grid">${[['Listed Price',W.money(t.listedPrice)],['Agent Submitted Price',W.money(t.agentSubmittedPrice)],['Client Submitted Price',W.money(t.clientSubmittedPrice)],['Final Sale Price',W.money(t.finalSalePrice)],['Difference',t.clientSubmittedPrice==null?'—':W.money(Math.abs(t.clientSubmittedPrice-t.agentSubmittedPrice))+' ('+W.discrepancy(t).toFixed(2)+'%)']].map(([k,v])=>`<div><small>${k}</small><p>${v}</p></div>`).join('')}<div><small>Verification Status</small><p>${W.statusBadge(t.verificationStatus)} ${W.outlier(t)}</p></div></div><p>Related Dispute Ticket: ${t.disputeTicketId?W.esc(t.disputeTicketId):'—'}</p><p>Outlier alert: difference ≥20% versus Agent price; warning only.</p>${t.verificationStatus==='Pending Client Confirmation'?'<button class="btn btn-primary" onclick="simulateClientConfirmation()">Simulate Client Confirmation</button>':''} ${t.verificationStatus==='Disputed'?'<button class="btn btn-primary" onclick="raisePriceDispute()">Raise Price Dispute</button>':''}<h4>Verification timeline</h4>${W.timeline(t.timeline)}`;document.querySelector('#screenDetailClosed .detail-top').insertAdjacentElement('afterend',box);}
+function renderVerification(){const t=W.read(W.keys.transactions).find(t=>t.transactionId===currentVerificationId);if(!t)return;syncTransactionDetail(t);document.querySelectorAll('.transaction-verification').forEach(e=>e.remove());const eligible=['Matched','Admin Resolved'].includes(t.verificationStatus);const box=document.createElement('section');box.className='wf-card transaction-verification';box.innerHTML=`<h3>Transaction Verification · ${W.esc(t.transactionId)}</h3><div class="wf-grid">${[['Listed Price',W.money(t.listedPrice)],['Agent Submitted Price',W.money(t.agentSubmittedPrice)],['Client Submitted Price',W.money(t.clientSubmittedPrice)],['Final Sale Price',W.money(t.finalSalePrice)],['Difference',t.clientSubmittedPrice==null?'—':W.money(Math.abs(t.clientSubmittedPrice-t.agentSubmittedPrice))+' ('+W.discrepancy(t).toFixed(2)+'%)']].map(([k,v])=>`<div><small>${k}</small><p>${v}</p></div>`).join('')}<div><small>Verification Status</small><p>${W.statusBadge(t.verificationStatus)} ${W.outlier(t)}</p></div></div><p><strong>Agency Profile metrics:</strong> ${eligible?'This verified sale contributes one Agency Sale and its verified amount contributes to Total Sales Value.':'This transaction does not yet contribute to Agency Sales or Total Sales Value.'} Price Public/Private controls price display only.</p><p>Related Dispute Ticket: ${t.disputeTicketId?W.esc(t.disputeTicketId):'—'}</p><p>Outlier alert: difference ≥20% versus Agent price; warning only.</p>${t.verificationStatus==='Pending Client Confirmation'?'<button class="btn btn-primary" onclick="simulateClientConfirmation()">Simulate Client Confirmation</button>':''} ${t.verificationStatus==='Disputed'?'<button class="btn btn-primary" onclick="raisePriceDispute()">Raise Price Dispute</button>':''}<h4>Verification timeline</h4>${W.timeline(t.timeline)}`;document.querySelector('#screenDetailClosed .detail-top').insertAdjacentElement('afterend',box);}
 function syncTransactionDetail(t){const screen=document.getElementById('screenDetailClosed');const values={'Property':t.propertyName,'Client':t.clientName,'Agent':t.listingOwnerName,'Transaction Date':t.soldDate,'Listing Price':W.money(t.listedPrice),'Transaction Price':W.money(t.finalSalePrice),'Ref':t.transactionId,'Lead Ref':t.leadId||'—','Created':t.soldDate,'Modified':t.updatedAt};screen.querySelectorAll('.kv-grid>div').forEach(el=>{const label=el.querySelector('.kv-l')?.textContent;if(Object.hasOwn(values,label))el.querySelector('.kv-v').textContent=values[label];});screen.querySelector('.banner-sub').textContent='Property ID: '+t.propertyId;
 const sidebar=screen.querySelector('.detail-layout>div:last-child');
 if(sidebar){if(!sidebar.dataset.seedHtml)sidebar.dataset.seedHtml=sidebar.innerHTML;if(t.transactionId==='TXN-100012')sidebar.innerHTML=sidebar.dataset.seedHtml;else sidebar.innerHTML='<section class="sec"><div class="sec-title">Activities</div>'+W.timeline(t.timeline)+'</section><section class="sec"><div class="sec-title">Comments</div><p>No comments for this transaction.</p></section>';}

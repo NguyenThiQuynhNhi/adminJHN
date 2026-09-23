@@ -3037,7 +3037,7 @@
       YuushiWorkflow.syncAgencies(agents);
       YuushiWorkflow.initUI();
       addEventListener('storage',e=>{if([YuushiWorkflow.keys.badges,YuushiWorkflow.keys.assignments].includes(e.key)){YuushiWorkflow.syncAgencies(agents);renderList();if(currentAgent)renderDetail();}});
-      let filtered = agents.slice();
+      let filtered = agents.filter(account => !account.deletedAt);
       const PAGE_SIZE = 50;
       let pageNum = 1;
       function pageWindow(cur, pages) {
@@ -3089,7 +3089,7 @@
       let completedTxnMode = "12m"; 
       const $ = (id) => document.getElementById(id);
       let selectedIds = new Set();
-      function getSelectedAgents() { return agents.filter((a) => selectedIds.has(a.id)); }
+      function getSelectedAgents() { return agents.filter((a) => !a.deletedAt && selectedIds.has(a.id)); }
       function updateBulkBar() {
         const n = selectedIds.size;
         $("bulkBar")?.classList.toggle("hidden", n === 0);
@@ -3124,14 +3124,14 @@
         const sel = getSelectedAgents();
         if (!sel.length) return;
         openConfirm({
-          title: "Permanently delete accounts?",
+          title: "Delete accounts?",
           icon: "fa-trash title-danger",
-          body: `Permanently delete ${sel.length} selected agency(ies)? This action cannot be undone.`,
+          body: `Soft-delete ${sel.length} selected agency(ies)? This action cannot be undone.`,
           confirmLabel: '<i class="fas fa-trash"></i> Delete all',
           confirmClass: "btn-primary-danger",
           onConfirm: () => {
             const ids = new Set(sel.map(a => a.id));
-            for (let i = agents.length - 1; i >= 0; i--) if (ids.has(agents[i].id)) agents.splice(i, 1);
+            agents.forEach(account => { if (ids.has(account.id)) softDeleteAccount(account); });
             filtered = filtered.filter(a => !ids.has(a.id));
             selectedIds.clear(); renderList();
             toast(`${sel.length} agency(ies) deleted.`, true);
@@ -3281,6 +3281,7 @@
         };
         const today = new Date();
         filtered = agents.filter((a) => {
+          if (a.deletedAt) return false;
           if (st.length && !st.includes(a.status)) return false;
           if (pl.length && !pl.includes(a.plan)) return false;
           if (sa.length && !sa.some((c) => a.targetCities.includes(c)))
@@ -3354,7 +3355,7 @@
         ["fLicPreset", "fRespTime"].forEach((id) => ($(id).value = ""));
         $("fUnpaid").value = "All";
         $("fAppraisal").value = "All";
-        filtered = agents.slice();
+        filtered = agents.filter(account => !account.deletedAt);
         pageNum = 1;
         renderList();
       }
@@ -3502,7 +3503,7 @@
 
       function showDetail(id) {
         const a = agents.find((x) => x.id === id);
-        if (!a) return;
+        if (!a || a.deletedAt) return;
         currentAgent = a;
         originalAgent = JSON.parse(JSON.stringify(a));
         editMode = false;
@@ -4000,7 +4001,7 @@
         toast("Agency updated successfully.");
       }
       function suspendAccount() {
-        if (!currentAgent) return;
+        if (!currentAgent || currentAgent.deletedAt) return;
         const next = currentAgent.status === "Suspended" ? "Active" : "Suspended";
         const isSuspend = next === "Suspended";
         openConfirm({
@@ -4018,17 +4019,27 @@
           },
         });
       }
+      // Soft deletion preserves identity/history while releasing login email in this mock.
+      function softDeleteAccount(account) {
+        if (!account || account.deletedAt) return;
+        account.deletedAt = new Date().toISOString();
+        account.status = "Deleted";
+        account.loginBlocked = true;
+        if (account.opEmail) account.opEmail += "_deleted_" + account.id + "_" + Date.now();
+        if (account.inqEmail) account.inqEmail += "_deleted_" + account.id + "_" + Date.now();
+        if (account.inqEmailCc) account.inqEmailCc += "_deleted_" + account.id + "_" + Date.now();
+      }
       function deleteAccount() {
         if (!currentAgent) return;
         openConfirm({
-          title: "Permanently delete account?",
+          title: "Delete account?",
           icon: "fa-trash title-danger",
-          body: `Permanently delete ${esc(currentAgent.id)} (${esc(currentAgent.company)})?<br><span style="color:var(--text-muted)">This action cannot be undone.</span>`,
+          body: `Soft-delete ${esc(currentAgent.id)} (${esc(currentAgent.company)})?<br><span style="color:var(--text-muted)">This action cannot be undone.</span>`,
           confirmLabel: '<i class="fas fa-trash"></i> Delete',
           confirmClass: "btn-primary-danger",
           onConfirm: () => {
             const idx = agents.findIndex((x) => x.id === currentAgent.id);
-            if (idx >= 0) agents.splice(idx, 1);
+            if (idx >= 0) softDeleteAccount(agents[idx]);
             filtered = filtered.filter((x) => x.id !== currentAgent.id);
             showList();
             renderList();

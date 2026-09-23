@@ -813,6 +813,29 @@
       }
     </style>
   <link rel="stylesheet" href="../dropdown-indicators.css">
+
+    <script>
+      // C07 shared, Agency-safe demo records only. No reporter PII or raw Customer attachments.
+      // localStorage connects these static pages; it is not an authorization/security boundary.
+      window.C07 = {
+        key: 'yuushi.c07.propertyReports',
+        labels: { awaiting_agency_response:'Awaiting Agency response', pending_admin_review:'Pending Admin review', suspended:'Suspended', dismissed:'Dismissed' },
+        read() { try { return JSON.parse(localStorage.getItem(this.key) || '{}'); } catch { return {}; } },
+        save(record) { const all = this.read(); all[record.id] = record; localStorage.setItem(this.key, JSON.stringify(all)); },
+        unresolved(r) { return ['awaiting_agency_response','pending_admin_review'].includes(r.status); },
+        escape(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); },
+        event(r, action, detail, by) { r.updatedAt = new Date().toISOString(); r.audit.push({at:r.updatedAt, action, detail, by}); },
+        seed(id, propertyId, title, reason, date) {
+          return {id, propertyId, propertyTitle:title, reason, createdAt:date, updatedAt:date,
+            status:'awaiting_agency_response',
+            description:'Please review the reported listing issue: ' + reason + '. Correct the property information where needed and explain the action taken.',
+            evidence:[], responses:[], clarification:'', audit:[
+              {at:date, by:'Customer', action:'submitted', detail:'Report submitted.'},
+              {at:date, by:'System', action:'awaiting_agency_response', detail:'Sent to Agency for response.'}
+            ]};
+        }
+      };
+    </script>
 </head>
   <body>
     <!-- ================== LIST VIEW ================== -->
@@ -834,7 +857,8 @@
           <div class="field-group">
             <label class="field-label" for="fStatus">Status</label>
             <select id="fStatus" multiple size="3">
-              <option value="pending">Pending</option>
+              <option value="awaiting_agency_response">Awaiting Agency response</option>
+              <option value="pending_admin_review">Pending Admin review</option>
               <option value="suspended">Suspend listing</option>
               <option value="dismissed">Dismiss report</option>
             </select>
@@ -949,7 +973,7 @@
       <div class="section-grid">
         <section class="card">
           <div class="card-title">
-            <i class="fas fa-circle-info"></i> Report Information
+            <i class="fas fa-circle-info"></i> Customer Report
           </div>
           <div class="kv-grid" id="dReportInfo"></div>
         </section>
@@ -973,12 +997,35 @@
           <div class="attach-list" id="dAttachments"></div>
         </section>
 
+        <section class="card" style="grid-column:1 / -1">
+          <div class="card-title">Agency Response</div>
+          <div id="dAgencyResponse"></div>
+        </section>
+        <section class="card" style="grid-column:1 / -1">
+          <div class="card-title">Audit Log</div>
+          <div id="dC07Audit"></div>
+        </section>
         <section class="card" style="grid-column: 1 / -1">
           <div class="card-title">
             <i class="fas fa-clock-rotate-left"></i> Action
           </div>
           <div class="kv-grid" id="dActionInfo"></div>
         </section>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="clarificationModal">
+      <div class="modal-box">
+        <div class="modal-header"><h3 class="modal-title">Request Additional Clarification</h3></div>
+        <div class="modal-body">
+          <label class="req" for="clarificationNote">Clarification note</label>
+          <textarea id="clarificationNote" rows="4" required></textarea>
+          <p style="font-size:12px">Visible to Agency in Property Detail. Do not include reporter-identifying information.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" type="button" onclick="closeModal('clarificationModal')">Cancel</button>
+          <button class="btn btn-primary" type="button" onclick="confirmClarification()">Request clarification</button>
+        </div>
       </div>
     </div>
 
@@ -1050,10 +1097,12 @@
           <label class="req" for="dismissReason">Dismiss reason</label>
           <select id="dismissReason">
             <option value="">Select a reason…</option>
+            <option value="issue_resolved">Issue resolved by Agency</option>
+            <option value="other">Other</option>
             <option value="invalid_report">Invalid report</option>
             <option value="not_enough_evidence">Not enough evidence</option>
             <option value="no_issue_found">No issue found</option>
-            <option value="duplicate">Duplicate of another report</option>
+            <option value="duplicate">Duplicate</option>
             <option value="out_of_scope">Out of platform scope</option>
           </select>
           <label for="dismissNote">Internal Note</label>
@@ -1091,11 +1140,14 @@
         unauthorized_images: "Unauthorized images",
       };
       const STATUS_LABEL = {
-        pending: "Pending",
+        awaiting_agency_response: "Awaiting Agency response",
+        pending_admin_review: "Pending Admin review",
         suspended: "Suspend listing",
         dismissed: "Dismiss report",
       };
       const DISMISS_REASON_LABEL = {
+        issue_resolved: "Issue resolved by Agency",
+        other: "Other",
         invalid_report: "Invalid report",
         not_enough_evidence: "Not enough evidence",
         duplicate: "Duplicate of another report",
@@ -1123,7 +1175,7 @@
           attachments: [
             { type: "image", label: "Listing screenshot", size: "412 KB" },
           ],
-          status: "pending",
+          status: "awaiting_agency_response",
           createdAt: "2024-03-10T10:30:00",
           updatedAt: "2024-03-10T10:30:00",
           auditLog: [
@@ -1159,7 +1211,7 @@
               size: "284 KB",
             },
           ],
-          status: "pending",
+          status: "awaiting_agency_response",
           createdAt: "2024-03-12T09:10:00",
           updatedAt: "2024-03-12T09:10:00",
           auditLog: [
@@ -1208,7 +1260,7 @@
               by: "Admin Tanaka",
               action: "suspended",
               detail:
-                "Suspended by Admin Tanaka — Listing suspended. Reporter notified.",
+                "Suspended by Admin Tanaka — Listing suspended in mock.",
             },
           ],
         },
@@ -1244,7 +1296,7 @@
               by: "Admin Sato",
               action: "dismissed",
               detail:
-                "Dismissed by Admin Sato — Reason: Duplicate of another report. No action on listing. Reporter notified.",
+                "Dismissed by Admin Sato — Reason: Duplicate of another report. No action on listing.",
             },
           ],
         },
@@ -1267,7 +1319,7 @@
               size: "2.4 MB",
             },
           ],
-          status: "pending",
+          status: "awaiting_agency_response",
           createdAt: "2024-03-15T14:20:00",
           updatedAt: "2024-03-15T14:20:00",
           auditLog: [
@@ -1308,7 +1360,7 @@
           "unauthorized_listing",
           "unauthorized_images",
         ];
-        const STATUSES = ["pending", "suspended", "dismissed"];
+        const STATUSES = ["awaiting_agency_response", "suspended", "dismissed"];
         const REPORTERS = [
           ["individual", "Sophie Turner", "sophie.turner@example.com", "+81-90-1111-2222"],
           ["company", "Compliance Team", "compliance@example.jp", "+81-3-4444-5555"],
@@ -1339,7 +1391,7 @@
           const month = ((i * 3) % 12) + 1;
           const created = `2024-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}T${String(8 + (i % 10)).padStart(2, "0")}:${String((i * 5) % 60).padStart(2, "0")}:00`;
           const updated =
-            status === "pending"
+            status === "awaiting_agency_response"
               ? created
               : `2024-${String(month).padStart(2, "0")}-${String(Math.min(day + 1, 28)).padStart(2, "0")}T12:00:00`;
           const audit = [
@@ -1383,7 +1435,7 @@
               by: "Admin Tanaka",
               action: "suspended",
               detail:
-                "Suspended by Admin Tanaka — Listing suspended. Reporter notified.",
+                "Suspended by Admin Tanaka — Listing suspended in mock.",
             });
           } else if (status === "dismissed") {
             rec.dismissReason = "no_issue_found";
@@ -1393,7 +1445,7 @@
               by: "Admin Sato",
               action: "dismissed",
               detail:
-                "Dismissed by Admin Sato — Reason: No issue found. No action on listing. Reporter notified.",
+                "Dismissed by Admin Sato — Reason: No issue found. No action on listing.",
             });
           }
           reports.push(rec);
@@ -1404,6 +1456,58 @@
       // STATE + HELPERS
       // ========================================================================
       const PAGE_SIZE = 50;
+      function c07AdminSync() {
+        const shared = C07.read(); let changed = false;
+        reports.forEach(r => {
+          if (!shared[r.id]) {
+            const safe = C07.seed(r.id, r.propertyId, r.propertyTitle, REASON_LABEL[r.reason] || r.reason, r.createdAt);
+            safe.status = r.status;
+            if (r.dismissReason) safe.dismissReason = r.dismissReason;
+            // A curated issue summary is shared, never raw Customer text/attachments or reporter fields.
+            if (['suspended','dismissed'].includes(r.status)) { safe.updatedAt = r.updatedAt; safe.audit.push({at:r.updatedAt, by:'Admin', action:r.status, detail:'Final Admin decision: ' + r.status + '.'}); }
+            shared[r.id] = safe; changed = true;
+          }
+          r.status = shared[r.id].status;
+          r.updatedAt = shared[r.id].updatedAt;
+          if (shared[r.id].dismissReason) r.dismissReason = shared[r.id].dismissReason;
+        });
+        Object.values(shared).forEach(r => {
+          if (!reports.some(existing => existing.id === r.id)) reports.push({
+            id:r.id, propertyId:r.propertyId, propertyTitle:r.propertyTitle, propertyOwner:'Agency',
+            reporterType:null, reporterName:'Not provided in this mock', reporterEmail:'', reporterPhone:'',
+            reason:r.reason, description:r.description, attachments:[], createdAt:r.createdAt, updatedAt:r.updatedAt,
+            status:r.status, auditLog:[],
+          });
+        });
+        if (changed) { try { localStorage.setItem(C07.key, JSON.stringify(shared)); } catch { toast("Unable to save report demo state.", "error"); } }
+      }
+      function c07ReviewRecord() {
+        if (!currentReport) return null;
+        const record = C07.read()[currentReport.id];
+        if (!record || record.status !== 'pending_admin_review') {
+          toast('An Agency response is required before Admin review. The report may have changed.', 'error');
+          c07AdminSync(); renderDetail(); return null;
+        }
+        return record;
+      }
+      function c07SaveDecision(record, status, reason) {
+        record.status = status;
+        if (reason) record.dismissReason = reason;
+        C07.event(record, status, 'Final Admin decision: ' + C07.labels[status] + (reason ? ' — ' + DISMISS_REASON_LABEL[reason] : '') + '.', CURRENT_ADMIN);
+        try { C07.save(record); return true; }
+        catch { toast('Unable to save the decision. Please try again.', 'error'); return false; }
+      }
+      function confirmClarification() {
+        const record = c07ReviewRecord(); if (!record) return;
+        const note = $('clarificationNote').value.trim();
+        if (!note) { toast('Enter a clarification note.', 'error'); return; }
+        record.status = 'awaiting_agency_response'; record.clarification = note;
+        C07.event(record, 'clarification_requested', 'Additional clarification requested: ' + note, CURRENT_ADMIN);
+        try { C07.save(record); } catch { toast('Unable to save clarification.', 'error'); return; }
+        c07AdminSync(); closeModal('clarificationModal'); $('clarificationNote').value = '';
+        renderDetail(); applyFilters(); toast('Clarification requested in Agency Property Detail (mock).');
+      }
+      c07AdminSync();
       let filtered = reports.slice();
       let currentPage = 1;
       let currentReport = null;
@@ -1443,15 +1547,16 @@
         });
       }
       function badgeStatus(s) {
-        return `<span class="badge badge-${s}">${STATUS_LABEL[s] || s}</span>`;
+        return `<span class="badge badge-${C07.unresolved({status:s}) ? "pending" : s}">${STATUS_LABEL[s] || s}</span>`;
       }
       function badgeReporter(t) {
+        if (!t) return "—";
         return t === "company"
           ? '<span class="badge badge-company"><i class="fas fa-building"></i> Real-Estate Company</span>'
           : '<span class="badge badge-individual"><i class="fas fa-user"></i> Individual</span>';
       }
       function badgeReason(r) {
-        return `<span class="badge badge-reason">${REASON_LABEL[r] || r}</span>`;
+        return `<span class="badge badge-reason">${esc(REASON_LABEL[r] || r)}</span>`;
       }
 
       function toast(msg, kind) {
@@ -1675,7 +1780,7 @@
         if (!r) return;
 
         $("dStatusBadge").outerHTML =
-          `<span class="badge badge-${r.status}" id="dStatusBadge">${STATUS_LABEL[r.status]}</span>`;
+          `<span class="badge badge-${C07.unresolved(r) ? "pending" : r.status}" id="dStatusBadge">${STATUS_LABEL[r.status]}</span>`;
         $("dPropertyTitle").textContent = r.propertyTitle;
         $("dReportId").textContent = r.id;
         $("dPropertyId").textContent = r.propertyId;
@@ -1683,10 +1788,11 @@
 
         // Actions toolbar — depends on status
         const actions = $("dActions");
-        if (r.status === "pending") {
+        if (r.status === "pending_admin_review") {
           actions.innerHTML = `
             <button class="btn btn-danger" type="button" onclick="openModal('suspendModal')" title="Suspend the listing — hide from public view"><i class="fas fa-lock"></i> Suspend listing</button>
-            <button class="btn btn-success" type="button" onclick="openModal('dismissModal')" title="Close report without action on listing"><i class="fas fa-circle-xmark"></i> Dismiss report</button>`;
+            <button class="btn btn-success" type="button" onclick="openModal('dismissModal')" title="Close report without action on listing"><i class="fas fa-circle-xmark"></i> Dismiss report</button>
+            <button class="btn" type="button" onclick="openModal('clarificationModal')">Request Additional Clarification</button>`;
         } else {
           actions.innerHTML = `
             <span style="font-size:12px;color:var(--text-muted);align-self:center">
@@ -1696,7 +1802,16 @@
 
         // Status-driven alert banners removed (status pill + Report Information
         // card already convey status/reason — see "Business rules" in handoff).
-        $("dAlert").innerHTML = "";
+        $("dAlert").textContent = r.status === 'awaiting_agency_response' ? 'Awaiting Agency response. Inspect the report; final review follows the Agency submission.' : '';
+        const sharedReport = C07.read()[r.id];
+        const responses = sharedReport?.responses || [];
+        $('dAgencyResponse').innerHTML = '<p>' + esc(STATUS_LABEL[r.status]) + '</p>' + (responses.length ? responses.map(response => `
+          <div class="description-box"><p><b>Response date:</b> ${esc(response.at)}</p>
+          <p><b>Agency explanation:</b> ${esc(response.explanation)}</p>
+          <p><b>Corrective action:</b> ${esc(response.correctiveAction)}</p>
+          <p><b>Agency evidence:</b> ${response.files.map(file => esc(file.name) + ' · ' + Number(file.size) + ' bytes (mock metadata only)').join('<br>') || 'None'}</p></div>`).join('') : '<p>No Agency response submitted.</p>');
+        const audit = [...(r.auditLog || []), ...(sharedReport?.audit || [])];
+        $('dC07Audit').innerHTML = audit.sort((a,b) => a.at.localeCompare(b.at)).map(entry => `<div class="description-box"><b>${esc(entry.at)} · ${esc(entry.by)}</b><p>${esc(entry.detail)}</p></div>`).join('');
 
         // Report Info card
         $("dReportInfo").innerHTML = `
@@ -1775,7 +1890,7 @@
       // Close (without confirming) via backdrop click or Escape key, in
       // addition to the header "X" and "Cancel" buttons. Applies to both the
       // Suspend and Dismiss modals.
-      ["suspendModal", "dismissModal"].forEach((id) => {
+      ["suspendModal", "dismissModal", "clarificationModal"].forEach((id) => {
         const backdrop = $(id);
         if (!backdrop) return;
         backdrop.addEventListener("mousedown", (e) => {
@@ -1784,14 +1899,15 @@
       });
       document.addEventListener("keydown", (e) => {
         if (e.key !== "Escape") return;
-        ["suspendModal", "dismissModal"].forEach((id) => {
+        ["suspendModal", "dismissModal", "clarificationModal"].forEach((id) => {
           const backdrop = $(id);
           if (backdrop && backdrop.classList.contains("open")) closeModal(id);
         });
       });
 
       function confirmSuspend() {
-        if (!currentReport) return;
+        const record = c07ReviewRecord(); if (!record) return;
+        if (!c07SaveDecision(record, 'suspended')) return;
         const note = $("suspendNote").value.trim();
         const notify = $("suspendNotify").checked;
         currentReport.status = "suspended";
@@ -1801,7 +1917,7 @@
           at: currentReport.updatedAt,
           by: CURRENT_ADMIN,
           action: "suspended",
-          detail: `Suspended by ${CURRENT_ADMIN} — Listing suspended. Reporter notified.${note ? " " + note : ""}`,
+          detail: `Suspended by ${CURRENT_ADMIN} — Listing suspended in mock.${note ? " " + note : ""}`,
         });
         closeModal("suspendModal");
         $("suspendNote").value = "";
@@ -1810,18 +1926,19 @@
         renderKpi();
         applyFilters();
         toast(
-          `${currentReport.id} resolved — listing suspended.${notify ? " Email sent." : ""}`,
+          `${currentReport.id} resolved — listing suspended.${notify ? " Email notification requested (mock)." : ""}`,
         );
       }
 
       function confirmDismiss() {
-        if (!currentReport) return;
+        const record = c07ReviewRecord(); if (!record) return;
         const reason = $("dismissReason").value;
         const note = $("dismissNote").value.trim();
-        if (!reason) {
-          toast("Please select a dismiss reason.", "error");
+        if (!Object.hasOwn(DISMISS_REASON_LABEL, reason) || (reason === "other" && !note)) {
+          toast("Select a dismiss reason; add a note for Other.", "error");
           return;
         }
+        if (!c07SaveDecision(record, "dismissed", reason)) return;
         currentReport.status = "dismissed";
         currentReport.dismissReason = reason;
         currentReport.dismissNote = note;
@@ -1830,7 +1947,7 @@
           at: currentReport.updatedAt,
           by: CURRENT_ADMIN,
           action: "dismissed",
-          detail: `Dismissed by ${CURRENT_ADMIN} — Reason: ${DISMISS_REASON_LABEL[reason]}. No action on listing. Reporter notified.${note ? " " + note : ""}`,
+          detail: `Dismissed by ${CURRENT_ADMIN} — Reason: ${DISMISS_REASON_LABEL[reason]}. No action on listing.${note ? " " + note : ""}`,
         });
         closeModal("dismissModal");
         $("dismissReason").value = "";
@@ -1838,7 +1955,7 @@
         renderDetail();
         renderKpi();
         applyFilters();
-        toast(`${currentReport.id} dismissed. Reporter notified.`, "warn");
+        toast(`${currentReport.id} dismissed in mock.`, "warn");
       }
 
       function openPropertyLink() {
@@ -1868,6 +1985,10 @@
       // ========================================================================
       // INIT
       // ========================================================================
+      window.addEventListener('storage', event => {
+        if (event.key !== C07.key) return;
+        c07AdminSync(); applyFilters(); if (currentReport) renderDetail();
+      });
       renderKpi();
       renderList();
     </script>

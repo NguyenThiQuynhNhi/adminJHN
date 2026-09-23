@@ -689,6 +689,29 @@
       }
     </style>
   <link rel="stylesheet" href="../dropdown-indicators.css">
+
+    <script>
+      // C07 shared, Agency-safe demo records only. No reporter PII or raw Customer attachments.
+      // localStorage connects these static pages; it is not an authorization/security boundary.
+      window.C07 = {
+        key: 'yuushi.c07.propertyReports',
+        labels: { awaiting_agency_response:'Awaiting Agency response', pending_admin_review:'Pending Admin review', suspended:'Suspended', dismissed:'Dismissed' },
+        read() { try { return JSON.parse(localStorage.getItem(this.key) || '{}'); } catch { return {}; } },
+        save(record) { const all = this.read(); all[record.id] = record; localStorage.setItem(this.key, JSON.stringify(all)); },
+        unresolved(r) { return ['awaiting_agency_response','pending_admin_review'].includes(r.status); },
+        escape(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); },
+        event(r, action, detail, by) { r.updatedAt = new Date().toISOString(); r.audit.push({at:r.updatedAt, action, detail, by}); },
+        seed(id, propertyId, title, reason, date) {
+          return {id, propertyId, propertyTitle:title, reason, createdAt:date, updatedAt:date,
+            status:'awaiting_agency_response',
+            description:'Please review the reported listing issue: ' + reason + '. Correct the property information where needed and explain the action taken.',
+            evidence:[], responses:[], clarification:'', audit:[
+              {at:date, by:'Customer', action:'submitted', detail:'Report submitted.'},
+              {at:date, by:'System', action:'awaiting_agency_response', detail:'Sent to Agency for response.'}
+            ]};
+        }
+      };
+    </script>
 </head>
   <body>
     <div class="page">
@@ -741,6 +764,90 @@
       </div>
     </div>
 
+    <section class="card" id="c07Reports" style="margin:16px auto;max-width:1200px;padding:20px">
+      <h2 style="font-size:18px;margin:0 0 12px">Reports &amp; Resolution</h2>
+      <p id="c07ReportContext" style="font-size:13px"></p>
+      <p style="font-size:12px;color:#666">Only Agency-safe report details are shown. Evidence files are represented by metadata in this static preview; file contents are not uploaded.</p>
+      <div id="c07ReportsBody"></div>
+      <p id="c07Feedback" role="status" style="font-size:13px"></p>
+    </section>
+    <style>
+      body.c07-embedded { padding:0; background:transparent; }
+      body.c07-embedded > .page { display:none; }
+      body.c07-embedded #c07Reports { margin:0; box-shadow:none; border:0; }
+      .c07-report { border-top:1px solid #ded3c3; padding:16px 0; }
+      .c07-report label { display:block; margin:12px 0 6px; font-size:13px; }
+      .c07-report textarea { width:100%; min-height:75px; border:1px solid #ded3c3; border-radius:6px; padding:10px; font:inherit; }
+      .c07-report p { white-space:pre-wrap; overflow-wrap:anywhere; font-size:13px; }
+      .c07-report input[type=file] { max-width:100%; margin-bottom:12px; }
+    </style>
+    <script>
+      function c07RenderReports(propertyId) {
+        const esc = C07.escape;
+        const rows = Object.values(C07.read()).filter(r => r.propertyId === propertyId);
+        document.getElementById('c07Reports').dataset.propertyId = propertyId;
+        document.getElementById('c07ReportContext').textContent = 'Property ' + propertyId + (rows[0] ? ' · ' + rows[0].propertyTitle : '');
+        document.getElementById('c07ReportsBody').innerHTML = rows.length ? rows.map(r => {
+          const latest = r.responses?.at(-1);
+          return `<article class="c07-report" data-report-id="${esc(r.id)}">
+            <strong>${esc(r.id)}</strong> <span class="badge">${esc(C07.labels[r.status])}</span>
+            <p><b>Reason:</b> ${esc(r.reason)}<br><b>Submitted:</b> ${esc(r.createdAt)}</p>
+            <p>${esc(r.description)}</p>
+            <p><b>Shared evidence:</b> ${(r.evidence || []).filter(a => a.agencySafe === true).map(a => esc(a.label) + ' (mock attachment)').join(', ') || 'No Customer evidence cleared for Agency sharing.'}</p>
+            ${r.clarification && r.status === 'awaiting_agency_response' ? `<p><b>Clarification required:</b> ${esc(r.clarification)}</p>` : ''}
+            ${latest ? `<p><b>Last response:</b> ${esc(latest.explanation)}<br><b>Corrective action:</b> ${esc(latest.correctiveAction)}<br><b>Response date:</b> ${esc(latest.at)}<br><b>Agency evidence:</b> ${latest.files.map(f => esc(f.name) + ' (mock file)').join(', ') || 'None'}</p>` : ''}
+            ${r.status === 'awaiting_agency_response' ? `<form data-c07-response="${esc(r.id)}">
+              <button class="btn btn-secondary" type="button" data-c07-correct>Correct property using existing editor</button>
+              <label>Agency Response / Explanation *<textarea name="explanation" maxlength="4000" required></textarea></label>
+              <label>Corrective action taken *<textarea name="correctiveAction" maxlength="4000" required placeholder="Describe the correction, or explain why no change is needed."></textarea></label>
+              <label>Agency evidence (optional)<input type="file" name="evidence" multiple></label>
+              <button class="btn btn-primary" type="submit">Submit Response</button>
+            </form>` : `<p>${r.status === 'pending_admin_review' ? 'Response submitted. Awaiting the final Admin decision.' : 'Final decision recorded by Admin.'}</p>`}
+          </article>`;
+        }).join('') : '<p>No reports for this property.</p>';
+        document.querySelectorAll('[data-c07-correct]').forEach(button => button.addEventListener('click', () => {
+          if (new URLSearchParams(location.search).get('reportsOnly') === '1' && parent !== window) {
+            parent.postMessage({type:'c07-edit-property'}, location.origin === 'null' ? '*' : location.origin); return;
+          }
+          const key = Object.keys(demoProperties).find(key => demoProperties[key].id === propertyId);
+          if (key) enterEditMode(demoProperties[key]);
+        }));
+        document.querySelectorAll('[data-c07-response]').forEach(form => form.addEventListener('submit', event => {
+          event.preventDefault();
+          const feedback = document.getElementById('c07Feedback');
+          const report = C07.read()[form.dataset.c07Response];
+          if (!report || report.propertyId !== propertyId || report.status !== 'awaiting_agency_response') {
+            feedback.textContent = 'Report status changed. Review the latest status before responding.'; c07RenderReports(propertyId); return;
+          }
+          const explanation = form.elements.explanation.value.trim();
+          const correctiveAction = form.elements.correctiveAction.value.trim();
+          if (!explanation || !correctiveAction) { feedback.textContent = 'Enter an explanation and corrective action.'; return; }
+          const files = Array.from(form.elements.evidence.files).map(f => ({name:f.name, size:f.size, type:f.type}));
+          report.responses.push({explanation, correctiveAction, files, at:new Date().toISOString()});
+          report.status = 'pending_admin_review';
+          C07.event(report, 'agency_response', 'Agency response and corrective action submitted.', 'Agency');
+          try { C07.save(report); } catch { feedback.textContent = 'Unable to save response. Please try again.'; return; }
+          c07RenderReports(propertyId);
+          feedback.textContent = 'Response saved in the mock. Pending Admin review.';
+        }));
+      }
+      document.addEventListener('DOMContentLoaded', () => {
+        const params = new URLSearchParams(location.search);
+        if (params.get('reportsOnly') === '1') {
+          document.body.classList.add('c07-embedded');
+          c07RenderReports(params.get('reportPropertyId') || '');
+        }
+        const sendHeight = () => {
+          if (params.get('reportsOnly') === '1' && parent !== window) parent.postMessage({type:'c07-height',height:document.getElementById('c07Reports').scrollHeight + 24},location.origin === 'null' ? '*' : location.origin);
+        };
+        new ResizeObserver(sendHeight).observe(document.getElementById('c07Reports'));
+        window.addEventListener('storage', event => {
+          if (event.key !== C07.key) return;
+          if (document.activeElement?.closest('[data-c07-response]')) return;
+          c07RenderReports(document.getElementById('c07Reports').dataset.propertyId);
+        });
+      });
+    </script>
     <div class="lightbox-backdrop" id="lightbox">
       <div class="lightbox-content" id="lightboxContent"></div>
     </div>
@@ -1775,6 +1882,8 @@
       }
 
       function renderProperty(p) {
+        if (Object.values(C07.read()).some(r => r.propertyId === p.id && r.status === 'suspended')) p.status = 'Suspended';
+        c07RenderReports(p.id);
         buildMetaStrip(p);
         buildHeroSection(p);
         buildActionRow(p);
@@ -2685,10 +2794,12 @@
       }
 
       document.addEventListener("DOMContentLoaded", () => {
+        if (new URLSearchParams(location.search).get("reportsOnly") === "1") return;
         initLightbox();
         const select = document.getElementById("demoGroupSelect");
         const params = new URLSearchParams(window.location.search);
-        const paramGroup = params.get("group");
+        const requestedKey = Object.keys(demoProperties).find(key => demoProperties[key].id === params.get('propertyId'));
+        const paramGroup = requestedKey || params.get("group");
         let currentKey = "single_unit_buy";
         if (paramGroup && demoProperties[paramGroup]) {
           currentKey = paramGroup;
