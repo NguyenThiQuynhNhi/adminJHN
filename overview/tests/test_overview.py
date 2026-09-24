@@ -133,6 +133,15 @@ class OverviewTests(unittest.TestCase):
         self.assertTrue(ctx.eval("OverviewModel.filteredFacts({...f,transaction:'For Rent',prefectures:['Tokyo']}).every(r=>{const p=OverviewDemo.data.properties.find(p=>p.id===r.propertyId);return p.transaction==='For Rent'&&p.prefecture==='Tokyo'})"))
         self.assertEqual(ctx.eval("OverviewModel.filteredFacts({...f,prefectures:['Not in data']}).length"),0)
 
+    def test_metric_calculation_is_merged_into_description(self):
+        ctx=self.app_context('kpi')
+        html=ctx.eval("document.getElementById('mainContent').innerHTML")
+        self.assertNotIn('How this metric is calculated',html)
+        self.assertIn('<strong>Description:</strong>',html)
+        self.assertIn('Daily count of listed properties grouped by city.',html)
+        self.assertNotIn('Listing count trend by city. Daily count of listed properties by type tag',html)
+        self.assertEqual(ctx.eval("OverviewSpec.metrics.find(s=>s.id==='r31').calculation"),'Daily count of listed properties grouped by city.')
+
     def test_scope_and_fraud_source(self):
         ctx=self.context()
         self.assertEqual(ctx.eval('OverviewSpec.metrics.filter(s=>s.outOfScope).length'),51)

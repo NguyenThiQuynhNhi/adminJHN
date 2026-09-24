@@ -99,8 +99,9 @@ use Agency-level Dashboard data. Table remains a generic presentation option.
 
 Saved layouts use `yuushi.agency.dashboard.mock.v2`. Loading preserves valid dashboards,
 panels and widgets, converts permitted legacy system references, and discards unsupported
-references/settings. Save persists the normalized layout. Dashboard View, premium-plan and
-advertising-suppression gates apply to rendering and selection.
+references/settings. Save persists the normalized layout. Dashboard View and platform
+advertising-suppression gates apply to rendering and selection. Agency users are not shown
+preview controls and cannot change platform suppression from Dashboard.
 
 Monetary metrics count sold Sale transactions, including New Development units, and exclude
 Rentals. Days to Close includes confirmed sold listings without a Lead. Inquiry records,

@@ -293,7 +293,7 @@ window.OverviewSpec = {
       "page": "KPI Dashboard",
       "title": "Listing Trend",
       "definition": "Listing count trend by city",
-      "calculation": "Daily count of listed properties by type tag",
+      "calculation": "Daily count of listed properties grouped by city.",
       "chart": "Line chart",
       "period": "Past 30 days",
       "outOfScope": false
