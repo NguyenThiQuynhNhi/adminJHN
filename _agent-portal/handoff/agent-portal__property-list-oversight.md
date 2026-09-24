@@ -73,6 +73,10 @@ Per-listing **alert detectors** are pure functions `(listing) => alert | null`; 
 
 **(F) "Why is this required?"** A `?` icon with a CSS tooltip (`.req-help` / `.req-tip`) next to required-field labels, text from the `REQ_HELP` map (e.g. price, prefecture, area).
 
+## Address identity
+
+Property address uses two administrative levels: Prefecture and one City/Ward municipality field. `city` is the full municipality display value and `municipalityCode` is the canonical 5-digit key used by filters, matching, area assignment, and MLIT integration. No separate `ward` field is used.
+
 **(G) Clone from existing.** A **"New property (clone from existing)"** button (`openCloneModal`) opens a picker searchable by ID / name / address (`renderCloneResults`). `cloneFromListing(srcId)` pre-fills a **new** listing from the source **except** address, price, photos, and listing date (`CLONE_CLEAR_FIELDS`; media reset; status → Pending Review). A banner `#cloneBanner` reads "Cloned from {sourceID} — review and update fields…"; saving creates a fresh record (and drops the `_clonedFrom` marker).
 
 ---

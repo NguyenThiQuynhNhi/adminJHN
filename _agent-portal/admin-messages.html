@@ -2436,6 +2436,7 @@
     <div class="toast" id="toast"></div>
 
     <script src="property-card.js"></script>
+    <script src="../municipality-address.js"></script>
     <script>
       /* ============ MOCK DATA ============ */
       const AV = (n) => `https://i.pravatar.cc/150?img=${n}`;
@@ -2660,18 +2661,7 @@
       let epPage = 1;
 
       function buildPropertyPool() {
-        const cityByPref = {
-          Tokyo: ["Minato", "Shinjuku", "Shibuya", "Setagaya", "Shinagawa"],
-          Osaka: ["Osaka", "Sakai", "Toyonaka"],
-          Kanagawa: ["Yokohama", "Kawasaki", "Kamakura"],
-          Kyoto: ["Kyoto", "Uji"],
-          Hokkaido: ["Sapporo", "Hakodate"],
-          Fukuoka: ["Fukuoka", "Kitakyushu"],
-          Saitama: ["Saitama", "Kawagoe"],
-          Chiba: ["Chiba", "Funabashi"],
-          Aichi: ["Nagoya", "Toyota"],
-          Hyogo: ["Kobe", "Himeji"],
-        };
+        const cityByPref = YuushiMunicipality.namesByPrefecture;
         const prefs = Object.keys(cityByPref);
         const typeByGroup = {
           1: ["Apartment", "Tower Mansion", "Detached House"],
@@ -2721,7 +2711,7 @@
             });
           }
         });
-        return pool;
+        return YuushiMunicipality.normalizeAll(pool);
       }
       const PROPERTY_POOL = buildPropertyPool();
       const propImg = (id) => `https://picsum.photos/seed/${encodeURIComponent(id)}/300/180`;
@@ -2798,7 +2788,7 @@
             </label>
             <div class="pop-tree-children">
               ${cities.map((c) =>
-                `<label class="pop-row"><input type="checkbox" data-epregcity value="${escapeHtml(pref + "|" + c)}" data-pref="${escapeHtml(pref)}"><span>${escapeHtml(c)}</span></label>`
+                `<label class="pop-row"><input type="checkbox" data-epregcity value="${escapeHtml(YuushiMunicipality.filterValue(pref, c))}" data-pref="${escapeHtml(pref)}"><span>${escapeHtml(c)}</span></label>`
               ).join("")}
             </div>
           </div>`;
@@ -2815,7 +2805,7 @@
             </label>
             <div class="pop-tree-children">
               ${cities.map((c) =>
-                `<label class="pop-row"><input type="checkbox" data-epstation value="${escapeHtml(pref + "|" + c)}"><span>${escapeHtml(c)} Station</span></label>`
+                `<label class="pop-row"><input type="checkbox" data-epstation value="${escapeHtml(YuushiMunicipality.filterValue(pref, c))}"><span>${escapeHtml(c)} Station</span></label>`
               ).join("")}
             </div>
           </div>`;
@@ -3031,8 +3021,8 @@
           if (FILT_EP.region.prefs.length || FILT_EP.region.cities.length || FILT_EP.region.stations.length) {
             const hit =
               FILT_EP.region.prefs.includes(p.prefecture) ||
-              FILT_EP.region.cities.includes(p.prefecture + "|" + p.city) ||
-              FILT_EP.region.stations.includes(p.prefecture + "|" + p.city);
+              FILT_EP.region.cities.includes(YuushiMunicipality.filterValue(p.prefecture, p.municipalityCode)) ||
+              FILT_EP.region.stations.includes(YuushiMunicipality.filterValue(p.prefecture, p.municipalityCode));
             if (!hit) return false;
           }
           if (FILT_EP.priceMin != null && p.priceM < FILT_EP.priceMin) return false;

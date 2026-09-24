@@ -7,6 +7,19 @@ From the repository root, run `python3 -m http.server 8766` and open
 This is a frontend implementation with a shared deterministic data store, no backend dependency.
 Runtime assets require no build or package installation.
 
+## Access model
+
+Agency Dashboard access is controlled by the role's binary **Dashboard View** permission.
+When View is granted, all system and custom Dashboard metrics are calculated from the
+Agency's eligible records. Dashboard does not use None/Own/Agency record scope and does
+not inherit record scope from source modules. Staff identifiers remain available as
+analytics filters and group-by dimensions, including Sales Value by Staff.
+
+Dashboard Export remains a separate action. A viewer with Dashboard View and Dashboard
+Export exports the same Agency-level data shown by the Dashboard. Plan and advertising
+suppression gates remain independent. Drill-through destinations continue to enforce
+their own module permissions and Dashboard never grants write access to source records.
+
 ## Current scope
 
 Add Widget contains exactly these 29 selectable metrics. The runtime definitions in
@@ -67,7 +80,7 @@ Supporting fields appear only inside their parents:
 
 
 Quota includes Remaining and Unlimited handling. Review deadlines and subscription notices
-inherit contributing-source permissions. Table remains a generic presentation option.
+use Agency-level Dashboard data. Table remains a generic presentation option.
 
 ## Runtime and maintenance
 
@@ -86,7 +99,7 @@ inherit contributing-source permissions. Table remains a generic presentation op
 
 Saved layouts use `yuushi.agency.dashboard.mock.v2`. Loading preserves valid dashboards,
 panels and widgets, converts permitted legacy system references, and discards unsupported
-references/settings. Save persists the normalized layout. Permission, premium-plan and
+references/settings. Save persists the normalized layout. Dashboard View, premium-plan and
 advertising-suppression gates apply to rendering and selection.
 
 Monetary metrics count sold Sale transactions, including New Development units, and exclude

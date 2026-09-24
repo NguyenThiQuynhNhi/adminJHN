@@ -54,7 +54,8 @@ Alert keys are namespaced per project (e.g. `"{id}:phase"`). **Severity → exis
 - **Price** integer ¥1–¥9,999,999,999 (`PRICE_MAX = 9999999999`); thousands-separator on blur.
 - **Area** positive, ≤ 2 decimals, 1–99,999㎡.
 - **Dates**: no future date for past events; **sold ≥ listing**; and the project-specific **phase end ≥ start** rule ("Completion (phase end) cannot be before sales start.", `salesStartDate` vs `completionDate`).
-- **Address change** → inline re-approval warning (`ADDRESS_KEYS`: postCode/prefecture/city/chome/buildingName/unitNo).
+- **Address change** → inline re-approval warning (`ADDRESS_KEYS`: postCode/prefecture/city/municipalityCode/chome/buildingName/unitNo).
+- **Municipality identity** → `city` stores the complete City/Ward display value as one field; `municipalityCode` stores its canonical 5-digit key. Municipality filtering, matching, area assignment, and MLIT hooks use the code rather than City/Ward text.
 - **Document / floor-plan upload** → JPG/PNG/PDF, ≤ 10MB.
 
 **(C) Inline cell edit on the list** (`startInlineEdit`). Double-click **Price / Status / Assigned Agent** → inline editor; Enter saves, Esc/blur cancels; brief spinner then toast **"Updated."** (revert + error path on failure); appends a `changeHistory` entry. Other columns read-only.

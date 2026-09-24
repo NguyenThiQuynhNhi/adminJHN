@@ -690,6 +690,7 @@
     </style>
   <link rel="stylesheet" href="../dropdown-indicators.css">
 
+    <script src="../municipality-address.js"></script>
     <script>
       // C07 shared, Agency-safe demo records only. No reporter PII or raw Customer attachments.
       // localStorage connects these static pages; it is not an authorization/security boundary.
@@ -1447,6 +1448,7 @@
         addField(grid, "Status", p.status);
         addField(grid, "Address", p.address, { copy: true });
         addField(grid, "Prefecture", p.prefecture);
+        addField(grid, "City / Ward", p.city);
         addField(grid, "Route / Line", p.route);
         addField(grid, "Nearest station", p.station);
         addField(
@@ -2087,8 +2089,12 @@
         // Prefecture
         const f3 = document.createElement("div");
         f3.className = "field-item";
-        f3.innerHTML = `<label>Prefecture</label><input name="prefecture" value="${p.prefecture || ""}" />`;
+        f3.innerHTML = `<label>Prefecture</label><select name="prefecture">${Object.keys(MUNICIPALITIES_BY_PREFECTURE).map(pref => `<option value="${pref}" ${pref === p.prefecture ? "selected" : ""}>${pref}</option>`).join("")}</select>`;
         grid.appendChild(f3);
+        const fCity = document.createElement("div");
+        fCity.className = "field-item";
+        fCity.innerHTML = `<label>City / Ward</label><select name="city"></select><input type="hidden" name="municipalityCode" value="${p.municipalityCode || ""}">`;
+        grid.appendChild(fCity);
         // Address
         const f4 = document.createElement("div");
         f4.className = "field-item";
@@ -2231,6 +2237,24 @@
         }
 
         sectionsCol.appendChild(form);
+        const prefSelect = form.elements.prefecture;
+        const citySelect = form.elements.city;
+        const codeInput = form.elements.municipalityCode;
+        const populateMunicipalities = () => {
+          const rows = YuushiMunicipality.records(prefSelect.value);
+          const currentCode = codeInput.value;
+          citySelect.innerHTML = '<option value=""></option>' + rows.map(row => `<option value="${row.name}" ${row.code === currentCode ? "selected" : ""}>${row.name}</option>`).join("");
+          if (!rows.some(row => row.code === currentCode)) {
+            citySelect.value = "";
+            codeInput.value = "";
+          }
+        };
+        prefSelect.addEventListener("change", populateMunicipalities);
+        citySelect.addEventListener("change", () => {
+          const match = YuushiMunicipality.find(prefSelect.value, citySelect.value);
+          codeInput.value = match ? match.code : "";
+        });
+        populateMunicipalities();
         // mark editing flag
         window.UX_marked = true;
         // start autosave
@@ -2795,6 +2819,7 @@
 
       document.addEventListener("DOMContentLoaded", () => {
         if (new URLSearchParams(location.search).get("reportsOnly") === "1") return;
+        YuushiMunicipality.normalizeAll(Object.values(demoProperties));
         initLightbox();
         const select = document.getElementById("demoGroupSelect");
         const params = new URLSearchParams(window.location.search);

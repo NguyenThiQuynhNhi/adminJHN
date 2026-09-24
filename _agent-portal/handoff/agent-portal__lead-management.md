@@ -25,3 +25,6 @@ Selecting Sold opens `openLeadSoldModal()`: sale price + Sold Date for purchase;
 Offer creation is available from the detail Offers tab. Activity additions and Enter-to-post comments update the local detail UI; they do not establish synchronized CRM records. File/image controls are mock interactions. Send to Client Chat confirmation describes sending a property and automatically creating a lead, but `confirmSendToChat()` is toast feedback; no delivered chat or new Inquiry is created by that handler.
 
 Inquiry is client-initiated Chat-with-Agency. The assignment terminology used here does not add an Agency-created Inquiry workflow. Evidence: `STAGES`, `setStage`, `confirmLeadSold`, `assignEnquiry`, `saveLead`, `addActivityType`, `commentKey`, `confirmSendToChat`; shared `../mock-workflows.js` and Dashboard source adapter.
+## Location matching
+
+Lead-to-Property and Project location comparison uses the shared 5-digit `municipalityCode`. The `city` value remains a single City/Ward display field and is not the canonical matching key.

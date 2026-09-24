@@ -250,6 +250,7 @@
       .match-prop-sub { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
     </style>
   <script src="../mock-workflows.js"></script>
+  <script src="../municipality-address.js"></script>
 <link rel="stylesheet" href="../dropdown-indicators.css">
 </head>
   <body>
@@ -732,6 +733,7 @@
           ],
         },
       ];
+      YuushiMunicipality.normalizeAll(PROJECTS);
 
       // helper: lấy danh sách target (Type hoặc Lot) của 1 project, bất kể group nào
       function getProjectTargets(project) {
@@ -1144,8 +1146,8 @@
               const price = getTargetPrice(target, project);
               const sold = target.saleStatus === "Sold Out";
               const priceMatch = curPrice ? Math.abs(price - curPrice) / curPrice <= 0.2 : false;
-              const prefMatch = curProject && project.prefecture === curProject.prefecture;
-              return { project, target, price, sold, priceMatch, prefMatch, score: (priceMatch?1:0)+(prefMatch?1:0) };
+              const municipalityMatch = curProject && YuushiMunicipality.sameMunicipality(project, curProject);
+              return { project, target, price, sold, priceMatch, municipalityMatch, score: (priceMatch?1:0)+(municipalityMatch?1:0) };
             })
             .sort((a,b) => b.score - a.score)
             .slice(0, 5)
@@ -1155,14 +1157,14 @@
                   <div class="match-prop-name">${m.project.name} — ${m.target.name}</div>
                   <div class="match-prop-sub">${m.project.prefecture}, ${m.project.city} · ${m.target.layout || ""}</div>
                 </td>
-                <td ${m.prefMatch ? "style='color:#2a7a2a;font-weight:600'" : ""}>${m.project.prefecture}</td>
+                <td ${m.municipalityMatch ? "style='color:#2a7a2a;font-weight:600'" : ""}>${m.project.city}</td>
                 <td ${m.priceMatch ? "style='color:#2a7a2a;font-weight:600'" : ""}>¥${m.price.toLocaleString()}</td>
                 <td>${m.sold ? '<span class="mc-pill mc-miss">SOLD OUT</span>' : '<span class="mc-pill mc-ok">Available</span>'}</td>
               </tr>`).join("");
 
           body.innerHTML = `
             <table class="data" style="table-layout:auto">
-              <thead><tr><th>Project / Type/Lot</th><th>Prefecture</th><th>Price</th><th>Status</th></tr></thead>
+              <thead><tr><th>Project / Type/Lot</th><th>City / Ward</th><th>Price</th><th>Status</th></tr></thead>
               <tbody>${rows || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px">No other projects to compare.</td></tr>'}</tbody>
             </table>`;
           return; // không rơi xuống nhánh matching Buy bên dưới
@@ -1189,6 +1191,8 @@
             { id:"PROP-1004", name:"Osaka Bay House",             prefecture:"Osaka", city:"Namba",   propType:"House", floorArea:260, landArea:92,  price:2900000, txnType:"To Buy", br:3, agent:"Osaka Realty" },
             { id:"PROP-1005", name:"Shinjuku Studio Apt",         prefecture:"Tokyo", city:"Shinjuku",propType:"Apartment", floorArea:45, landArea:0, price:1800000, txnType:"To Buy", br:1, agent:"City Homes" },
           ];
+          YuushiMunicipality.normalizeMunicipality(lead);
+          YuushiMunicipality.normalizeAll(PROPS);
 
           function inRange(val, min, max, tol=0.05) {
             const lo = min * (1 - tol), hi = max * (1 + tol);
@@ -1198,7 +1202,7 @@
           function scoreProperty(p) {
             const criteria = [
               { label: "Prefecture", ok: p.prefecture === lead.prefecture },
-              { label: "City/Ward",  ok: p.city === lead.city },
+              { label: "City/Ward",  ok: YuushiMunicipality.sameMunicipality(p, lead) },
               { label: "Type",       ok: p.propType === lead.propType },
               { label: "Floor area", ok: inRange(p.floorArea, lead.floorAreaMin, lead.floorAreaMax) },
               { label: "Land area",  ok: lead.landAreaMin === 0 || inRange(p.landArea, lead.landAreaMin, lead.landAreaMax) },

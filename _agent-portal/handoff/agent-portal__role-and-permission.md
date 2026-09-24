@@ -8,7 +8,7 @@
 
 ## Layout & structure
 
-Page head ("Roles & Permissions" + subtitle + a mode pill "View mode" / "Editing…") → an info box explaining **Scope rules** ("None / Own / Agency"; "Own = only items the agent owns. Agency = every item across the agency.") → a two-column grid (left = sticky Roles list; right = role Detail) → a fixed bottom action bar → three modals + toasts.
+Page head ("Roles & Permissions" + subtitle + a mode pill "View mode" / "Editing…") → an info box explaining scope rules for scope-bearing business modules → a two-column grid (left = sticky Roles list; right = role Detail) → a fixed bottom action bar → three modals + toasts. Dashboard access is binary and has no record scope.
 
 ## Left — Roles list
 
@@ -32,7 +32,7 @@ Each table: a **Feature** column (name + description), an optional **Scope** col
 **Features & actions by section:**
 - *Listings:* Property listings (scope; create/edit/delete/publish), Listing drafts (scope; create/edit/delete), New development projects (scope; create/edit/delete).
 - *Inquiries:* Inquiries from clients (scope; reply/assign/close), Lead group / saved searches (scope; create/edit/delete), Appraisal requests (scope; accept/quote/close).
-- *Analytics:* Performance analytics (scope; export), Revenue & billing reports (scope; export).
+- *Analytics:* Dashboard (view/export; no scope), Revenue & billing reports (scope; export).
 - *Ads:* Sponsored listing slots (scope; create/edit/cancel), Banner & featured ads (scope; create/edit/cancel), Appraisal budget (scope; edit).
 - *Admin (no scope):* Staff management (view/create/edit/remove), Roles & permissions (view/create/edit/delete), Agency profile (view/edit), Billing & plan (view/edit).
 
@@ -75,3 +75,5 @@ None. Edits mutate the in-memory `roles` array; a deep-clone `snapshot` is used 
 ## Current implementation review
 
 Source: [role-and-permission.html](../role-and-permission.html). The matrix is a local role editor, not an enforcement layer wired into every module. Legacy feature names (including Appraisal budget and Lead group / saved searches) remain visible in the matrix; they do not establish additional monetization or Inquiry-management workflows. Deleting a role removes the local role; the described staff reassignment is not a mutation of the separate Staff page.
+
+Agency Dashboard access is controlled only by the role's **Dashboard → View** permission. When granted, Dashboard metrics use Agency-level eligible data and do not inherit Own/Agency scope from Property, Lead, Inquiry, Appraisal or CRM permissions. Dashboard exports use the separate Dashboard Export action shown in this matrix. Opening a source module from Dashboard still requires that destination module's own permission.

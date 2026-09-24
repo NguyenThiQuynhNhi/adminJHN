@@ -9,3 +9,6 @@ Supplementary screen outside the sidebar. Source has a read-only title, but the 
 `saveDraft()` stores FormData under `property-draft-{id}` (or `new`); autosave/restoration are local. `publishListing()` validates, asks for publish-preview confirmation, clears the local draft and reports “Listing published (demo)”; this is not a server publish.
 
 `goBackToList()` navigates the current document to `property-list-oversight.html`; it does not update the parent menu. The Properties list normally uses its own inline `showDetail()` screen rather than linking here. Admin-oriented title text remains a mockup labeling inconsistency.
+## Address model
+
+Property address uses Prefecture plus one complete City/Ward municipality value. The record keeps that display value in `city` and its canonical 5-digit identity in `municipalityCode`; no separate `ward` field is used.

@@ -2560,6 +2560,7 @@
     <div class="toast-wrap" id="toastWrap"></div>
 
     <script src="../property-card.js"></script>
+    <script src="../municipality-address.js"></script>
     <script>
       // ========================================================================
       // OPTIONS
@@ -2577,44 +2578,7 @@
           "Aichi",
           "Hyogo",
         ],
-        cityByPref: {
-          Tokyo: [
-            "Shibuya",
-            "Shinjuku",
-            "Minato",
-            "Setagaya",
-            "Chuo",
-            "Meguro",
-            "Bunkyo",
-            "Koto",
-            "Shinagawa",
-            "Suginami",
-            "Taito",
-            "Edogawa",
-          ],
-          Osaka: [
-            "Osaka",
-            "Sakai",
-            "Toyonaka",
-            "Higashi-Osaka",
-            "Suita",
-            "Hirakata",
-          ],
-          Kanagawa: [
-            "Yokohama",
-            "Kawasaki",
-            "Sagamihara",
-            "Yokosuka",
-            "Fujisawa",
-          ],
-          Kyoto: ["Kyoto", "Uji", "Kameoka"],
-          Hokkaido: ["Sapporo", "Hakodate", "Asahikawa"],
-          Fukuoka: ["Fukuoka", "Kitakyushu", "Kurume"],
-          Saitama: ["Saitama", "Kawaguchi", "Tokorozawa", "Kawagoe"],
-          Chiba: ["Chiba", "Funabashi", "Matsudo", "Ichikawa"],
-          Aichi: ["Nagoya", "Toyota", "Toyohashi", "Okazaki"],
-          Hyogo: ["Kobe", "Himeji", "Nishinomiya", "Amagasaki"],
-        },
+        cityByPref: YuushiMunicipality.namesByPrefecture,
         layout: [
           "1K",
           "1R",
@@ -3989,7 +3953,7 @@
           const seed = start + n;
           const group = seed % 2 === 0 ? 5 : 6;
           const pref = PREFS[seed % PREFS.length];
-          const cityList = OPT.cityByPref[pref] || ["Central"];
+          const cityList = YuushiMunicipality.namesByPrefecture[pref] || [];
           const city = cityList[seed % cityList.length];
           const soldOut = seed % 5 === 0; 
           let publish;
@@ -4506,7 +4470,7 @@
           return GROUP_META[prop.group].propTypes;
         if (f.optsByField && prop) {
           const v = prop[f.optsByField];
-          if (f.optsByField === "prefecture") return OPT.cityByPref[v] || [];
+          if (f.optsByField === "prefecture") return YuushiMunicipality.namesByPrefecture[v] || [];
         }
         return [];
       }
@@ -5360,7 +5324,7 @@
 
       function onLpPrefChange() {
         const pref = $("lpPref").value;
-        const cities = OPT.cityByPref[pref] || [];
+        const cities = YuushiMunicipality.namesByPrefecture[pref] || [];
         $("lpCity").innerHTML = cities
           .map((c) => `<option value="${escAttr(c)}">${esc(c)}</option>`)
           .join("");
@@ -5417,6 +5381,7 @@
         if (!p) return;
         p.prefecture = $("lpPref").value;
         p.city = $("lpCity").value;
+        YuushiMunicipality.reconcile(p);
         p.chome = $("lpChome").value;
         p.pinOffset = { ...lpPinOffset };
         if (!editMode) originalProj = JSON.parse(JSON.stringify(p));
@@ -5848,7 +5813,7 @@
       const FILT = {
         tx: "",
         ptypes: [],
-        region: { prefectures: [], cities: [] }, // cities: "Pref|City"
+        region: { prefectures: [], cities: [] }, // cities: "Pref|municipalityCode"
         railway: { stations: [] }, // "Pref|Line|Station"
         beds: [],
         sizeMin: null,
@@ -6007,7 +5972,7 @@
         ) {
           const regHit =
             F.region.prefectures.includes(p.prefecture) ||
-            F.region.cities.includes(p.prefecture + "|" + p.city);
+            F.region.cities.includes(YuushiMunicipality.filterValue(p.prefecture, p.municipalityCode));
           const railHit = F.railway.stations.some((s) => {
             const access = (p.poi && p.poi.access) || [];
             return access.some(
@@ -6241,7 +6206,7 @@
       function buildRegionTree() {
         $("regionTree").innerHTML = OPT.prefectures
           .map((pref) => {
-            const cities = OPT.cityByPref[pref] || [];
+            const cities = YuushiMunicipality.namesByPrefecture[pref] || [];
             return `
             <div class="pop-tree-node" data-pref-node="${escAttr(pref)}">
               <label class="pop-row">
@@ -6253,7 +6218,7 @@
                 ${cities
                   .map(
                     (c) =>
-                      `<label class="pop-row"><input type="checkbox" data-region-city value="${escAttr(pref + "|" + c)}" data-pref="${escAttr(pref)}"><span>${esc(c)}</span></label>`,
+                      `<label class="pop-row"><input type="checkbox" data-region-city value="${escAttr(YuushiMunicipality.filterValue(pref, c))}" data-pref="${escAttr(pref)}"><span>${esc(c)}</span></label>`,
                   )
                   .join("")}
               </div>
@@ -7037,7 +7002,7 @@
       function buildAdvTrees() {
         $("advRegionTree").innerHTML = OPT.prefectures
           .map((pref) => {
-            const cities = OPT.cityByPref[pref] || [];
+            const cities = YuushiMunicipality.namesByPrefecture[pref] || [];
             return `
             <div class="pop-tree-node" data-pref-node="${escAttr(pref)}">
               <label class="pop-row">
@@ -7049,7 +7014,7 @@
                 ${cities
                   .map(
                     (c) =>
-                      `<label class="pop-row"><input type="checkbox" data-adv-region-city value="${escAttr(pref + "|" + c)}" data-pref="${escAttr(pref)}" ${FILT.region.cities.includes(pref + "|" + c) ? "checked" : ""}><span>${esc(c)}</span></label>`,
+                      `<label class="pop-row"><input type="checkbox" data-adv-region-city value="${escAttr(YuushiMunicipality.filterValue(pref, c))}" data-pref="${escAttr(pref)}" ${FILT.region.cities.includes(YuushiMunicipality.filterValue(pref, c)) ? "checked" : ""}><span>${esc(c)}</span></label>`,
                   )
                   .join("")}
               </div>
@@ -7317,6 +7282,7 @@
         "landRight",
         "leaseholdType",
         "prefecture",
+        "city",
         "salesStatus",
       ]);
 
@@ -7338,6 +7304,7 @@
             currentProj.media[f.split(".")[1]] = el.value;
           } else currentProj[f] = el.value;
         });
+        YuushiMunicipality.reconcile(currentProj);
         document.querySelectorAll("[data-fp]").forEach((el) => {
           const i = Number(el.dataset.fp);
           const k = el.dataset.fpk;
@@ -7743,6 +7710,8 @@
           applyFilters();
         });
       }
+      YuushiMunicipality.normalizeAll(projects);
+      FILT.region.cities = YuushiMunicipality.migrateFilterValues(FILT.region.cities);
       initFilters();
       // Real-time search: typing re-applies filters and resets to page 1.
       $("fSearch").addEventListener("input", applyFilters);

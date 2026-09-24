@@ -725,6 +725,7 @@
     <div id="dAlerts"></div>
     <div class="section-grid" id="dSections"></div>
 
+    <script src="../municipality-address.js"></script>
     <script>
       // ====================================================================
       // READ-ONLY project (new-development) detail page.
@@ -753,44 +754,7 @@
           "Aichi",
           "Hyogo",
         ],
-        cityByPref: {
-          Tokyo: [
-            "Shibuya",
-            "Shinjuku",
-            "Minato",
-            "Setagaya",
-            "Chuo",
-            "Meguro",
-            "Bunkyo",
-            "Koto",
-            "Shinagawa",
-            "Suginami",
-            "Taito",
-            "Edogawa",
-          ],
-          Osaka: [
-            "Osaka",
-            "Sakai",
-            "Toyonaka",
-            "Higashi-Osaka",
-            "Suita",
-            "Hirakata",
-          ],
-          Kanagawa: [
-            "Yokohama",
-            "Kawasaki",
-            "Sagamihara",
-            "Yokosuka",
-            "Fujisawa",
-          ],
-          Kyoto: ["Kyoto", "Uji", "Kameoka"],
-          Hokkaido: ["Sapporo", "Hakodate", "Asahikawa"],
-          Fukuoka: ["Fukuoka", "Kitakyushu", "Kurume"],
-          Saitama: ["Saitama", "Kawaguchi", "Tokorozawa", "Kawagoe"],
-          Chiba: ["Chiba", "Funabashi", "Matsudo", "Ichikawa"],
-          Aichi: ["Nagoya", "Toyota", "Toyohashi", "Okazaki"],
-          Hyogo: ["Kobe", "Himeji", "Nishinomiya", "Amagasaki"],
-        },
+        cityByPref: YuushiMunicipality.namesByPrefecture,
         layout: [
           "1K",
           "1R",
@@ -2156,7 +2120,7 @@
           const seed = start + n;
           const group = seed % 2 === 0 ? 5 : 6;
           const pref = PREFS[seed % PREFS.length];
-          const cityList = OPT.cityByPref[pref] || ["Central"];
+          const cityList = YuushiMunicipality.namesByPrefecture[pref] || [];
           const city = cityList[seed % cityList.length];
           const publish = PUBLISH[seed % PUBLISH.length];
           const soldOut = seed % 5 === 0; // ~1 in 5 fully sold
@@ -2495,7 +2459,7 @@
           return GROUP_META[prop.group].propTypes;
         if (f.optsByField && prop) {
           const v = prop[f.optsByField];
-          if (f.optsByField === "prefecture") return OPT.cityByPref[v] || [];
+          if (f.optsByField === "prefecture") return YuushiMunicipality.namesByPrefecture[v] || [];
         }
         return [];
       }
@@ -3125,7 +3089,8 @@
       }
 
       function initDetailPage() {
-        currentProj = resolveRecord();
+        YuushiMunicipality.normalizeAll(projects);
+        currentProj = YuushiMunicipality.normalizeMunicipality(resolveRecord());
         activeFpIndex = 0;
         renderDetailPage();
         window.scrollTo(0, 0);

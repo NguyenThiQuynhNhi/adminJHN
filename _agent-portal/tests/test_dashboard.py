@@ -11,14 +11,14 @@ class DashboardTests(unittest.TestCase):
  def setUp(self):
   self.c=quickjs.Context();self.c.eval('var window=globalThis;')
   for f in ['agency-dashboard-catalog.js','agency-dashboard-model.js','agency-dashboard-rules.js']:self.c.eval((ROOT/f).read_text())
-  self.c.eval("var M=AgencyDashboardModel;var C={mode:'preview',features:{crmPremium:true},suppression:false};var now=new Date('2026-09-08T04:00:00Z');function run(n,rows,w={},g={},ctx=C){return M.evaluate(n,{rows,mode:'preview',complete:true},ctx,w,g,now)}")
+  self.c.eval("var M=AgencyDashboardModel;var C={mode:'preview',agencyId:'AG-1',staffId:'STAFF-1',dashboardPermission:{view:true,export:true},features:{crmPremium:true},suppression:false};var now=new Date('2026-09-08T04:00:00Z');function run(n,rows,w={},g={},ctx=C){return M.evaluate(n,{rows,mode:'preview',complete:true},ctx,w,g,now)}")
  def js(self,s):return json.loads(self.c.eval('JSON.stringify('+s+')'))
  def test_zero_denominators_and_empty_source(self):
   self.assertIsNone(self.js('run(290,[{clicks:0,impressions:0}])')['value'])
   self.assertEqual(self.js('run(64,[])')['value'],0)
   self.assertEqual(self.js('M.evaluate(64,null,C)')['state'],'unavailable')
  def test_preview_never_used_for_connected_account(self):
-  self.assertEqual(self.js("M.evaluate(64,{rows:[],complete:true,mode:'preview'},{mode:'connected',agencyId:'a',staffId:'u',permissions:{listings_view:{scope:'agency'}}})")['state'],'unavailable')
+  self.assertEqual(self.js("M.evaluate(64,{rows:[],complete:true,mode:'preview'},{mode:'connected',agencyId:'a',staffId:'u',dashboardPermission:{view:true}})")['state'],'unavailable')
  def test_date_timezone_and_ranges(self):
   self.assertEqual(self.js("M.tokyoDay('2026-09-07T16:00:00Z')"),'2026-09-08')
   self.assertEqual(self.js("M.dateRange('custom',now,'2026-09-01','2026-09-08')"),self.js("[M.time('2026-09-01'),M.time('2026-09-09')-1]"))
@@ -99,8 +99,8 @@ class WidgetContractTests(unittest.TestCase):
   self.assertTrue(self.js("[76,79].every(no=>run(no).supporting.reviews.every(r=>Number.isFinite(r.hoursRemaining)&&r.reviewDeadline))"))
   self.assertTrue(self.js("run(73).rows.some(n=>n.noticeSource==='subscription')&&run(73).rows.some(n=>n.noticeSource==='campaigns')"))
   self.assertIsNotNone(self.js('D.context().agentRating'))
- def test_notice_dependencies_preserve_permission_scope(self):
-  self.assertTrue(self.js("(()=>{const ctx={...C,permissions:{...C.permissions,campaigns:{scope:'none',actions:{view:false}}}},r=M.evaluate(73,D.read('subscription'),ctx);return r.rows.every(n=>n.noticeSource!=='campaigns')})()"))
+ def test_dashboard_ignores_source_scope_for_agency_metrics(self):
+  self.assertTrue(self.js("(()=>{const ctx={...C,permissions:{...C.permissions,campaigns:{scope:'none',actions:{view:false}}}},r=M.evaluate(73,D.read('subscription'),ctx);return r.rows.some(n=>n.noticeSource==='campaigns')})()"))
  def test_migration_preserves_valid_widgets_and_system_boundaries(self):
   self.assertIsNone(self.js("M.normalizeWidget({id:'old',metric:74},'custom')"))
   self.assertEqual(self.js("M.normalizeWidget({id:'old',metric:74},'subscriptions').systemWidget"),74)
@@ -124,6 +124,11 @@ class RenderingAndAccessTests(unittest.TestCase):
  def test_permission_plan_and_suppression_matrix(self):
   result=self.js("""(()=>{const bad=[];let checks=0;for(const role of ['Agency Admin','Sales Agent','Property Manager','Reception'])for(const crmPremium of [true,false])for(const suppression of [true,false]){D.setPreview({role,crmPremium,suppression});const ctx=D.context();for(const m of M.metrics){checks++;const r=run(m.no,{},ctx),gate=M.gate(m,ctx);if(gate?r.state!==gate.state:!['ready','empty'].includes(r.state))bad.push([role,m.no,r.state]);}}D.setPreview({role:'Agency Admin',crmPremium:true,suppression:false});return {checks,bad}})()""")
   self.assertEqual(result['bad'],[]);print('\nCurrent scope permission matrix:',result)
+ def test_binary_dashboard_access_and_agency_level_rows(self):
+  self.assertTrue(self.js("(()=>{D.setPreview({role:'Agency Admin'});const admin=D.context(),adminValue=run(64,{},admin).value;D.setPreview({role:'Sales Agent'});const sales=D.context(),salesValue=run(64,{},sales).value;D.setPreview({role:'Reception'});const denied=D.context();D.setPreview({role:'Agency Admin'});return M.canViewDashboard(admin)&&M.canViewDashboard(sales)&&adminValue===salesValue&&!M.canViewDashboard(denied)&&run(64,{},denied).state==='locked'})()"))
+  self.assertTrue(self.js("(()=>{D.setPreview({role:'Sales Agent'});const ctx=D.context(),rows=M.scoped(S.transactions,M.sourceMap.transactions,ctx);D.setPreview({role:'Agency Admin'});return rows.some(r=>r.staffId!==ctx.staffId)&&M.metrics.find(m=>m.no===324).dimensions.includes('staffId')})()"))
+ def test_destination_permissions_remain_separate(self):
+  self.assertTrue(self.js("(()=>{D.setPreview({role:'Sales Agent'});const ctx=D.context();D.setPreview({role:'Agency Admin'});return M.canViewDashboard(ctx)&&!M.canAccessDestination(M.sourceMap.projects,ctx,'view')&&M.evaluate(118,D.read('projects'),ctx).state!=='locked'})()"))
  def test_raw_view_events_are_isolated_and_not_deduplicated(self):
   self.assertTrue(self.js("S.viewEvents.length>0&&S.propertyPerformance.reduce((n,p)=>n+p.organic.views,0)===R.countViews(S.viewEvents.filter(v=>v.channel==='organic'))"))
   self.assertTrue(self.js("S.adPerformance.reduce((n,p)=>n+p.views,0)===R.countViews(S.viewEvents.filter(v=>v.channel==='paid'))"))
