@@ -780,8 +780,16 @@
       }
       function applyLeadClosureState(){
         const states=W.read(W.keys.leadClosures,{});
+        const soldAssets=W.read(W.keys.soldAssets,[]);
         LEADS.forEach(l=>{
-          const s=states[String(l.id)];
+          let s=states[String(l.id)];
+          if(!s && !['Sold','Closed Lost'].includes(l.status)){
+            const ref=leadAssetRef(l);
+            const sold=soldAssets.find(r=>(ref.projectId&&r.projectId===ref.projectId&&String(r.targetName||'').toLowerCase()===String(ref.targetName||'').toLowerCase())||(ref.propertyId&&r.propertyId===ref.propertyId)||(!ref.propertyId&&!ref.projectId&&ref.propertyName&&String(r.propertyName||'').trim().toLowerCase()===String(ref.propertyName||'').trim().toLowerCase()));
+            if(sold && String(sold.winningLeadId)!==String(l.id)){
+              s=W.saveLeadClosure(l.id,{reason:'Property sold',soldByStaffId:sold.soldByStaffId,soldByStaffName:sold.soldByStaffName,soldAt:sold.soldAt,winningLeadId:sold.winningLeadId});
+            }
+          }
           if(s){
             l.status='Closed Lost';
             l.closedLostReason=s.reason||'Property sold';
@@ -805,6 +813,17 @@
       function assignmentRecord(l){return Object.fromEntries(['id','listingOwnerId','listingOwnerName','assigneeType','assigneeId','assigneeName','assignedAt','assignedBy','assignmentHistory'].map(k=>[k,l[k]]));}
       W.merge(W.keys.enquiries,LEADS.map(assignmentRecord));
       applyLeadClosureState();
+      addEventListener('storage',e=>{
+        if(e.key===W.keys.soldAssets||e.key===W.keys.leadClosures){
+          applyLeadClosureState();
+          renderList();
+          if(currentLead){
+            currentStage=Math.max(0,STAGES.indexOf(currentLead.status));
+            leadIsSold=['Sold','Closed Lost'].includes(currentLead.status);
+            renderPipeline();
+          }
+        }
+      });
       function assignEnquiry(id){if(!ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name]?.assign)return toast('You do not have permission to assign enquiries.');const l=LEADS.find(l=>l.id===id);if(!l)return;W.assignmentModal(l,true,(type,person,note)=>{if(!ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name]?.assign)throw Error('Assignment is not permitted.');W.assign(l,type,person,note,ENQUIRY_ROLE.name);W.upsert(W.keys.enquiries,assignmentRecord(l));renderList();if(currentLead?.id===id)renderDetailScreen(l);toast('Enquiry assignment updated. Listing Owner unchanged.','success');});}
       window.assignEnquiry=assignEnquiry;
       // ===== LEAD_PROJECT_INTERESTS =====
