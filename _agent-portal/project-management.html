@@ -2583,7 +2583,8 @@
                 <th>Transaction</th>
                 <th>Price</th>
                 <th>Address</th>
-                <th>Agent</th>
+                <th>Created By</th>
+                <th>Responsible Staff</th>
                 <th>Status</th>
                 <th>Updated</th>
               </tr>
@@ -3022,7 +3023,7 @@
     <div class="modal-backdrop" id="bulkAgentModal">
       <div class="modal-box" style="width: 460px">
         <div class="modal-header">
-          <h3 class="modal-title">Bulk reassign agent</h3>
+          <h3 class="modal-title">Bulk reassign responsible staff</h3>
           <button
             class="btn btn-ghost btn-sm"
             type="button"
@@ -3041,7 +3042,7 @@
             id="bulkAgentLead"
           ></p>
           <div class="field-group">
-            <label class="field-label" for="bulkAgentSel">Assign to</label>
+            <label class="field-label" for="bulkAgentSel">Responsible Staff</label>
             <select id="bulkAgentSel"></select>
           </div>
         </div>
@@ -4474,6 +4475,7 @@
       (function padSeed() {
         // Migration: collapse any legacy Sale Status into the 2-option set.
         projects.forEach((p) => {
+          if (!p.createdBy) p.createdBy = p.agent;
           if (p.salesStatus !== "On Sale" && p.salesStatus !== "Sold Out") {
             p.salesStatus = "On Sale";
           }
@@ -6833,6 +6835,7 @@
       }
 
       function renderList() {
+        projects.forEach((p) => { if (!p.createdBy) p.createdBy = p.agent; });
         const total = filtered.length;
         const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
         if (currentPage > totalPages) currentPage = totalPages;
@@ -6865,7 +6868,7 @@
         const tbody = $("listBody");
         if (!pageItems.length) {
           tbody.innerHTML =
-            '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted)">No projects match the filters.</td></tr>';
+            '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-muted)">No projects match the filters.</td></tr>';
           renderPagination(totalPages);
           syncSelectionUI(pageItems);
           return;
@@ -6895,7 +6898,8 @@
             <td class="cell-editable" data-cell="price" data-id="${escAttr(p.id)}" title="Double-click to edit price"
               ondblclick="event.stopPropagation(); startInlineEdit(this,'price','${escAttr(p.id)}')">${priceCell(p)}</td>
             <td>${esc(p.prefecture)} · ${esc(p.city)}</td>
-            <td class="cell-editable" data-cell="agent" data-id="${escAttr(p.id)}" title="Double-click to edit agent"
+            <td>${esc(p.createdBy || "—")}</td>
+            <td class="cell-editable" data-cell="agent" data-id="${escAttr(p.id)}" title="Double-click to edit Responsible Staff"
               ondblclick="event.stopPropagation(); startInlineEdit(this,'agent','${escAttr(p.id)}')">${esc(p.agent || "—")}</td>
             <td class="cell-editable" data-cell="status" data-id="${escAttr(p.id)}" title="Double-click to edit status"
               ondblclick="event.stopPropagation(); startInlineEdit(this,'status','${escAttr(p.id)}')">${badgePublish(p.publishStatus)}</td>

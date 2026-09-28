@@ -18,9 +18,9 @@ Có 165 dòng có tên Metric / Feature: 114 dòng không tick (110 định ngh�
 
 ## Quy tắc bổ sung từ người dùng
 
-- Payment Errors: đúng 5 nhóm Card declined, Authentication failure, Card expired, System/network error, Other. Đếm lỗi chưa giải quyết theo ID duy nhất; loại chưa biết chuyển vào Other.
+- Payment Errors: đúng 5 nhóm Card declined, Authentication failure, Card expired, System / network error, Other. Đếm lỗi chưa giải quyết theo ID duy nhất; loại chưa biết chuyển vào Other.
 - Fraud: chỉ đếm flag có status `unhandled` và thuộc loại được bật trong cấu hình KPI. 6 loại có đánh dấu Fraud trong sheet Automated Alert: High Volume Inquiries, Multi-Device Login, Consecutive Failed Logins, Report Received, Consecutive Payment Failure, Mass Reporting. Tắt một loại chỉ thay đổi KPI, không xóa flag hay tắt phát hiện.
-- Error Log Count: cửa sổ `(now − 24 giờ, now]`, mức FATAL / ERROR / WARN; loại frontend và validation. Dialog hướng dẫn kiểm tra rồi liên hệ server operations / SVC.
+- System Issues: cửa sổ `(now − 24 giờ, now]`, tổng occurrence của FATAL/CRITICAL, ERROR và WARN; loại frontend, validation, INFO và DEBUG. Detail chỉ hiển thị thời gian, severity, function/service, identifier, summary, occurrence count và trạng thái vận hành an toàn.
 - Withdrawals this month: tài khoản Client rút trong tháng và có lý do.
 - Newly inactive users this month: Client vừa vượt 90 ngày không đăng nhập trong tháng, tính một lần mỗi tài khoản trong tháng. Dùng lịch sử các khoảng không đăng nhập, vẫn giữ sự kiện lịch sử sau khi người dùng quay lại; không tính người đã rút trước mốc.
 - Hai card độc lập, từ ngày 1 đến ngày xem; tháng hiện tại là provisional. Biểu đồ Withdrawal Trend hiển thị hai chuỗi hàng tháng trong 12 tháng. Dormant User Count cũng dùng 90 ngày theo yêu cầu mới, thay cho 30 ngày trong workbook.
@@ -50,7 +50,7 @@ Fraud settings, targets, report shortcuts và schedules được lưu ở localS
 | 13 | API Status | KPI Dashboard |
 | 14 | DB Status | KPI Dashboard |
 | 15 | Payment Gateway Status | KPI Dashboard |
-| 16 | Error Log Count | KPI Dashboard |
+| 16 | System Issues | KPI Dashboard |
 | 17 | KPI Cards (Today + Day-on-Day) | KPI Dashboard |
 | 18 | Total Users | KPI Dashboard |
 | 19 | Active Users DAU/WAU/MAU | KPI Dashboard |
@@ -87,7 +87,7 @@ Fraud settings, targets, report shortcuts và schedules được lưu ở localS
 | 52 | Behavior Metrics Trend | End User Statistics |
 | 53 | Behavior Metrics Trend | End User Statistics |
 | 54 | Site-wide Funnel Metrics Trend | End User Statistics |
-| 55 | Dormant User Count | End User Statistics |
+| 55 | Dormant User Count (90 days) | End User Statistics |
 | 56 | Withdrawal Trend | End User Statistics |
 | 57 | Chat Message Statistics - End User | End User Statistics |
 | 58 | Chat Message Statistics - End User | End User Statistics |
@@ -98,7 +98,7 @@ Fraud settings, targets, report shortcuts và schedules được lưu ở localS
 | 71 | Subscription Plan Distribution | Agency Statistics; Agency League cho r80 |
 | 72 | Subscription Plan Listings Utilisation | Agency Statistics; Agency League cho r80 |
 | 73 | Ad Adoption Rate | Agency Statistics; Agency League cho r80 |
-| 74 | Ad Adoption Rate per Agency | Agency Statistics; Agency League cho r80 |
+| 74 | Ad Spend per Agency | Agency Statistics; Agency League cho r80 |
 | 75 | Ad Type Usage Breakdown | Agency Statistics; Agency League cho r80 |
 | 76 | Option Product Usage Breakdown | Agency Statistics; Agency League cho r80 |
 | 77 | Listing Count Distribution | Agency Statistics; Agency League cho r80 |

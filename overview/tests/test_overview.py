@@ -114,7 +114,7 @@ class OverviewTests(unittest.TestCase):
 
     def test_fraud_settings_unique_unhandled_flags(self):
         ctx=self.context()
-        result=ctx.eval("OverviewModel.fraudCount([{id:'1',alertId:'a',status:'unhandled'},{id:'1',alertId:'a',status:'unhandled'},{id:'2',alertId:'b',status:'unhandled'},{id:'3',alertId:'a',status:'handled'}],{a:true,b:false})")
+        result=ctx.eval("OverviewModel.fraudCount([{id:'1',alertId:'a',status:'unhandled'},{id:'1',alertId:'a',status:'unhandled'},{id:'2',alertId:'b',status:'unhandled'},{id:'3',alertId:'a',status:'handled'},{id:'4',alertId:'not-fraud',status:'unhandled'}],{a:true,b:false,'not-fraud':true},[{id:'a',fraud:true},{id:'b',fraud:true},{id:'not-fraud',fraud:false}])")
         self.assertEqual(result,1)
 
     def test_payment_categories_include_unknown_in_other(self):
@@ -123,6 +123,35 @@ class OverviewTests(unittest.TestCase):
         self.assertEqual(len(values),5)
         self.assertEqual(sum(v['count'] for v in values),2)
         self.assertEqual(values[-1]['count'],1)
+
+    def test_system_issues_contract_and_safe_breakdown(self):
+        ctx=self.context()
+        value=json.loads(ctx.eval("""JSON.stringify((()=>{const now=Date.parse('2026-09-07T12:00:00Z'),base={occurredAt:'2026-09-07T11:00:00Z',source:'server',kind:'system',occurrenceCount:2};return OverviewModel.systemIssueSummary([{...base,severity:'CRITICAL'},{...base,severity:'ERROR',occurrenceCount:3},{...base,severity:'WARN',occurrenceCount:4},{...base,severity:'INFO',occurrenceCount:99},{...base,severity:'ERROR',kind:'validation',occurrenceCount:99}],now)})())"""))
+        self.assertEqual({k:value[k] for k in ['total','critical','error','warning']},{'total':9,'critical':2,'error':3,'warning':4})
+
+    def test_response_cycles_use_last_client_and_first_agency_messages(self):
+        ctx=self.context()
+        cycles=json.loads(ctx.eval("""JSON.stringify(OverviewModel.responseCycles([{id:'C1',messages:[{sender:'Client',sentAt:'2026-09-07T00:00:00Z',businessHours:true},{sender:'Client',sentAt:'2026-09-07T00:05:00Z',businessHours:false},{sender:'Agency',sentAt:'2026-09-07T00:20:00Z'},{sender:'Agency',sentAt:'2026-09-07T00:22:00Z'},{sender:'Client',sentAt:'2026-09-07T01:00:00Z',businessHours:true},{sender:'Agency',sentAt:'2026-09-07T01:10:00Z'}]}]))"""))
+        self.assertEqual([(c['responseMinutes'],c['businessHours']) for c in cycles],[(15,False),(10,True)])
+
+    def test_finalized_admin_srs_metric_contracts(self):
+        ctx=self.context()
+        self.assertEqual(ctx.eval("OverviewSpec.metrics.find(s=>s.id==='r74').title"),'Ad Spend per Agency')
+        self.assertTrue(ctx.eval("['r57','r58','r59','r60','r72','r74','r82','r83','r84','r125','r142'].every(id=>OverviewSpec.metrics.find(s=>s.id===id).calculation.trim())"))
+        self.assertTrue(ctx.eval("OverviewSpec.metrics.find(s=>s.id==='r60').calculation.includes('LAST Client message')&&OverviewSpec.metrics.find(s=>s.id==='r60').calculation.includes('FIRST following Agency reply')"))
+        self.assertTrue(ctx.eval("OverviewSpec.metrics.find(s=>s.id==='r125').calculation.includes('never combined into a weighted score')"))
+
+    def test_property_attribute_popularity_ranking(self):
+        ctx=self.context()
+        ctx.eval("var popularityFilters={start:'2026-08-01',end:'2026-09-07',unit:'Monthly',transaction:'All',membership:'All',breakdown:'structure'}")
+        self.assertTrue(ctx.eval("(()=>{const r=OverviewModel.metric({id:'r125'},popularityFilters);return r.ranked&&r.columns.length===1&&r.columns[0].key==='impressions'&&r.columns[0].label==='Property Views'&&r.rows.every((x,i)=>x.rank===i+1&&(!i||r.rows[i-1].impressions>=x.impressions))})()"))
+        self.assertTrue(ctx.eval("(()=>{const r=OverviewModel.metric({id:'r125'},{...popularityFilters,breakdown:'floorPlan',rankBy:'clicks'});return r.columns.length===1&&r.columns[0].key==='clicks'&&r.columns[0].label==='Property Clicks'&&r.rows.every((x,i)=>!i||r.rows[i-1].clicks>=x.clicks)})()"))
+        app=self.app_context('market')
+        html=app.eval("document.getElementById('mainContent').innerHTML")
+        self.assertIn('data-rank-by="r125"',html)
+        self.assertIn('Building Age Range',html)
+        self.assertIn('Property Inquiries',html)
+        self.assertNotIn('data-measure="r125"',html)
 
     def test_every_in_scope_analytics_metric_renders_and_filters(self):
         ctx=self.context()

@@ -27,11 +27,23 @@
       return U.addDays(anchor,90)<=at;
     }).length;
   }
-  function errorLogs(logs,now=D.now) { return logs.filter(log=>['FATAL','ERROR','WARN'].includes(log.severity)&&log.source!=='frontend'&&log.kind!=='validation'&&Date.parse(log.timestamp)>now-U.DAY&&Date.parse(log.timestamp)<=now); }
-  function fraudCount(flags,enabled) {return new Set(flags.filter(f=>f.status==='unhandled'&&enabled[f.alertId]===true).map(f=>f.id)).size;}
-  function paymentBreakdown(errors) {
-    return ['Card declined','Authentication failure','Card expired','System/network error','Other'].map(category=>({category,count:new Set(errors.filter(e=>e.status==='unresolved'&&(e.category===category||(category==='Other'&&!['Card declined','Authentication failure','Card expired','System/network error'].includes(e.category)))).map(e=>e.id)).size}));
+  function errorLogs(logs,now=D.now) { return logs.filter(log=>['FATAL','CRITICAL','ERROR','WARN'].includes(log.severity)&&log.source!=='frontend'&&log.kind!=='validation'&&Date.parse(log.occurredAt||log.timestamp)>now-U.DAY&&Date.parse(log.occurredAt||log.timestamp)<=now); }
+  function systemIssueSummary(logs,now=D.now) {
+    const issues=errorLogs(logs,now),count=severity=>issues.filter(i=>severity.includes(i.severity)).reduce((n,i)=>n+(Number(i.occurrenceCount)||1),0);
+    return {issues,total:count(['FATAL','CRITICAL','ERROR','WARN']),critical:count(['FATAL','CRITICAL']),error:count(['ERROR']),warning:count(['WARN'])};
   }
+  function fraudCount(flags,enabled,alerts=root.OverviewSpec?.alerts||[]) {const fraudIds=new Set(alerts.filter(a=>a.fraud===true).map(a=>a.id));return new Set(flags.filter(f=>f.status==='unhandled'&&fraudIds.has(f.alertId)&&enabled[f.alertId]===true).map(f=>f.id)).size;}
+  function paymentBreakdown(errors) {
+    return ['Card declined','Authentication failure','Card expired','System / network error','Other'].map(category=>({category,count:new Set(errors.filter(e=>e.status==='unresolved'&&(e.category===category||(category==='Other'&&!['Card declined','Authentication failure','Card expired','System / network error'].includes(e.category)))).map(e=>e.id)).size}));
+  }
+  function responseCycles(chats) {
+    return chats.flatMap(chat=>{
+      const messages=[...(chat.messages||[])].sort((a,b)=>Date.parse(a.sentAt)-Date.parse(b.sentAt)),cycles=[];let lastClient=null;
+      for(const message of messages){if(message.sender==='Client'){lastClient=message;continue;}if(message.sender==='Agency'&&lastClient){const minutes=(Date.parse(message.sentAt)-Date.parse(lastClient.sentAt))/60000;if(Number.isFinite(minutes)&&minutes>=0)cycles.push({chatId:chat.id,responseMinutes:minutes,businessHours:lastClient.businessHours===true});lastClient=null;}}
+      return cycles;
+    });
+  }
+  function chatMessages(chats) {return chats.flatMap(chat=>(chat.messages||[]).map(message=>({...message,chatId:chat.id,customerId:chat.customerId,agencyId:chat.agentId,country:chat.country,date:message.sentAt.slice(0,10)})));}
   const propertyById=new Map(D.properties.map(p=>[p.id,p]));
   const agentById=new Map(D.agents.map(a=>[a.id,a]));
   function matchesProperty(p,f) {
@@ -133,12 +145,13 @@
     }
     if(id==='r55')return result(buckets(f.start,f.end,f.unit).map(b=>({label:b.label,count:inactiveCount(users,b.end)})),['count'],'line','Current stock of accounts without login for at least 90 days; withdrawn accounts excluded.');
     if(id==='r56')return result(Array.from({length:12},(_,i)=>{const start=shiftMonth(monthStart(D.today),i-11),end=i===11?D.today:U.addDays(shiftMonth(start,1),-1);return {label:start.slice(0,7),...withdrawalStats(users,start,end)};}),['withdrawals','newlyInactive'],'line','Past 12 months. Current month is provisional (1st through today); completed months are finalized. Each series counts unique Clients separately.');
-    if(id==='r57')return result(groupBy(filteredChats(f),r=>periodKey(r.date,f.unit),items=>({chats:distinct(items,'id'),messagesUser:sum(items,'messagesUser'),messagesAgent:sum(items,'messagesAgent')})),['chats','messagesUser','messagesAgent'],'line');
-    if(id==='r58')return aggregate(filteredChats(f),r=>f.breakdown==='customerId'?r.customerId+' · '+r.country:r.country,['messagesUser'],f.breakdown==='customerId'?'table':'bar','Count of messages sent by registered End Users. Switch between country totals and individual End Users.');
-    if(id==='r59')return aggregate(filteredChats(f),'agentId',['messagesAgent']);
-    if(id==='r60')return result(groupBy(filteredChats(f),r=>r.businessHours?'Japan business hours (weekdays 09:00–18:00)':'Outside Japan business hours',r=>({responseMinutes:sum(r,'replied')?r.reduce((n,x)=>n+x.responseMinutes*x.replied,0)/sum(r,'replied'):null})),['responseMinutes'],'bar','Time from inquiry to first Agency reply, averaged over replied chats. Business hours use weekdays and time of day only.');
+    if(id==='r57')return result(groupBy(filteredChats(f),r=>periodKey(r.date,f.unit),items=>{const messages=chatMessages(items);return {chats:distinct(items,'id'),messagesUser:messages.filter(m=>m.sender==='Client').length,messagesAgent:messages.filter(m=>m.sender==='Agency').length};}),['chats','messagesUser','messagesAgent'],'line');
+    if(id==='r58'){const messages=chatMessages(filteredChats(f)).filter(m=>m.sender==='Client');return result(groupBy(messages,m=>f.breakdown==='customerId'?m.customerId+' · '+m.country:m.country,items=>({messagesUser:items.length})),['messagesUser'],f.breakdown==='customerId'?'table':'bar','Client-sent Message records grouped by End User or the country stored on the End User profile.');}
+    if(id==='r59'){const messages=chatMessages(filteredChats(f)).filter(m=>m.sender==='Agency');return result(groupBy(messages,'agencyId',items=>({messagesAgent:items.length})),['messagesAgent'],'bar','Agency-sent Message records grouped by Agency.');}
+    if(id==='r60')return result(groupBy(responseCycles(filteredChats(f)),r=>r.businessHours?'Japan business hours':'Outside Japan business hours',r=>({responseMinutes:r.length?average(r,'responseMinutes'):null})),['responseMinutes'],'bar','Average time from the last Client message in a waiting block to the first following Agency reply. Segments use the configured business-hours flag on that Client message.');
     if(id==='r71'||id==='r81')return result(groupBy(agents,'plan',r=>({count:r.length,revenue:r.reduce((n,a)=>n+D.prices[a.plan],0)})),id==='r71'?['count']:['count','revenue'],'donut');
-    if(id==='r72'||id==='r110')return result(groupBy(agents,'plan',items=> {const live=properties.filter(p=>p.createdAt<=f.end&&items.some(a=>a.id===p.agentId)&&(!p.endedAt||p.endedAt>f.end)),atCapacity=items.filter(a=>live.filter(p=>p.agentId===a.id).length>=a.slots).length;return {live:live.length,slots:sum(items,'slots'),utilization:ratio(live.length,sum(items,'slots')),atCapacity,atCapacityRate:ratio(atCapacity,items.length)};}),id==='r72'?['atCapacityRate','atCapacity','utilization','live','slots']:['utilization','live','slots'],'bar');
+    if(id==='r72')return result(groupBy(agents.filter(a=>Number.isFinite(a.slots)),'plan',items=>{const live=properties.filter(p=>p.createdAt<=f.end&&items.some(a=>a.id===p.agentId)&&(!p.endedAt||p.endedAt>f.end)),atCapacity=items.filter(a=>live.filter(p=>p.agentId===a.id).length>=a.slots).length;return {atCapacityRate:ratio(atCapacity,items.length),atCapacity,agencies:items.length};}),['atCapacityRate','atCapacity','agencies'],'bar','Agencies without a numeric listing limit are excluded from the denominator.');
+    if(id==='r110')return result(groupBy(agents,'plan',items=>{const live=properties.filter(p=>p.createdAt<=f.end&&items.some(a=>a.id===p.agentId)&&(!p.endedAt||p.endedAt>f.end));return {live:live.length,slots:sum(items,'slots'),utilization:ratio(live.length,sum(items,'slots'))};}),['utilization','live','slots'],'bar');
     if(id==='r73')return result([1,2,3].map(n=>({label:n+'+ ad products',count:agents.filter(a=>a.adProducts.length>=n).length,rate:ratio(agents.filter(a=>a.adProducts.length>=n).length,agents.length)})),['rate','count']);
     if(id==='r74')return result(groupBy(rows,r=>f.breakdown==='prefecture'?agentById.get(r.agentId).prefecture:f.breakdown==='subtype'?propertyById.get(r.propertyId).subtype:r.agentId,r=>({revenue:r.reduce((n,x)=>n+x.banner+x.sponsored+x.featured+x.appraisal,0)})),['revenue'],'bar');
     if(id==='r75'){
@@ -176,12 +189,18 @@
     if(id==='r120')return prices('prefecture');
     if(id==='r121')return perfs(r=>propertyById.get(r.propertyId).city+' · '+propertyById.get(r.propertyId).subtype,'heatmap');
     if(id==='r122'||id==='r123')return perfs(r=>{const p=propertyById.get(r.propertyId);return id==='r122'?p.city:p.line+' · '+p.station;},'table');
-    if(id==='r124'||id==='r125')return perfs(r=>{const p=propertyById.get(r.propertyId);return id==='r124'?(p.walk<=5?'≤ 5 minutes':p.walk<=10?'6–10 minutes':p.walk<=15?'11–15 minutes':'16+ minutes'):String(p[f.breakdown||'structure']);});
+    if(id==='r124')return perfs(r=>{const p=propertyById.get(r.propertyId);return p.walk<=5?'≤ 5 minutes':p.walk<=10?'6–10 minutes':p.walk<=15?'11–15 minutes':'16+ minutes';});
+    if(id==='r125'){
+      const measure=['impressions','clicks','saves','inquiries'].includes(f.rankBy)?f.rankBy:'impressions',dimension=['structure','floorPlan','age','floorArea','price'].includes(f.breakdown)?f.breakdown:'structure';
+      const attribute=p=>dimension==='structure'?p.structure:dimension==='floorPlan'?p.floorPlan:dimension==='age'?(p.age<=5?'0–5 years':p.age<=10?'6–10 years':p.age<=20?'11–20 years':p.age<=30?'21–30 years':'31+ years'):dimension==='floorArea'?(p.floorArea<30?'Under 30 m²':p.floorArea<50?'30–49 m²':p.floorArea<80?'50–79 m²':p.floorArea<120?'80–119 m²':'120+ m²'):(p.price<10000000?'Under ¥10M':p.price<30000000?'¥10M–¥29.9M':p.price<50000000?'¥30M–¥49.9M':p.price<100000000?'¥50M–¥99.9M':'¥100M+');
+      const ranked=groupBy(rows,r=>attribute(propertyById.get(r.propertyId)),items=>({[measure]:sum(items,measure)})).sort((a,b)=>b[measure]-a[measure]||String(a.label).localeCompare(String(b.label))).map((row,index)=>({...row,rank:index+1}));
+      const output=result(ranked,[measure],'table','Attribute values ranked by the selected engagement measure. Measures are not combined or normalized.');output.ranked=true;output.columns[0].label={impressions:'Property Views',clicks:'Property Clicks',saves:'Keep / Saves',inquiries:'Property Inquiries'}[measure];return output;
+    }
     if(id==='r127')return result(buckets(f.start,f.end,f.unit).flatMap(b=>groupBy(properties,p=>p.city+' · '+p.subtype,ps=>{const ids=new Set(ps.map(p=>p.id)),searches=sum(rows.filter(r=>ids.has(r.propertyId)&&inPeriod(r.date,b.start,b.end)),'searches'),listings=ps.filter(p=>p.createdAt<=b.end&&(!p.endedAt||p.endedAt>b.end)).length;return {listings,searches,ratio:searches?listings/searches:null};}).map(r=>({...r,label:b.label+' · '+r.label}))),['listings','searches','ratio'],'heatmap','Published inventory at period-end divided by searches during the period, by city and property type.');
     if(id==='r128')return aggregate(rows,r=>r.country+' · '+String(r.hour).padStart(2,'0')+':00',['sessions'],'heatmap');
     if(id==='r130') {const vals=['clicks','saves','inquiries','deals'].map(k=>sum(rows,k));return result(vals.map((count,i)=>({label:['Property views','Saves (Keep)','Inquiries','Deals'][i],count,rate:i?ratio(count,vals[i-1]):100})),['count','rate'],'funnel');}
     if(id==='r137')return result(groupBy(rows,r=>(f.breakdown==='campaign'?r.campaign+' · ':'')+(r.member?'In-platform':'Email'),r=>({sent:sum(r,'sent'),read:sum(r,'read'),marketingClicks:sum(r,'marketingClicks'),marketingCV:sum(r,'marketingCV'),readRate:ratio(sum(r,'read'),sum(r,'sent')),clickRate:ratio(sum(r,'marketingClicks'),sum(r,'read'))})),['sent','read','marketingClicks','marketingCV','readRate','clickRate'],'funnel');
     throw new Error('Metric renderer is not implemented: '+id);
   }
-  root.OverviewModel={platformAccounts,pendingAgencies,unrespondedMessages,activeSubscriptions,mrr,sessionAverage,validateTarget,sum,ratio,average,distinct,monthStart,shiftMonth,inPeriod,inactivityEvents,withdrawalStats,inactiveCount,errorLogs,fraudCount,paymentBreakdown,matchesProperty,filteredFacts,filteredChats,filteredAccounts,groupBy,buckets,activity,amount,performance,result,metric};
+  root.OverviewModel={platformAccounts,pendingAgencies,unrespondedMessages,activeSubscriptions,mrr,sessionAverage,validateTarget,sum,ratio,average,distinct,monthStart,shiftMonth,inPeriod,inactivityEvents,withdrawalStats,inactiveCount,errorLogs,systemIssueSummary,fraudCount,paymentBreakdown,responseCycles,chatMessages,matchesProperty,filteredFacts,filteredChats,filteredAccounts,groupBy,buckets,activity,amount,performance,result,metric};
 })(typeof window!=='undefined'?window:globalThis);

@@ -1,7 +1,7 @@
 /* Shared local-only records and UI for verification, assignment and agency badges. */
 (function (root) {
   'use strict';
-  const keys={transactions:'yuushi.transactionVerificationRecords',tickets:'yuushi.adminTickets',enquiries:'yuushi.agencyEnquiryAssignments',badges:'yuushi.admin.badgeCatalog',assignments:'yuushi.admin.agencyBadgeAssignments',agencies:'yuushi.admin.agencyDirectory',phones:'yuushi.admin.removedPhoneNumbers'};
+  const keys={transactions:'yuushi.transactionVerificationRecords',tickets:'yuushi.adminTickets',enquiries:'yuushi.agencyEnquiryAssignments',leadRecords:'yuushi.agencyLeadRecords',badges:'yuushi.admin.badgeCatalog',assignments:'yuushi.admin.agencyBadgeAssignments',agencies:'yuushi.admin.agencyDirectory',phones:'yuushi.admin.removedPhoneNumbers'};
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const read=(key,fallback=[])=>{try{const v=JSON.parse(localStorage.getItem(key));return v??fallback;}catch{return fallback;}};
   const write=(key,value)=>{const text=JSON.stringify(value);if(localStorage.getItem(key)!==text)localStorage.setItem(key,text);return value;};
