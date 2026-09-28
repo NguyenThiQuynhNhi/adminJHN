@@ -770,60 +770,10 @@
       const ENQUIRY_ROLE = {name:'Agency Admin',staffId:'AGT-001',teamId:'TEAM-TOKYO'};
       const ENQUIRY_PERMISSIONS = {'Sales Agent':{scope:'own',assign:false},'Property Manager':{scope:'agency',assign:true},'Reception':{scope:'agency',assign:true},'Agency Admin':{scope:'agency',assign:true}};
       const W=YuushiWorkflow;
-      function leadAssetRef(l){
-        if(l.intent==='project') return {projectId:l.projectId,targetName:l.targetName,propertyName:l.type};
-        return {propertyId:l.propertyId||null,propertyName:l.type};
-      }
-      function sameLeadAsset(a,b){
-        if(a.intent==='project'||b.intent==='project') return a.intent===b.intent&&a.projectId===b.projectId&&String(a.targetName||'').toLowerCase()===String(b.targetName||'').toLowerCase();
-        return String(a.type||'').trim().toLowerCase()===String(b.type||'').trim().toLowerCase();
-      }
-      function applyLeadClosureState(){
-        const states=W.read(W.keys.leadClosures,{});
-        const soldAssets=W.read(W.keys.soldAssets,[]);
-        LEADS.forEach(l=>{
-          let s=states[String(l.id)];
-          if(!s && !['Sold','Closed Lost'].includes(l.status)){
-            const ref=leadAssetRef(l);
-            const sold=soldAssets.find(r=>(ref.projectId&&r.projectId===ref.projectId&&String(r.targetName||'').toLowerCase()===String(ref.targetName||'').toLowerCase())||(ref.propertyId&&r.propertyId===ref.propertyId)||(!ref.propertyId&&!ref.projectId&&ref.propertyName&&String(r.propertyName||'').trim().toLowerCase()===String(ref.propertyName||'').trim().toLowerCase()));
-            if(sold && String(sold.winningLeadId)!==String(l.id)){
-              s=W.saveLeadClosure(l.id,{reason:'Property sold',soldByStaffId:sold.soldByStaffId,soldByStaffName:sold.soldByStaffName,soldAt:sold.soldAt,winningLeadId:sold.winningLeadId});
-            }
-          }
-          if(s){
-            l.status='Closed Lost';
-            l.closedLostReason=s.reason||'Property sold';
-            l.closedLostByStaffName=s.soldByStaffName||'Another staff member';
-            l.closedLostAt=s.soldAt||s.updatedAt||null;
-          }
-        });
-      }
-      function closeCompetingLeads(winner,soldRecord){
-        LEADS.forEach(l=>{
-          if(l.id===winner.id||!sameLeadAsset(l,winner)||['Sold','Closed Lost'].includes(l.status))return;
-          l.status='Closed Lost';
-          l.closedLostReason='Property sold';
-          l.closedLostByStaffName=soldRecord.soldByStaffName;
-          l.closedLostAt=soldRecord.soldAt;
-          W.saveLeadClosure(l.id,{reason:'Property sold',soldByStaffId:soldRecord.soldByStaffId,soldByStaffName:soldRecord.soldByStaffName,soldAt:soldRecord.soldAt,winningLeadId:winner.id});
-        });
-      }
       const storedAssignments=W.read(W.keys.enquiries);
       LEADS.forEach(l=>{const owner=W.AGENCY_SUB_ACCOUNTS.find(a=>a.name===(OWNERS[l.owner]||l.owner));const saved=storedAssignments.find(a=>a.id===l.id);Object.assign(l,{...W.unassigned(),listingOwnerId:owner?.id||'OWNER-'+l.owner,listingOwnerName:OWNERS[l.owner]||l.owner});if(owner?.status==='Active')Object.assign(l,{assigneeType:'Agent Individual',assigneeId:owner.id,assigneeName:owner.name,assignedAt:l.enquiry,assignedBy:'Listing owner default'});if(saved)Object.assign(l,saved);});
       function assignmentRecord(l){return Object.fromEntries(['id','listingOwnerId','listingOwnerName','assigneeType','assigneeId','assigneeName','assignedAt','assignedBy','assignmentHistory'].map(k=>[k,l[k]]));}
       W.merge(W.keys.enquiries,LEADS.map(assignmentRecord));
-      applyLeadClosureState();
-      addEventListener('storage',e=>{
-        if(e.key===W.keys.soldAssets||e.key===W.keys.leadClosures){
-          applyLeadClosureState();
-          renderList();
-          if(currentLead){
-            currentStage=Math.max(0,STAGES.indexOf(currentLead.status));
-            leadIsSold=['Sold','Closed Lost'].includes(currentLead.status);
-            renderPipeline();
-          }
-        }
-      });
       function assignEnquiry(id){if(!ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name]?.assign)return toast('You do not have permission to assign enquiries.');const l=LEADS.find(l=>l.id===id);if(!l)return;W.assignmentModal(l,true,(type,person,note)=>{if(!ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name]?.assign)throw Error('Assignment is not permitted.');W.assign(l,type,person,note,ENQUIRY_ROLE.name);W.upsert(W.keys.enquiries,assignmentRecord(l));renderList();if(currentLead?.id===id)renderDetailScreen(l);toast('Enquiry assignment updated. Listing Owner unchanged.','success');});}
       window.assignEnquiry=assignEnquiry;
       // ===== LEAD_PROJECT_INTERESTS =====
@@ -905,7 +855,7 @@
               </td>
               <td>${l.enquiry}</td>
               <td>${l.follow}</td>
-              <td><span class="mc-pill ${l.status === 'Sold' ? 'mc-ok' : 'mc-miss'}" style="background:var(--grey-pill);color:var(--text-main)">${l.status}</span>${l.status==='Closed Lost'&&l.closedLostReason==='Property sold'?`<div style="font-size:11px;color:var(--text-muted);margin-top:4px">Sold by ${W.esc(l.closedLostByStaffName||'another staff member')}</div>`:''}</td>
+              <td><span class="mc-pill ${l.status === 'Sold' ? 'mc-ok' : 'mc-miss'}" style="background:var(--grey-pill);color:var(--text-main)">${l.status}</span></td>
               <td><div class="owner-cell"><span class="owner-avatar">${l.owner}</span> ${W.esc(l.listingOwnerName)}</div></td><td>${W.esc(l.assigneeName)}<br><small>${W.esc(l.assigneeType)}</small></td><td onclick="event.stopPropagation()">${ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name].assign?`<button class="btn" onclick="assignEnquiry(${l.id})">Assign/Reassign</button>`:"—"}</td>
             </tr>`).join("");
         }
@@ -974,9 +924,7 @@
         if (leadIsSold) {
           const badge = document.createElement("span");
           badge.style = "margin-left:10px;font-size:11.5px;color:var(--text-muted)";
-          if (currentLead?.status === "Closed Lost" && currentLead.closedLostReason === "Property sold") {
-            badge.innerHTML = `<i class="fas fa-lock"></i> Property sold by ${W.esc(currentLead.closedLostByStaffName || "another staff member")} — lead closed lost`;
-          } else if (leadTxnType === "Rent") {
+          if (leadTxnType === "Rent") {
             badge.innerHTML = `<i class="fas fa-lock"></i> Leased at ¥${Number(leadSoldPrice).toLocaleString()}/mo (${leadRentDuration} mos, Total Volume: ¥${Number(leadTotalVolume).toLocaleString()}) on ${leadSoldDate} — status locked`;
           } else if (leadTxnType === "Project") {
             badge.innerHTML = `<i class="fas fa-lock"></i> ${currentLead.soldTargetName || ""} sold at ¥${Number(leadSoldPrice).toLocaleString()} on ${leadSoldDate} — status locked`;
@@ -1093,22 +1041,6 @@
         if (isProject && !targetName) { ok = false; toast("This lead has no target Type/Lot assigned.", "error"); }
         if (!ok) return;
 
-        const existingSale=W.soldAssetFor(leadAssetRef(currentLead));
-        if(existingSale && String(existingSale.winningLeadId)!==String(currentLead.id)){
-          currentLead.status='Closed Lost';
-          currentLead.closedLostReason='Property sold';
-          currentLead.closedLostByStaffName=existingSale.soldByStaffName;
-          currentLead.closedLostAt=existingSale.soldAt;
-          W.saveLeadClosure(currentLead.id,{reason:'Property sold',soldByStaffId:existingSale.soldByStaffId,soldByStaffName:existingSale.soldByStaffName,soldAt:existingSale.soldAt,winningLeadId:existingSale.winningLeadId});
-          currentStage=STAGES.indexOf('Closed Lost');
-          leadIsSold=true;
-          closeLeadSoldModal();
-          renderList();
-          renderPipeline();
-          toast('This property was already sold by '+existingSale.soldByStaffName+'. Lead moved to Closed Lost.','error');
-          return;
-        }
-
         const rawAmount = Number(priceRaw);
         currentStage = _pendingSoldStageIdx;
         leadIsSold = true;
@@ -1159,12 +1091,7 @@
           toast(`Lead marked as Sold at ¥${rawAmount.toLocaleString()}. Status locked.`, "success");
         }
 
-        currentLead.status = "Sold";
-        const sellingStaffName=currentLead.assigneeName&&currentLead.assigneeName!=="Unassigned"?currentLead.assigneeName:(OWNERS[currentLead.owner]||ENQUIRY_ROLE.staffId);
-        const soldRecord=W.markAssetSold({...leadAssetRef(currentLead),soldByStaffId:currentLead.assigneeId||ENQUIRY_ROLE.staffId,soldByStaffName:sellingStaffName,winningLeadId:currentLead.id,soldAt:dateRaw,transactionId:"LEAD-"+currentLead.id+"-"+Date.now()});
-        closeCompetingLeads(currentLead,soldRecord);
         closeLeadSoldModal();
-        renderList();
         renderPipeline();
       }
       window.confirmLeadSold = confirmLeadSold;
@@ -1519,9 +1446,6 @@
           if (found) currentLead = found;
         }
         if (!currentLead) currentLead = LEADS[0]; // fallback an toàn
-        applyLeadClosureState();
-        currentStage=Math.max(0,STAGES.indexOf(currentLead.status));
-        leadIsSold=['Sold','Closed Lost'].includes(currentLead.status);
 
         if(ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name].scope==='own'&&currentLead.assigneeId!==ENQUIRY_ROLE.staffId&&!(currentLead.assigneeType==='Agency Team'&&currentLead.assigneeId===ENQUIRY_ROLE.teamId)){toast('This enquiry is outside your scope.');return;}
         renderDetailScreen(currentLead);
