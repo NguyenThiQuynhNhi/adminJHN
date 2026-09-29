@@ -920,16 +920,20 @@
         <!-- STATS -->
         <div class="stat-row">
           <div class="stat">
-            <div class="lbl">Total staff</div>
-            <div class="val">12</div>
+            <div class="lbl">Staff records</div>
+            <div class="val" id="stat-records">0</div>
           </div>
           <div class="stat">
-            <div class="lbl">Active</div>
-            <div class="val">10 <small>83%</small></div>
+            <div class="lbl">Active staff</div>
+            <div class="val" id="stat-active">0</div>
           </div>
           <div class="stat">
             <div class="lbl">Suspended</div>
-            <div class="val">1</div>
+            <div class="val" id="stat-suspended">0</div>
+          </div>
+          <div class="stat">
+            <div class="lbl">Available staff slots</div>
+            <div class="val" id="stat-available">0</div>
           </div>
         </div>
 
@@ -1076,8 +1080,7 @@
           <div class="danger-zone">
             <p>
               Suspending revokes access without removing the account or its
-              historical references. Offboarding retains the permanent staff ID.
-              Active work reassignment is handled separately.
+              historical references, and frees one active staff slot.
             </p>
             <div style="display: flex; gap: 8px; flex-wrap: wrap">
               <button
@@ -1087,12 +1090,7 @@
               >
                 Suspend access
               </button>
-              <button
-                class="btn btn-danger-ghost btn-small"
-                onclick="askRemoveFor(currentId)"
-              >
-                Remove agent
-              </button>
+              <small id="v-seat-help" style="align-self:center;color:var(--soft)"></small>
             </div>
           </div>
         </div>
@@ -1291,32 +1289,6 @@
       </div>
     </main>
 
-    <!-- REMOVE CONFIRM MODAL -->
-    <div
-      class="modal-backdrop"
-      id="rm-modal"
-      onclick="if (event.target === this) closeModal('rm-modal');"
-    >
-      <div class="modal">
-        <h3><span class="icon">!</span> Remove this agent?</h3>
-        <p id="rm-msg">
-          Offboard <b id="rm-name">this agent</b>: retain the permanent staff ID, block login and clear personal contact data. Active work reassignment is handled separately.
-        </p>
-        <div class="modal-actions">
-          <button class="btn btn-ghost" onclick="closeModal('rm-modal')">
-            Cancel
-          </button>
-          <button
-            class="btn btn-primary"
-            style="background: var(--danger)"
-            onclick="confirmRemove()"
-          >
-            Remove
-          </button>
-        </div>
-      </div>
-    </div>
-
     <div class="toasts" id="toasts"></div>
 
     <script>
@@ -1496,21 +1468,19 @@
         },
       ];
       staff.forEach(s => Object.defineProperty(s, 'staffId', {value:'STF-'+String(s.id).padStart(4,'0'), enumerable:true}));
+      const staffSeatLimit = 10; // prototype entitlement fixture — not a canonical plan limit
       const issuedStaffIds = new Set(staff.map(s=>s.staffId.toLowerCase()));
-      // Demo-only offboarding metadata. Actual login denial belongs to the server.
-      function offboardIdentity(s, at) {
-        Object.assign(s, { offboardedAt: at, status: "suspended", statusLabel: "Offboarded", loginBlocked: true,
-          name: "Former Agent", initials: "FA", email: "", phone: "", avatar: "", bio: "", hours: "" });
-        delete s.passwordResetRequest;
+      const activeNonRootStaffCount = () => staff.filter(s=>!s.isRoot&&s.status==='active').length;
+      const suspendedNonRootStaffCount = () => staff.filter(s=>!s.isRoot&&s.status==='suspended').length;
+      const availableStaffSlots = () => Math.max(0,staffSeatLimit-activeNonRootStaffCount());
+      function renderStaffStats(){
+        document.getElementById('stat-records').textContent=staff.length;
+        document.getElementById('stat-active').innerHTML=activeNonRootStaffCount()+' <small>/ '+staffSeatLimit+' seats</small>';
+        document.getElementById('stat-suspended').textContent=suspendedNonRootStaffCount();
+        document.getElementById('stat-available').textContent=availableStaffSlots();
       }
-      try {
-        const former = JSON.parse(localStorage.getItem('yuushi.formerAgencyStaff') || '{}');
-        Object.keys(former).forEach(id => issuedStaffIds.add(id.toLowerCase()));
-        staff.forEach(s => { if (!s.isRoot && former[s.staffId.toLowerCase()]) offboardIdentity(s, former[s.staffId.toLowerCase()]); });
-      } catch (error) { /* The in-memory prototype remains usable. */ }
       let editingId = null,
-        currentId = null,
-        currentRemoveId = null;
+        currentId = null;
 
       // ==== VIEW ROUTING ====
       function showView(id) {
@@ -1525,6 +1495,7 @@
       }
 
       function renderTable() {
+        renderStaffStats();
         const q = document.getElementById("search").value.toLowerCase().trim();
         const fRole = document.getElementById("f-role").value;
         const fStat = document.getElementById("f-status").value;
@@ -1571,7 +1542,9 @@
               <div class="menu-sep"></div>
               ${
                 s.status === "suspended"
-                  ? `<div class="menu-item" onclick="event.stopPropagation();reactivate(${s.id})">Reactivate access</div>`
+                  ? (availableStaffSlots()>0
+                    ? `<div class="menu-item" onclick="event.stopPropagation();reactivateStaff(${s.id})">Reactivate access</div>`
+                    : `<div class="menu-item" aria-disabled="true" title="No active staff slot available" style="opacity:.45;cursor:not-allowed">Reactivate access</div>`)
                   : `<div class="menu-item danger" onclick="event.stopPropagation();suspendFor(${s.id})">Suspend access</div>`
               }
             </div>
@@ -1636,7 +1609,12 @@
           : "Disabled";
         document.getElementById("v-suspend-btn").textContent =
           s.status === "suspended" ? "Reactivate access" : "Suspend access";
-        document.getElementById("v-danger-card").style.display = (s.isRoot || s.isYou || s.offboardedAt)
+        const reactivationBlocked=s.status==='suspended'&&availableStaffSlots()===0;
+        document.getElementById("v-suspend-btn").disabled=reactivationBlocked;
+        document.getElementById("v-suspend-btn").style.cursor=reactivationBlocked?'not-allowed':'';
+        document.getElementById("v-suspend-btn").style.opacity=reactivationBlocked?'.55':'';
+        document.getElementById("v-seat-help").textContent=reactivationBlocked?'No active staff slot available':'';
+        document.getElementById("v-danger-card").style.display = (s.isRoot || s.isYou)
           ? "none"
           : "";
         showView("view-detail");
@@ -1678,7 +1656,6 @@
         switchFTab("fp-identity");
       }
       function openEdit(id) {
-        if (staff.find(s => s.id === id)?.offboardedAt) { toast("Former Agent records are read-only.", "error"); return; }
         const s = staff.find((x) => x.id === id);
         if (!s) return;
         editingId = id;
@@ -1748,7 +1725,6 @@
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
       }
       function saveEdit() {
-        if (staff.find(s => s.id === editingId)?.offboardedAt) return;
         let ok = true;
         const name = document.getElementById("d-name").value.trim();
         const email = document.getElementById("d-email").value.trim();
@@ -1786,6 +1762,10 @@
         const hours = document.getElementById("d-hours").value.trim();
 
         if (editingId === null) {
+          if (availableStaffSlots() === 0) {
+            toast("All staff slots are currently in use.", "error");
+            return;
+          }
           const newId = Math.max(0, ...staff.map((s) => s.id)) + 1;
           staff.push({
             id: newId,
@@ -1831,7 +1811,7 @@
       function sendReset() { sendResetFor(editingId ?? currentId); }
       function sendResetFor(id) {
         const s = staff.find(x=>x.id===id);
-        if(!s || s.offboardedAt)return;
+        if(!s)return;
         if(!confirm('Reset password for '+s.staffId+'? The platform will email a random temporary password to '+s.email+'. Administrators cannot view it.'))return;
         // Mock request only. Password generation and email delivery belong on the server.
         s.passwordResetRequest = {staffId:s.staffId, email:s.email, status:'requested', requestedAt:new Date().toISOString()};
@@ -1844,7 +1824,7 @@
       function forceSignOut() { forceSignOutFor(editingId ?? currentId); }
       function forceSignOutFor(id) {
         const s = staff.find((x) => x.id === id);
-        if (!s || s.isRoot || s.offboardedAt) return;
+        if (!s || s.isRoot) return;
         s.sessionRevocation = { requestedAt: new Date().toISOString(), requiresAuthentication: true, status: "mock-requested" };
         toast("Mock: force sign-out requested for " + s.staffId + ". Authentication is required again; server enforcement is required.");
       }
@@ -1852,67 +1832,40 @@
         forceSignOutFor(currentId);
       }
 
-      function suspendCurrent() {
-        if (currentId === null) return;
-        const s = staff.find((x) => x.id === currentId);
-        if (!s || s.isRoot || s.offboardedAt) return;
-        if (s.status === "suspended") {
-          s.status = "active";
-          s.statusLabel = "Active";
-          toast(s.name + "'s access reactivated.");
-        } else {
-          s.status = "suspended";
-          s.statusLabel = "Suspended";
-          toast(s.name + "'s access suspended.");
+      function canReactivateStaff() { return availableStaffSlots() > 0; }
+      function reactivateStaff(id) {
+        const s = staff.find(x=>x.id===id);
+        if (!s || s.isRoot || s.status !== "suspended") return false;
+        if (!canReactivateStaff()) {
+          toast("Cannot reactivate this staff member because all staff slots are currently in use. Free a staff slot or increase the Agency's staff-seat capacity first.", "error");
+          return false;
         }
-        openView(currentId);
-      }
-      function suspendFor(id) {
-        const s = staff.find((x) => x.id === id);
-        if (!s || s.isRoot || s.offboardedAt) return;
-        s.status = "suspended";
-        s.statusLabel = "Suspended";
-        toast(s.name + "'s access suspended.");
-        renderTable();
-      }
-      function reactivate(id) {
-        const s = staff.find((x) => x.id === id);
-        if (!s || s.isRoot || s.offboardedAt) return;
         s.status = "active";
         s.statusLabel = "Active";
         toast(s.name + "'s access reactivated.");
         renderTable();
+        if (currentId === id && document.getElementById('view-detail').classList.contains('active')) openView(id);
+        return true;
       }
-
-      function askRemoveFor(id) {
-        const s = staff.find((x) => x.id === id);
-        if (!s || s.isRoot || s.isYou || s.offboardedAt) {
-          toast("The Root Admin, your own account, or an offboarded identity cannot be removed.", "error");
-          return;
-        }
-        currentRemoveId = id;
-        document.getElementById("rm-name").textContent = s.name;
-        openModal("rm-modal");
+      function suspendStaff(id) {
+        const s = staff.find(x=>x.id===id);
+        if (!s || s.isRoot || s.status !== "active") return false;
+        if (!confirm("Suspend access for " + s.name + "?\n\nThe account will remain in Staff Management and historical records will be preserved. Suspending this staff member frees 1 active staff slot.")) return false;
+        s.status = "suspended";
+        s.statusLabel = "Suspended";
+        toast(s.name + "'s access suspended. One active staff slot is now available.");
+        renderTable();
+        if (currentId === id && document.getElementById('view-detail').classList.contains('active')) openView(id);
+        return true;
       }
-      function confirmRemove() {
-        const idx = staff.findIndex((x) => x.id === currentRemoveId);
-        if (idx < 0) return;
-        const removed = staff[idx];
-        if (removed.isRoot || removed.isYou || removed.offboardedAt) return;
-        const at = new Date().toISOString();
-        try {
-          const former = JSON.parse(localStorage.getItem('yuushi.formerAgencyStaff') || '{}');
-          former[removed.staffId.toLowerCase()] = at;
-          localStorage.setItem('yuushi.formerAgencyStaff', JSON.stringify(former));
-        } catch (error) { toast("Unable to save mock offboarding state. Please try again.", "error"); return; }
-        offboardIdentity(removed, at);
-        closeModal("rm-modal");
-        toast(
-          removed.name +
-            " offboarded. Permanent staff ID retained. Active work reassignment is handled separately.",
-        );
-        backToList();
+      function suspendCurrent() {
+        const s=staff.find(x=>x.id===currentId);
+        if (!s) return;
+        if (s.status === "suspended") reactivateStaff(currentId);
+        else suspendStaff(currentId);
       }
+      function suspendFor(id) { suspendStaff(id); }
+      function reactivate(id) { reactivateStaff(id); }
 
       function openModal(id) {
         document.getElementById(id).classList.add("open");

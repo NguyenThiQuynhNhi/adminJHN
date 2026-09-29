@@ -21,10 +21,13 @@
     if(property.status==='Suspended'&&property.suspensionReason==='Sold')dates.push(property.soldAt);
     return dates.filter(d=>Number.isFinite(time(d))&&time(d)>=time(property.datePublished)).sort((a,b)=>time(a)-time(b))[0]||null;
   }
-  function closedSales(rows){return rows.filter(r=>r.dealType==='Sale'&&(r.status==='closed'||r.status==='suspended'&&r.suspensionReason==='Sold'));}
-  // BA attribution is still open. The selected stored staff field is a display setting.
-  const attributionFields=['staffId','closingStaffId','ownerStaffId','assignedStaffId'];
-  function attributedStaff(row,field='staffId'){return row[attributionFields.includes(field)?field:'staffId']||null;}
+  function closedSales(rows){return rows.filter(r=>{
+    if(r.dealType!=='Sale'||r.transactionSource!=='Yuushi Client Transaction'||!(r.status==='closed'||r.status==='suspended'&&r.suspensionReason==='Sold'))return false;
+    if(r.verificationStatus==='Matched')return Number.isFinite(Number(r.finalSalePrice??r.value));
+    return r.verificationStatus==='Admin Resolved'&&r.adminResolutionAccepted===true&&Number.isFinite(Number(r.finalSalePrice??r.value));
+  }).map(r=>({...r,value:Number(r.finalSalePrice??r.value)}));}
+  // Final sale credit belongs only to the signed-in account stored as Closed By.
+  function attributedStaff(row){return row.closedByStaffId||null;}
   function scheduledAt(row){
     if(['Done','Cancelled','Completed','No Show','Sent','Failed','Missed'].includes(row.status))return null;
     if(row.activityType==='viewing')return row.start||null;
@@ -44,5 +47,5 @@
   const inquiryRecords=records=>records;
   // Raw observations are counted for this frontend. Final repeated-View deduplication is pending.
   const countViews=events=>events.length;
-  root.AgencyDashboardRules={countViews,inquiryRecords,soldListings,responseCycles,inquiryViewing,soldDate,closedSales,attributionFields,attributedStaff,scheduledAt,calendar};
+  root.AgencyDashboardRules={countViews,inquiryRecords,soldListings,responseCycles,inquiryViewing,soldDate,closedSales,attributedStaff,scheduledAt,calendar};
 })(window);

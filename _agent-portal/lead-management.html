@@ -765,8 +765,8 @@
           targetName: "Type A",  
           price: 35000000 },
         { id: 14, leadname: "Aiko Mori - Green Vintage House", name: "Aiko Mori", type: "Green Vintage House", propertyId: "PROP-001", enquiry: "2025-06-12", follow: "2025-06-18", status: "Sold", owner: "CS", intent: "buy", price: 46000000, soldByStaffId: "AGT-001", soldByStaffName: "Chris Sales", soldDate: "2025-06-15", soldPrice: 45500000 },
-        { id: 15, leadname: "Emi Kato - Green Vintage House", name: "Emi Kato", type: "Green Vintage House", propertyId: "PROP-001", enquiry: "2025-06-13", follow: "2025-06-19", status: "Closed Lost", owner: "MS", intent: "buy", price: 47000000, autoClosedBySale: true, lossReason: "Property sold by Chris Sales", soldByStaffId: "AGT-001", soldByStaffName: "Chris Sales" },
-        { id: 16, leadname: "Daichi Ito - Classical House", name: "Daichi Ito", type: "Classical House", propertyId: "PROP-016", enquiry: "2025-06-08", follow: "2025-06-10", status: "Closed Lost", owner: "TS", intent: "buy", price: 52000000, lossReason: "Client withdrew interest" }
+        { id: 15, leadname: "Emi Kato - Green Vintage House", name: "Emi Kato", type: "Green Vintage House", propertyId: "PROP-001", enquiry: "2025-06-13", follow: "2025-06-19", status: "Closed Lost", owner: "MS", intent: "buy", price: 47000000, autoClosedBySale: true, soldByStaffId: "AGT-001", soldByStaffName: "Chris Sales" },
+        { id: 16, leadname: "Daichi Ito - Classical House", name: "Daichi Ito", type: "Classical House", propertyId: "PROP-016", enquiry: "2025-06-08", follow: "2025-06-10", status: "Closed Lost", owner: "TS", intent: "buy", price: 52000000 }
       ];
 
       const W=YuushiWorkflow;
@@ -780,7 +780,7 @@
       const storedLeadRecords=W.read(W.keys.leadRecords);
       LEADS.forEach(l=>{const creator=W.AGENCY_SUB_ACCOUNTS.find(a=>a.name===(OWNERS[l.owner]||l.owner));const savedAssignment=storedAssignments.find(a=>a.id===l.id);const savedRecord=storedLeadRecords.find(a=>a.id===l.id);Object.assign(l,{...W.unassigned(),createdById:creator?.id||'STAFF-'+l.owner,createdByName:OWNERS[l.owner]||l.owner});if(creator?.status==='Active')Object.assign(l,{assigneeType:'Agent Individual',assigneeId:creator.id,assigneeName:creator.name,assignedAt:l.enquiry,assignedBy:'Initial assignment'});if(savedAssignment)Object.assign(l,savedAssignment);if(savedRecord)Object.assign(l,savedRecord);});
       function assignmentRecord(l){return Object.fromEntries(['id','createdById','createdByName','assigneeType','assigneeId','assigneeName','assignedAt','assignedBy','assignmentHistory'].map(k=>[k,l[k]]));}
-      function leadRecord(l){return Object.fromEntries(['id','propertyId','projectId','targetName','status','soldByStaffId','soldByStaffName','soldDate','soldPrice','autoClosedBySale','lossReason'].map(k=>[k,l[k]]));}
+      function leadRecord(l){return Object.fromEntries(['id','propertyId','projectId','targetName','status','soldByStaffId','soldByStaffName','soldByRole','soldDate','soldPrice','autoClosedBySale','lossReason'].map(k=>[k,l[k]]));}
       W.merge(W.keys.enquiries,LEADS.map(assignmentRecord));
       W.merge(W.keys.leadRecords,LEADS.map(leadRecord));
       function persistLead(l){W.upsert(W.keys.enquiries,assignmentRecord(l));W.upsert(W.keys.leadRecords,leadRecord(l));}
@@ -865,7 +865,7 @@
               </td>
               <td>${l.enquiry}</td>
               <td>${l.follow}</td>
-              <td><span class="mc-pill ${l.status === 'Sold' ? 'mc-ok' : 'mc-miss'}" style="background:var(--grey-pill);color:var(--text-main)">${l.status}</span>${l.autoClosedBySale?`<br><small>${W.esc(l.lossReason)}</small>`:""}</td>
+              <td><span class="mc-pill ${l.status === 'Sold' ? 'mc-ok' : 'mc-miss'}" style="background:var(--grey-pill);color:var(--text-main)">${l.status}</span>${l.autoClosedBySale?`<br><small>Sold by ${W.esc(l.soldByStaffName)}</small>`:""}</td>
               <td><div class="owner-cell"><span class="owner-avatar">${l.owner}</span> ${W.esc(l.createdByName)}</div></td><td>${W.esc(l.assigneeName)}<br><small>${W.esc(l.assigneeType)}</small></td><td onclick="event.stopPropagation()">${ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name].assign&&!['Sold','Closed Lost'].includes(l.status)?`<button class="btn" onclick="assignEnquiry(${l.id})">Assign/Reassign</button>`:"—"}</td>
             </tr>`).join("");
         }
@@ -935,9 +935,9 @@
           const badge = document.createElement("span");
           badge.style = "margin-left:10px;font-size:11.5px;color:var(--text-muted)";
           if (currentLead.status === "Closed Lost") {
-            badge.innerHTML = `<i class="fas fa-lock"></i> ${W.esc(currentLead.lossReason || "Closed Lost")} — status locked`;
+            return;
           } else if (leadTxnType === "Rent") {
-            badge.innerHTML = `<i class="fas fa-lock"></i> Leased at ¥${Number(leadSoldPrice).toLocaleString()}/mo (${leadRentDuration} mos, Total Volume: ¥${Number(leadTotalVolume).toLocaleString()}) on ${leadSoldDate} — status locked`;
+            badge.innerHTML = `<i class="fas fa-lock"></i> Rented at ¥${Number(leadSoldPrice).toLocaleString()}/mo on ${leadSoldDate} — status locked`;
           } else if (leadTxnType === "Project") {
             badge.innerHTML = `<i class="fas fa-lock"></i> ${currentLead.soldTargetName || ""} sold at ¥${Number(leadSoldPrice).toLocaleString()} on ${leadSoldDate} — status locked`;
           } else {
@@ -1066,17 +1066,19 @@
         currentLead.status = "Sold";
         currentLead.soldPrice = rawAmount;
         currentLead.soldDate = dateRaw;
-        currentLead.soldByStaffId = ENQUIRY_ROLE.staffId;
-        currentLead.soldByStaffName = W.AGENCY_SUB_ACCOUNTS.find(s=>s.id===ENQUIRY_ROLE.staffId)?.name || currentLead.assigneeName;
+        const closingActor = W.currentAgencyActor({staffId:'AGT-001',name:'Chris Sales',role:'Sales Agent'});
+        currentLead.soldByStaffId = closingActor.staffId;
+        currentLead.soldByStaffName = closingActor.name;
+        currentLead.soldByRole = closingActor.role;
         currentLead.autoClosedBySale = false;
         currentLead.lossReason = null;
 
         if (isRent) {
           leadTxnType = "Rent";
           leadRentDuration = durationMonths;
-          leadTotalVolume = rawAmount * durationMonths;
+          leadTotalVolume = null;
           leadAgencyCommission = rawAmount;
-          toast(`Lease recorded at ¥${rawAmount.toLocaleString()}/mo (Contract Volume: ¥${leadTotalVolume.toLocaleString()}). Status locked.`, "success");
+          toast(`Rental completed at ¥${rawAmount.toLocaleString()}/mo. Rental performance remains count-only.`, "success");
 
         } else if (isProject) {
           leadTxnType = "Project";
@@ -1120,6 +1122,12 @@
           toast(`Lead marked as Sold at ¥${rawAmount.toLocaleString()}. Status locked.`, "success");
         }
 
+        if (!isRent) {
+          const salePropertyId=isProject?`${currentLead.projectId}::${targetName}`:currentLead.propertyId;
+          const transactionId='LEAD-SALE-'+currentLead.id;
+          W.upsert(W.keys.transactions,W.transaction({transactionId,propertyId:salePropertyId,projectId:isProject?currentLead.projectId:null,targetName:isProject?targetName:null,propertyName:currentLead.type||targetName,transactionSource:'Yuushi Client Transaction',closedByStaffId:closingActor.staffId,closedByStaffName:closingActor.name,closedByRole:closingActor.role,clientId:'CLIENT-LEAD-'+currentLead.id,clientName:currentLead.name,leadId:String(currentLead.id),listedPrice:Number(currentLead.price)||null,agentSubmittedPrice:rawAmount,finalSalePrice:null,soldDate:dateRaw,publishPrice:false}),'transactionId');
+        }
+
         const openStatuses = new Set(["New", "Assigned", "Contact", "Viewing", "Proposal", "Negotiation", "Asleep"]);
         const sellableRef = currentLead.intent === 'project'
           ? (PROJECTS.find(p=>p.id===currentLead.projectId)?.group===6 ? `${currentLead.projectId}::${currentLead.targetName}` : null)
@@ -1132,9 +1140,10 @@
           if (other.id !== currentLead.id && sellableRef && otherRef === sellableRef && openStatuses.has(other.status)) {
             other.status = "Closed Lost";
             other.autoClosedBySale = true;
-            other.lossReason = `Property sold by ${currentLead.soldByStaffName}`;
+            other.lossReason = null;
             other.soldByStaffId = currentLead.soldByStaffId;
             other.soldByStaffName = currentLead.soldByStaffName;
+            other.soldByRole = currentLead.soldByRole;
             persistLead(other);
             closedCount++;
           }
@@ -1580,7 +1589,7 @@
         document.querySelectorAll(".sec")[0].querySelector(".kv-grid").innerHTML = `
           <div><div class="kv-l">Id</div><div class="kv-v">${100000 + lead.id}</div></div>
           <div><div class="kv-l">Lead Name</div><div class="kv-v">${lead.leadname}</div></div>
-          <div><div class="kv-l">Status</div><div class="kv-v">${lead.status}</div>${lead.lossReason?`<small>${W.esc(lead.lossReason)}</small>`:''}</div>
+          <div><div class="kv-l">Status</div><div class="kv-v">${lead.status}</div>${lead.autoClosedBySale?`<small>Sold by ${W.esc(lead.soldByStaffName)}</small>`:''}</div>
           <div><div class="kv-l">Created By</div><div class="kv-v">${W.esc(lead.createdByName)}</div></div><div><div class="kv-l">Assigned To / Primary Representative</div><div class="kv-v">${W.esc(lead.assigneeName)} · ${W.esc(lead.assigneeType)}</div>${ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name].assign&&!isClosed?`<button class="btn" onclick="assignEnquiry(${lead.id})">Assign/Reassign</button>`:''}</div><div style="grid-column:1/-1"><div class="kv-l">Assignment History</div>${W.timeline(lead.assignmentHistory)}</div>
           <div><div class="kv-l">Created</div><div class="kv-v">${lead.enquiry}</div></div>
           <div><div class="kv-l">Next Follow Up Date</div><div class="kv-v">${lead.follow}</div></div>

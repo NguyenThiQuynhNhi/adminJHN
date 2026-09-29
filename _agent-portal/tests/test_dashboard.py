@@ -48,7 +48,24 @@ class BusinessRuleTests(unittest.TestCase):
   self.assertEqual(self.js("run(256).value"),before)
   self.c.eval("S.inquiries=[]")
   self.assertIsNone(self.js("run(256).value"))
- def test_sales_excludes_rent_and_includes_all_sold_development_units(self):
+ def test_verified_yuushi_sales_eligibility(self):
+  rows="""[
+   {id:'waiting',status:'closed',dealType:'Sale',transactionSource:'Yuushi Client Transaction',verificationStatus:null,finalSalePrice:100},
+   {id:'matched',status:'closed',dealType:'Sale',transactionSource:'Yuushi Client Transaction',verificationStatus:'Matched',finalSalePrice:200},
+   {id:'mismatch',status:'closed',dealType:'Sale',transactionSource:'Yuushi Client Transaction',verificationStatus:'Mismatch / Needs Review',finalSalePrice:300},
+   {id:'disputed',status:'closed',dealType:'Sale',transactionSource:'Yuushi Client Transaction',verificationStatus:'Disputed',finalSalePrice:400},
+   {id:'accepted',status:'closed',dealType:'Sale',transactionSource:'Yuushi Client Transaction',verificationStatus:'Admin Resolved',adminResolutionAccepted:true,finalSalePrice:500},
+   {id:'rejected',status:'closed',dealType:'Sale',transactionSource:'Yuushi Client Transaction',verificationStatus:'Rejected',finalSalePrice:600},
+   {id:'info',status:'closed',dealType:'Sale',transactionSource:'Sold Price Known — Information Only',finalSalePrice:700},
+   {id:'other',status:'closed',dealType:'Sale',transactionSource:'Sold by Other — Price Unknown',finalSalePrice:null},
+   {id:'external',status:'closed',dealType:'Sale',transactionSource:'External Client Transaction',finalSalePrice:800},
+   {id:'rental',status:'closed',dealType:'Rental',transactionSource:'Yuushi Client Transaction',verificationStatus:'Matched',finalSalePrice:999999},
+   {id:'lot',status:'closed',unitId:'LOT-2',dealType:'Sale',transactionSource:'Yuushi Client Transaction',verificationStatus:'Matched',finalSalePrice:900},
+   {id:'type-unit',status:'closed',projectId:'PRJ-5',targetName:'Type A',dealType:'Sale',transactionSource:'Yuushi Client Transaction',verificationStatus:'Matched',finalSalePrice:1000}
+  ]"""
+  self.assertEqual(self.js(f"R.closedSales({rows}).map(r=>r.id)"),['matched','accepted','lot','type-unit'])
+  self.assertEqual(self.js(f"R.closedSales({rows}).reduce((n,r)=>n+r.value,0)"),2600)
+ def test_sales_excludes_rent_and_uses_verified_rows(self):
   self.assertTrue(self.js("S.transactions.filter(t=>t.dealType==='Rental').every(t=>t.value===null)"))
   self.assertEqual(self.js("S.transactions.filter(t=>t.unitId).length"),self.js("S.projects.flatMap(p=>p.inventory).filter(u=>u.status==='Sold Out').reduce((s,u)=>s+u.quantity,0)"))
   total=self.js("run(231).value")
@@ -58,14 +75,15 @@ class BusinessRuleTests(unittest.TestCase):
   self.assertEqual(self.js("run(231,{filters:{dealType:['Rental']}}).value"),0)
   self.assertEqual(self.js("run(234,{dimension:'dealType',aggregation:'sum'}).rows.map(r=>r.label)"),['Sale'])
  def test_manual_sold_listing_no_lead_days_to_close(self):
-  self.assertTrue(self.js("(()=>{const t=S.transactions.find(t=>t.status==='suspended'&&t.suspensionReason==='Sold'&&!t.leadId);return !!t&&!S.leads.some(l=>l.propertyId===t.propertyId)&&run(236).drillRows.some(r=>r.id===t.propertyId)&&R.closedSales([t]).length===1})()"))
+  self.assertTrue(self.js("(()=>{const t=S.transactions.find(t=>t.status==='suspended'&&t.suspensionReason==='Sold'&&!t.leadId);return !!t&&!S.leads.some(l=>l.propertyId===t.propertyId)&&run(236).drillRows.some(r=>r.id===t.propertyId)&&R.closedSales([t]).length===0})()"))
   self.assertEqual(self.js("R.soldDate({id:'p',status:'Suspended',suspensionReason:'Sold',soldAt:'2026-09-08',datePublished:'2026-09-01'},[])"),'2026-09-08')
   self.assertEqual(self.js("R.soldDate({id:'p',datePublished:'2026-09-01'},[{propertyId:'p',status:'Closed Won',soldAt:'2026-09-05'}])"),'2026-09-05')
   self.assertTrue(self.js("run(236).drillRows.every(r=>M.time(r.confirmedSoldAt)>=M.time(r.publishedDate))"))
  def test_internal_staff_attribution_and_canonical_ids(self):
   self.assertTrue(self.js("Object.values(S).flat().every(r=>!('userId' in r)&&!('ownerId' in r)&&!('agentId' in r)&&!('assignedUserId' in r))"))
-  self.assertTrue(self.js("Object.values(S).flat().every(r=>['staffId','ownerStaffId','assignedStaffId','closingStaffId','acceptedStaffId'].every(k=>!r[k]||S.staff.some(s=>s.staffId===r[k]&&s.agencyId===r.agencyId)))"))
-  self.assertTrue(self.js("(()=>{const a=run(324,{topN:100}),b=run(324,{topN:100,staffAttribution:'closingStaffId'});return a.value===run(231).value&&JSON.stringify(a.rows)===JSON.stringify(b.rows)})()"))
+  self.assertTrue(self.js("Object.values(S).flat().every(r=>['staffId','ownerStaffId','assignedStaffId','closedByStaffId','recordedByStaffId','acceptedStaffId'].every(k=>!r[k]||S.staff.some(s=>s.staffId===r[k]&&s.agencyId===r.agencyId)))"))
+  self.assertTrue(self.js("(()=>{const eligible={dealType:'Sale',transactionSource:'Yuushi Client Transaction',status:'closed',verificationStatus:'Matched',finalSalePrice:100,closedByStaffId:'STAFF-002',ownerStaffId:'STAFF-003',assignedStaffId:'STAFF-003'};return R.attributedStaff(eligible)==='STAFF-002'&&R.closedSales([eligible]).length===1})()"))
+  self.assertTrue(self.js("(()=>{const adminClose={closedByStaffId:'STAFF-001',assignedStaffId:'STAFF-003'},info={transactionSource:'Sold Price Known — Information Only',recordedByStaffId:'STAFF-001',dealType:'Sale',status:'closed',verificationStatus:'Matched',finalSalePrice:100},other={transactionSource:'Sold by Other — Price Unknown',recordedByStaffId:'STAFF-002',dealType:'Sale',status:'closed'};return R.attributedStaff(adminClose)==='STAFF-001'&&R.attributedStaff(info)===null&&R.attributedStaff(other)===null&&R.closedSales([info,other]).length===0})()"))
  def test_upcoming_uses_due_or_explicit_schedule(self):
   self.assertIsNone(self.js("R.scheduledAt({activityType:'calls',status:'Completed',start:'2026-10-01'})"))
   self.assertIsNone(self.js("R.scheduledAt({activityType:'emails',status:'Draft',start:'2026-10-01'})"))

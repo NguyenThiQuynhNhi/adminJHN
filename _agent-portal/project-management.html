@@ -2657,7 +2657,7 @@
             <span>·</span><span id="dMetaSales">—</span> <span>·</span
             ><span id="dMetaPublish">—</span> <span>·</span
             ><span id="dMetaTx">—</span> <span>·</span
-            ><span id="dMetaMembers">—</span>
+            >
           </div>
         </div>
       </div>
@@ -3133,6 +3133,7 @@
 
     <script src="../property-card.js"></script>
     <script src="../municipality-address.js"></script>
+    <script src="../mock-workflows.js"></script>
     <script>
       // ========================================================================
       // OPTIONS
@@ -3182,7 +3183,6 @@
         transactionType: ["Buy", "Rent"],
         moveIn: ["Available Now", "Specified Due Date", "Consultation"],
         publish: ["Pending Review", "Published", "Rejected", "Suspended"],
-        membersOnly: ["Open for Public", "Members Only"],
         specialUpdates: ["Price Reduction", "Price Negotiable"],
         txTypeOpt: [
           "Owner",
@@ -3476,12 +3476,6 @@
               l: "Publish Status",
               t: "select",
               opts: OPT.publish,
-            },
-            {
-              k: "membersOnly",
-              l: "Members Only",
-              t: "select",
-              opts: OPT.membersOnly,
             },
             {
               k: "datePublished",
@@ -3877,7 +3871,6 @@
           buildingPermit: "確認番号2024-東京-001234",
           moveIn: "Specified Due Date",
           publishStatus: "Pending Review",
-          membersOnly: "Open for Public",
           datePublished: "2026-03-10",
           dateUpdated: "2026-05-18",
           specialUpdates: [],
@@ -4198,7 +4191,6 @@
           rejectCategory: "Incomplete documentation",
           rejectNotes:
             "Building permit number could not be verified. Please re-submit with a valid 確認番号.",
-          membersOnly: "Open for Public",
           datePublished: "2026-04-20",
           dateUpdated: "2026-05-15",
           specialUpdates: [],
@@ -4555,7 +4547,6 @@
             buildingPermit: "確認番号2025-" + idNum,
             moveIn: "Specified Due Date",
             publishStatus: publish,
-            membersOnly: seed % 4 === 0 ? "Members Only" : "Open for Public",
             datePublished:
               publish === "Pending Review" ? "" : `${compYear - 1}-06-10`,
             dateUpdated: `${compYear - 1}-08-${String((seed % 27) + 1).padStart(2, "0")}`,
@@ -4774,7 +4765,6 @@
         );
         if (pAll) {
           pAll.publishStatus = "Published";
-          pAll.membersOnly = "Open for Public";
           pAll.salesStatus = "Sold Out";
           pAll.floorPlanTypes.forEach((t) => (t.saleStatus = "Sold Out"));
         }
@@ -4883,11 +4873,6 @@
         if (s === "Rent") return `<span class="badge badge-amber">Rent</span>`;
         return `<span class="badge badge-gray">${s}</span>`;
       }
-      function badgeMembers(s) {
-        return s === "Members Only"
-          ? `<span class="badge badge-members"><i class="fas fa-lock"></i> Members Only</span>`
-          : `<span class="badge badge-published">Open</span>`;
-      }
       function badgeYesNo(b) {
         return b
           ? `<span class="badge badge-yes">Yes</span>`
@@ -4957,19 +4942,22 @@
       let _soldCancelCb = null;
       function openSoldModal(opts) {
         const modal = $("soldModal");
+        if(!$("soldSource")){const source=document.createElement('div');source.className='field-group';source.style.marginBottom='12px';source.innerHTML='<label class="field-label" for="soldSource">Sold / Transaction Source</label><select id="soldSource"><option>Yuushi Client Transaction</option><option>External Client Transaction</option><option>Sold Price Known — Information Only</option><option>Sold by Other — Price Unknown</option></select><div class="field-group" style="margin-top:12px"><div class="field-label" id="soldActorLabel">Sold By</div><div id="soldActorValue" style="font-weight:600"></div><small id="soldActorRole"></small></div><div id="soldClientWrap"><label class="field-label" for="soldClient">Related Yuushi Client / Lead</label><select id="soldClient"><option value="">Select existing Lead...</option><option value="14">LEAD-100014 · Aiko Mori</option></select></div>';$("soldPrice").closest('.field-group').before(source);$("soldSource").onchange=()=>{const src=$("soldSource").value,actor=YuushiWorkflow.currentAgencyActor({staffId:'STF-0001',name:'Taro Tanaka',role:'Agency Admin'}),agencyDeal=['Yuushi Client Transaction','External Client Transaction'].includes(src);$("soldClientWrap").style.display=src==='Yuushi Client Transaction'?'':'none';$("soldPrice").closest('.field-group').style.display=src==='Sold by Other — Price Unknown'?'none':'';$("soldActorLabel").textContent=agencyDeal?'Sold By':'Recorded By';$("soldActorValue").textContent=actor.name;$("soldActorRole").textContent=actor.role;};}
         $("soldTitle").textContent = `Mark ${opts.unitName} as Sold?`;
         $("soldPrice").value = "";
         $("soldDate").value = new Date().toISOString().slice(0, 10);
         $("soldPublishPrice").checked = false;
         $("soldPriceErr").style.display = "none";
         $("soldDateErr").style.display = "none";
+        $("soldSource").value='Yuushi Client Transaction';$("soldClient").value='';$("soldClientWrap").style.display='';$("soldPrice").closest('.field-group').style.display='';$("soldSource").onchange();
         _soldCancelCb =
           typeof opts.onCancel === "function" ? opts.onCancel : null;
         $("soldConfirmBtn").onclick = () => {
           const price = $("soldPrice").value;
           const date = $("soldDate").value;
+          const source=$("soldSource").value;
           let ok = true;
-          if (price === "" || Number(price) <= 0) {
+          if (source!=="Sold by Other — Price Unknown"&&(price === "" || Number(price) <= 0)) {
             $("soldPriceErr").style.display = "block";
             ok = false;
           } else $("soldPriceErr").style.display = "none";
@@ -4977,12 +4965,16 @@
             $("soldDateErr").style.display = "block";
             ok = false;
           } else $("soldDateErr").style.display = "none";
+          if(source==='Yuushi Client Transaction'&&!$("soldClient").value){toast('Select an existing Yuushi Lead.','error');ok=false;}
           if (!ok) return;
           const publishPrice = $("soldPublishPrice").checked;
           const payload = {
-            price: Number(price),
+            price:price===''?null:Number(price),
             date,
             publishPrice,
+            transactionSource:source,
+            leadId:source==='Yuushi Client Transaction'?$("soldClient").value:null,
+            saleActor:YuushiWorkflow.currentAgencyActor({staffId:'STF-0001',name:'Taro Tanaka',role:'Agency Admin'}),
           };
           _soldCancelCb = null;
           modal.classList.remove("open");
@@ -6472,7 +6464,7 @@
         if (!units.length) return null;
         const allSold = units.every((u) => u.saleStatus === "Sold Out");
         const isPublic =
-          p.publishStatus === "Published" && p.membersOnly !== "Members Only";
+          p.publishStatus === "Published";
         if (!allSold || !isPublic) return null;
         return {
           key: `${p.id}:allsold`,
@@ -7723,7 +7715,6 @@
         txTypeProject: "Brokerage Type",
         completionDate: "Completion Date",
         dateUpdated: "Date Updated",
-        membersOnly: "Members Only",
         description: "Description",
         Project: "Project",
       };
@@ -8383,8 +8374,6 @@
         $("dMetaSales").innerHTML = badgeSales(p.salesStatus);
         $("dMetaPublish").innerHTML = badgePublish(p.publishStatus);
         $("dMetaTx").innerHTML = badgeTx(p.transactionType || "Buy");
-        $("dMetaMembers").innerHTML = badgeMembers(p.membersOnly);
-
         // View-mode Suspend / Re-activate toggle.
         // Published -> "Suspend" (danger); Suspended -> "Re-activate" (success);
         // Pending Review or Rejected -> button hidden.
@@ -8614,10 +8603,18 @@
         const unit = queue.shift();
         openSoldModal({
           unitName: unit.name,
-          onConfirm: ({ price, date, publishPrice }) => {
+          onConfirm: ({ price, date, publishPrice, transactionSource, leadId, saleActor }) => {
             unit.obj.finalSalePrice = price;
             unit.obj.soldDate = date;
             unit.obj.publishPrice = publishPrice;
+            unit.obj.transactionSource = transactionSource;
+            unit.obj.leadId = leadId;
+            const agencyDeal=['Yuushi Client Transaction','External Client Transaction'].includes(transactionSource);
+            Object.assign(unit.obj,agencyDeal?{closedByStaffId:saleActor.staffId,closedByStaffName:saleActor.name,closedByRole:saleActor.role}:{recordedByStaffId:saleActor.staffId,recordedByStaffName:saleActor.name,recordedByRole:saleActor.role});
+            const txRows=YuushiWorkflow.read(YuushiWorkflow.keys.transactions),txId=unit.obj.verificationTransactionId||YuushiWorkflow.next(txRows,'TV-','transactionId');
+            unit.obj.verificationTransactionId=txId;
+            YuushiWorkflow.upsert(YuushiWorkflow.keys.transactions,YuushiWorkflow.transaction({transactionId:txId,propertyId:`${currentProj.id}::${unit.name}`,projectId:currentProj.id,targetName:unit.name,propertyName:`${currentProj.name||currentProj.title} · ${unit.name}`,transactionSource,...(agencyDeal?{closedByStaffId:saleActor.staffId,closedByStaffName:saleActor.name,closedByRole:saleActor.role}:{recordedByStaffId:saleActor.staffId,recordedByStaffName:saleActor.name,recordedByRole:saleActor.role}),leadId,agentSubmittedPrice:price,finalSalePrice:null,soldDate:date,publishPrice}),'transactionId');
+            if(currentProj.group===6){const open=new Set(['New','Assigned','Contact','Viewing','Proposal','Negotiation','Asleep']),rows=YuushiWorkflow.read(YuushiWorkflow.keys.leadRecords);rows.forEach(l=>{if(l.projectId===currentProj.id&&l.targetName===unit.name&&open.has(l.status)&&l.id!==Number(leadId)){l.status='Closed Lost';l.autoClosedBySale=agencyDeal;l.soldByStaffName=agencyDeal?saleActor.name:null;l.soldByStaffId=agencyDeal?saleActor.staffId:null;l.soldByRole=agencyDeal?saleActor.role:null;l.lossReason=null;}});YuushiWorkflow.write(YuushiWorkflow.keys.leadRecords,rows);}
             toast(
               `${unit.name} marked as Sold at ${fmtYen(price)} on ${date}.`,
             );
@@ -9665,7 +9662,6 @@
           transactionType: "Buy",
           salesStatus: "On Sale",
           publishStatus: "Pending Review",
-          membersOnly: "Open for Public",
           datePublished: "",
           dateUpdated: today,
           completionDate: completion.toISOString().slice(0, 10),
