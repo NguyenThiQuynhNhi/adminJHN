@@ -1097,17 +1097,17 @@
             lot.soldDate = dateRaw;
             toast(`${targetName} sold at ¥${rawAmount.toLocaleString()}. Lot marked Sold Out.`, "success");
           } else {
-            // Type (group 5) = bucket nhiều căn, KHÔNG có unit ID riêng.
-            // Chỉ ghi log giao dịch — KHÔNG tự ý đổi saleStatus của cả Type,
-            // vì Type vẫn còn các căn khác chưa bán. Admin tự tay đổi khi họ
-            // xác nhận Type đã bán hết (không có cơ chế đếm tồn kho tự động).
+            // Group 5 records one Type-level transaction and decrements the
+            // shared inventory counter; no fake physical Unit ID is created.
+            const type=project.floorPlanTypes.find(t=>t.name===targetName);
+            if(type){type.totalUnits=Math.max(1,Number(type.totalUnits||10));type.soldUnits=Math.min(type.totalUnits,Number(type.soldUnits||0)+1);type.availableUnits=type.totalUnits-type.soldUnits;type.saleStatus=type.availableUnits===0?'Sold Out':'On Sale';}
             TRANSACTIONS.push({
               id: "TXN-" + Date.now(),
               leadId: currentLead.id, projectId: project.id,
               targetType: "floorPlanType", targetName,
               price: rawAmount, date: dateRaw,
             });
-            toast(`Sale recorded for ${targetName} at ¥${rawAmount.toLocaleString()}. Type status unchanged — update manually in Project Admin when fully sold.`, "success");
+            toast(`Sale recorded for ${targetName} at ¥${rawAmount.toLocaleString()}. ${type?.availableUnits||0} unit(s) remain available.`, "success");
           }
 
         } else {
@@ -1129,13 +1129,17 @@
         }
 
         const openStatuses = new Set(["New", "Assigned", "Contact", "Viewing", "Proposal", "Negotiation", "Asleep"]);
+        const leadProject=currentLead.intent==='project'?PROJECTS.find(p=>p.id===currentLead.projectId):null;
+        const leadType=leadProject?.group===5?leadProject.floorPlanTypes.find(t=>t.name===currentLead.targetName):null;
         const sellableRef = currentLead.intent === 'project'
-          ? (PROJECTS.find(p=>p.id===currentLead.projectId)?.group===6 ? `${currentLead.projectId}::${currentLead.targetName}` : null)
+          ? (leadProject?.group===6||leadType?.availableUnits===0 ? `${currentLead.projectId}::${currentLead.targetName}` : null)
           : currentLead.propertyId;
         let closedCount = 0;
         LEADS.forEach(other => {
+          const otherProject=other.intent==='project'?PROJECTS.find(p=>p.id===other.projectId):null;
+          const otherType=otherProject?.group===5?otherProject.floorPlanTypes.find(t=>t.name===other.targetName):null;
           const otherRef = other.intent === 'project'
-            ? (PROJECTS.find(p=>p.id===other.projectId)?.group===6 ? `${other.projectId}::${other.targetName}` : null)
+            ? (otherProject?.group===6||otherType?.availableUnits===0 ? `${other.projectId}::${other.targetName}` : null)
             : other.propertyId;
           if (other.id !== currentLead.id && sellableRef && otherRef === sellableRef && openStatuses.has(other.status)) {
             other.status = "Closed Lost";

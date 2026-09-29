@@ -2720,13 +2720,7 @@
             <button class="btn btn-sm" type="button" onclick="openBulkAgent()">
               <i class="fas fa-user-tie"></i> Edit assigned agent
             </button>
-            <button
-              class="btn btn-sm btn-danger"
-              type="button"
-              onclick="openBulkArchive()"
-            >
-              <i class="fas fa-box-archive"></i> Archive
-            </button>
+
             <button
               class="btn btn-sm btn-ghost"
               type="button"
@@ -3027,7 +3021,7 @@
       </div>
     </div>
 
-    <!-- Mark as Sold modal (sale-details capture) -->
+    <!-- Sold Details modal (sale-details capture) -->
     <div class="modal-backdrop" id="soldModal">
       <div
         class="confirm-box"
@@ -3036,7 +3030,7 @@
         aria-labelledby="soldTitle"
       >
         <div class="confirm-header">
-          <h3 class="confirm-title" id="soldTitle">Mark as Sold?</h3>
+          <h3 class="confirm-title" id="soldTitle">Sold Details</h3>
           <button
             class="confirm-close"
             type="button"
@@ -3195,7 +3189,6 @@
             <select id="bulkStatusValue">
               <option value="Public">Public (Published)</option>
               <option value="Private">Private (Suspended)</option>
-              <option value="Archive">Archive (Suspended)</option>
             </select>
           </div>
         </div>
@@ -6461,6 +6454,7 @@
 
       let _suspTxProp = null;
       let _suspTxReason = null;
+      let _saleEndingReason = null;
 
       function syncSuspToggle() {
         const cb = document.getElementById("suspTxPublicPrice");
@@ -6501,91 +6495,33 @@
 
       function selectSuspReason(el, reason) {
         _suspTxReason = reason;
-        document.querySelectorAll(".susp-reason-card").forEach((c) => c.classList.remove("selected"));
+        document.querySelectorAll(".susp-reason-card").forEach(c=>c.classList.remove("selected"));
         el.classList.add("selected");
         document.getElementById("suspTxReasonErr").classList.add("hidden");
-        const needsPrice = reason === "sold";
-        const priceWrap = document.getElementById("suspTxPriceWrap");
-        priceWrap.style.display = needsPrice ? "" : "none";
-        if (needsPrice) {
-          document.getElementById("suspTxPriceLabel").innerHTML = 'Transaction Price (¥) <span class="required">*</span>';
-          document.getElementById("suspTxPriceReq").style.display = "";
-        }
-        document.getElementById("suspTxVisWrap").style.display = needsPrice ? "" : "none";
+        document.getElementById("suspTxPriceWrap").style.display="none";
+        document.getElementById("suspTxVisWrap").style.display="none";
       }
 
       function confirmSuspensionTransaction() {
-        if (!_suspTxReason) {
-          document.getElementById("suspTxReasonErr").classList.remove("hidden");
+        if (!_suspTxReason) { document.getElementById("suspTxReasonErr").classList.remove("hidden"); return; }
+        const prop=_suspTxProp, reason=_suspTxReason, date=document.getElementById("suspTxDate").value, notes=document.getElementById("suspTxNotes").value.trim();
+        if (['sold','sold-others'].includes(reason)) {
+          _saleEndingReason=reason;
+          closeSuspensionTransactionModal();
+          openSoldModal(payload=>{
+            const agencyDeal=['Yuushi Client Transaction','External Client Transaction'].includes(payload.transactionSource);
+            Object.assign(prop,payload,{publishStatus:'Suspended',saleStatus:'Sold Out',suspensionReason:reason,suspensionDate:payload.soldDate,suspensionNotes:notes,dateUpdated:new Date().toISOString().slice(0,10)});
+            persistSale(prop);
+            const open=new Set(['New','Assigned','Contact','Viewing','Proposal','Negotiation','Asleep']),rows=YuushiWorkflow.read(YuushiWorkflow.keys.leadRecords),winner=Number(String(payload.leadId||'').replace(/\D/g,''));
+            rows.forEach(l=>{if(l.propertyId===prop.id&&open.has(l.status)&&l.id!==winner){l.status='Closed Lost';l.autoClosedBySale=agencyDeal;l.soldByStaffId=agencyDeal?payload.saleActor.staffId:null;l.soldByStaffName=agencyDeal?payload.saleActor.name:null;l.soldByRole=agencyDeal?payload.saleActor.role:null;}});
+            YuushiWorkflow.write(YuushiWorkflow.keys.leadRecords,rows);pushHistory(prop,'publishStatus','Published','Suspended · '+reason);originalProp=JSON.parse(JSON.stringify(prop));renderDetail();renderList();toast('Sale information recorded. This listing cannot be re-activated.');_saleEndingReason=null;
+          });
           return;
         }
-
-        const priceInput = document.getElementById("suspTxPrice");
-        const price = priceInput.value.trim();
-        if (_suspTxReason === "sold" && !price) {
-          document.getElementById("suspTxPriceErr").classList.remove("hidden");
-          priceInput.classList.add("invalid");
-          priceInput.focus();
-          return;
-        }
-        document.getElementById("suspTxPriceErr").classList.add("hidden");
-        priceInput.classList.remove("invalid");
-
-        const payload = {
-          propertyId: _suspTxProp.id,
-          propertyName: _suspTxProp.name,
-          reason: _suspTxReason,
-          transactionPrice: price ? Number(price) : null,
-          publicPrice: document.getElementById("suspTxPublicPrice").checked,
-          suspensionDate: document.getElementById("suspTxDate").value,
-          notes: document.getElementById("suspTxNotes").value.trim(),
-          agent: _suspTxProp.agent,
-          ref: "TXN-" + Date.now().toString().slice(-6),
-          createdAt: new Date().toISOString(),
-        };
-
-        _suspTxProp.publishStatus = "Suspended";
-        _suspTxProp.dateUpdated = new Date().toISOString().slice(0, 10);
-        // Persist the suspension record directly on the property so it can be
-        // displayed on the detail page (localStorage log alone isn't enough).
-        _suspTxProp.suspensionReason = _suspTxReason;
-        _suspTxProp.suspensionDate = payload.suspensionDate;
-        _suspTxProp.suspensionNotes = payload.notes;
-        _suspTxProp.suspensionTxPrice = payload.transactionPrice;
-        _suspTxProp.suspensionPublicPrice = payload.publicPrice;
-        if (_suspTxReason === "sold") {
-          _suspTxProp.saleStatus = "Sold Out";
-          _suspTxProp.finalSalePrice = payload.transactionPrice;
-          _suspTxProp.soldDate = payload.suspensionDate;
-          _suspTxProp.publishPrice = payload.publicPrice;
-          _suspTxProp.transactionSource = "Yuushi Client Transaction";
-          _suspTxProp.saleActor = YuushiWorkflow.currentAgencyActor({staffId:'AGT-001',name:'Chris Sales',role:'Sales Agent'});
-          persistSale(_suspTxProp,payload.ref);
-        }
-        pushHistory(_suspTxProp, "publishStatus", "Published", "Suspended");
-        if (currentProp && currentProp.id === _suspTxProp.id) {
-          originalProp = JSON.parse(JSON.stringify(currentProp));
-        }
-
-        try {
-          const existing = JSON.parse(localStorage.getItem("yuushi.suspensionTx") || "[]");
-          existing.unshift(payload);
-          localStorage.setItem("yuushi.suspensionTx", JSON.stringify(existing));
-        } catch (e) {}
-
-        closeSuspensionTransactionModal();
-        renderDetail();
-        renderList();
-        if (typeof refreshAlertsUI === "function") refreshAlertsUI();
-
-        const reasonLabels = {
-          sold: "Sold",
-          "sold-others": "Sold by Others",
-          "seller-withdrew": "Seller Withdrew",
-          expired: "Listing Expired",
-          legal: "Legal Hold",
-        };
-        toast(`Listing suspended (${reasonLabels[payload.reason]}). Transaction logged.`);
+        const payload={propertyId:prop.id,propertyName:prop.name,reason,suspensionDate:date,notes,ref:'TXN-'+Date.now().toString().slice(-6),createdAt:new Date().toISOString()};
+        Object.assign(prop,{publishStatus:'Suspended',suspensionReason:reason,suspensionDate:date,suspensionNotes:notes,dateUpdated:new Date().toISOString().slice(0,10)});
+        try{const existing=JSON.parse(localStorage.getItem('yuushi.suspensionTx')||'[]');existing.unshift(payload);localStorage.setItem('yuushi.suspensionTx',JSON.stringify(existing));}catch(e){}
+        pushHistory(prop,'publishStatus','Published','Suspended');originalProp=JSON.parse(JSON.stringify(prop));closeSuspensionTransactionModal();renderDetail();renderList();toast('Listing suspended. Sale Status remains On Sale.');
       }
 
       (function wireSuspTxModal() {
@@ -6654,6 +6590,7 @@
       function closeSoldModal() {
         $("soldModal").classList.remove("open");
         _soldCb = null;
+        _saleEndingReason = null;
       }
       function openSoldModal(onConfirm) {
         _soldCb = typeof onConfirm === "function" ? onConfirm : null;
@@ -6664,7 +6601,9 @@
         $("soldDateErr").classList.add("hidden");
         $("soldPrice").classList.remove("invalid");
         $("soldDate").classList.remove("invalid");
-        $("soldSource").value="Yuushi Client Transaction";
+        const allowed=_saleEndingReason==='sold-others'?['Sold Price Known — Information Only','Sold by Other — Price Unknown']:['Yuushi Client Transaction','External Client Transaction'];
+        [...$("soldSource").options].forEach(o=>{o.hidden=!allowed.includes(o.value);o.disabled=!allowed.includes(o.value);});
+        $("soldSource").value=allowed[0];
         $("soldClient").value="";
         updateSoldSourceFields();
         $("soldModal").classList.add("open");
@@ -7962,7 +7901,7 @@
       // Map the bulk status dropdown wording to the file's publishStatus model.
       function mapStatusChoice(choice) {
         if (choice === "Public") return "Published";
-        return "Suspended"; // Private + Archive both hide the listing
+        return "Suspended";
       }
 
       // Resolve the currently selected listing records (across all pages).
@@ -8168,31 +8107,6 @@
           n++;
         });
         finishBulk(n);
-      }
-
-      // ===== Bulk Archive =====
-      function openBulkArchive() {
-        if (!bulkSelection.size) return;
-        const list = selectedListings();
-        openConfirm({
-          title: "Archive listings?",
-          body: `Archive ${list.length} listing(s)? They will be Suspended (hidden from the Client Portal): ${list
-            .map((p) => p.id)
-            .join(", ")}.`,
-          actionLabel: "Archive",
-          actionKind: "danger",
-          onConfirm: () => {
-            let n = 0;
-            list.forEach((p) => {
-              if (p.publishStatus === "Suspended") return;
-              pushHistory(p, "publishStatus", p.publishStatus, "Suspended");
-              p.publishStatus = "Suspended";
-              p.dateUpdated = new Date().toISOString().slice(0, 10);
-              n++;
-            });
-            finishBulk(n);
-          },
-        });
       }
 
       // Common post-bulk: re-render list + alerts, clear selection, one toast.
@@ -8673,7 +8587,7 @@
               (p.rejectNotes ? ". " + esc(p.rejectNotes) : ""),
           });
         // Prominent Sold-Out record card (shown ABOVE the section cards).
-        let soldCardHtml = p.publishStatus==='Published'&&p.saleStatus!=='Sold Out'&&Number(p.priceBuy)>0?'<div style="grid-column:1/-1"><button class="btn btn-primary" onclick="markPropertySold()">Mark as Sold</button></div>':'';
+        let soldCardHtml = '';
         if (p.saleStatus === "Sold Out") {
           const saleLine = p.transactionSource==='Sold by Other — Price Unknown'?`Sold on ${fmtDate(p.soldDate)} · Price unavailable`:`Sold at ${fmtYen(p.finalSalePrice)} on ${fmtDate(p.soldDate)}`;
           soldCardHtml = `
@@ -9222,9 +9136,6 @@
             } catch (e) {}
           }
           return;
-        }
-        if(currentProp.saleStatus==='Sold Out'&&originalProp.saleStatus!=='Sold Out'){
-          openSoldModal(payload=>{Object.assign(currentProp,payload,{publishStatus:'Suspended',suspensionReason:'sold'});persistSale(currentProp);commitSave();});return;
         }
         commitSave();
       }
@@ -10700,9 +10611,9 @@
 YuushiWorkflow.initUI();
 function savePropertySaleState(p){const states=YuushiWorkflow.read('yuushi.agency.propertySaleState',{});states[p.id]=Object.fromEntries(['saleStatus','publishStatus','finalSalePrice','soldDate','publishPrice','verificationTransactionId'].map(k=>[k,p[k]??null]));YuushiWorkflow.write('yuushi.agency.propertySaleState',states);}
 function persistSale(p,ref){const t=YuushiWorkflow.recordSale(p,p.finalSalePrice,p.soldDate,p.publishPrice,ref);p.verificationTransactionId=t.transactionId;savePropertySaleState(p);return t;}
-function markPropertySold(){if(!currentProp||editMode)return toast('Save or discard property edits before marking Sold.');openSoldModal(payload=>{const agencyDeal=['Yuushi Client Transaction','External Client Transaction'].includes(payload.transactionSource),actor=payload.saleActor;Object.assign(currentProp,payload,{saleStatus:'Sold Out',publishStatus:'Suspended',suspensionReason:agencyDeal?'sold':'sold-others'});persistSale(currentProp);const open=new Set(['New','Assigned','Contact','Viewing','Proposal','Negotiation','Asleep']),leadRows=YuushiWorkflow.read(YuushiWorkflow.keys.leadRecords);leadRows.forEach(l=>{if(l.propertyId===currentProp.id&&open.has(l.status)&&l.id!==Number(String(payload.leadId||'').replace(/\D/g,''))){l.status='Closed Lost';l.autoClosedBySale=agencyDeal;l.soldByStaffName=agencyDeal?actor.name:null;l.soldByStaffId=agencyDeal?actor.staffId:null;l.soldByRole=agencyDeal?actor.role:null;l.lossReason=null;}});YuushiWorkflow.write(YuushiWorkflow.keys.leadRecords,leadRows);originalProp=JSON.parse(JSON.stringify(currentProp));renderDetail();renderList();toast('Sale recorded. The listing is now unavailable.');});}
-const savedSaleStates=YuushiWorkflow.read('yuushi.agency.propertySaleState',{});
-const verificationRows=YuushiWorkflow.read(YuushiWorkflow.keys.transactions);
+
+const savedSaleStates=YuushiWorkflow.read('yuushi.agency.propertySaleState',{}),verificationRows=YuushiWorkflow.read(YuushiWorkflow.keys.transactions);
+
 properties.forEach(p=>{if(savedSaleStates[p.id])Object.assign(p,savedSaleStates[p.id]);if(p.saleStatus==='Sold Out'&&p.finalSalePrice&&!p.verificationTransactionId){const id='SEED-'+p.id;const found=verificationRows.find(t=>t.transactionId===id);p.verificationTransactionId=id;if(!found)YuushiWorkflow.upsert(YuushiWorkflow.keys.transactions,YuushiWorkflow.transaction({transactionId:id,propertyId:p.id,propertyName:p.name,closedByStaffId:'AGT-001',closedByStaffName:'Chris Sales',closedByRole:'Sales Agent',listedPrice:Number(p.priceBuy)||null,agentSubmittedPrice:p.finalSalePrice,finalSalePrice:p.finalSalePrice,soldDate:p.soldDate,publishPrice:!!p.publishPrice}),'transactionId');}const t=verificationRows.find(t=>t.transactionId===p.verificationTransactionId);if(t){p.finalSalePrice=t.finalSalePrice;p.publishPrice=t.publishPrice;}});
 renderList();
 </script>

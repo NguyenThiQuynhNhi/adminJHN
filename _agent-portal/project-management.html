@@ -2547,13 +2547,7 @@
           <button class="btn btn-sm" type="button" onclick="openBulkAgent()">
             <i class="fas fa-user-tie"></i> Edit assigned agent
           </button>
-          <button
-            class="btn btn-sm btn-danger"
-            type="button"
-            onclick="openBulkArchive()"
-          >
-            <i class="fas fa-box-archive"></i> Archive
-          </button>
+
           <button
             class="btn btn-sm btn-ghost"
             type="button"
@@ -2833,11 +2827,11 @@
       </div>
     </div>
 
-    <!-- Per-unit Mark-as-Sold modal (Floor Plan Type / Lot) -->
+    <!-- Per-inventory Sold Details modal (Floor Plan Type / Lot) -->
     <div class="modal-backdrop" id="soldModal">
       <div class="modal-box" style="width: 480px">
         <div class="modal-header">
-          <h3 class="modal-title" id="soldTitle">Mark as Sold?</h3>
+          <h3 class="modal-title" id="soldTitle">Sold Details</h3>
           <button
             class="btn btn-ghost btn-sm"
             type="button"
@@ -3000,7 +2994,6 @@
             <select id="bulkStatusSel">
               <option value="Public">Public (Published)</option>
               <option value="Private">Private (Suspended)</option>
-              <option value="Archive">Archive (Suspended &amp; hidden)</option>
             </select>
           </div>
         </div>
@@ -3463,6 +3456,7 @@
               t: "select",
               opts: OPT.salesStatus,
               req: true,
+              readonly: true,
             },
             {
               k: "buildingPermit",
@@ -4468,10 +4462,12 @@
         // Migration: collapse any legacy Sale Status into the 2-option set.
         projects.forEach((p) => {
           if (!p.createdBy) p.createdBy = p.agent;
+          if(p.group===5)(p.floorPlanTypes||[]).forEach(t=>{t.totalUnits=Math.max(1,Number(t.totalUnits||10));t.soldUnits=Math.min(t.totalUnits,Number(t.soldUnits??(t.saleStatus==='Sold Out'?t.totalUnits:0)));t.availableUnits=t.totalUnits-t.soldUnits;t.saleStatus=t.availableUnits===0?'Sold Out':'On Sale';});
           if (p.salesStatus !== "On Sale" && p.salesStatus !== "Sold Out") {
             p.salesStatus = "On Sale";
           }
         });
+        const partial=projects.find(p=>p.group===5)?.floorPlanTypes?.find(t=>t.saleStatus==='On Sale');if(partial&&partial.soldUnits===0){partial.totalUnits=10;partial.soldUnits=2;partial.availableUnits=8;}
 
         const PUBLISH = [
           "Pending Review",
@@ -4935,7 +4931,7 @@
       });
 
       // ------------------------------------------------------------------------
-      // Per-unit Mark-as-Sold modal (CHANGE 2b)
+      // Per-inventory Sold Details modal (CHANGE 2b)
       // openSoldModal({ unitName, onConfirm({price, date, notes}), onCancel })
       // Final Sale Price + Sold Date required; inline validation. 4 close methods.
       // ------------------------------------------------------------------------
@@ -5464,15 +5460,7 @@
           ${soldInfo}
           <div class="kv-grid">
             ${inp("name", "Type Name", "text", null, true)}
-            ${
-              editMode
-                ? `<div class="kv"><span class="kv-label">Sale Status</span><div class="kv-value">
-                  <select class="edit-input" data-fp="${idx}" data-fpk="saleStatus">
-                    <option ${t.saleStatus === "On Sale" ? "selected" : ""}>On Sale</option>
-                    <option ${t.saleStatus === "Sold Out" ? "selected" : ""}>Sold Out</option>
-                  </select></div></div>`
-                : `<div class="kv"><span class="kv-label">Sale Status</span><div class="kv-value">${t.saleStatus === "Sold Out" ? '<span class="badge badge-soldout">SOLD OUT</span>' : '<span class="badge badge-onsale">ON SALE</span>'}</div></div>`
-            }
+            <div class="kv"><span class="kv-label">Sale Status · system derived</span><div class="kv-value">${t.saleStatus === "Sold Out" ? '<span class="badge badge-soldout">SOLD OUT</span>' : '<span class="badge badge-onsale">ON SALE</span>'}${currentProj.group===5?`<small style="display:block;margin-top:5px">${Number(t.soldUnits||0)} sold · ${Math.max(0,Number(t.totalUnits||10)-Number(t.soldUnits||0))} available of ${Number(t.totalUnits||10)}</small>`:''}${t.saleStatus!=="Sold Out"?` <button type="button" class="btn btn-small" onclick="recordInventorySale('type',${idx})">Record Sale</button>`:''}</div></div>
             ${
               editMode
                 ? `<div class="kv"><span class="kv-label">Price Mode</span><div class="kv-value">
@@ -5702,15 +5690,7 @@
                 : ""
             }
             <div class="kv-grid">
-              ${
-                editMode
-                  ? `<div class="kv"><span class="kv-label">Sale Status</span><div class="kv-value">
-                <select class="edit-input" data-lot="${idx}" data-lotk="saleStatus">
-                  <option ${t.saleStatus === "On Sale" ? "selected" : ""}>On Sale</option>
-                  <option ${t.saleStatus === "Sold Out" ? "selected" : ""}>Sold Out</option>
-                </select></div></div>`
-                  : ""
-              }
+              <div class="kv"><span class="kv-label">Sale Status · system derived</span><div class="kv-value">${t.saleStatus === "Sold Out"?'<span class="badge badge-soldout">SOLD OUT</span>':'<span class="badge badge-onsale">ON SALE</span>'}${t.saleStatus!=="Sold Out"?` <button type="button" class="btn btn-small" onclick="recordInventorySale('lot',${idx})">Record Sale</button>`:''}</div></div>
               ${editMode ? inp("priceTBD", "Price TBD", "toggle") : ""}
               ${priceBlock}
               ${pricePerSqm}
@@ -6459,37 +6439,8 @@
         };
       }
       // PROJECT #10 — All units sold but project still Public → info
-      function detAllUnitsSold(p) {
-        const units = projUnits(p);
-        if (!units.length) return null;
-        const allSold = units.every((u) => u.saleStatus === "Sold Out");
-        const isPublic =
-          p.publishStatus === "Published";
-        if (!allSold || !isPublic) return null;
-        return {
-          key: `${p.id}:allsold`,
-          id: "allsold",
-          entityId: p.id,
-          severity: "info",
-          title: "All units sold",
-          desc: "Every unit is sold but the project is still publicly visible.",
-          actionLabel: "Archive / Keep",
-          actionFn: () =>
-            showConfirm({
-              title: "All units sold",
-              body: `Every unit in ${p.name} is sold. Archive the project (hide from public) or keep it visible?`,
-              confirmLabel: "Archive project",
-              danger: false,
-              onConfirm: () => {
-                p.publishStatus = "Suspended";
-                toast(`${p.name} archived.`, "success");
-                refreshAlerts();
-                if (currentProj && currentProj.id === p.id) renderDetail();
-                applyFilters();
-              },
-            }),
-        };
-      }
+      function detAllUnitsSold(){ return null; }
+
       // PROJECT #11 — Sales slowing (>70% unsold after 12 months) → warning
       function detSalesSlowing(p) {
         const launch = _daysFromNow(p.launchDate);
@@ -6561,7 +6512,6 @@
         detSoldNotClosed,
         detDuplicate,
         detPhaseOverdue,
-        detAllUnitsSold,
         detSalesSlowing,
         detDocExpired,
       ];
@@ -8382,7 +8332,7 @@
           tog.className = "btn btn-danger";
           tog.innerHTML = '<i class="fas fa-ban"></i> Suspend';
           tog.classList.remove("hidden");
-        } else if (p.publishStatus === "Suspended") {
+        } else if (p.publishStatus === "Suspended" && p.salesStatus !== "Sold Out") {
           tog.className = "btn btn-success";
           tog.innerHTML = '<i class="fas fa-circle-check"></i> Re-activate';
           tog.classList.remove("hidden");
@@ -8594,7 +8544,22 @@
         return out;
       }
 
-      // Process the per-unit Mark-as-Sold prompts one at a time, then finalize.
+      function deriveProjectSalesStatus(project){const items=project.group===5?(project.floorPlanTypes||[]):(project.lots||[]);project.salesStatus=items.length&&items.every(x=>x.saleStatus==='Sold Out')?'Sold Out':'On Sale';if(project.salesStatus==='Sold Out')project.publishStatus='Suspended';}
+      function recordInventorySale(kind,idx){
+        const item=kind==='type'?currentProj.floorPlanTypes[idx]:currentProj.lots[idx];if(!item||item.saleStatus==='Sold Out')return;
+        openSoldModal({unitName:item.name,onConfirm:payload=>{
+          const {price,date,publishPrice,transactionSource,leadId,saleActor}=payload,agencyDeal=['Yuushi Client Transaction','External Client Transaction'].includes(transactionSource);
+          if(kind==='type'){item.totalUnits=Math.max(1,Number(item.totalUnits||10));item.soldUnits=Math.min(item.totalUnits,Number(item.soldUnits||0)+1);item.availableUnits=item.totalUnits-item.soldUnits;item.saleStatus=item.availableUnits===0?'Sold Out':'On Sale';}
+          else{item.saleStatus='Sold Out';item.soldDate=date;item.finalSalePrice=price;item.publishPrice=publishPrice;item.availableUnits=0;item.soldUnits=1;item.totalUnits=1;}
+          const actorFields=agencyDeal?{closedByStaffId:saleActor.staffId,closedByStaffName:saleActor.name,closedByRole:saleActor.role}:{recordedByStaffId:saleActor.staffId,recordedByStaffName:saleActor.name,recordedByRole:saleActor.role},txId=YuushiWorkflow.next(YuushiWorkflow.read(YuushiWorkflow.keys.transactions),'TV-','transactionId');
+          YuushiWorkflow.upsert(YuushiWorkflow.keys.transactions,YuushiWorkflow.transaction({transactionId:txId,propertyId:`${currentProj.id}::${item.name}`,projectId:currentProj.id,targetName:item.name,propertyName:`${currentProj.name} · ${item.name}`,transactionSource,...actorFields,leadId,agentSubmittedPrice:price,finalSalePrice:null,soldDate:date,publishPrice}),'transactionId');
+          const depleted=kind==='lot'||item.availableUnits===0,open=new Set(['New','Assigned','Contact','Viewing','Proposal','Negotiation','Asleep']),rows=YuushiWorkflow.read(YuushiWorkflow.keys.leadRecords),winner=Number(leadId);if(depleted)rows.forEach(l=>{if(l.projectId===currentProj.id&&l.targetName===item.name&&open.has(l.status)&&l.id!==winner){l.status='Closed Lost';l.autoClosedBySale=agencyDeal;l.soldByStaffId=agencyDeal?saleActor.staffId:null;l.soldByStaffName=agencyDeal?saleActor.name:null;}});YuushiWorkflow.write(YuushiWorkflow.keys.leadRecords,rows);
+          deriveProjectSalesStatus(currentProj);originalProj=JSON.parse(JSON.stringify(currentProj));renderDetail();renderList();toast(kind==='type'?`${item.name}: ${item.soldUnits} sold, ${item.availableUnits} available.`:`${item.name} marked Sold Out.`);
+        },onCancel:()=>{toast('Sale cancelled. Inventory was not changed.');}});
+      }
+      window.recordInventorySale=recordInventorySale;
+
+      // Process legacy queued sale records without mutating inventory on cancel.
       function processSoldQueue(queue, done) {
         if (!queue.length) {
           done();
@@ -8621,8 +8586,8 @@
             processSoldQueue(queue, done);
           },
           onCancel: () => {
-            // Cancel = skip recording details for this unit; it stays Sold Out
-            // but without sale data. Continue with the rest of the queue.
+            unit.obj.saleStatus = "On Sale";
+            delete unit.obj.soldDate; delete unit.obj.finalSalePrice; delete unit.obj.publishPrice;
             processSoldQueue(queue, done);
           },
         });
@@ -9063,63 +9028,14 @@
         }
         collectInputsToState();
 
-        const wasProjSold =
-          originalProj && originalProj.salesStatus === "Sold Out";
-        const projNowSold = currentProj.salesStatus === "Sold Out";
-
-        // CHANGE 2c — project-level Sold Out → confirm + auto-suspend (atomic).
-        // If confirmed: Sold Out + Suspended. If dismissed (any of 4 close
-        // methods): revert Sales Status to its pre-edit value, finalize normally.
-        const projectSoldOutStep = (next) => {
-          if (projNowSold && !wasProjSold) {
-            let confirmed = false;
-            showConfirm({
-              title: "Mark entire project as Sold Out?",
-              body: "This will auto-suspend the project from the Client Portal. Confirm only when all units are sold or the project is no longer for sale.",
-              confirmLabel: "Confirm",
-              danger: true,
-              onConfirm: () => {
-                confirmed = true;
-                currentProj.salesStatus = "Sold Out";
-                currentProj.publishStatus = "Suspended";
-                next(true);
-              },
-            });
-            // Watch for dismissal-without-confirm; revert + finalize once.
-            const modal = $("confirmModal");
-            const obs = new MutationObserver(() => {
-              if (!modal.classList.contains("open")) {
-                obs.disconnect();
-                if (!confirmed) {
-                  currentProj.salesStatus = originalProj
-                    ? originalProj.salesStatus
-                    : currentProj.salesStatus;
-                  next(false);
-                }
-              }
-            });
-            obs.observe(modal, {
-              attributes: true,
-              attributeFilter: ["class"],
-            });
-            return;
-          }
-          next(false);
-        };
-
-        // Per-unit prompts first, then the project-level step, then finalize.
         const queue = pendingSoldUnits();
-        processSoldQueue(queue, () => {
-          projectSoldOutStep((suspended) => {
-            finalizeSave();
-            if (suspended) toast("Project marked as Sold Out and suspended.");
-          });
-        });
+        processSoldQueue(queue, () => { deriveProjectSalesStatus(currentProj); finalizeSave(); });
       }
 
       function toggleSuspend() {
         if (!currentProj) return;
-        // Only valid from Published (suspend) or Suspended (re-activate).
+        if(currentProj.publishStatus==='Suspended'&&currentProj.salesStatus==='Sold Out'){toast('Sold-out projects cannot be re-activated.','error');return;}
+        // Only valid from Published (suspend) or normal Suspended (re-activate).
         const suspending = currentProj.publishStatus === "Published";
         const next = suspending ? "Suspended" : "Published";
         showConfirm({
@@ -9210,11 +9126,10 @@
       // ---- Status model mapping -----------------------------------------
       // List/bulk status choices map onto the file's publishStatus model:
       //   Public  -> "Published"  (visible)
-      //   Private -> "Suspended"  (hidden, not archived)
-      //   Archive -> "Suspended"  (hidden / archived)
+      //   Private -> "Suspended"  (hidden)
       function statusChoiceToPublish(choice) {
         if (choice === "Public") return "Published";
-        return "Suspended"; // Private + Archive both hide the project
+        return "Suspended";
       }
       function isPendingStatus(s) {
         return s === "Pending Review" || s === "Pending approval";
@@ -9481,30 +9396,6 @@
       window.applyBulkAgent = applyBulkAgent;
 
       // ====================================================================
-      // BULK ARCHIVE (group A.6)
-      // ====================================================================
-      function openBulkArchive() {
-        const sel = selectedProjects();
-        if (!sel.length) return;
-        const ids = sel.map((p) => p.id).join(", ");
-        showConfirm({
-          title: `Archive ${sel.length} project${sel.length !== 1 ? "s" : ""}?`,
-          body: `The following will be archived (hidden from public): ${ids}.`,
-          confirmLabel: "Archive",
-          danger: true,
-          onConfirm: () => {
-            sel.forEach((p) => {
-              const before = p.publishStatus;
-              p.publishStatus = "Suspended";
-              pushHistory(p, "publishStatus", before, "Suspended (Archived)");
-            });
-            finishBulk(sel.length, "archived");
-          },
-        });
-      }
-      window.openBulkArchive = openBulkArchive;
-
-      // ====================================================================
       // INLINE CELL EDIT (group C.8)
       // ====================================================================
       function startInlineEdit(td, kind, id) {
@@ -9530,7 +9421,7 @@
               : p.publishStatus === "Suspended"
                 ? "Private"
                 : p.publishStatus;
-          ["Public", "Private", "Archive"].forEach((o) => {
+          ["Public", "Private"].forEach((o) => {
             const opt = document.createElement("option");
             opt.value = o;
             opt.textContent = o;

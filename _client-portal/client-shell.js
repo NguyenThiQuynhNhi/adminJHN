@@ -4,6 +4,7 @@
   const pageTitles = {
     'client-myprofile.html':'My Profile',
     'customer-profile.html':'My Profile',
+    'client-my-reviews.html':'My Reviews',
     'support_landing.html':'Support Services',
     'supportal_directory.html':'Find a Provider',
     'supportal_profile.html':'Provider Profile',
@@ -59,7 +60,7 @@
   function renderRoute() {
     const url = new URL(location.href);
     const page = url.searchParams.get('page');
-    if (['client-myprofile.html','customer-profile.html'].includes(page) && !signedIn) {
+    if (['client-myprofile.html','customer-profile.html','client-my-reviews.html'].includes(page) && !signedIn) {
       url.searchParams.delete('page');
       history.replaceState(null,'',url);
       renderRoute(); return;

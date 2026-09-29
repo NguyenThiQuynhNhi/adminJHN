@@ -2427,7 +2427,7 @@
       </div>
     </div>
 
-    <!-- Mark as Sold modal (sale-details capture) -->
+    <!-- Sold Details modal (sale-details capture) -->
     <div class="modal-backdrop" id="soldModal">
       <div
         class="confirm-box"
@@ -2436,7 +2436,7 @@
         aria-labelledby="soldTitle"
       >
         <div class="confirm-header">
-          <h3 class="confirm-title" id="soldTitle">Mark as Sold?</h3>
+          <h3 class="confirm-title" id="soldTitle">Sold Details</h3>
           <button
             class="confirm-close"
             type="button"
@@ -2447,6 +2447,8 @@
           </button>
         </div>
         <div class="confirm-body">
+          <div class="field-group" style="margin-bottom:12px"><label class="field-label" for="adminSoldSource">Sale context <span class="required">*</span></label><select id="adminSoldSource"><option value="Yuushi Client Transaction">Sold by Agency · Yuushi Client</option><option value="External Client Transaction">Sold by Agency · External buyer</option><option value="Sold Price Known — Information Only">Sold by Other · Price known</option><option value="Sold by Other — Price Unknown">Sold by Other · Price unknown</option></select></div>
+          <div class="field-group" id="adminSoldLeadWrap" style="margin-bottom:12px"><label class="field-label" for="adminSoldLead">Related Yuushi Client / Lead</label><select id="adminSoldLead"><option value="">Select existing Lead...</option><option value="14">LEAD-100014 · Aiko Mori</option></select></div>
           <div class="field-group" style="margin-bottom: 12px">
             <label class="field-label" for="soldPrice"
               >Final Sale Price (¥) <span class="required">*</span></label
@@ -2695,6 +2697,7 @@
 
     <script src="../property-card.js"></script>
     <script src="../municipality-address.js"></script>
+    <script src="../mock-workflows.js"></script>
     <script>
       // ========================================================================
       // OPTIONS — shared dropdowns
@@ -5138,6 +5141,9 @@
       }
       function openSoldModal(onConfirm) {
         _soldCb = typeof onConfirm === "function" ? onConfirm : null;
+        $("adminSoldSource").value = _suspReason==='sold-others'?'Sold Price Known — Information Only':'Yuushi Client Transaction';
+        $("adminSoldLead").value = "";
+        updateAdminSoldFields();
         $("soldPrice").value = "";
         $("soldPublishPrice").checked = false;
         $("soldDate").value = new Date().toISOString().slice(0, 10); // default today
@@ -5148,14 +5154,17 @@
         $("soldModal").classList.add("open");
         setTimeout(() => $("soldPrice").focus(), 30);
       }
+      function updateAdminSoldFields(){const source=$("adminSoldSource").value,known=source!=="Sold by Other — Price Unknown";$("adminSoldLeadWrap").style.display=source==="Yuushi Client Transaction"?"":"none";$("soldPrice").closest('.field-group').style.display=known?"":"none";$("soldPublishPrice").closest('.field-group').style.display=known?"":"none";}
       (function wireSold() {
         const modal = $("soldModal");
+        $("adminSoldSource").addEventListener("change",updateAdminSoldFields);
         $("soldConfirm").addEventListener("click", () => {
+          const source=$("adminSoldSource").value,priceKnown=source!=="Sold by Other — Price Unknown";
           const priceRaw = $("soldPrice").value.trim();
           const dateRaw = $("soldDate").value;
           let ok = true;
           // Final Sale Price required
-          if (priceRaw === "") {
+          if (priceKnown && priceRaw === "") {
             $("soldPriceErr").textContent =
               "Please enter the final sale price.";
             $("soldPriceErr").classList.remove("hidden");
@@ -5165,6 +5174,7 @@
             $("soldPriceErr").classList.add("hidden");
             $("soldPrice").classList.remove("invalid");
           }
+          if(source==="Yuushi Client Transaction"&&!$("adminSoldLead").value){toast("Select an existing Yuushi Lead.","error");ok=false;}
           // Sold Date required
           if (!dateRaw) {
             $("soldDateErr").textContent = "Please select the sold date.";
@@ -5179,9 +5189,11 @@
           const cb = _soldCb;
           const publishPrice = $("soldPublishPrice").checked;
           const payload = {
-            finalSalePrice: Number(priceRaw),
+            finalSalePrice: priceKnown?Number(priceRaw):null,
             soldDate: dateRaw,
-            publishPrice,
+            publishPrice: priceKnown&&publishPrice,
+            transactionSource:source,
+            leadId:source==="Yuushi Client Transaction"?$("adminSoldLead").value:null,
           };
           closeSoldModal();
           if (cb) cb(payload);
@@ -6783,36 +6795,13 @@
           if (e.target === $("suspModal")) closeSuspModal();
         });
         $("suspConfirm").addEventListener("click", () => {
-          if (!_suspReason) {
-            $("suspReasonErr").classList.remove("hidden");
-            return;
+          if(!_suspReason){$("suspReasonErr").classList.remove("hidden");return;}
+          if(!currentProp)return;
+          if(['sold','sold-others'].includes(_suspReason)){
+            closeSuspModal();
+            openSoldModal(payload=>{const agencyDeal=['Yuushi Client Transaction','External Client Transaction'].includes(payload.transactionSource),actor=agencyDeal?{closedByStaffId:null,closedByStaffName:'Agency closer not supplied',closedByRole:null}:{recordedByStaffId:'ADM-001',recordedByStaffName:'Platform Admin',recordedByRole:'Platform Admin'};Object.assign(currentProp,payload,{publishStatus:'Suspended',saleStatus:'Sold Out',suspensionReason:_suspReason,suspensionDate:payload.soldDate,dateUpdated:new Date().toISOString().slice(0,10)});const id='ADMIN-SALE-'+currentProp.id;YuushiWorkflow.upsert(YuushiWorkflow.keys.transactions,YuushiWorkflow.transaction({transactionId:id,propertyId:currentProp.id,propertyName:currentProp.name,transactionSource:payload.transactionSource,...actor,leadId:payload.leadId,agentSubmittedPrice:payload.finalSalePrice,finalSalePrice:null,soldDate:payload.soldDate,publishPrice:payload.publishPrice}),'transactionId');originalProp=JSON.parse(JSON.stringify(currentProp));renderDetail();renderList();toast('Sale information recorded. Sold listings cannot be re-activated.');});return;
           }
-          const priceRaw = $("suspPrice").value.trim();
-          if (_suspReason === "sold" && !priceRaw) {
-            $("suspPriceErr").classList.remove("hidden");
-            $("suspPrice").focus();
-            return;
-          }
-          $("suspPriceErr").classList.add("hidden");
-          if (!currentProp) return;
-          currentProp.publishStatus = "Suspended";
-          currentProp.suspensionReason = _suspReason;
-          currentProp.suspensionDate = $("suspDate").value;
-          currentProp.suspensionNotes = $("suspNotes").value.trim();
-          currentProp.suspensionTxPrice = priceRaw ? Number(priceRaw) : null;
-          currentProp.suspensionPublicPrice = $("suspPublicPrice").checked;
-          currentProp.dateUpdated = new Date().toISOString().slice(0, 10);
-          if (_suspReason === "sold") {
-            currentProp.saleStatus = "Sold Out";
-            currentProp.finalSalePrice = Number(priceRaw);
-            currentProp.soldDate = $("suspDate").value;
-            currentProp.publishPrice = $("suspPublicPrice").checked;
-          }
-          originalProp = JSON.parse(JSON.stringify(currentProp));
-          closeSuspModal();
-          renderDetail();
-          renderList();
-          toast("Listing suspended.");
+          Object.assign(currentProp,{publishStatus:'Suspended',suspensionReason:_suspReason,suspensionDate:$("suspDate").value,suspensionNotes:$("suspNotes").value.trim(),dateUpdated:new Date().toISOString().slice(0,10)});originalProp=JSON.parse(JSON.stringify(currentProp));closeSuspModal();renderDetail();renderList();toast('Listing suspended. Sale Status remains On Sale.');
         });
       })();
 
@@ -6822,31 +6811,7 @@
         if (currentProp.publishStatus === "Published") {
           openSuspModal();
         } else if (currentProp.publishStatus === "Suspended") {
-          if (currentProp.saleStatus === "Sold Out") {
-            // Sold-Out re-activation clears the sale record and resets to On Sale.
-            openConfirm({
-              title: "Re-activate listing?",
-              body: `This listing is marked as Sold Out (sold ${fmtYen(
-                currentProp.finalSalePrice,
-              )} on ${fmtDate(
-                currentProp.soldDate,
-              )}). Re-activating will reset Sale Status to On Sale and clear the sale record.`,
-              actionLabel: "Re-activate",
-              actionKind: "success",
-              onConfirm: () => {
-                currentProp.saleStatus = "On Sale";
-                currentProp.finalSalePrice = undefined;
-                currentProp.soldDate = undefined;
-                currentProp.publishPrice = undefined;
-                currentProp.publishStatus = "Published";
-                originalProp = JSON.parse(JSON.stringify(currentProp));
-                renderDetail();
-                renderList();
-                toast("Listing re-activated. Sale record cleared.");
-              },
-            });
-            return;
-          }
+          if (currentProp.saleStatus === "Sold Out" || ['sold','sold-others'].includes(currentProp.suspensionReason)) { toast("Sold listings cannot be re-activated.","error"); return; }
           openConfirm({
             title: "Re-activate listing?",
             body: `Re-activate ${currentProp.id} (${currentProp.name})? The listing will be visible publicly again.`,
