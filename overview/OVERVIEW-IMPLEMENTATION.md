@@ -41,7 +41,7 @@ Fraud settings, targets, report shortcuts và schedules được lưu ở localS
 | --- | --- | --- |
 | 5 | Alert Bar (Real-time) | KPI Dashboard |
 | 6 | Unresponded Messages | KPI Dashboard |
-| 7 | Property Complaints (Unprocessed) | KPI Dashboard |
+| 7 | Property Reports (Unprocessed) | KPI Dashboard |
 | 8 | Pending Ad Approvals | KPI Dashboard |
 | 9 | Fraud Detections | KPI Dashboard |
 | 10 | Payment Errors | KPI Dashboard |
