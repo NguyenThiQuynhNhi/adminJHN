@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Messages — Agent Portal</title>
+    <title>Messages — Agency Portal</title>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
@@ -2173,6 +2173,8 @@
       }
     </style>
   <link rel="stylesheet" href="../dropdown-indicators.css">
+<script src="../mock-workflows.js"></script>
+<script src="../ba-workflows.js"></script>
 </head>
   <body>
     <!-- ============ PANEL 1 — SIDEBAR ============ -->
@@ -2186,7 +2188,7 @@
       </div>
       <div class="sb-tabs" id="sbTabs" style="display:none">
         <div class="sb-tab active" data-view="inbox" onclick="switchSidebarView('inbox')">Agency Message</div>
-        <div class="sb-tab" data-view="staff" onclick="switchSidebarView('staff')">Agents Message</div>
+        <div class="sb-tab" data-view="staff" onclick="switchSidebarView('staff')">Staff Messages</div>
       </div>
       <div class="convo-list" id="convoList"></div>
     </aside>
@@ -2599,8 +2601,8 @@
         { id: "g1", name: "High-Net-Worth Investors", entityType: "end_user", leadIds: ["U-1001", "U-1003", "U-1004"], createdDate: "2026-04-10" },
         { id: "g2", name: "First-time Buyers Vietnam", entityType: "end_user", leadIds: ["U-1002", "U-1005"], createdDate: "2026-04-09" },
         { id: "g3", name: "International Buyers", entityType: "end_user", leadIds: ["U-1006"], createdDate: "2026-04-08" },
-        { id: "g4", name: "Top Performing Agents", entityType: "agent", leadIds: ["A-101", "A-103"], createdDate: "2026-04-05" },
-        { id: "g5", name: "Standard Agents Tokyo/Osaka", entityType: "agent", leadIds: ["A-102", "A-104"], createdDate: "2026-04-06" },
+        { id: "g4", name: "Top Performing Agencies", entityType: "agent", leadIds: ["A-101", "A-103"], createdDate: "2026-04-05" },
+        { id: "g5", name: "Standard Agencies Tokyo/Osaka", entityType: "agent", leadIds: ["A-102", "A-104"], createdDate: "2026-04-06" },
       ];
 
       function getGroupsStore() {
@@ -3232,7 +3234,20 @@ function renderStaffView() {
   }
 }
 
+      function syncAgencyInquiries(){
+        const signed=WAgency.read('yuushi.agencySignedInStaff',null);
+        const rows=WAgency.read(WAgency.keys.enquiries).filter(r=>r.customerId&&r.propertyId);
+        for(const r of rows){
+          if(currentUserRole!=='ceo' && (!signed || (r.assignedStaffId||r.assigneeId)!==signed.staffId))continue;
+          let c=clients.find(c=>c.id===r.conversationId||c.id===r.id);
+          const data={...r,id:r.conversationId||r.id,kind:'client',name:r.customerName||r.customerId,img:AV(24),time:r.lastOpenedAt||r.createdAt,preview:r.preview||'Agency inquiry · '+r.propertyId,unread:0,online:false,saved:false,email:'',phone:'',ceoReadOnly:currentUserRole==='ceo',msgs:r.msgs||[]};
+          if(c)Object.assign(c,data);else clients.push(data);
+        }
+      }
+      const WAgency=YuushiWorkflow;
+      addEventListener('storage',e=>{if(e.key===WAgency.keys.enquiries){syncAgencyInquiries();renderList();if(current?.customerId)renderMessages();}});
       function renderList() {
+        syncAgencyInquiries();
         // Guard: check if elements exist
         const sbTabs = $("sbTabs");
         const searchInput = $("searchInput");
@@ -3268,8 +3283,8 @@ function renderStaffView() {
               ${c.online ? '<span class="dot"></span>' : ""}
             </div>
             <div class="convo-mid">
-              <div class="convo-name">${c.name}<i class="fas fa-thumbtack pin-flag" title="Pinned"></i></div>
-              <div class="convo-prev">${c.preview}</div>
+              <div class="convo-name">${escapeHtml(c.name)}<i class="fas fa-thumbtack pin-flag" title="Pinned"></i></div>
+              <div class="convo-prev">${escapeHtml(c.preview)}</div>
             </div>
             <div class="convo-right">
               <span class="convo-time">${c.time}</span>
@@ -3284,12 +3299,12 @@ function renderStaffView() {
           item.onclick = () => selectConvo(c.id);
           item.innerHTML = `
             <div class="av-wrap">
-              <img class="av" src="${c.img}" alt="${c.name}" />
+              <img class="av" src="${c.img}" alt="${escapeHtml(c.name)}" />
               ${c.online ? '<span class="dot"></span>' : ""}
             </div>
             <div class="convo-mid">
-              <div class="convo-name">${c.name}</div>
-              <div class="convo-prev">${c.preview}</div>
+              <div class="convo-name">${escapeHtml(c.name)}</div>
+              <div class="convo-prev">${escapeHtml(c.preview)}</div>
             </div>
             <div class="convo-right">
               <span class="convo-time">${c.time}</span>
@@ -3487,6 +3502,7 @@ function renderStaffView() {
         if (!text) return;
         current.msgs.push({ sender: "me", text, time: nowTime() });
         current.preview = text;
+        if(current.customerId){const row=WAgency.read(WAgency.keys.enquiries).find(r=>r.id===current.id);if(row){row.msgs=current.msgs;row.preview=text;WAgency.upsert(WAgency.keys.enquiries,row);}}
         inp.value = "";
         closeAllPopups();
         renderMessages();
@@ -3673,7 +3689,7 @@ function renderStaffView() {
           // CLIENT — client info + shared media/files/links
           body.innerHTML = `
             <div class="info-sec">
-              <div class="cinfo-row"><div class="lbl">Full Name</div><div class="val">${c.name}</div></div>
+              <div class="cinfo-row"><div class="lbl">Full Name</div><div class="val">${escapeHtml(c.name)}</div></div>
               <div class="cinfo-row"><div class="lbl">Email</div><div class="val">${c.email}</div></div>
               <div class="cinfo-row"><div class="lbl">Phone</div><div class="val">${c.phone}</div></div>
             </div>
@@ -3943,7 +3959,7 @@ function renderStaffView() {
 
         renderList();
         // default: open the pinned Company Inbox thread
-        selectConvo("u0");
+        selectConvo(new URLSearchParams(location.search).get("conversationId")||"u0");
         if (window.innerWidth <= 760) $("sidebar").classList.add("hidden");
       })();
     </script>

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Leads — YUUSHI Agent</title>
+    <title>Leads — YUUSHI Agency</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <style>
       :root {
@@ -252,6 +252,7 @@
   <script src="../mock-workflows.js"></script>
   <script src="../municipality-address.js"></script>
 <link rel="stylesheet" href="../dropdown-indicators.css">
+<script src="../ba-workflows.js"></script>
 </head>
   <body>
     <main class="main">
@@ -268,7 +269,7 @@
             </div>
           </div>
 
-          <div class="filter-bar"><label>Assignment Type <select id="enquiryType" onchange="page=1;renderList()"><option value="">All</option><option>Agent Individual</option><option>Agency Team</option><option>Unassigned</option></select></label><label>Assigned To <select id="enquiryPerson" onchange="page=1;renderList()"><option value="">All assignees</option><option value="AGT-001">Chris Sales</option><option value="AGT-002">Maria Sales</option><option value="AGT-003">Tony Sales</option><option value="TEAM-TOKYO">Tokyo Sales Team</option><option value="TEAM-OSAKA">Osaka Sales Team</option></select></label>
+          <div class="filter-bar"><label>Assignment Type <select id="enquiryType" onchange="page=1;renderList()"><option value="">All</option><option value="Agent Individual">Agency Staff</option><option>Agency Team</option><option>Unassigned</option></select></label><label>Assigned To <select id="enquiryPerson" onchange="page=1;renderList()"><option value="">All assignees</option><option value="AGT-001">Chris Sales</option><option value="AGT-002">Maria Sales</option><option value="AGT-003">Tony Sales</option><option value="TEAM-TOKYO">Tokyo Sales Team</option><option value="TEAM-OSAKA">Osaka Sales Team</option></select></label>
             <div class="pill-toggle">
               <button class="active" id="pillBuy" onclick="setIntent('buy')">To Buy</button>
               <button id="pillRent" onclick="setIntent('rent')">To Rent</button>
@@ -778,14 +779,17 @@
         : {name:'Agency Admin',staffId:'AGT-001',teamId:'TEAM-TOKYO'};
       const storedAssignments=W.read(W.keys.enquiries);
       const storedLeadRecords=W.read(W.keys.leadRecords);
+      storedLeadRecords.filter(l=>!LEADS.some(x=>x.id===l.id)).forEach(l=>LEADS.push(l));
+      storedAssignments.filter(l=>l.customerId&&l.propertyId&&!LEADS.some(x=>x.id===l.id)).forEach(l=>LEADS.push({...l,leadname:(l.customerName||l.customerId)+" - "+(l.propertyTitle||l.propertyId),name:l.customerName||l.customerId,type:l.propertyTitle||l.propertyId,enquiry:l.createdAt?.slice(0,10),follow:"",owner:"",intent:"buy",status:l.status||"New"}));
       LEADS.forEach(l=>{const creator=W.AGENCY_SUB_ACCOUNTS.find(a=>a.name===(OWNERS[l.owner]||l.owner));const savedAssignment=storedAssignments.find(a=>a.id===l.id);const savedRecord=storedLeadRecords.find(a=>a.id===l.id);Object.assign(l,{...W.unassigned(),createdById:creator?.id||'STAFF-'+l.owner,createdByName:OWNERS[l.owner]||l.owner});if(creator?.status==='Active')Object.assign(l,{assigneeType:'Agent Individual',assigneeId:creator.id,assigneeName:creator.name,assignedAt:l.enquiry,assignedBy:'Initial assignment'});if(savedAssignment)Object.assign(l,savedAssignment);if(savedRecord)Object.assign(l,savedRecord);});
-      function assignmentRecord(l){return Object.fromEntries(['id','createdById','createdByName','assigneeType','assigneeId','assigneeName','assignedAt','assignedBy','assignmentHistory'].map(k=>[k,l[k]]));}
-      function leadRecord(l){return Object.fromEntries(['id','propertyId','projectId','targetName','status','soldByStaffId','soldByStaffName','soldByRole','soldDate','soldPrice','autoClosedBySale','lossReason'].map(k=>[k,l[k]]));}
+      function assignmentRecord(l){return {...W.read(W.keys.enquiries).find(r=>r.id===l.id),...Object.fromEntries(['id','createdById','createdByName','assigneeType','assigneeId','assigneeName','assignedAt','assignedBy','assignmentHistory','assignedStaffId','customerId','agencyId','propertyId','conversationId'].map(k=>[k,l[k]]))};}
+      function leadRecord(l){return {...l};}
       W.merge(W.keys.enquiries,LEADS.map(assignmentRecord));
       W.merge(W.keys.leadRecords,LEADS.map(leadRecord));
       function persistLead(l){W.upsert(W.keys.enquiries,assignmentRecord(l));W.upsert(W.keys.leadRecords,leadRecord(l));}
-      function assignEnquiry(id){if(!ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name]?.assign)return toast('You do not have permission to assign leads.');const l=LEADS.find(l=>l.id===id);if(!l)return;W.assignmentModal(l,true,(type,person,note)=>{if(!ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name]?.assign)throw Error('Assignment is not permitted.');W.assign(l,type,person,note,ENQUIRY_ROLE.name);persistLead(l);renderList();if(currentLead?.id===id)renderDetailScreen(l);toast('Lead assignment updated. Created By remains unchanged.','success');});}
+      function assignEnquiry(id){if(!ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name]?.assign)return toast('You do not have permission to assign leads.');const l=LEADS.find(l=>String(l.id)===String(id));if(!l)return;W.assignmentModal(l,true,(type,person,note)=>{if(!ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name]?.assign)throw Error('Assignment is not permitted.');W.assign(l,type,person,note,ENQUIRY_ROLE.name);persistLead(l);renderList();if(currentLead?.id===id)renderDetailScreen(l);toast('Lead assignment updated. Created By remains unchanged.','success');});}
       window.assignEnquiry=assignEnquiry;
+      addEventListener('storage',e=>{if(e.key===W.keys.leadRecords||e.key===W.keys.enquiries){for(const l of LEADS){Object.assign(l,W.read(W.keys.enquiries).find(r=>r.id===l.id)||{},W.read(W.keys.leadRecords).find(r=>r.id===l.id)||{});}renderList();if(currentLead)renderDetailScreen(currentLead);}});
       // ===== LEAD_PROJECT_INTERESTS =====
       let TRANSACTIONS = []; 
 
@@ -854,11 +858,11 @@
             </tr>`;
         } else {
           document.getElementById("listBody").innerHTML = shown.map(l => `
-            <tr onclick="showDetail(${l.id})">
-              <td><div class="name-cell"><span class="ini-avatar">${ini2(l.leadname)}</span> ${l.leadname}</div></td>
-              <td><div class="name-cell"><span class="ini-avatar">${ini2(l.name)}</span> ${l.name}</div></td>
+            <tr onclick="showDetail('${l.id}')">
+              <td><div class="name-cell"><span class="ini-avatar">${ini2(l.leadname)}</span> ${W.esc(l.leadname)}</div></td>
+              <td><div class="name-cell"><span class="ini-avatar">${ini2(l.name)}</span> ${W.esc(l.name)}</div></td>
               <td>
-                <div>${l.type}</div>
+                <div>${W.esc(l.type)}</div>
                 <div style="font-size:11px;color:var(--accent);font-weight:600">
                   ${fmtPriceCell(l)}
                 </div>
@@ -866,7 +870,7 @@
               <td>${l.enquiry}</td>
               <td>${l.follow}</td>
               <td><span class="mc-pill ${l.status === 'Sold' ? 'mc-ok' : 'mc-miss'}" style="background:var(--grey-pill);color:var(--text-main)">${l.status}</span>${l.autoClosedBySale?`<br><small>Sold by ${W.esc(l.soldByStaffName)}</small>`:""}</td>
-              <td><div class="owner-cell"><span class="owner-avatar">${l.owner}</span> ${W.esc(l.createdByName)}</div></td><td>${W.esc(l.assigneeName)}<br><small>${W.esc(l.assigneeType)}</small></td><td onclick="event.stopPropagation()">${ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name].assign&&!['Sold','Closed Lost'].includes(l.status)?`<button class="btn" onclick="assignEnquiry(${l.id})">Assign/Reassign</button>`:"—"}</td>
+              <td><div class="owner-cell"><span class="owner-avatar">${l.owner}</span> ${W.esc(l.createdByName)}</div></td><td>${W.esc(l.assigneeName)}<br><small>${W.esc(l.assigneeType==='Agent Individual'?'Agency Staff':l.assigneeType)}</small></td><td onclick="event.stopPropagation()">${ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name].assign&&!['Sold','Closed Lost'].includes(l.status)?`<button class="btn" onclick="assignEnquiry('${l.id}')">Assign/Reassign</button>`:"—"}</td>
             </tr>`).join("");
         }
 
@@ -1507,7 +1511,7 @@
 
       function showDetail(id) {
         if (id != null) {
-          const found = LEADS.find(l => l.id === id);
+          const found = LEADS.find(l => String(l.id) === String(id));
           if (found) currentLead = found;
         }
         if (!currentLead) currentLead = LEADS[0]; // fallback an toàn
@@ -1544,12 +1548,12 @@
           statsBody = `
             <div class="dt-stat"><i class="fas fa-building"></i><div><div class="l">Project</div><div class="v">${project ? project.name : "—"}</div></div></div>
             <div class="dt-stat"><i class="fas fa-tag"></i><div><div class="l">Interest</div><div class="v">New Development</div></div></div>
-            <div class="dt-stat"><i class="fas fa-yen-sign"></i><div><div class="l">From</div><div class="v">¥${lead.price.toLocaleString()}</div></div></div>`;
+            <div class="dt-stat"><i class="fas fa-yen-sign"></i><div><div class="l">From</div><div class="v">${W.money(lead.price)}</div></div></div>`;
         } else {
           statsBody = `
-            <div class="dt-stat"><i class="fas fa-house"></i><div><div class="l">Looking for</div><div class="v">${lead.type}</div></div></div>
+            <div class="dt-stat"><i class="fas fa-house"></i><div><div class="l">Looking for</div><div class="v">${W.esc(lead.type)}</div></div></div>
             <div class="dt-stat"><i class="fas fa-tag"></i><div><div class="l">Interest</div><div class="v">${isRent ? "To Rent" : "To Buy"}</div></div></div>
-            <div class="dt-stat"><i class="fas fa-yen-sign"></i><div><div class="l">Budget</div><div class="v">¥${lead.price.toLocaleString()}${isRent ? "/mo" : ""}</div></div></div>`;
+            <div class="dt-stat"><i class="fas fa-yen-sign"></i><div><div class="l">Budget</div><div class="v">${W.money(lead.price)}${isRent ? "/mo" : ""}</div></div></div>`;
         }
 
         const isClosed = ['Sold','Closed Lost'].includes(lead.status);
@@ -1591,13 +1595,13 @@
 
         // ---- Details section ----
         document.querySelectorAll(".sec")[0].querySelector(".kv-grid").innerHTML = `
-          <div><div class="kv-l">Id</div><div class="kv-v">${100000 + lead.id}</div></div>
-          <div><div class="kv-l">Lead Name</div><div class="kv-v">${lead.leadname}</div></div>
+          <div><div class="kv-l">Id</div><div class="kv-v">${typeof lead.id==='number'?100000+lead.id:W.esc(lead.id)}</div></div>
+          <div><div class="kv-l">Lead Name</div><div class="kv-v">${W.esc(lead.leadname)}</div></div>
           <div><div class="kv-l">Status</div><div class="kv-v">${lead.status}</div>${lead.autoClosedBySale?`<small>Sold by ${W.esc(lead.soldByStaffName)}</small>`:''}</div>
-          <div><div class="kv-l">Created By</div><div class="kv-v">${W.esc(lead.createdByName)}</div></div><div><div class="kv-l">Assigned To / Primary Representative</div><div class="kv-v">${W.esc(lead.assigneeName)} · ${W.esc(lead.assigneeType)}</div>${ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name].assign&&!isClosed?`<button class="btn" onclick="assignEnquiry(${lead.id})">Assign/Reassign</button>`:''}</div><div style="grid-column:1/-1"><div class="kv-l">Assignment History</div>${W.timeline(lead.assignmentHistory)}</div>
+          <div><div class="kv-l">Created By</div><div class="kv-v">${W.esc(lead.createdByName)}</div></div><div><div class="kv-l">Assigned Staff</div><div class="kv-v">${W.esc(lead.assigneeName)} · ${W.esc(lead.assigneeType==='Agent Individual'?'Agency Staff':lead.assigneeType)}</div>${ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name].assign&&!isClosed?`<button class="btn" onclick="assignEnquiry('${lead.id}')">Assign/Reassign</button>`:''}</div><div style="grid-column:1/-1"><div class="kv-l">Assignment History</div>${W.timeline(lead.assignmentHistory)}</div>
           <div><div class="kv-l">Created</div><div class="kv-v">${lead.enquiry}</div></div>
           <div><div class="kv-l">Next Follow Up Date</div><div class="kv-v">${lead.follow}</div></div>
-          <div><div class="kv-l">Property Type</div><div class="kv-v">${lead.type}</div></div>`;
+          <div><div class="kv-l">Property Type</div><div class="kv-v">${W.esc(lead.type)}</div></div>`;
 
         // ---- Budget & Necessities section ----
         let budgetHtml;
@@ -1607,17 +1611,17 @@
           budgetHtml = `
             <div><div class="kv-l">Transaction Type</div><div class="kv-v">New Development</div></div>
             <div><div class="kv-l">${isG6 ? "Lot" : "Unit Type"}</div><div class="kv-v">${lead.targetName || "—"}</div></div>
-            <div><div class="kv-l">Sale Price</div><div class="kv-v">¥${lead.price.toLocaleString()}</div></div>`;
+            <div><div class="kv-l">Sale Price</div><div class="kv-v">${W.money(lead.price)}</div></div>`;
         } else {
           budgetHtml = `
             <div><div class="kv-l">Transaction Type</div><div class="kv-v">${isRent ? "To Rent" : "To Buy"}</div></div>
-            <div><div class="kv-l">${isRent ? "Monthly Rent" : "List Selling Price"}</div><div class="kv-v">¥${lead.price.toLocaleString()}${isRent ? "/mo" : ""}</div></div>`;
+            <div><div class="kv-l">${isRent ? "Monthly Rent" : "List Selling Price"}</div><div class="kv-v">${W.money(lead.price)}${isRent ? "/mo" : ""}</div></div>`;
         }
         document.querySelectorAll(".sec")[2].querySelector(".kv-grid").innerHTML = budgetHtml;
 
         // ---- Contact Information ----
         document.querySelectorAll(".sec")[4].querySelector(".kv-grid").innerHTML = `
-          <div><div class="kv-l">Contact Name</div><div class="kv-v">${lead.name}</div></div>
+          <div><div class="kv-l">Contact Name</div><div class="kv-v">${W.esc(lead.name)}</div></div>
           <div><div class="kv-l">Phone</div><div class="kv-v">—</div></div>
           <div><div class="kv-l">Email</div><div class="kv-v link">—</div></div>`;
       }
@@ -1626,21 +1630,25 @@
         isCreatingLead=createNew;
         const assignee=document.getElementById('editLeadAssignee'),help=document.getElementById('editLeadAssigneeHelp');
         const canAssign=ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name].assign;
-        assignee.value=canAssign?(!createNew&&currentLead?.assigneeId||ENQUIRY_ROLE.staffId):ENQUIRY_ROLE.staffId;
+        assignee.innerHTML='<option value="">Unassigned — Agency inbox</option>'+W.options(YuushiBA.refreshStaff());
+        assignee.value=!createNew&&currentLead?.assigneeId||'';
         assignee.disabled=!canAssign;
-        help.textContent=canAssign?'Select the staff responsible for this Lead.':'New Leads are automatically assigned to you.';
+        help.textContent=canAssign?'Leave unassigned in the Agency inbox, or assign eligible staff.':'New inquiries belong to the Agency and remain unassigned.';
         document.getElementById("screenList").classList.add("hidden"); document.getElementById("screenDetail").classList.add("hidden"); document.getElementById("screenEdit").classList.remove("hidden"); window.scrollTo(0, 0);
       }
       function saveLead() {
         const assignee=document.getElementById('editLeadAssignee');
         const canAssign=ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name].assign;
-        const staff=W.AGENCY_SUB_ACCOUNTS.find(s=>s.id===(canAssign?assignee.value:ENQUIRY_ROLE.staffId));
+        const staff=YuushiBA.refreshStaff().find(s=>s.id===(canAssign?assignee.value:''));
+        if(canAssign&&assignee.value&&!staff)return toast('Select an active staff member.','error');
         if(isCreatingLead){
           const creator=W.AGENCY_SUB_ACCOUNTS.find(s=>s.id===ENQUIRY_ROLE.staffId);
-          currentLead={id:Math.max(...LEADS.map(l=>l.id))+1,leadname:'New Lead - San Jose 4-bedroom Villa',name:'New Lead',type:'San Jose 4-bedroom Villa',propertyId:'PROP-1002',enquiry:new Date().toISOString().slice(0,10),follow:'',status:'New',owner:(creator?.name||'Staff').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase(),intent:'buy',price:2000000,createdById:ENQUIRY_ROLE.staffId,createdByName:creator?.name||ENQUIRY_ROLE.name,...W.unassigned()};
+          currentLead={id:Math.max(0,...LEADS.map(l=>Number(l.id)||0))+1,leadname:'New Lead - San Jose 4-bedroom Villa',name:'New Lead',type:'San Jose 4-bedroom Villa',propertyId:'PROP-1002',enquiry:new Date().toISOString().slice(0,10),follow:'',status:'New',owner:(creator?.name||'Staff').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase(),intent:'buy',price:2000000,createdById:ENQUIRY_ROLE.staffId,createdByName:creator?.name||ENQUIRY_ROLE.name,...W.unassigned()};
           LEADS.push(currentLead);
         }
-        if(currentLead&&staff){currentLead.assigneeType='Agent Individual';currentLead.assigneeId=staff.id;currentLead.assigneeName=staff.name;currentLead.assignedAt=new Date().toISOString();currentLead.assignedBy=isCreatingLead?'Lead creator':ENQUIRY_ROLE.name;persistLead(currentLead);}
+        if(currentLead&&staff){currentLead.assignedStaffId=staff.id;currentLead.assigneeType='Agent Individual';currentLead.assigneeId=staff.id;currentLead.assigneeName=staff.name;currentLead.assignedAt=new Date().toISOString();currentLead.assignedBy=isCreatingLead?'Lead creator':ENQUIRY_ROLE.name;persistLead(currentLead);}
+        if(currentLead&&canAssign&&!staff)W.assign(currentLead,'Unassigned',null,'Left in Agency inbox',ENQUIRY_ROLE.name);
+        if(currentLead)persistLead(currentLead);
         isCreatingLead=false;
         toast("Lead saved successfully", "success"); setTimeout(()=>showDetail(currentLead?.id), 400);
       }

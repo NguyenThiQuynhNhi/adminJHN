@@ -705,8 +705,8 @@
               <option value="Rejected">Rejected</option>
             </select>
             <select id="typeFilter">
-              <option value="">All user types</option>
-              <option value="End User">End User</option>
+              <option value="">All account types</option>
+              <option value="End User">Customer</option>
               <option value="Agency">Agency</option>
               <option value="Support">Support</option>
             </select>
@@ -729,12 +729,12 @@
             <thead>
               <tr>
                 <th>Request ID</th>
-                <th>Full name</th>
+                <th>Requester</th>
+                <th>Account Type</th>
                 <th>Phone</th>
                 <th>Recovery Contact Email</th>
-                <th>User type</th>
-                <th>Created at</th>
                 <th>Status</th>
+                <th>Created</th>
               </tr>
             </thead>
             <tbody id="requestTableBody"></tbody>
@@ -752,7 +752,7 @@
             &#8249;
           </button>
           <div class="detail-title-block">
-            <div class="page-title">Ticket detail</div>
+            <div class="page-title">Recovery Request Detail</div>
             <div class="detail-sub" id="detailCreatedSub">Created –</div>
           </div>
           <div class="detail-actions">
@@ -767,13 +767,13 @@
 
         <div class="card detail-card">
           <div class="detail-section-title">Information</div>
-          <div class="info-grid">
+          <div class="info-grid"><div class="field"><span class="field-label" id="detailAccountIdLabel">Customer ID</span><span class="field-value" id="detailAccountId">—</span></div><div class="field" id="detailContactField" hidden><span class="field-label">Representative / Requesting Contact</span><span class="field-value" id="detailContact">—</span></div><div class="field"><span class="field-label">Registered Account Email</span><span class="field-value" id="detailRegisteredEmail">—</span></div>
             <div class="field">
               <span class="field-label">Request ID</span>
               <span class="field-value" id="detailRequestId">–</span>
             </div>
             <div class="field">
-              <span class="field-label">Full Name</span>
+              <span class="field-label" id="detailNameLabel">Full Name</span>
               <span class="field-value" id="detailName">–</span>
             </div>
             <div class="field">
@@ -785,7 +785,7 @@
               <span class="field-value" id="detailPhone">–</span>
             </div>
             <div class="field">
-              <span class="field-label">User Type</span>
+              <span class="field-label">Account Type</span>
               <span class="field-value" id="detailUserType">–</span>
             </div>
             <div class="field">
@@ -793,7 +793,7 @@
               <span class="field-value" id="detailEmail">–</span>
             </div>
             <div class="field">
-              <span class="field-label">Created Time</span>
+              <span class="field-label">Created Date</span>
               <span class="field-value" id="detailCreatedTime">–</span>
             </div>
             <div class="field">
@@ -807,7 +807,7 @@
           </div>
 
           <div class="doc-block">
-            <div class="field-label">Uploaded ID Document</div>
+            <div class="field-label" id="detailDocumentLabel">Uploaded ID Document</div>
             <div class="doc-preview" id="detailDocument">No document loaded.</div>
           </div>
         </div>
@@ -979,12 +979,12 @@
       })();
 
       // Existing request email samples represent the recovery contact, not a verified login.
-      recoveryRequests.forEach((r) => { r.recoveryContactEmail = r.accountEmail; });
+      recoveryRequests.forEach((r,i) => { r.recoveryContactEmail = r.accountEmail; r.registeredAccountEmail = "registered."+r.accountEmail; r.accountId=(r.userType==="Agency"?"AG-":r.userType==="Support"?"SUP-":"CLIENT-")+String(i+1).padStart(4,"0"); if(r.userType!=="End User")r.requestingContact="Requesting representative "+(i+1); });
 
       // Demo dates of birth for the four hand-authored records.
       ["1990-05-26", "1981-11-02", "1975-07-19", "1993-03-14"].forEach(
         (d, i) => {
-          if (recoveryRequests[i]) recoveryRequests[i].dateOfBirth = d;
+          if (recoveryRequests[i]?.userType==="End User") recoveryRequests[i].dateOfBirth = d;
         },
       );
 
@@ -1175,11 +1175,12 @@
           tr.innerHTML = `
             <td>${r.id}</td>
             <td>${r.fullName}</td>
+            <td><span class="status-pill" style="background:${r.userType==='Agency'?'#e0f2fe':'#e6f6ef'};color:#3b2f2a">${r.userType==='End User'?'Customer':r.userType}</span></td>
             <td>${r.phone || "—"}</td>
-            <td>${r.accountEmail}</td>
-            <td>${r.userType}</td>
-            <td>${r.createdAt}</td>
+            <td>${r.recoveryContactEmail}</td>
+
             <td><span class="status-pill ${statusClass(r.status)}">${r.status}</span></td>
+            <td>${r.createdAt}</td>
           `;
           tr.addEventListener("click", (e) => {
             if (e.target.type === "checkbox") return;
@@ -1252,8 +1253,15 @@
         document.getElementById("detailDob").textContent =
           (isOrg ? r.establishedDate : r.dateOfBirth) || "–";
         document.getElementById("detailPhone").textContent = r.phone || "—";
-        document.getElementById("detailUserType").textContent = r.userType;
-        document.getElementById("detailEmail").textContent = r.accountEmail;
+        document.getElementById("detailUserType").innerHTML = `<span class="status-pill" style="background:${isOrg?'#e0f2fe':'#e6f6ef'};color:#3b2f2a">${r.userType==='End User'?'Customer':r.userType}</span>`;
+        document.getElementById("detailNameLabel").textContent=isOrg?"Company Name":"Full Name";
+        document.getElementById("detailAccountIdLabel").textContent=r.userType==='Agency'?'Agency ID':r.userType==='Support'?'Support ID':'Customer ID';
+        document.getElementById("detailAccountId").textContent=r.accountId;
+        document.getElementById("detailContactField").hidden=!isOrg;
+        document.getElementById("detailContact").textContent=r.requestingContact||"—";
+        document.getElementById("detailRegisteredEmail").textContent=r.registeredAccountEmail;
+        document.getElementById("detailDocumentLabel").textContent=isOrg?"Uploaded verification document":"Uploaded ID Document";
+        document.getElementById("detailEmail").textContent = r.recoveryContactEmail;
         document.getElementById("detailCreatedTime").textContent =
           r.createdAt || "–";
         document.getElementById("detailCreatedSub").textContent =
@@ -1368,7 +1376,7 @@
         backdrop.style.display = "flex";
         document.getElementById("modalTicketLabel").textContent =
           `${r.id} · ${r.fullName}`;
-        document.getElementById("solveEmail").value = "";
+        document.getElementById("solveEmail").value = r.registeredAccountEmail || "";
         document.getElementById("solveRecoveryEmail").value = r.recoveryContactEmail;
         setTimeout(() => {
           const first = document.getElementById("solveEmail");
@@ -1438,6 +1446,7 @@
           }
           r.recoveryEmail = { to: recoveryEmail.to, status: "simulated", requiresPasswordChange: true };
           r.registeredLoginEmail = recoveryEmail.registeredLoginEmail;
+          r.registeredAccountEmail = recoveryEmail.registeredLoginEmail;
           // Represents the requested reset/unlock, not an authentication backend operation.
           r.recoveryAction = { resetRequested: true, unlockRequested: true, requiresPasswordChange: true };
         } catch (error) {

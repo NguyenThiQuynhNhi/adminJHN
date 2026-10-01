@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Staff Management — YUUSHI Agent Portal</title>
+    <title>Staff Management — YUUSHI Agency Portal</title>
     <style>
       :root {
         --accent: #8b7340;
@@ -902,6 +902,8 @@
       }
     </style>
   <link rel="stylesheet" href="../dropdown-indicators.css">
+<script src="../mock-workflows.js"></script>
+<script src="../ba-workflows.js"></script>
 </head>
   <body>
     <!-- MAIN -->
@@ -1468,6 +1470,8 @@
         },
       ];
       staff.forEach(s => Object.defineProperty(s, 'staffId', {value:'STF-'+String(s.id).padStart(4,'0'), enumerable:true}));
+      YuushiWorkflow.read(YuushiBA.staffKey).filter(r=>!staff.some(s=>s.staffId===r.staffId)&&typeof r.id==='number').forEach(r=>{const saved={...r};Object.defineProperty(saved,'staffId',{value:r.staffId,enumerable:true});staff.push(saved);});
+      YuushiBA.syncStaff(staff);
       const staffSeatLimit = 10; // prototype entitlement fixture — not a canonical plan limit
       const issuedStaffIds = new Set(staff.map(s=>s.staffId.toLowerCase()));
       const activeNonRootStaffCount = () => staff.filter(s=>!s.isRoot&&s.status==='active').length;
@@ -1790,6 +1794,7 @@
           issuedStaffIds.add(staffId.toLowerCase());
           staff[staff.length-1].requiresPasswordChange = true;
           toast("Mock: invitation requested for " + email + ". Platform-generated credentials are emailed privately.");
+          YuushiBA.syncStaff(staff);
           backToList();
         } else {
           const s = staff.find((x) => x.id === editingId);
@@ -1802,6 +1807,7 @@
             hours,
             twofa: document.getElementById("d-2fa-edit").checked,
           });
+          YuushiBA.syncStaff(staff);
           toast("Changes saved.");
           openView(editingId);
         }
@@ -1832,6 +1838,7 @@
         forceSignOutFor(currentId);
       }
 
+      const staffAuditActor=()=>YuushiWorkflow.currentAgencyActor({staffId:staff.find(s=>s.isYou)?.staffId,name:staff.find(s=>s.isYou)?.name||'Agency Admin',role:'Agency Admin'}).name;
       function canReactivateStaff() { return availableStaffSlots() > 0; }
       function reactivateStaff(id) {
         const s = staff.find(x=>x.id===id);
@@ -1842,6 +1849,7 @@
         }
         s.status = "active";
         s.statusLabel = "Active";
+        YuushiBA.setStaffStatus(s,"Active",staffAuditActor());
         toast(s.name + "'s access reactivated.");
         renderTable();
         if (currentId === id && document.getElementById('view-detail').classList.contains('active')) openView(id);
@@ -1853,6 +1861,8 @@
         if (!confirm("Suspend access for " + s.name + "?\n\nThe account will remain in Staff Management and historical records will be preserved. Suspending this staff member frees 1 active staff slot.")) return false;
         s.status = "suspended";
         s.statusLabel = "Suspended";
+        const closedCount=YuushiBA.setStaffStatus(s,"Suspended",staffAuditActor());
+        if(closedCount)toast(closedCount+" active Leads changed to Closed Lost.");
         toast(s.name + "'s access suspended. One active staff slot is now available.");
         renderTable();
         if (currentId === id && document.getElementById('view-detail').classList.contains('active')) openView(id);

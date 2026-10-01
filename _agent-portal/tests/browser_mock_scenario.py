@@ -87,9 +87,10 @@ try:
  c.call('Page.reload');ready();check('Builder changes survive reload',c.js("document.querySelector('.widget h3').innerText==='Client inquiries'"))
  click('duplicate-widget');ready();check('Duplicate widget',c.js("document.querySelectorAll('.widget').length===2"))
  c.js('window.confirm=()=>true');click('remove-widget');ready();check('Remove widget',c.js("document.querySelectorAll('.widget').length===1"))
- # Exports still re-evaluate current approved metrics.
- c.js("window.qaExport=null;AgencyDashboardExport.download=(rows,name,type)=>{window.qaExport={rows,name,type}}")
- click('export-csv');c.wait('!!window.qaExport');check('Export recalculates approved metric',c.js("qaExport.type==='csv'&&JSON.stringify(qaExport.rows).includes('40')"))
+ # Demo exports re-evaluate current approved metrics and never download a file.
+ c.js("window.qaDownloads=0;AgencyDashboardExport.download=()=>{window.qaDownloads++}")
+ click('export-menu');check('Export offers exactly Excel and CSV',c.js("JSON.stringify([...document.querySelectorAll('.mock-export-menu button')].map(b=>b.textContent))===JSON.stringify(['Excel (.xlsx)','CSV (.csv)'])"))
+ c.js("document.querySelectorAll('.mock-export-menu button')[1].click()");c.wait("document.getElementById('dashboardToast').textContent.includes('CSV export prepared for demo')");check('Export recalculates approved metric without downloading',c.js("qaDownloads===0&&document.getElementById('dashboardToast').textContent.includes('40 filtered rows')"))
  click('drill');c.wait("document.getElementById('dashboardDialog').open")
  check('Details remain usable without generic Title/Record columns',c.js("document.querySelectorAll('#dashboardDialog tbody tr').length>0&&![...document.querySelectorAll('#dashboardDialog th')].some(e=>/^(Title|Record)$/i.test(e.innerText))"));click('close-dialog')
  click('save')
@@ -114,7 +115,7 @@ try:
  check('Quota supporting values render within one parent card',c.js("(()=>{const card=document.querySelector('[data-system-widget=\"74\"]');return !!card&&[156,157,159].every(n=>card.querySelector('[data-supporting-field=\"'+n+'\"]'))&&card.innerText.includes('Remaining')})()"))
  check('Plan fields render inside Current Plan/Tier',c.js("(()=>{const card=document.querySelector('[data-system-widget=\"58\"]');return !!card&&[299,300,301].every(n=>card.querySelector('[data-supporting-field=\"'+n+'\"]'))})()"))
  check('Review deadline supports count, snapshot and alerts',c.js("(()=>{const articles=[...document.querySelectorAll('.widget')],pending=articles.find(a=>a.querySelector('h3').innerText==='Pending Review'),snapshot=articles.find(a=>a.querySelector('h3').innerText==='Advertising Snapshot'),alerts=document.querySelector('[data-system-widget=\"73\"]');return !!pending.querySelector('[data-supporting-field=\"271\"]')&&snapshot.innerText.includes('Review Deadline')&&!!alerts.querySelector('[data-supporting-field=\"271\"]')&&!!alerts.querySelector('[data-supporting-field=\"301\"]')})()"))
- check('Agent Rating is a header supporting field',c.js("!!document.querySelector('.workspace-top [data-supporting-field=\"57\"]')"))
+ check('Agency Rating is a header supporting field',c.js("!!document.querySelector('.workspace-top [data-supporting-field=\"57\"]')"))
  c.js("document.querySelector('[data-system-widget=\"74\"]').closest('article').querySelector('[data-action=edit-widget]').click()")
  check('System presentation settings have no metric or source selector',c.js("!document.getElementById('widgetMetric')&&!document.getElementById('widgetSource')&&!!document.getElementById('widgetTitle')"));click('close-dialog')
  # Exercise legacy migration on system dashboards and custom dashboards.

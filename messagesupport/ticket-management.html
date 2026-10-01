@@ -629,7 +629,7 @@
 
       <div class="card">
         <div class="filter-bar">
-          <div class="fb-field"><span class="fb-label">Assignment</span><select id="assignmentType" onchange="onFilter()"><option value="">All</option><option>Unassigned</option><option>Admin Individual</option><option>Admin Team</option></select></div><div class="fb-field"><span class="fb-label">Assignee</span><select id="assignmentPerson" onchange="onFilter()"><option value="">All assignees</option></select></div><div class="fb-field fb-search">
+          <div class="fb-field"><span class="fb-label">Requester Type</span><select id="fRequesterType" onchange="onFilter()"><option value="">All</option><option>Customer</option><option>Agency</option></select></div><div class="fb-field"><span class="fb-label">Assignment</span><select id="assignmentType" onchange="onFilter()"><option value="">All</option><option>Unassigned</option><option>Admin Individual</option><option>Admin Team</option></select></div><div class="fb-field"><span class="fb-label">Assignee</span><select id="assignmentPerson" onchange="onFilter()"><option value="">All assignees</option></select></div><div class="fb-field fb-search">
             <span class="fb-label">Search</span>
             <i class="fas fa-magnifying-glass"></i>
             <input
@@ -688,8 +688,9 @@
                 Ticket ID <span class="si"></span>
               </th>
               <th data-key="name" onclick="toggleSort('name')">
-                Customer Name <span class="si"></span>
+                Requester <span class="si"></span>
               </th>
+              <th>Requester Type</th>
               <th data-key="email" onclick="toggleSort('email')">
                 Email <span class="si"></span>
               </th>
@@ -853,7 +854,7 @@
 
         <!-- sidebar -->
         <div class="card side-card">
-          <h3 class="side-title">Customer information</h3>
+          <h3 class="side-title">Requester Information</h3><div id="dRequesterMeta"></div>
           <div class="side-row">
             <div class="side-k">Name</div>
             <div class="side-v" id="dCustName">—</div>
@@ -1072,7 +1073,10 @@
           }
           out.push({
             id,
-            name,
+            requesterType: i%3===0 ? "Agency" : "Customer",
+            requesterId: (i%3===0?"AG-":"CLIENT-")+String(i+1).padStart(4,"0"),
+            contactPerson: name,
+            name: i%3===0 ? "Yamada Estates Branch "+(i+1) : name,
             email,
             phone,
             category,
@@ -1086,7 +1090,7 @@
       }
 
       let tickets = YuushiWorkflow.merge(YuushiWorkflow.keys.tickets, buildSeed().map(t=>({...YuushiWorkflow.unassigned(),...t})));
-      tickets.forEach(t=>Object.assign(t,{...YuushiWorkflow.unassigned(),...t}));
+      tickets.forEach(t=>Object.assign(t,{...YuushiWorkflow.unassigned(),requesterType:"Customer",...t}));
       YuushiWorkflow.write(YuushiWorkflow.keys.tickets,tickets);
 
       // ---------- nav badge (open count) in parent shell ----------
@@ -1123,6 +1127,7 @@
         let rows = tickets.filter((t) => {
           if ($('assignmentType').value && t.assigneeType !== $('assignmentType').value) return false;
           if ($('assignmentPerson').value && t.assigneeId !== $('assignmentPerson').value) return false;
+          if ($("fRequesterType").value && t.requesterType !== $("fRequesterType").value) return false;
           if (cat && t.category !== cat) return false;
           if (st && t.status !== st) return false;
           if (from && t.created < from) return false;
@@ -1199,14 +1204,14 @@
         const tb = $("tkBody");
         if (!pageRows.length) {
           tb.innerHTML =
-            '<tr><td colspan="7" class="tk-empty">No tickets match your filters.</td></tr>';
+            '<tr><td colspan="8" class="tk-empty">No tickets match your filters.</td></tr>';
         } else {
           tb.innerHTML = pageRows
             .map(
               (t) => `
             <tr onclick="openDetail('${esc(t.id)}')">
               <td><span class="tk-id">${esc(t.id)}</span></td>
-              <td>${esc(t.name)}</td>
+              <td>${esc(t.name)}</td><td><span class="wf-badge ${t.requesterType==='Agency'?'wf-info':'wf-success'}">${esc(t.requesterType)}</span></td>
               <td>${esc(t.email)}</td>
               <td>${esc(t.category)}</td>
               <td>${esc(t.status)}</td>
@@ -1298,11 +1303,13 @@
         const t = tickets.find((x) => x.id === id);
         if (!t) return;
         currentId = id;
+        $("dRequesterMeta").innerHTML=`<div class="side-row"><div class="side-k">Requester Type</div><div class="side-v"><span class="wf-badge ${t.requesterType==='Agency'?'wf-info':'wf-success'}">${esc(t.requesterType)}</span></div></div><div class="side-row"><div class="side-k">${t.requesterType==='Agency'?'Agency ID':'Customer ID'}</div><div class="side-v">${esc(t.requesterId||t.clientId||t.agencyId||'—')}</div></div>${t.requesterType==='Agency'?`<div class="side-row"><div class="side-k">Submitted By / Contact Person</div><div class="side-v">${esc(t.contactPerson||'—')}</div></div>`:''}<div class="side-row"><div class="side-k">Source Portal</div><div class="side-v">${t.requesterType==='Agency'?'Agency Portal':'Customer Portal'}</div></div>`;
+        $("dCustName").previousElementSibling.textContent=t.requesterType==='Agency'?'Agency Name':'Full Name';
         $("dHeadId").textContent = t.id;
         $("dHeadCreated").textContent = "Created: " + fmtLong(t.created);
         $("dTitle").textContent = t.title || "Support request";
         $("dCustName").innerHTML =
-          '<a href="../usermanagement/user-account-management.html?ref=' +
+          '<a href="../usermanagement/'+(t.requesterType==='Agency'?'agent-management.html':'user-account-management.html')+'?ref=' +
           encodeURIComponent(t.name) +
           '" target="_blank" rel="noopener">' +
           esc(t.name) +
@@ -1326,7 +1333,7 @@
         const lastCustIdx = (() => {
           let idx = -1;
           t.messages.forEach((m, i) => {
-            if (m.from === "customer") idx = i;
+            if (m.from !== "yuushi") idx = i;
           });
           return idx;
         })();
@@ -1350,7 +1357,7 @@
               <div class="avatar ${isY ? "yuushi" : "cust"}">${esc(initials)}</div>
               <div class="msg-main">
                 <div class="msg-top">
-                  <span class="msg-name">${esc(m.name)}</span>
+                  <span class="msg-name">${esc(m.name)} · ${isY?"YUUSHI Admin":esc(t.requesterType)}</span>
                   <span class="msg-time">${esc(m.time)}</span>
                 </div>
                 <div class="msg-text">${esc(m.text)}</div>
