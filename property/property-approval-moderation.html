@@ -1020,18 +1020,7 @@
                 <option value="Rejected">Rejected</option>
               </select>
             </div>
-            <div class="field-group">
-              <label class="field-label" for="reasonFilter">Reason</label>
-              <select id="reasonFilter">
-                <option value="">All reasons</option>
-                <option value="Incomplete information">Incomplete information</option>
-                <option value="Inappropriate content">Inappropriate content</option>
-                <option value="Duplicate listing">Duplicate listing</option>
-                <option value="Invalid license">Invalid license</option>
-                <option value="Poor image quality">Poor image quality</option>
-                <option value="Policy violation">Policy violation</option>
-              </select>
-            </div>
+            
           </div>
           <div class="filter-actions">
             <button class="btn btn-secondary" id="clearFilterBtn" type="button" onclick="resetFilters()">
@@ -1054,7 +1043,7 @@
                   <th>Property</th>
                   <th>Agency</th>
                   <th>Status</th>
-                  <th>Reject Reason</th>
+                  
                 </tr>
               </thead>
               <tbody id="pendingBody"></tbody>
@@ -1200,7 +1189,6 @@
         const q = filters.search.toLowerCase();
         return moderationQueue.filter((p) =>
           (!filters.status || p.status === filters.status) &&
-          (!filters.reason || p.reason === filters.reason) &&
           (!q || p.id.toLowerCase().includes(q) || p.title.toLowerCase().includes(q) || p.agent.toLowerCase().includes(q)));
       }
       function renderPending() {
@@ -1213,7 +1201,7 @@
             <td>${esc(p.title)}</td>
             <td>${esc(p.agent)}</td>
             <td><span class="status-pill ${statusClass(p.status)}">${esc(p.status)}</span></td>
-            <td class="rej-reason">${p.status === "Rejected" ? esc(p.reason || "—") : "—"}</td>
+            
           </tr>`).join("");
         $("pendingEmpty").style.display = all.length ? "none" : "block";
       }
@@ -1221,7 +1209,6 @@
       // Apply the Search / Reason / Status controls to the list.
       function applyFilters() {
         filters.search = $("searchInput").value;
-        filters.reason = $("reasonFilter").value;
         filters.status = $("statusFilter").value;
         pendingPage = 1;
         renderPending();
@@ -1230,7 +1217,6 @@
       function resetFilters() {
         filters = { search: "", reason: "", status: "" };
         $("searchInput").value = "";
-        $("reasonFilter").value = "";
         $("statusFilter").value = "";
         pendingPage = 1;
         renderPending();
@@ -1323,7 +1309,6 @@
         $("dStatusPill").innerHTML = '<span class="status-pill ' + statusClass(p.status) + '">' + esc(p.status) + "</span>";
         const ctxParts = [p.id];
         if (p.group) ctxParts.push(p.group);
-        if (p.reason) ctxParts.push(p.reason);
         $("dModContext").textContent = ctxParts.join("  ·  ");
 
         // Actions: Pending -> Approve + Reject; otherwise none.
@@ -1378,15 +1363,19 @@
       function rejectSelected() {
         const p = moderationQueue.find((x) => x.id === selectedId);
         if (!p) return;
-        openRejectModal({
+        openDecisionModal({
+          title: "Reject this listing?",
           subtitle: "Listing ID: " + p.id,
-          onConfirm(category) {
+          danger: true,
+          okLabel: "Reject",
+          hideNote: true,
+          onConfirm() {
             p.status = "Rejected";
-            p.reason = category;
+            p.reason = "";
             p.decisionNote = "";
-            logDecision(p, "Rejected", category);
+            logDecision(p, "Rejected", "");
             persistQueue();
-            Toast.err("Listing rejected. Agent " + p.agent + " has been notified with your reason.");
+            Toast.err("Listing rejected. Agent " + p.agent + " has been notified.");
             $("detailPage").classList.add("hidden");
             $("listPage").classList.remove("hidden");
             renderPending();
@@ -1456,72 +1445,9 @@
         };
       })();
 
-      // Structured reject modal (required category dropdown + optional notes)
-      (function setupRejectModal() {
-        const modal = document.createElement("div");
-        modal.className = "ux-modal";
-        modal.id = "rejectModal";
-        modal.setAttribute("role", "dialog");
-        modal.setAttribute("aria-modal", "true");
-        modal.innerHTML = `
-          <div class="ux-modal-box" style="width:480px">
-            <h3>Reject this listing?</h3>
-            <p id="rejectSub" style="margin:-4px 0 14px;font-size:12px;color:var(--text-muted)"></p>
-            <div style="margin-bottom:14px">
-              <label class="req" for="rejectCategory" style="display:block;font-size:11.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px">Reject category</label>
-              <div class="select-wrapper" style="display:block">
-                <select id="rejectCategory" style="width:100%;padding:9px 12px;border:1px solid var(--border-warm);border-radius:var(--r-md);font-size:13px;font-family:inherit;background:var(--bg-card)">
-                  <option value="">Select a reason…</option>
-                  <option value="Incomplete information">Incomplete information</option>
-                  <option value="Inappropriate content">Inappropriate content</option>
-                  <option value="Duplicate listing">Duplicate listing</option>
-                  <option value="Invalid license">Invalid license</option>
-                  <option value="Poor image quality">Poor image quality</option>
-                  <option value="Policy violation">Policy violation</option>
-                </select>
-              </div>
-              <span id="rejectCatErr" class="ux-field-error" style="display:none">Please select a reject category.</span>
-            </div>
-            <div class="ux-modal-actions">
-              <button type="button" class="ux-btn" id="rejectCancel">Cancel</button>
-              <button type="button" class="ux-btn danger" id="rejectOk">Reject</button>
-            </div>
-          </div>`;
-        document.body.appendChild(modal);
-
-        const subEl = modal.querySelector("#rejectSub");
-        const catEl = modal.querySelector("#rejectCategory");
-        const catErr = modal.querySelector("#rejectCatErr");
-        const okBtn = modal.querySelector("#rejectOk");
-        const cancelBtn = modal.querySelector("#rejectCancel");
-        let _cb = null;
-
-        const close = () => { modal.classList.remove("open"); _cb = null; };
-        cancelBtn.addEventListener("click", close);
-        modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
-        modal.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
-        catEl.addEventListener("change", () => { if (catEl.value) { catErr.style.display = "none"; catEl.classList.remove("ux-invalid"); } });
-        okBtn.addEventListener("click", () => {
-          if (!catEl.value) { catErr.style.display = "block"; catEl.classList.add("ux-invalid"); catEl.focus(); return; }
-          const cb = _cb; const cat = catEl.value; close();
-          if (cb) cb(cat);
-        });
-
-        window.openRejectModal = (opts) => {
-          subEl.textContent = opts.subtitle || "";
-          catEl.value = "";
-          catEl.classList.remove("ux-invalid");
-          catErr.style.display = "none";
-          _cb = typeof opts.onConfirm === "function" ? opts.onConfirm : null;
-          modal.classList.add("open");
-          setTimeout(() => catEl.focus(), 40);
-        };
-      })();
-
       document.addEventListener("DOMContentLoaded", () => {
         renderPending();
         $("searchInput").addEventListener("input", (e) => { filters.search = e.target.value; pendingPage = 1; renderPending(); });
-        $("reasonFilter").addEventListener("change", (e) => { filters.reason = e.target.value; pendingPage = 1; renderPending(); });
         $("statusFilter").addEventListener("change", (e) => { filters.status = e.target.value; pendingPage = 1; renderPending(); });
       });
     </script>
