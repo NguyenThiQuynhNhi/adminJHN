@@ -71,7 +71,7 @@
     if(e.type==='property_saved')base.saves=1;
     if(e.type==='inquiry_created'){base.inquiries=1;if(e.campaignId||e.campaign)base.adInquiries=1;}
     if(e.type==='search_submitted')base.searches=1;
-    if(e.type==='page_view')base.pageViews=1;
+    if(e.type==='client_route_view')base.pageViews=1;
     if(e.type==='session_started')base.sessions=1;
     if(e.type==='account_registered')base.registrations=1;
     if(e.type==='ad_rendered'){base.adImpressions=1;}
@@ -99,10 +99,14 @@
     const end=sessionEnds.find(e=>e.sessionId===s.sessionId&&e.occurredAt>=s.occurredAt);
     return {accountId:s.accountId,date:evtDate(s),seconds:end?Math.max(0,(Date.parse(end.occurredAt)-Date.parse(s.occurredAt))/1000):null};
   });
-  // Account activity is derived from canonical session events, not a dashboard-only login seed.
-  const sessionsByAccount=new Map();
-  accountSessions.forEach(s=>{if(!s.accountId||!s.date)return;const dates=sessionsByAccount.get(s.accountId)||[];if(!dates.includes(s.date))dates.push(s.date);sessionsByAccount.set(s.accountId,dates);});
-  accounts.forEach(a=>{a.logins=(sessionsByAccount.get(a.id||a.customerId||a.agencyId)||[]).sort();});
+  // Account activity is derived from authenticated Client events. A dashboard-only login seed is never used.
+  // Any authenticated route/action event is activity; account_login is additionally emitted at sign-in.
+  const activityByAccount=new Map();
+  clientEvents.filter(e=>e.accountId&&e.accountType==='Customer').forEach(e=>{
+    const date=evtDate(e);if(!date)return;
+    const dates=activityByAccount.get(e.accountId)||[];if(!dates.includes(date))dates.push(date);activityByAccount.set(e.accountId,dates);
+  });
+  accounts.forEach(a=>{a.logins=(activityByAccount.get(a.id||a.customerId||a.agencyId)||[]).sort();});
   const guestMap=new Map();
   clientEvents.filter(e=>e.accountType==='Guest').forEach(e=>{
     const id=e.anonymousVisitorId;if(!id)return;
