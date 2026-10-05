@@ -1573,15 +1573,14 @@
         <label for="withdraw-reason">Withdrawal Reason *</label>
         <select id="withdraw-reason" required>
           <option value="">Select a reason...</option>
-          <option>Not enough properties matching my needs</option>
-          <option>Property information was inaccurate or outdated</option>
-          <option>Agents were slow to respond</option>
-          <option>Agent service did not meet my expectations</option>
-          <option>Search did not help me find suitable properties</option>
-          <option>The portal was difficult to use</option>
-          <option>Too many notifications or unwanted contacts</option>
-          <option>Concerns about privacy</option>
-          <option>Other — please specify</option>
+          <option value="found_property_elsewhere">Found a property elsewhere</option>
+          <option value="completed_transaction">Completed my transaction (purchased/rented through this platform)</option>
+          <option value="not_searching">No longer searching / paused my search</option>
+          <option value="portal_difficult">Portal too difficult to use</option>
+          <option value="dissatisfied_agent_service">Dissatisfied with an agent or the service</option>
+          <option value="privacy_data_concerns">Privacy or data concerns</option>
+          <option value="duplicate_account">Duplicate account</option>
+          <option value="other">Other — please specify</option>
         </select>
         <div id="withdraw-other-field" hidden>
           <label for="withdraw-other">Please specify *</label>
@@ -1612,7 +1611,7 @@
         });
         document.getElementById('withdraw-cancel').addEventListener('click', () => dialog.close());
         reason.addEventListener('change', () => {
-          other.required = reason.value === 'Other — please specify';
+          other.required = reason.value === 'other';
           document.getElementById('withdraw-other-field').hidden = !other.required;
         });
         form.addEventListener('submit', event => {
@@ -1620,7 +1619,7 @@
           error.hidden = true;
           if (!parent.clientIsSignedIn?.()) return;
           const validReason = Array.from(reason.options).some(option => option.value && option.value === reason.value);
-          if (!validReason || (reason.value === 'Other — please specify' && !other.value.trim())) {
+          if (!validReason || (reason.value === 'other' && !other.value.trim())) {
             error.textContent = 'Select a withdrawal reason and provide details for Other.';
             error.hidden = false; return;
           }
@@ -1632,13 +1631,14 @@
             if (!account.deletedAt) {
               const now = new Date().toISOString();
               Object.assign(account, { status:'Withdrawn', withdrawnAt:now, deletedAt:now,
-                withdrawalReason:reason.value, withdrawalReasonOther:reason.value === 'Other — please specify' ? other.value.trim() : '',
+                withdrawalReason:reason.options[reason.selectedIndex].text, withdrawalReasonCode:reason.value, withdrawalReasonOther:reason.value === 'other' ? other.value.trim() : '',
                 loginEmail:account.loginEmail + '_deleted_' + account.id + '_' + Date.now(),
                 loginBlocked:true, sessionActive:false, sessionTerminatedAt:now });
               const archive = JSON.parse(localStorage.getItem(archiveKey) || '[]');
               if (!archive.some(record => record.id === account.id)) archive.push(account);
               localStorage.setItem(archiveKey, JSON.stringify(archive));
               localStorage.setItem(accountKey, JSON.stringify(account));
+              parent.YuushiAnalytics?.emitWithdrawal('Customer', account, reason.value, reason.options[reason.selectedIndex].text, other.value.trim());
             }
             if (parent.clientWithdraw?.()) dialog.close();
           } catch (failure) {
