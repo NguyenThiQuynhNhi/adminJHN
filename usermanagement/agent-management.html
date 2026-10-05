@@ -3513,11 +3513,16 @@
       }
 
       function readShared(key,fallback=[]) { try { const v=JSON.parse(localStorage.getItem(key)); return v??fallback; } catch { return fallback; } }
-      function agencyOperationalData(agencyId) {
+      function agencyOperationalData(agencyId,agencyName='') {
         const props=(readShared('yuushi.analytics.propertySnapshots',[])||[]).filter(p=>String(p.agencyId||'')===String(agencyId));
         const inquiries=(readShared(YuushiWorkflow.keys.enquiries,[])||[]).filter(q=>String(q.agencyId||'')===String(agencyId));
         const transactions=(readShared(YuushiWorkflow.keys.transactions,[])||[]).filter(t=>String(t.agencyId||'')===String(agencyId));
-        const campaigns=(readShared('yuushi.agencyCampaigns',[])||[]).filter(row=>String(row.agencyId||'')===String(agencyId));
+        const sharedCampaigns=(readShared('yuushi.agencyCampaigns',[])||[]).filter(row=>String(row.agencyId||'')===String(agencyId));
+        const commerce=readShared('yuushi-cms-v1',{});
+        const adminBookings=((commerce&&Array.isArray(commerce.bookings))?commerce.bookings:[])
+          .filter(row=>agencyName&&String(row.account||'').toLowerCase()===String(agencyName).toLowerCase())
+          .map(row=>({campaignId:row.id,agencyId,name:row.title||row.id,status:row.status,placement:row.destination||'',dateRange:[row.start,row.end].filter(Boolean).join(' → '),budgetLabel:Number.isFinite(Number(row.price))?('¥'+Number(row.price).toLocaleString()):'',source:'Admin Advertising Booking'}));
+        const campaigns=[...new Map([...sharedCampaigns,...adminBookings].map(row=>[row.campaignId,row])).values()];
         const events=(readShared('yuushi.analytics.events.v1',[])||[]);
         return {props,inquiries,transactions,campaigns,events};
       }
@@ -3529,20 +3534,20 @@
       }
       function openAgencySummaryReport(button) {
         if(!currentAgent)return;
-        const d=agencyOperationalData(currentAgent.id);
+        const d=agencyOperationalData(currentAgent.id,currentAgent.company);
         const joined=currentAgent.regDate||currentAgent.contractStart||'—';
         button.dataset.exportContext=`Agency Summary · ${currentAgent.id} · ${currentAgent.company} · Joined ${joined} · Plan ${currentAgent.plan||'—'} · Current published listings ${d.props.filter(p=>p.publishStatus==='Published'&&!p.endedAt).length} · Recorded transactions ${d.transactions.length} · Campaign records ${d.campaigns.length}. Subscription/payment spend is included only when an operational ledger exists; no dashboard seed values are exported.`;
         MockExport.open(button);
       }
       function openPropertyPerformanceReport(button,propertyId) {
-        const d=agencyOperationalData(currentAgent?.id),p=d.props.find(row=>String(row.id)===String(propertyId)),perf=propertyPerformance(propertyId,d.events);
+        const d=agencyOperationalData(currentAgent?.id,currentAgent?.company||''),p=d.props.find(row=>String(row.id)===String(propertyId)),perf=propertyPerformance(propertyId,d.events);
         button.dataset.exportContext=p
           ? `Property Performance · ${p.id} · ${p.name||'—'} · Standard Listing IMP ${perf.instrumented?perf.impressions:'Requires Client Property-card instrumentation'} · Property Views ${perf.instrumented?perf.views:'Requires Client Property-card instrumentation'} · Property Clicks ${perf.instrumented?perf.clicks:'Requires Client Property-card instrumentation'} · Keep ${perf.instrumented?perf.saves:'Requires Client Property-card instrumentation'} · New Inquiries ${perf.inquiries}. Organic events only; paid Ad events are excluded.`
           : 'Property Performance · Property record not found in the shared operational Property store.';
         MockExport.open(button);
       }
       function openCampaignPerformanceReport(button,campaignId) {
-        const d=agencyOperationalData(currentAgent?.id),row=d.campaigns.find(x=>String(x.campaignId)===String(campaignId));
+        const d=agencyOperationalData(currentAgent?.id,currentAgent?.company||''),row=d.campaigns.find(x=>String(x.campaignId)===String(campaignId));
         const adEvents=d.events.filter(e=>String(e.campaignId||e.campaign||'')===String(campaignId));
         const imp=adEvents.filter(e=>e.type==='ad_rendered').length,views=adEvents.filter(e=>e.type==='ad_viewed').length,clicks=adEvents.filter(e=>e.type==='ad_clicked').length;
         const ready=adEvents.some(e=>['ad_rendered','ad_viewed','ad_clicked'].includes(e.type));
