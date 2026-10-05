@@ -82,7 +82,7 @@
     return result('line',[{key:'count',label:'Count'}],periods.map((label,i)=>({label,count:grow(42+(seed%20),i,7)})));
   }
   function metricDescription(spec,result){
-    const description=(result.note||spec.definition||'').trim();
+    const description=((result.prototype?spec.definition:result.note)||spec.definition||'').trim();
     const calculation=(spec.id==='r56'
       ?'Withdrawals are explicit account withdrawals only. Inactivity is not counted as withdrawal.'
       :spec.id==='r55'
