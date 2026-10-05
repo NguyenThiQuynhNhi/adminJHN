@@ -158,8 +158,12 @@
     telemetry,metricStatus:(id)=>{
       const accountMetrics=new Set(['r29','r42','r43','r44','r46','r55','r56','r69','r70','r71','r72','r73','r77','r80','r81','r83','r110']);
       const propertySnapshotMetrics=new Set(['r77','r92','r93','r101','r102']);
+      const enquiryMetrics=new Set(['r32','r57','r58','r59','r60','r78','r98']);
+      const transactionMetrics=new Set(['r32','r79','r100']);
       if(accountMetrics.has(id)&&!accountDirectoryReady)return {ready:false,note:'Platform-wide Customer/Agency directory has not been synchronized from Admin User/Agency Management yet.'};
       if(propertySnapshotMetrics.has(id)&&!propertyStoreReady)return {ready:false,note:'Operational Property snapshot store has not been synchronized from Property Management yet.'};
+      if(enquiryMetrics.has(id)&&!enquiryStoreReady)return {ready:false,note:'Agency Inquiry/conversation store has not been synchronized yet.'};
+      if(transactionMetrics.has(id)&&!transactionStoreReady)return {ready:false,note:'Agency-recorded Transaction store has not been synchronized yet.'};
       if(id==='r84'&&!appraisalDeliveryReady)return {ready:false,note:'Appraisal delivery store has not been synchronized from Agency Appraisal Management yet.'};
       return A.overviewMetricStatus(id);
     }
