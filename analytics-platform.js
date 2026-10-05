@@ -74,11 +74,22 @@
   const getVisitorId=()=>{let id;try{id=localStorage.getItem(VISITOR_KEY);}catch{}if(!id){id=uid('anon');try{localStorage.setItem(VISITOR_KEY,id);}catch{}}return id;};
   const getSessionId=()=>{let id;try{id=sessionStorage.getItem(SESSION_KEY);}catch{}if(!id){id=uid('sess');try{sessionStorage.setItem(SESSION_KEY,id);}catch{}}return id;};
   const accountContext=()=>{
-    const client=read('yuushi.client.account',null);
-    const agency=read('yuushi.agency.primaryAccount',null);
-    if(client&&!client.deletedAt)return {accountId:client.id||client.customerId||null,accountType:'Customer'};
-    if(agency&&!agency.deletedAt)return {accountId:agency.id||null,accountType:'Agency'};
-    return {accountId:null,accountType:'Guest'};
+    let portal='';try{portal=sessionStorage.getItem('yuushi.activePortal')||'';}catch{}
+    if(portal==='client'){
+      const client=read('yuushi.client.account',null);
+      return client&&!client.deletedAt
+        ? {accountId:client.id||client.customerId||null,accountType:'Customer',portal:'Client'}
+        : {accountId:null,accountType:'Guest',portal:'Client'};
+    }
+    if(portal==='agency'){
+      const agency=read('yuushi.agency.primaryAccount',null);
+      return agency&&!agency.deletedAt
+        ? {accountId:agency.id||null,accountType:'Agency',portal:'Agency'}
+        : {accountId:null,accountType:'Agency Staff',portal:'Agency'};
+    }
+    if(portal==='supportal')return {accountId:null,accountType:'Supportal',portal:'Supportal'};
+    if(portal==='platform')return {accountId:null,accountType:'Platform Admin',portal:'Admin'};
+    return {accountId:null,accountType:'Guest',portal:'Unknown'};
   };
 
   function emit(type,payload={}){
@@ -204,10 +215,16 @@
   }
 
   function startPageInstrumentation(){
-    emit('session_started',{page:location.pathname+location.search});
-    emit('page_view',{page:location.pathname+location.search,referrer:document.referrer||'',deviceType:innerWidth<768?'Mobile':innerWidth<1100?'Tablet':'Desktop',language:navigator.language||''});
+    const page=location.pathname+location.search;
+    let started=false;
+    try{started=sessionStorage.getItem('yuushi.analytics.sessionStarted')===getSessionId();}catch{}
+    if(!started){
+      emit('session_started',{page});
+      try{sessionStorage.setItem('yuushi.analytics.sessionStarted',getSessionId());}catch{}
+    }
+    emit('page_view',{page,referrer:document.referrer||'',deviceType:innerWidth<768?'Mobile':innerWidth<1100?'Tablet':'Desktop',language:navigator.language||''});
     bindPropertyCards(document);
-    root.addEventListener('beforeunload',()=>emit('session_ended',{page:location.pathname+location.search}),{once:true});
+    root.addEventListener('beforeunload',()=>emit('session_ended',{page}),{once:true});
   }
 
   root.YuushiAnalytics={EVENT_KEY,TELEMETRY_KEY,masters,metricRegistry,overviewMetricStatus,read,write,emit,events,telemetry,setMockTelemetry,emitWithdrawal,bindPropertyCards,startPageInstrumentation,getVisitorId,getSessionId};
