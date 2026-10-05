@@ -29,7 +29,16 @@
     const destination=new URL(form.action || location.href);
     if(form.method.toLowerCase()!=='get' || !contentFiles.has(destination.pathname.split('/').pop())) return;
     event.preventDefault();
-    new FormData(form).forEach((value,key)=> { if(typeof value==='string') destination.searchParams.append(key,value); });
+    const submitted={};
+    new FormData(form).forEach((value,key)=> { if(typeof value==='string'){destination.searchParams.append(key,value);submitted[key]=value;} });
+    try{
+      parent.YuushiAnalytics?.emit?.('search_submitted',{
+        page:location.pathname,
+        destination:destination.pathname,
+        query:submitted.q||submitted.keyword||submitted.search||'',
+        filters:submitted
+      });
+    }catch{}
     routeTo(destination.href);
   });
   // Keep search filters visible after navigation or refreshing the shell URL.
