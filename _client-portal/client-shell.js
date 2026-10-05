@@ -11,6 +11,18 @@
     document.head.appendChild(script);
   }
   ensureAnalytics();
+  let analyticsRoute='',analyticsRouteStartedAt=Date.now();
+  function analyticsEmit(type,payload={}){
+    const run=()=>window.YuushiAnalytics?.emit?.(type,payload);
+    if(window.YuushiAnalytics)run();else setTimeout(run,250);
+  }
+  function trackClientRoute(route){
+    if(!route||route===analyticsRoute)return;
+    if(analyticsRoute)analyticsEmit('page_timing',{page:analyticsRoute,seconds:Math.max(0,(Date.now()-analyticsRouteStartedAt)/1000)});
+    analyticsRoute=route;analyticsRouteStartedAt=Date.now();
+    analyticsEmit('client_route_view',{page:route,referrer:document.referrer||''});
+  }
+  window.addEventListener('beforeunload',()=>{if(analyticsRoute)analyticsEmit('page_timing',{page:analyticsRoute,seconds:Math.max(0,(Date.now()-analyticsRouteStartedAt)/1000)});},{once:true});
   const homeFile = 'yuushi_homepage_standalone.html';
   const pageTitles = {
     'client-myprofile.html':'My Profile',
@@ -52,6 +64,7 @@
     } catch { return; }
     signedIn = true;
     try { sessionStorage.setItem('yuushi.client.previewSignedIn','true'); } catch {}
+    analyticsEmit('account_login',{loginAt:new Date().toISOString()});
     updateAccount();
     menu.hidden = false;
     toggle.setAttribute('aria-expanded','true');
@@ -96,6 +109,7 @@
       document.title = 'YUUSHI — Homepage';
       if(url.hash) requestAnimationFrame(()=>document.getElementById(url.hash.slice(1))?.scrollIntoView());
     }
+    trackClientRoute(validPage?page:(url.hash?homeFile+url.hash:homeFile));
     const active = validPage ? isSupportPage ? 'support' : '' : url.hash.slice(1) || 'home';
     document.querySelectorAll('[data-main-nav]').forEach(a=> {
       if(a.dataset.mainNav===active) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current');
