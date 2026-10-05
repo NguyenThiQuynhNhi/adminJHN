@@ -1020,6 +1020,18 @@
                 <option value="Rejected">Rejected</option>
               </select>
             </div>
+            <div class="field-group">
+              <label class="field-label" for="reasonFilter">Reason</label>
+              <select id="reasonFilter">
+                <option value="">All reasons</option>
+                <option value="property_already_sold">Property already sold</option>
+                <option value="incorrect_information">Incorrect information</option>
+                <option value="privacy_copyright_infringement">Privacy/Copyright infringement</option>
+                <option value="unauthorized_listing_own_property">Unauthorized listing of own property</option>
+                <option value="unauthorized_use_own_images">Unauthorized use of own images</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
             
           </div>
           <div class="filter-actions">
@@ -1184,11 +1196,22 @@
         decisionLog.push({ time: ts, propertyId: record.id, decision, note });
       }
 
+      const PROPERTY_REJECT_REASON_LABELS={
+        property_already_sold:"Property already sold",
+        incorrect_information:"Incorrect information",
+        privacy_copyright_infringement:"Privacy/Copyright infringement",
+        unauthorized_listing_own_property:"Unauthorized listing of own property",
+        unauthorized_use_own_images:"Unauthorized use of own images",
+        other:"Other"
+      };
+      const rejectReasonLabel=value=>PROPERTY_REJECT_REASON_LABELS[value]||value||"—";
+
       // ---------- Unified list (search / reason / status filter) ----------
       function listFiltered() {
         const q = filters.search.toLowerCase();
         return moderationQueue.filter((p) =>
           (!filters.status || p.status === filters.status) &&
+          (!filters.reason || p.reason === filters.reason) &&
           (!q || p.id.toLowerCase().includes(q) || p.title.toLowerCase().includes(q) || p.agent.toLowerCase().includes(q)));
       }
       function renderPending() {
@@ -1209,6 +1232,7 @@
       // Apply the Search / Reason / Status controls to the list.
       function applyFilters() {
         filters.search = $("searchInput").value;
+        filters.reason = $("reasonFilter").value;
         filters.status = $("statusFilter").value;
         pendingPage = 1;
         renderPending();
@@ -1217,6 +1241,7 @@
       function resetFilters() {
         filters = { search: "", reason: "", status: "" };
         $("searchInput").value = "";
+        $("reasonFilter").value = "";
         $("statusFilter").value = "";
         pendingPage = 1;
         renderPending();
@@ -1363,17 +1388,13 @@
       function rejectSelected() {
         const p = moderationQueue.find((x) => x.id === selectedId);
         if (!p) return;
-        openDecisionModal({
-          title: "Reject this listing?",
+        openRejectModal({
           subtitle: "Listing ID: " + p.id,
-          danger: true,
-          okLabel: "Reject",
-          hideNote: true,
-          onConfirm() {
+          onConfirm(reason,notes) {
             p.status = "Rejected";
-            p.reason = "";
-            p.decisionNote = "";
-            logDecision(p, "Rejected", "");
+            p.reason = reason;
+            p.decisionNote = notes || "";
+            logDecision(p, "Rejected", rejectReasonLabel(reason)+(notes?": "+notes:""));
             persistQueue();
             Toast.err("Listing rejected. Agent " + p.agent + " has been notified.");
             $("detailPage").classList.add("hidden");
@@ -1445,9 +1466,59 @@
         };
       })();
 
+      (function setupRejectModal() {
+        const modal=document.createElement("div");
+        modal.className="ux-modal";
+        modal.id="rejectModal";
+        modal.setAttribute("role","dialog");
+        modal.setAttribute("aria-modal","true");
+        modal.innerHTML=`
+          <div class="ux-modal-box" style="width:500px">
+            <h3>Reject this listing?</h3>
+            <p id="rejectSub" style="margin:-4px 0 14px;font-size:12px;color:var(--text-muted)"></p>
+            <div style="margin-bottom:14px">
+              <label class="req" for="rejectCategory" style="display:block;font-size:11.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px">Reason</label>
+              <select id="rejectCategory" style="width:100%;padding:9px 12px;border:1px solid var(--border-warm);border-radius:var(--r-md);font-size:13px;font-family:inherit;background:var(--bg-card)">
+                <option value="">Select a reason…</option>
+                <option value="property_already_sold">Property already sold</option>
+                <option value="incorrect_information">Incorrect information</option>
+                <option value="privacy_copyright_infringement">Privacy/Copyright infringement</option>
+                <option value="unauthorized_listing_own_property">Unauthorized listing of own property</option>
+                <option value="unauthorized_use_own_images">Unauthorized use of own images</option>
+                <option value="other">Other</option>
+              </select>
+              <span id="rejectCatErr" class="ux-field-error" style="display:none">Please select a reason.</span>
+            </div>
+            <div style="margin-bottom:14px">
+              <label for="rejectNote" style="display:block;font-size:11.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px">Details <span id="rejectNoteReq" style="display:none;color:var(--status-danger-text)">*</span></label>
+              <textarea id="rejectNote" style="width:100%;min-height:80px;padding:9px 12px;border:1px solid var(--border-warm);border-radius:var(--r-md);font-size:13px;font-family:inherit;background:var(--bg-card);resize:vertical" placeholder="Add details for the Agency…"></textarea>
+              <span id="rejectNoteErr" class="ux-field-error" style="display:none">Details are required when Reason = Other.</span>
+            </div>
+            <div class="ux-modal-actions">
+              <button type="button" class="ux-btn" id="rejectCancel">Cancel</button>
+              <button type="button" class="ux-btn danger" id="rejectOk">Reject</button>
+            </div>
+          </div>`;
+        document.body.appendChild(modal);
+        const sub=modal.querySelector("#rejectSub"),cat=modal.querySelector("#rejectCategory"),note=modal.querySelector("#rejectNote"),catErr=modal.querySelector("#rejectCatErr"),noteErr=modal.querySelector("#rejectNoteErr"),noteReq=modal.querySelector("#rejectNoteReq");
+        let cb=null;
+        const close=()=>{modal.classList.remove("open");cb=null;};
+        modal.querySelector("#rejectCancel").onclick=close;
+        modal.addEventListener("click",e=>{if(e.target===modal)close();});
+        cat.addEventListener("change",()=>{const other=cat.value==="other";noteReq.style.display=other?"inline":"none";catErr.style.display="none";if(!other)noteErr.style.display="none";});
+        modal.querySelector("#rejectOk").onclick=()=>{
+          const reason=cat.value,details=note.value.trim();
+          if(!reason){catErr.style.display="block";cat.focus();return;}
+          if(reason==="other"&&!details){noteErr.style.display="block";note.focus();return;}
+          const done=cb;close();if(done)done(reason,details);
+        };
+        window.openRejectModal=opts=>{sub.textContent=opts.subtitle||"";cat.value="";note.value="";catErr.style.display="none";noteErr.style.display="none";noteReq.style.display="none";cb=typeof opts.onConfirm==="function"?opts.onConfirm:null;modal.classList.add("open");setTimeout(()=>cat.focus(),40);};
+      })();
+
       document.addEventListener("DOMContentLoaded", () => {
         renderPending();
         $("searchInput").addEventListener("input", (e) => { filters.search = e.target.value; pendingPage = 1; renderPending(); });
+        $("reasonFilter").addEventListener("change", (e) => { filters.reason = e.target.value; pendingPage = 1; renderPending(); });
         $("statusFilter").addEventListener("change", (e) => { filters.status = e.target.value; pendingPage = 1; renderPending(); });
       });
     </script>
