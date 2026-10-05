@@ -94,12 +94,17 @@ class OverviewTests(unittest.TestCase):
         ctx=self.context()
         actual=json.loads(ctx.eval('''JSON.stringify((()=>{
           const M=OverviewModel;
-          const base={type:'Client',registeredAt:'2025-01-01',logins:['2026-06-09'],withdrawnAt:null,withdrawalReason:''};
-          const users=[base,{...base,withdrawnAt:'2026-09-02',withdrawalReason:'Moved away'},{...base,withdrawnAt:'2026-09-03',withdrawalReason:''},{...base,logins:['2026-06-10','2026-09-07']},{...base,logins:['2026-06-09','2026-09-07']}];
+          const base={type:'Client',registeredAt:'2025-01-01',logins:['2026-06-09'],withdrawnAt:null};
+          OverviewData.analyticsEvents=[
+            {eventId:'evt-1',type:'account_status_changed',accountId:'C-1',accountType:'Customer',newStatus:'Withdrawn',withdrawnAt:'2026-09-02T10:00:00Z'},
+            {eventId:'evt-2',type:'account_status_changed',accountId:'A-1',accountType:'Agency',newStatus:'Withdrawn',withdrawnAt:'2026-09-02T11:00:00Z'},
+            {eventId:'evt-3',type:'account_status_changed',accountId:'C-2',accountType:'Customer',newStatus:'Suspended',occurredAt:'2026-09-03T10:00:00Z'}
+          ];
+          const users=[base,{...base,logins:['2026-06-10','2026-09-07']},{...base,logins:['2026-06-09','2026-09-07']}];
           return {events:M.inactivityEvents(base,'2026-09-07'),stats:M.withdrawalStats(users,'2026-09-01','2026-09-07'),stock:M.inactiveCount(users,'2026-09-07')};
         })())'''))
         self.assertIn('2026-09-07',actual['events'])
-        self.assertEqual(actual['stats'],{'withdrawals':1,'newlyInactive':1})
+        self.assertEqual(actual['stats'],{'withdrawals':1})
         self.assertEqual(actual['stock'],1)
 
     def test_inactivity_history_not_only_latest_login(self):
