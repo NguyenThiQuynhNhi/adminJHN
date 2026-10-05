@@ -26,7 +26,9 @@
       const oldStatus=lead.status;lead.previousAssignedStaffId=id;lead.assignedStaffId=id;lead.status='Closed Lost';lead.lossReason='Closed Lost because assigned staff was suspended.';
       const event={actor,action:lead.lossReason,oldValue:oldStatus,newValue:'Closed Lost',timestamp:at};lead.history=[...(lead.history||[]),event];lead.assignmentHistory=[...(lead.assignmentHistory||assignment?.assignmentHistory||[]),event];count++;
     }
-    W.write(W.keys.leadRecords,leads);return count;
+    W.write(W.keys.leadRecords,leads);
+    if(count)(root.YuushiAnalytics||root.top?.YuushiAnalytics)?.emit('lead_status_changed',{staffId:id,newStatus:'Closed Lost',reason:'Assigned staff suspended',affectedLeadCount:count});
+    return count;
   }
   function openInquiry(data){
     if(!data.customerId||!data.agencyId||!data.propertyId)throw Error('Customer, Agency and Property are required.');
@@ -35,7 +37,9 @@
     let row=rows.find(match)||W.read(W.keys.leadRecords).find(match);
     if(row){row.lastOpenedAt=W.now();W.upsert(W.keys.enquiries,row);return {record:row,created:false};}
     const id=W.next(rows,'INQ-');row={...data,...W.unassigned(),id,conversationId:id,assignedStaffId:null,createdAt:W.now(),status:'New',msgs:[]};
-    W.upsert(W.keys.enquiries,row);return {record:row,created:true};
+    W.upsert(W.keys.enquiries,row);
+    (root.YuushiAnalytics||root.top?.YuushiAnalytics)?.emit('inquiry_created',{inquiryId:id,conversationId:id,customerId:data.customerId,agencyId:data.agencyId,propertyId:data.propertyId,source:'Chat with Agency'});
+    return {record:row,created:true};
   }
   root.YuushiBA={staffKey,syncStaff,refreshStaff,setStaffStatus,openInquiry};refreshStaff();
   // Recheck eligibility at submission time; a stale open assignment dialog cannot assign suspended staff.
