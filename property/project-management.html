@@ -5518,61 +5518,19 @@
       }
 
       function renderPerformance(prop) {
-        const perf = prop.performance || {};
-        const sl = perf.standardListing || {};
-        const ads = Array.isArray(perf.ads) ? perf.ads : [];
-        function ctr(clicks, impressions) { return impressions ? (clicks / impressions * 100).toFixed(1) + "%" : "—"; }
-        function kpr(keep, clicks) { return clicks ? (keep / clicks * 100).toFixed(1) + "%" : "—"; }
-        function ratePillCls(pct) {
-          if (pct === "—") return "badge-gray";
-          const n = parseFloat(pct);
-          if (n >= 10) return "badge-onsale";
-          if (n >= 5) return "badge-amber";
-          return "badge-closed";
-        }
-        function metricRow(label, imp, views, clicks, keep) {
-          const ctrVal = ctr(clicks, imp), kprVal = kpr(keep, clicks);
-          return `<tr>
-            <td style="font-weight:600;color:var(--text-main)">${esc(label)}</td>
-            <td>${(imp || 0).toLocaleString()}</td>
-            <td>${(views || 0).toLocaleString()}</td>
-            <td>${(clicks || 0).toLocaleString()}</td>
-            <td><span class="badge ${ratePillCls(ctrVal)}" style="font-size:11px">${esc(ctrVal)}</span></td>
-            <td>${(keep || 0).toLocaleString()}</td>
-            <td><span class="badge ${ratePillCls(kprVal)}" style="font-size:11px">${esc(kprVal)}</span></td>
-          </tr>`;
-        }
-        let totImp = sl.impressions || 0, totViews = sl.views || 0, totClicks = sl.clicks || 0, totKeep = sl.keep || 0;
-        ads.forEach((a) => { totImp += a.impressions || 0; totViews += a.views || 0; totClicks += a.clicks || 0; totKeep += a.keep || 0; });
-        const thead = `<thead><tr style="background:var(--bg-header-soft)">
-          <th style="min-width:160px">Source</th><th>Impressions</th><th>Views</th><th>Clicks</th><th>CTR</th><th>Keep</th><th>KPR</th>
-        </tr></thead>`;
-        const adRows = ads.length
-          ? ads.map((a) => metricRow(`${esc(a.adName)} (${esc(a.adType)}`, a.impressions, a.views, a.clicks, a.keep)).join("")
-          : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:14px;font-size:12px"><i class="fas fa-circle-info"></i> This project has not been placed in any ads yet.</td></tr>`;
-        return `
-          <style>
-            .perf-table { width:100%; border-collapse:collapse; font-size:12.5px; }
-            .perf-table th { padding:9px 12px; font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; text-align:left; }
-            .perf-table td { padding:10px 12px; border-top:1px solid var(--border-soft); color:var(--text-main); vertical-align:middle; }
-            .perf-block { border:1px solid var(--border-subtle); border-radius:var(--r-md); overflow:hidden; margin-bottom:14px; }
-            .perf-block-head { padding:9px 14px; background:var(--bg-header-soft); border-bottom:1px solid var(--border-subtle); display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:var(--text-main); }
-            .perf-block-head i { color:var(--accent); width:16px; text-align:center; }
-            .perf-total-row td { background:var(--bg-card-warm); font-weight:700; border-top:2px solid var(--border-warm); }
-          </style>
-          <div style="margin-bottom:10px;font-size:12px;color:var(--text-muted)"><i class="fas fa-circle-info"></i> CTR = Clicks ÷ Impressions · KPR = Keep ÷ Clicks · Metrics are read-only and updated daily.</div>
-          <div class="perf-block">
-            <div class="perf-block-head"><i class="fas fa-list-ul"></i> Standard Listing<span style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:4px">— organic search &amp; browse performance</span></div>
-            <div style="overflow-x:auto"><table class="perf-table">${thead}<tbody>${metricRow("Standard Listing", sl.impressions, sl.views, sl.clicks, sl.keep)}</tbody></table></div>
-          </div>
-          <div class="perf-block">
-            <div class="perf-block-head"><i class="fas fa-rectangle-ad"></i> Per Ad<span style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:4px">— ${ads.length} active ad slot${ads.length !== 1 ? "s" : ""}</span></div>
-            <div style="overflow-x:auto"><table class="perf-table">${thead}<tbody>${adRows}</tbody></table></div>
-          </div>
-          <div class="perf-block">
-            <div class="perf-block-head"><i class="fas fa-sigma"></i> Combined Total<span style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:4px">— Standard Listing + all Ads</span></div>
-            <div style="overflow-x:auto"><table class="perf-table">${thead}<tbody><tr class="perf-total-row">${metricRow("Total", totImp, totViews, totClicks, totKeep).replace("<tr>", "").replace("</tr>", "")}</tr></tbody></table></div>
-          </div>`;
+        const perf=projectPerformanceFromEvents(prop.id);
+        const o=perf.organic,pct=(n,d)=>d?(n/d*100).toFixed(1)+'%':'—',num=v=>Number(v||0).toLocaleString('en-US');
+        const organic=perf.organicReady?`
+          <div class="perf-block"><div class="perf-block-head"><i class="fas fa-list-ul"></i> Project Listing <span style="font-size:11px;font-weight:500;color:var(--text-muted)">— organic only</span></div>
+          <div style="overflow-x:auto"><table class="perf-table"><thead><tr><th>Impressions</th><th>Views</th><th>Clicks</th><th>CTR</th><th>Keep / Saves</th><th>Inquiries</th></tr></thead>
+          <tbody><tr><td>${num(o.impressions)}</td><td>${num(o.views)}</td><td>${num(o.clicks)}</td><td>${pct(o.clicks,o.impressions)}</td><td>${num(o.keep)}</td><td>${num(o.inquiries)}</td></tr></tbody></table></div></div>`
+          :`<div class="notice" style="margin-bottom:14px"><strong>Project performance: Source not ready.</strong><br>No project-card analytics events with this Project ID are available. Generated counters are not used.</div>`;
+        const ads=perf.adReady?`
+          <div class="perf-block"><div class="perf-block-head"><i class="fas fa-rectangle-ad"></i> Paid Advertisement Performance <span style="font-size:11px;font-weight:500;color:var(--text-muted)">— paid only</span></div>
+          <div style="overflow-x:auto"><table class="perf-table"><thead><tr><th>Campaign / Ad</th><th>Ad Impressions</th><th>Ad Views</th><th>Ad Clicks</th><th>Ad CTR</th><th>Ad-attributed Inquiries</th></tr></thead>
+          <tbody>${perf.ads.map(a=>`<tr><td><strong>${esc(a.name)}</strong>${a.adType?' · '+esc(a.adType):''}</td><td>${num(a.impressions)}</td><td>${num(a.views)}</td><td>${num(a.clicks)}</td><td>${pct(a.clicks,a.impressions)}</td><td>${num(a.inquiries)}</td></tr>`).join('')}</tbody></table></div></div>`
+          :`<div class="notice"><strong>Paid Advertisement performance: Source not ready.</strong><br>No paid-ad events are available for this Project. Organic engagement is never reused for paid metrics.</div>`;
+        return `<style>.perf-table{width:100%;border-collapse:collapse;font-size:12.5px}.perf-table th{padding:9px 12px;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;white-space:nowrap;text-align:left}.perf-table td{padding:10px 12px;border-top:1px solid var(--border-soft)}.perf-block{border:1px solid var(--border-subtle);border-radius:var(--r-md);overflow:hidden;margin-bottom:14px}.perf-block-head{padding:9px 14px;background:var(--bg-header-soft);border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700}</style>${organic}${ads}`;
       }
       // ========================================================================
       // LIST
