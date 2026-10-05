@@ -2665,13 +2665,30 @@
 
     <!-- Reject reason modal -->
     <div class="modal-backdrop" id="rejectModal">
-      <div class="confirm-box" style="width: 460px" role="dialog" aria-modal="true">
+      <div class="confirm-box" style="width: 500px" role="dialog" aria-modal="true">
         <div class="confirm-header">
           <h3 class="confirm-title">Reject this listing?</h3>
           <button class="confirm-close" type="button" id="rejectClose"><i class="fas fa-times"></i></button>
         </div>
         <div class="confirm-body" style="padding: 18px">
-          <p style="margin:0">Reject this listing and return it to the Agency for correction?</p>
+          <div class="field-group" style="margin-bottom:12px">
+            <label class="field-label" for="rejectCategorySelect">Reason <span class="required">*</span></label>
+            <select class="edit-input" id="rejectCategorySelect">
+              <option value="">Select a reason…</option>
+              <option value="property_already_sold">Property already sold</option>
+              <option value="incorrect_information">Incorrect information</option>
+              <option value="privacy_copyright_infringement">Privacy/Copyright infringement</option>
+              <option value="unauthorized_listing_own_property">Unauthorized listing of own property</option>
+              <option value="unauthorized_use_own_images">Unauthorized use of own images</option>
+              <option value="other">Other</option>
+            </select>
+            <span class="field-error hidden" id="rejectCategoryErr" style="color:var(--status-danger-text);font-size:11.5px">Please select a reason.</span>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="rejectNotesInput">Details <span id="rejectNotesRequired" class="hidden required">*</span></label>
+            <textarea class="edit-input" id="rejectNotesInput" style="min-height:72px" placeholder="Add details for the Agency…"></textarea>
+            <span class="field-error hidden" id="rejectNotesErr" style="color:var(--status-danger-text);font-size:11.5px">Details are required when Reason = Other.</span>
+          </div>
         </div>
         <div class="confirm-footer">
           <button class="btn" type="button" id="rejectCancel">Cancel</button>
@@ -4578,7 +4595,7 @@
           currentSituation: "Vacant Land",
           moveIn: "Available Now",
           publishStatus: "Rejected",
-          rejectCategory: "Incomplete documentation",
+          rejectCategory: "incorrect_information",
           rejectNotes:
             "Land survey certificate and boundary confirmation are missing. Re-submit with the registered area documents.",
           datePublished: "",
@@ -6421,12 +6438,21 @@
             icon: "fa-clock",
             msg: 'This listing is awaiting approval. Open <a href="property-approval-moderation.html" style="color:inherit;font-weight:700;text-decoration:underline">Property Approval</a> to approve or reject it.',
           });
-        if (p.publishStatus === "Rejected")
+        if (p.publishStatus === "Rejected") {
+          const labels={
+            property_already_sold:"Property already sold",
+            incorrect_information:"Incorrect information",
+            privacy_copyright_infringement:"Privacy/Copyright infringement",
+            unauthorized_listing_own_property:"Unauthorized listing of own property",
+            unauthorized_use_own_images:"Unauthorized use of own images",
+            other:"Other"
+          };
           alerts.push({
             kind: "danger",
             icon: "fa-circle-xmark",
-            msg: "This listing was rejected.",
+            msg:"This listing was rejected. Reason: "+esc(labels[p.rejectCategory]||p.rejectCategory||"—")+(p.rejectNotes?". "+esc(p.rejectNotes):""),
           });
+        }
         // Prominent Sold-Out record card (shown ABOVE the section cards).
         let soldCardHtml = "";
         if (p.saleStatus === "Sold Out") {
@@ -6775,6 +6801,11 @@
       
       function rejectListing() {
         if (!currentProp) return;
+        $("rejectCategorySelect").value="";
+        $("rejectNotesInput").value="";
+        $("rejectCategoryErr").classList.add("hidden");
+        $("rejectNotesErr").classList.add("hidden");
+        $("rejectNotesRequired").classList.add("hidden");
         $("rejectModal").classList.add("open");
       }
       (function wireRejectModal() {
@@ -6786,13 +6817,23 @@
         document.addEventListener("keydown", (e) => {
           if (e.key === "Escape" && modal.classList.contains("open")) close();
         });
+        $("rejectCategorySelect").addEventListener("change",()=>{
+          const other=$("rejectCategorySelect").value==="other";
+          $("rejectNotesRequired").classList.toggle("hidden",!other);
+          $("rejectCategoryErr").classList.add("hidden");
+          if(!other)$("rejectNotesErr").classList.add("hidden");
+        });
         $("rejectConfirmBtn").addEventListener("click", () => {
           if (!currentProp) return;
+          const reason=$("rejectCategorySelect").value;
+          const notes=$("rejectNotesInput").value.trim();
+          if(!reason){$("rejectCategoryErr").classList.remove("hidden");$("rejectCategorySelect").focus();return;}
+          if(reason==="other"&&!notes){$("rejectNotesErr").classList.remove("hidden");$("rejectNotesInput").focus();return;}
           const today = new Date().toISOString().slice(0, 10);
           const oldStatus = currentProp.publishStatus;
           currentProp.publishStatus = "Rejected";
-          currentProp.rejectCategory = undefined;
-          currentProp.rejectNotes = undefined;
+          currentProp.rejectCategory = reason;
+          currentProp.rejectNotes = notes;
           currentProp.dateUpdated = today;
           currentProp.changeHistory = currentProp.changeHistory || [];
           currentProp.changeHistory.unshift({
@@ -6804,7 +6845,7 @@
             oldVal: oldStatus,
             newVal: "Rejected",
           });
-          emitPropertyEvent('property_status_changed',currentProp,{oldStatus,newStatus:'Rejected',changeSource:'admin_rejection'});
+          emitPropertyEvent('property_status_changed',currentProp,{oldStatus,newStatus:'Rejected',changeSource:'admin_rejection',rejectCategory:reason,rejectNotes:notes});
           originalProp = JSON.parse(JSON.stringify(currentProp));
           close();
           renderDetail();
