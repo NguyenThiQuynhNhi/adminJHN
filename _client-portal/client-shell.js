@@ -1,5 +1,15 @@
 (() => {
   'use strict';
+  function ensureAnalytics() {
+    if (window.YuushiAnalytics) { window.YuushiAnalytics.startPageInstrumentation?.(); return; }
+    if (document.querySelector('script[data-yuushi-analytics]')) return;
+    const script=document.createElement('script');
+    script.src=new URL('../analytics-platform.js',location.href).href;
+    script.dataset.yuushiAnalytics='true';
+    script.onload=()=>window.YuushiAnalytics?.startPageInstrumentation?.();
+    document.head.appendChild(script);
+  }
+  ensureAnalytics();
   const homeFile = 'yuushi_homepage_standalone.html';
   const pageTitles = {
     'client-myprofile.html':'My Profile',
