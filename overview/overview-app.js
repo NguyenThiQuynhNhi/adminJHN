@@ -55,7 +55,7 @@
     const pendingAds=(D.campaigns||[]).filter(r=>['pending_review','pending','awaiting_approval'].includes(norm(r.status))).length;
     const telemetry=D.telemetry||{};
     const systemIssues=telemetry.systemIssues||{total:0,critical:0,error:0,warning:0};
-    const paymentErrorCount=(telemetry.paymentErrors||[]).filter(e=>!e.status||String(e.status).toLowerCase()==='unresolved').length;
+    const paymentErrorCount=(D.paymentErrors||[]).filter(e=>!e.status||String(e.status).toLowerCase()==='unresolved').length;
     const alerts=[
       ['Unresponded Messages',M.unrespondedMessages(),'unresponded'],
       ['Property Reports (Unprocessed)',unprocessedReports,'complaints'],
@@ -65,7 +65,7 @@
       ['Pending Agency Reviews',M.pendingAgencies(),'agents']
     ];
     const users=M.platformAccounts(),customerUsers=users.filter(a=>a.type==='Client'),agentUsers=users.filter(a=>a.type==='Agency');
-    const currentMonth=M.monthStart(D.today),todayFacts=D.facts.filter(r=>r.date===D.today),yesterdayFacts=D.facts.filter(r=>r.date===U.addDays(D.today,-1));
+    const currentMonth=M.monthStart(D.today),todayFacts=D.facts.filter(r=>r.date===D.today),yesterdayFacts=D.facts.filter(r=>r.date===U.addDays(D.today,-1)),todayInquiryCount=(D.chats||[]).filter(r=>r.date===D.today).length,yesterdayInquiryCount=(D.chats||[]).filter(r=>r.date===U.addDays(D.today,-1)).length;
     const withdrawal=M.withdrawalStats(D.accounts,currentMonth,D.today);
     const delta=(a,b)=>b?((a-b)/b*100).toFixed(1)+'% vs previous day':'No previous-day baseline';
     const mockValue=(value,unit='')=>Number.isFinite(Number(value))?number(Number(value),unit):'—';
@@ -92,7 +92,7 @@
         ${kcard('MTD Revenue',mockValue(telemetry.mtdRevenue,'JPY'),mockNote('MTD Revenue'))}
         ${kcard('MRR','—','Requires Subscription Plan Master + active recurring payment/subscription records. Dashboard must not hard-code plan prices.')}
         ${kcard('Total Listed Properties',publishedCount==null?'—':publishedCount,publishedCount==null?'Requires operational/shared Property store.':'Published listings from persisted Property records only.')}
-        ${kcard("Today's Inquiries",M.sum(todayFacts,'inquiries'),delta(M.sum(todayFacts,'inquiries'),M.sum(yesterdayFacts,'inquiries'))+' · NEW Client → Agency property inquiries only; duplicate reopen does not increment')}
+        ${kcard("Today's Inquiries",todayInquiryCount,delta(todayInquiryCount,yesterdayInquiryCount)+' · NEW Client → Agency property inquiries only; duplicate reopen does not increment')}
       </div>
       <div class="section-heading"><h2>Account changes this month</h2><span class="badge amber">Provisional · ${currentMonth} – ${D.today}</span></div>
       <div class="cards">
