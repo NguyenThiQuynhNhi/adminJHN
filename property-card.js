@@ -156,7 +156,7 @@
     var onclick = p.onClick ? ' onclick="' + p.onClick + '"' : "";
 
     return (
-      '<div class="ypc-card"' + onclick + ">" +
+      '<div class="ypc-card" data-property-id="' + esc(p.id || "") + '" data-agency-id="' + esc(p.agencyId || p.agentId || "") + '" data-placement="organic"' + onclick + ">" +
         '<div class="ypc-photo">' +
           svg +
           '<div class="ypc-ov"></div>' +
