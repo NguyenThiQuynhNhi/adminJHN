@@ -110,14 +110,14 @@
   const events=(type)=>read(EVENT_KEY,[]).filter(e=>!type||e.type===type);
 
   const metricRegistry={
-    property_standard_impressions:{source_ready:true,source_object:'AnalyticsEvent',required_events:['property_card_rendered']},
-    property_views:{source_ready:true,source_object:'AnalyticsEvent',required_events:['property_card_viewed']},
-    property_clicks:{source_ready:true,source_object:'AnalyticsEvent',required_events:['property_card_clicked']},
-    property_saves:{source_ready:true,source_object:'AnalyticsEvent',required_events:['property_saved']},
+    property_standard_impressions:{source_ready:false,source_object:'AnalyticsEvent',required_events:['property_card_rendered'],reason:'Event contract exists, but the current Client listing UI has no stable Property ID producer yet.'},
+    property_views:{source_ready:false,source_object:'AnalyticsEvent',required_events:['property_card_viewed'],reason:'Viewport event contract exists, but the current Client listing UI has no stable Property ID producer yet.'},
+    property_clicks:{source_ready:false,source_object:'AnalyticsEvent',required_events:['property_card_clicked'],reason:'Click event contract exists, but the current Client listing UI has no stable Property ID producer yet.'},
+    property_saves:{source_ready:false,source_object:'AnalyticsEvent',required_events:['property_saved'],reason:'Save event contract exists, but the current Client listing UI has no stable Property ID producer yet.'},
     property_inquiries:{source_ready:true,source_object:'Inquiry',required_events:['inquiry_created'],storage_key:'yuushi.agencyEnquiryAssignments'},
-    ad_impressions:{source_ready:true,source_object:'AnalyticsEvent',required_events:['ad_rendered']},
-    ad_views:{source_ready:true,source_object:'AnalyticsEvent',required_events:['ad_viewed']},
-    ad_clicks:{source_ready:true,source_object:'AnalyticsEvent',required_events:['ad_clicked']},
+    ad_impressions:{source_ready:false,source_object:'AnalyticsEvent',required_events:['ad_rendered'],reason:'No Client-side paid-ad impression producer is wired yet.'},
+    ad_views:{source_ready:false,source_object:'AnalyticsEvent',required_events:['ad_viewed'],reason:'No Client-side paid-ad viewport producer is wired yet.'},
+    ad_clicks:{source_ready:false,source_object:'AnalyticsEvent',required_events:['ad_clicked'],reason:'No Client-side paid-ad click producer is wired yet.'},
     withdrawal_trend:{source_ready:true,source_object:'AnalyticsEvent',required_events:['account_status_changed']},
     property_reports_unprocessed:{source_ready:true,source_object:'PropertyReport',storage_key:'yuushi.c07.propertyReports'},
     listing_end_reasons:{source_ready:true,source_object:'Property lifecycle record',required_fields:['suspensionReason','suspensionDate']},
@@ -142,23 +142,27 @@
   };
 
   const overviewMetricStatus=(id)=>{
+    // "ready" means this repository contains an actual producer/store for the metric inputs.
+    // A schema alone or a dashboard seed is not sufficient.
     const mock=new Set(['r22','r23','r24','r25','r26','r27']);
-    const ready=new Set([
-      'r32','r35','r36','r44','r47','r49','r52','r53','r54','r56','r57','r59','r60',
-      'r78','r79','r94','r95','r96','r97','r98','r99','r100','r102','r115'
-    ]);
-    const pendingVerification=new Set(['r104','r107','r112','r113','r114','r116','r117']);
-    const planMaster=new Set(['r71','r72','r73','r74','r75','r76','r81','r108','r109','r110','r111']);
-    const historicalEvents=new Set(['r30','r31','r91','r101','r103','r105']);
-    const appraisalDelivery=new Set(['r84']);
-    const instrumentation=new Set(['r37','r38','r39','r40','r42','r43','r45','r46','r48','r50','r51','r55','r58','r69','r70','r77','r80','r82','r83','r92','r93','r120','r121','r122','r123','r124','r125','r126','r127','r128','r130','r131','r132','r133','r134','r135','r136','r137','r139','r140','r141','r142','r143','r144','r145']);
+    const ready=new Set(['r32','r56','r57','r59','r60','r78','r79','r98','r100','r102']);
+    const propertyEngagement=new Set(['r37','r38','r47','r52','r53','r54','r94','r95','r96','r97','r99','r121','r122','r123','r124','r125']);
+    const adEvents=new Set(['r113','r114','r115','r116','r117']);
+    const pendingVerification=new Set(['r104']);
+    const planMaster=new Set(['r71','r72','r73','r74','r75','r76','r81','r107','r108','r109','r110','r111','r112']);
+    const historicalEvents=new Set(['r30','r31','r91','r103','r105','r120']);
+    const appraisalDelivery=new Set(['r84','r118']);
+    const instrumentation=new Set(['r35','r36','r39','r40','r42','r43','r44','r45','r46','r48','r49','r50','r51','r55','r58','r69','r70','r77','r80','r82','r83','r92','r93','r126','r127','r128','r130','r131','r132','r133','r134','r135','r136','r137','r139','r140','r141','r142','r143','r144','r145']);
     if(mock.has(id))return {ready:'mock',note:'Prototype telemetry only; no backend health/payment integration is built in this repository.'};
-    if(ready.has(id))return {ready:true,note:'Calculated from operational records and/or canonical analytics events.'};
-    if(pendingVerification.has(id))return {ready:false,note:'Requires finalized transaction verification/cost semantics before production calculation.'};
-    if(planMaster.has(id))return {ready:false,note:'Requires Subscription Plan Master / payment or campaign records. Dashboard must not hard-code plan prices or limits.'};
-    if(historicalEvents.has(id))return {ready:false,note:'Requires persisted historical property lifecycle/price events; current-state records cannot reconstruct this trend.'};
-    if(appraisalDelivery.has(id))return {ready:false,note:'Requires one persisted appraisal_delivery record per Agency recipient.'};
-    if(instrumentation.has(id))return {ready:false,note:'Requires analytics instrumentation or an operational shared store that is not yet available.'};
+    if(ready.has(id))return {ready:true,note:'Calculated from an operational shared store and/or a canonical event with a real producer in this prototype.'};
+    if(propertyEngagement.has(id))return {ready:false,note:'Requires Customer listing instrumentation with a stable Property ID. Event contracts exist, but the current static Client listing cards do not provide that identity yet.'};
+    if(adEvents.has(id))return {ready:false,note:'Requires paid-ad render/view/click producers. Organic Property events must not be reused for Ad metrics.'};
+    if(pendingVerification.has(id))return {ready:false,note:'Requires finalized transaction verification/public-sale eligibility before production calculation.'};
+    if(planMaster.has(id))return {ready:false,note:'Requires Subscription Plan Master and/or persisted payment/campaign spend records. Dashboard must not hard-code plan prices or limits.'};
+    if(historicalEvents.has(id))return {ready:false,note:'Property lifecycle/price events are now emitted prospectively; historical trend remains unavailable until sufficient event history exists.'};
+    if(appraisalDelivery.has(id))return {ready:false,note:'Requires one persisted appraisal_delivery record per Agency recipient; the current Appraisal page still uses page-local records.'};
+    if(instrumentation.has(id))return {ready:false,note:'Requires an analytics event producer or operational shared store that is not yet wired for this metric.'};
+    if(id==='r101')return {ready:true,note:'Uses persisted Property listing start/end dates from the operational Property snapshot store.'};
     return {ready:false,note:'No validated platform data lineage is registered for this metric yet.'};
   };
 
