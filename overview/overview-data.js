@@ -54,8 +54,12 @@
   const subscriptions=read('yuushi.subscriptionRecords',[]);
   const campaigns=Array.isArray(commerce.bookings)?commerce.bookings:[];
   const commerceTransactions=Array.isArray(commerce.transactions)?commerce.transactions:[];
-  const appraisalDeliveries=read('yuushi.appraisalDeliveries',[]);
-  const propertySnapshots=read('yuushi.analytics.propertySnapshots',[]);
+  const appraisalDeliveryRaw=read('yuushi.appraisalDeliveries',null);
+  const appraisalDeliveries=Array.isArray(appraisalDeliveryRaw)?appraisalDeliveryRaw:[];
+  const appraisalDeliveryReady=Array.isArray(appraisalDeliveryRaw);
+  const propertySnapshotRaw=read('yuushi.analytics.propertySnapshots',null);
+  const propertySnapshots=Array.isArray(propertySnapshotRaw)?propertySnapshotRaw:[];
+  const propertyStoreReady=Array.isArray(propertySnapshotRaw);
   const properties=uniqueBy(propertySnapshots,'id');
 
   const evtDate=e=>(e.occurredAt||e.createdAt||'').slice(0,10);
@@ -138,8 +142,15 @@
   const data={
     today,now,accounts,agencies,agents,subscriptions,adminChats,accountSessions,guests,properties,facts,chats,fraudFlags,paymentErrors,logs,
     reports,transactions,enquiries,campaigns,commerceTransactions,succeededPayments,appraisalDeliveries,analyticsEvents:events,places,groups,structures,countries,plans,prices,adTypes,options,
-    customerDirectoryReady,agencyDirectoryReady,accountDirectoryReady,
-    telemetry,metricStatus:(id)=>{const accountMetrics=new Set(['r29','r42','r43','r44','r46','r55','r56','r69','r70','r71','r72','r73','r77','r80','r81','r83','r110']);if(accountMetrics.has(id)&&!accountDirectoryReady)return {ready:false,note:'Platform-wide Customer/Agency directory has not been synchronized from Admin User/Agency Management yet.'};return A.overviewMetricStatus(id);}
+    customerDirectoryReady,agencyDirectoryReady,accountDirectoryReady,propertyStoreReady,appraisalDeliveryReady,
+    telemetry,metricStatus:(id)=>{
+      const accountMetrics=new Set(['r29','r42','r43','r44','r46','r55','r56','r69','r70','r71','r72','r73','r77','r80','r81','r83','r110']);
+      const propertySnapshotMetrics=new Set(['r77','r92','r93','r101','r102']);
+      if(accountMetrics.has(id)&&!accountDirectoryReady)return {ready:false,note:'Platform-wide Customer/Agency directory has not been synchronized from Admin User/Agency Management yet.'};
+      if(propertySnapshotMetrics.has(id)&&!propertyStoreReady)return {ready:false,note:'Operational Property snapshot store has not been synchronized from Property Management yet.'};
+      if(id==='r84'&&!appraisalDeliveryReady)return {ready:false,note:'Appraisal delivery store has not been synchronized from Agency Appraisal Management yet.'};
+      return A.overviewMetricStatus(id);
+    }
   };
   const utilities={DAY,dayKey,addDays};
   root.OverviewDemo={data,utilities};
