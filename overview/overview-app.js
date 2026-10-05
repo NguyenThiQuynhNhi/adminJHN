@@ -87,7 +87,7 @@
       <div class="cards">
         ${kcard('Total Users',users.length,'Excludes withdrawn accounts · '+customerUsers.length+' Clients / '+agentUsers.length+' Agencies')}
         ${kcard('Active Users','<span id="kpiActiveValue">'+M.activity(users,D.today,1)+'</span>','Registered accounts with recorded login/activity in selected window')}
-        ${kcard('Avg Session Time',mockValue(telemetry.avgSessionSeconds)+'s',mockNote('Avg Session Time'))}
+        ${kcard('Avg Session Time',Number.isFinite(Number(telemetry.avgSessionSeconds))?mockValue(telemetry.avgSessionSeconds)+'s':'—',mockNote('Avg Session Time'))}
         ${kcard("Today's Revenue",mockValue(telemetry.todayRevenue,'JPY'),mockNote("Today's Revenue"))}
         ${kcard('MTD Revenue',mockValue(telemetry.mtdRevenue,'JPY'),mockNote('MTD Revenue'))}
         ${kcard('MRR','—','Requires Subscription Plan Master + active recurring payment/subscription records. Dashboard must not hard-code plan prices.')}
