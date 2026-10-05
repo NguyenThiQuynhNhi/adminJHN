@@ -421,6 +421,7 @@
       }
     </style>
   <link rel="stylesheet" href="../dropdown-indicators.css">
+  <script src="../analytics-platform.js"></script>
 </head>
   <body>
     <main class="main">
@@ -602,6 +603,15 @@
             </div>
           </div>
         </div>
+        <div class="card" style="border-color:#efc7c7;background:#fffafa">
+          <div class="card-head">
+            <div class="card-title" style="color:var(--danger)">
+              <span class="card-num">7</span>Account Withdrawal
+            </div>
+          </div>
+          <p class="card-desc">Withdraw the Supportal company account from YUUSHI. This closes access and releases the original login email for a future new account.</p>
+          <button class="btn btn-ghost" id="withdrawOpen" type="button" style="color:var(--danger);border-color:#e7b5b5">Withdraw from YUUSHI</button>
+        </div>
       </section>
 
       <!-- ===== SECURITY & ACCESS PANEL ===== -->
@@ -682,6 +692,36 @@
       </div>
     </main>
 
+    <dialog id="withdrawDialog" style="max-width:560px;width:calc(100% - 32px);border:1px solid var(--border);border-radius:12px;padding:0">
+      <form id="withdrawForm" style="padding:22px">
+        <h2 style="margin:0 0 8px;font-size:20px">Withdraw from YUUSHI?</h2>
+        <p class="card-desc">The current Supportal account will be closed and access will end. A future signup with the released email creates a new account; it does not restore this one.</p>
+        <div class="field">
+          <label for="withdrawReason">Withdrawal Reason <span class="req">*</span></label>
+          <select id="withdrawReason" required>
+            <option value="">Select a reason...</option>
+            <option value="business_closed_or_paused">My business closed or paused operations</option>
+            <option value="insufficient_requests_roi">Not enough client requests/ROI</option>
+            <option value="switching_platform">Switching to a different platform</option>
+            <option value="subscription_cost_high">Subscription cost too high</option>
+            <option value="portal_or_technical_issues">Portal was difficult to use or had technical issues</option>
+            <option value="client_communication_tools_insufficient">Tools for communicating with clients were insufficient</option>
+            <option value="duplicate_account">Duplicate account</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="field" id="withdrawOtherField" hidden style="margin-top:12px">
+          <label for="withdrawOther">Please specify <span class="req">*</span></label>
+          <textarea id="withdrawOther" maxlength="2000"></textarea>
+        </div>
+        <p id="withdrawError" style="color:var(--danger);font-size:12px" hidden></p>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px">
+          <button type="button" class="btn btn-ghost" id="withdrawCancel">Cancel</button>
+          <button type="submit" class="btn" style="background:var(--danger);color:#fff">Confirm withdrawal</button>
+        </div>
+      </form>
+    </dialog>
+
     <div class="toast-wrap" id="toastWrap"></div>
 
     <script>
@@ -701,6 +741,64 @@
       function saveProfile() {
         showToast("Profile saved successfully", false);
       }
+
+      const supportalAccountKey = 'yuushi.supportal.account';
+      const supportalArchiveKey = 'yuushi.supportal.withdrawnAccounts';
+      const withdrawDialog = document.getElementById('withdrawDialog');
+      const withdrawReason = document.getElementById('withdrawReason');
+      const withdrawOther = document.getElementById('withdrawOther');
+      const withdrawOtherField = document.getElementById('withdrawOtherField');
+      const withdrawError = document.getElementById('withdrawError');
+
+      document.getElementById('withdrawOpen')?.addEventListener('click', () => {
+        document.getElementById('withdrawForm').reset();
+        withdrawOther.required = false;
+        withdrawOtherField.hidden = true;
+        withdrawError.hidden = true;
+        withdrawDialog.showModal();
+      });
+      document.getElementById('withdrawCancel')?.addEventListener('click', () => withdrawDialog.close());
+      withdrawReason?.addEventListener('change', () => {
+        withdrawOther.required = withdrawReason.value === 'other';
+        withdrawOtherField.hidden = !withdrawOther.required;
+      });
+      document.getElementById('withdrawForm')?.addEventListener('submit', event => {
+        event.preventDefault();
+        withdrawError.hidden = true;
+        if (!withdrawReason.value || (withdrawReason.value === 'other' && !withdrawOther.value.trim())) {
+          withdrawError.textContent = 'Select a withdrawal reason and provide details for Other.';
+          withdrawError.hidden = false;
+          return;
+        }
+        try {
+          const existing = JSON.parse(localStorage.getItem(supportalAccountKey) || 'null');
+          const account = existing || { id:'SUP-00000001', companyName:'Prime Insurance Solutions', loginEmail:'support@example.jp', status:'Active' };
+          if (!account.deletedAt) {
+            const now = new Date().toISOString();
+            const originalEmail = account.loginEmail || account.email || '';
+            const selectedLabel = withdrawReason.options[withdrawReason.selectedIndex].text;
+            Object.assign(account, {
+              status:'Withdrawn', withdrawnAt:now, deletedAt:now,
+              withdrawalReasonCode:withdrawReason.value,
+              withdrawalReason:selectedLabel,
+              withdrawalReasonOther:withdrawReason.value === 'other' ? withdrawOther.value.trim() : '',
+              originalLoginEmail:originalEmail,
+              loginEmail:originalEmail ? originalEmail + '_deleted_' + account.id + '_' + Date.now() : '',
+              loginBlocked:true, sessionActive:false, sessionTerminatedAt:now
+            });
+            const archive = JSON.parse(localStorage.getItem(supportalArchiveKey) || '[]');
+            if (!archive.some(row => row.id === account.id)) archive.push(account);
+            localStorage.setItem(supportalArchiveKey, JSON.stringify(archive));
+            localStorage.setItem(supportalAccountKey, JSON.stringify(account));
+            window.YuushiAnalytics?.emitWithdrawal('Supportal', account, withdrawReason.value, selectedLabel, withdrawOther.value.trim());
+          }
+          withdrawDialog.close();
+          showToast('Account withdrawn. Access has been closed.', false);
+        } catch (err) {
+          withdrawError.textContent = 'Unable to save withdrawal. Please try again.';
+          withdrawError.hidden = false;
+        }
+      });
 
       function showToast(msg, isError) {
         const el = document.createElement("div");
