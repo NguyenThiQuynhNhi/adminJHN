@@ -1090,7 +1090,20 @@
       }
 
       let tickets = YuushiWorkflow.merge(YuushiWorkflow.keys.tickets, buildSeed().map(t=>({...YuushiWorkflow.unassigned(),...t})));
-      tickets.forEach(t=>Object.assign(t,{...YuushiWorkflow.unassigned(),requesterType:"Customer",...t}));
+      // Prototype lifecycle: Resolved/In Progress tickets must have an accountable Admin assignee.
+      const adminSeed=YuushiWorkflow.ADMIN_INDIVIDUALS;
+      tickets.forEach((t,i)=>{
+        if(!t.requesterType)t.requesterType=i%3===0?"Agency":"Customer";
+        if((t.status==="Resolved"||t.status==="In Progress")&&(!t.assigneeId||t.assigneeType==="Unassigned")){
+          const person=adminSeed[i%adminSeed.length];
+          t.assigneeType="Admin Individual";
+          t.assigneeId=person.id;
+          t.assigneeName=person.name;
+          t.assignedAt=(t.created||"2026-06-01")+"T10:00:00Z";
+          t.assignedBy="Admin Tanaka";
+          t.assignmentHistory=[{oldValue:"Unassigned",newValue:person.name,type:"Admin Individual",note:t.status==="Resolved"?"Assigned and handled before resolution.":"Assigned for investigation.",actor:"Admin Tanaka",timestamp:t.assignedAt}];
+        }
+      });
       YuushiWorkflow.write(YuushiWorkflow.keys.tickets,tickets);
 
       // ---------- nav badge (open count) in parent shell ----------
