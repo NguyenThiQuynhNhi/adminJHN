@@ -46,6 +46,52 @@
     const periods=['May 2026','Jun 2026','Jul 2026','Aug 2026','Sep 2026','Oct 2026'];
     const grow=(base,i,step=1)=>Math.max(0,Math.round(base+i*step+((seed+i*7)%5)));
     const result=(kind,columns,rows)=>({kind,columns,rows,prototype:true,note:'Prototype mock data for UI review. Metric definition, labels and business terminology follow the current specification; values are sample data only.'});
+    if(spec.id==='r42')return result('line',[{key:'registrations',label:'New Client Registrations'}],periods.map((label,i)=>({label,registrations:grow(38,i,6)})));
+    if(spec.id==='r43')return result('line',[{key:'registeredClients',label:'Cumulative Registered Clients'}],periods.map((label,i)=>({label,registeredClients:1180+i*96+(seed%12)})));
+    if(spec.id==='r44')return result('line',[
+      {key:'dau',label:'DAU'},{key:'wau',label:'WAU'},{key:'mau',label:'MAU'},
+      {key:'guestDaily',label:'Guest Unique Visitors · Daily'},{key:'guest7d',label:'Guest Unique Visitors · 7-day'},{key:'guest30d',label:'Guest Unique Visitors · 30-day'}
+    ],periods.map((label,i)=>({label,dau:210+i*12,wau:820+i*34,mau:2140+i*61,guestDaily:330+i*18,guest7d:1290+i*42,guest30d:3180+i*79})));
+    if(spec.id==='r45')return result('line',[{key:'seconds',label:'Avg Session Time',unit:'seconds'},{key:'listingSeconds',label:'Avg Viewing Time per Listing',unit:'seconds'}],periods.map((label,i)=>({label,seconds:270+i*17+(seed%12),listingSeconds:74+i*5+(seed%6)})));
+    if(spec.id==='r46')return result('bar',[{key:'clients',label:'Clients'}],[['Japan',420],['China',138],['United States',94],['Singapore',67],['Hong Kong',51],['Australia',34]].map(([label,clients])=>({label,clients})));
+    if(spec.id==='r47')return result('table',[
+      {key:'sessions',label:'Sessions'},{key:'views',label:'Property Views'},{key:'clicks',label:'Property Clicks'},{key:'saves',label:'Keep / Saves'},{key:'inquiries',label:'Property Inquiries'}
+    ],[
+      {label:'Registered Members',sessions:1680,views:4320,clicks:1260,saves:418,inquiries:176},
+      {label:'Guests / Non-Members',sessions:2410,views:5180,clicks:980,saves:0,inquiries:0},
+      {label:'Total',sessions:4090,views:9500,clicks:2240,saves:418,inquiries:176}
+    ]);
+    if(spec.id==='r48')return result('bar',[{key:'clients',label:'Clients'}],[
+      ['18–24 · Female',118],['18–24 · Male',96],['25–34 · Female',226],['25–34 · Male',204],['35–44 · Female',174],['35–44 · Male',159]
+    ].map(([label,clients])=>({label,clients})));
+    if(spec.id==='r49')return result('bar',[{key:'sessions',label:'Sessions'}],[
+      ['Japanese · Smartphone',860],['Japanese · PC',540],['English · Smartphone',420],['English · PC',310],['Simplified Chinese · Smartphone',185],['Japanese · Tablet',96]
+    ].map(([label,sessions])=>({label,sessions})));
+    if(spec.id==='r50')return result('bar',[{key:'registrations',label:'Registrations'}],[
+      ['Organic Search',402],['Direct',286],['Referral',161],['Social',128],['Paid Ads',97]
+    ].map(([label,registrations])=>({label,registrations})));
+    if(spec.id==='r51')return result('world',[{key:'accesses',label:'Accesses'}],[['Japan',1960],['United States',310],['Singapore',246],['Hong Kong',198],['Australia',151],['United Kingdom',104]].map(([label,accesses])=>({label,accesses})));
+    if(spec.id==='r52')return result('line',[
+      {key:'searches',label:'Searches'},{key:'views',label:'Property Views'},{key:'saves',label:'Keep / Saves'},{key:'inquiries',label:'Property Inquiries'}
+    ],periods.map((label,i)=>({label,searches:grow(1480,i,115),views:grow(5100,i,410),saves:grow(340,i,28),inquiries:grow(160,i,14)})));
+    if(spec.id==='r53')return result('bar',[{key:'searches',label:'Searches'}],[
+      ['Apartment',640],['House',428],['2LDK',362],['Tokyo / Shibuya',331],['≤ ¥80M',288],['Building age ≤ 10 years',214]
+    ].map(([label,searches])=>({label,searches})));
+    if(spec.id==='r54')return result('line',[
+      {key:'sessions',label:'Sessions'},{key:'views',label:'Property Views'},{key:'clicks',label:'Property Clicks'},{key:'saves',label:'Keep / Saves'},{key:'inquiries',label:'Property Inquiries'},{key:'deals',label:'Agency-recorded Deals'}
+    ],periods.map((label,i)=>({label,sessions:grow(4200,i,260),views:grow(9800,i,590),clicks:grow(2520,i,165),saves:grow(620,i,44),inquiries:grow(286,i,22),deals:grow(61,i,6)})));
+    if(spec.id==='r55')return result('line',[{key:'inactiveClients',label:'Inactive Clients 30+ Days'}],periods.map((label,i)=>({label,inactiveClients:92+i*7+(seed%5)})));
+    if(spec.id==='r56')return result('line',[{key:'withdrawals',label:'Withdrawals'}],periods.map((label,i)=>({label,withdrawals:[8,11,9,13,10,12][i]})));
+    if(spec.id==='r57')return result('line',[{key:'conversations',label:'Conversation Count'},{key:'messages',label:'Message Count'}],periods.map((label,i)=>({label,conversations:180+i*14,messages:1240+i*95})));
+    if(spec.id==='r58')return result('bar',[{key:'clientMessages',label:'Client-sent Messages'}],[
+      ['Japan',1480],['China',372],['United States',244],['Singapore',186],['Hong Kong',151]
+    ].map(([label,clientMessages])=>({label,clientMessages})));
+    if(spec.id==='r59')return result('bar',[{key:'agencyMessages',label:'Agency-sent Messages'}],[
+      ['Yamada Estates Co., Ltd.',462],['Osaka Premier Realty',351],['Agency 6 Realty Co.',289],['Karuizawa Living',214],['Land Pros',173]
+    ].map(([label,agencyMessages])=>({label,agencyMessages})));
+    if(spec.id==='r60')return result('bar',[{key:'responseMinutes',label:'Average Response Time',unit:'minutes'}],[
+      {label:'Japan business hours',responseMinutes:42},{label:'Outside Japan business hours',responseMinutes:116}
+    ]);
     if(/Avg Session Time/i.test(title))return result('line',[{key:'seconds',label:'Avg Session Time',unit:'seconds'}],periods.map((label,i)=>({label,seconds:240+i*18+(seed%20)})));
     if(/Distribution by Nationality \/ Country/i.test(title))return result('bar',[{key:'count',label:'Clients'}],[['Japan',420],['China',138],['United States',94],['Singapore',67],['Hong Kong',51],['Australia',34]].map(([label,count])=>({label,count})));
     if(/Member vs Non-Member/i.test(title))return result('table',[
