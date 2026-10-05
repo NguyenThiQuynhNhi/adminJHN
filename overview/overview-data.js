@@ -137,7 +137,7 @@
   const logs=read('yuushi.admin.systemIssues',[]);
   const data={
     today,now,accounts,agencies,agents,subscriptions,adminChats,accountSessions,guests,properties,facts,chats,fraudFlags,paymentErrors,logs,
-    reports,transactions,campaigns,commerceTransactions,succeededPayments,appraisalDeliveries,analyticsEvents:events,places,groups,structures,countries,plans,prices,adTypes,options,
+    reports,transactions,enquiries,campaigns,commerceTransactions,succeededPayments,appraisalDeliveries,analyticsEvents:events,places,groups,structures,countries,plans,prices,adTypes,options,
     customerDirectoryReady,agencyDirectoryReady,accountDirectoryReady,
     telemetry,metricStatus:(id)=>{const accountMetrics=new Set(['r29','r42','r43','r44','r46','r55','r56','r69','r70','r71','r72','r73','r77','r80','r81','r83','r110']);if(accountMetrics.has(id)&&!accountDirectoryReady)return {ready:false,note:'Platform-wide Customer/Agency directory has not been synchronized from Admin User/Agency Management yet.'};return A.overviewMetricStatus(id);}
   };
