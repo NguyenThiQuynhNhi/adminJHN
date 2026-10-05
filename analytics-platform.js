@@ -111,10 +111,10 @@
   const events=(type)=>read(EVENT_KEY,[]).filter(e=>!type||e.type===type);
 
   const metricRegistry={
-    property_standard_impressions:{source_ready:false,source_object:'AnalyticsEvent',required_events:['property_card_rendered'],reason:'Event contract exists, but the current Client listing UI has no stable Property ID producer yet.'},
-    property_views:{source_ready:false,source_object:'AnalyticsEvent',required_events:['property_card_viewed'],reason:'Viewport event contract exists, but the current Client listing UI has no stable Property ID producer yet.'},
-    property_clicks:{source_ready:false,source_object:'AnalyticsEvent',required_events:['property_card_clicked'],reason:'Click event contract exists, but the current Client listing UI has no stable Property ID producer yet.'},
-    property_saves:{source_ready:false,source_object:'AnalyticsEvent',required_events:['property_saved'],reason:'Save event contract exists, but the current Client listing UI has no stable Property ID producer yet.'},
+    property_standard_impressions:{source_ready:true,source_object:'AnalyticsEvent',required_events:['property_card_rendered'],required_fields:['propertyId','agencyId','placement'],note:'Client Property cards expose stable data-property-id and are instrumented by bindPropertyCards().'},
+    property_views:{source_ready:true,source_object:'AnalyticsEvent',required_events:['property_card_viewed'],required_fields:['propertyId','agencyId','placement'],note:'Viewport visibility is captured by IntersectionObserver at >=50% visibility.'},
+    property_clicks:{source_ready:true,source_object:'AnalyticsEvent',required_events:['property_card_clicked'],required_fields:['propertyId','agencyId','placement'],note:'Organic Property-card clicks are emitted separately from paid Ad clicks.'},
+    property_saves:{source_ready:true,source_object:'AnalyticsEvent',required_events:['property_saved'],required_fields:['propertyId','agencyId','placement'],note:'Keep/Save is emitted from the Property-card heart action.'},
     property_inquiries:{source_ready:true,source_object:'Inquiry',required_events:['inquiry_created'],storage_key:'yuushi.agencyEnquiryAssignments'},
     ad_impressions:{source_ready:false,source_object:'AnalyticsEvent',required_events:['ad_rendered'],reason:'No Client-side paid-ad impression producer is wired yet.'},
     ad_views:{source_ready:false,source_object:'AnalyticsEvent',required_events:['ad_viewed'],reason:'No Client-side paid-ad viewport producer is wired yet.'},
@@ -147,7 +147,8 @@
     // A schema alone or a dashboard seed is not sufficient.
     const mock=new Set(['r22','r23','r24','r25','r26','r27']);
     const ready=new Set(['r32','r42','r43','r44','r55','r56','r57','r58','r59','r60','r78','r79','r84','r98','r100','r102']);
-    const propertyEngagement=new Set(['r37','r38','r47','r52','r53','r54','r94','r95','r96','r97','r99','r121','r122','r123','r124','r125']);
+    const propertyEngagement=new Set(['r37','r38','r47','r52','r53','r54','r121','r122','r123','r124','r125']);
+    const propertyEventMetrics=new Set(['r94','r95','r96','r97','r99']);
     const adEvents=new Set(['r113','r114','r115','r116','r117']);
     const pendingVerification=new Set(['r104']);
     const planMaster=new Set(['r71','r72','r73','r74','r75','r76','r81','r107','r108','r109','r110','r111','r112']);
@@ -159,6 +160,7 @@
     if(id==='r112')return {ready:false,note:'This is an Agency-facing subscription fee efficiency metric, not Platform CPA. Requires persisted subscription charges and the selected conversion records before calculation.'};
     if(['r113','r114'].includes(id))return {ready:false,note:'Agency ad cost per conversion requires persisted ad spend plus paid-ad attributed conversion events. Organic listing events must not be reused.'};
     if(ready.has(id))return {ready:true,note:'Calculated from an operational shared store and/or a canonical event with a real producer in this prototype.'};
+    if(propertyEventMetrics.has(id))return {ready:true,note:'Calculated from canonical organic Property-card events emitted by the Client UI. Paid Ad events are excluded.'};
     if(propertyEngagement.has(id))return {ready:false,note:'Requires Customer listing instrumentation with a stable Property ID. Event contracts exist, but the current static Client listing cards do not provide that identity yet.'};
     if(adEvents.has(id))return {ready:false,note:'Requires paid-ad render/view/click producers. Organic Property events must not be reused for Ad metrics.'};
     if(pendingVerification.has(id))return {ready:false,note:'Requires finalized transaction verification/public-sale eligibility before production calculation.'};
