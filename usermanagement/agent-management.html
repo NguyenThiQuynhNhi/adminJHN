@@ -1227,7 +1227,7 @@
             <i class="fas fa-trash"></i> Delete account
           </button>
           <button class="btn" type="button" onclick="openAgencySummaryReport(this)">
-            <i class="fas fa-file-arrow-down"></i> Agency report
+            <i class="fas fa-file-arrow-down"></i> Export Agency Summary
           </button>
           <button class="btn btn-star" type="button" onclick="saveAsLead()">
             <i class="fas fa-star"></i> Save as lead
@@ -1564,7 +1564,7 @@
 
         <section class="card" style="grid-column: 1 / -1">
           <div class="card-title">
-            <i class="fas fa-list"></i> Section 12 — Active Listings
+            <i class="fas fa-chart-line"></i> Section 12 — Property Performance Reports
           </div>
           <div class="mini-table-wrap">
             <table class="mini-table">
@@ -1580,6 +1580,7 @@
                   <th>Age (yr)</th>
                   <th>DoM</th>
                   <th>IMP</th>
+                  <th>View</th>
                   <th>CL</th>
                   <th>CTR (%)</th>
                   <th>Keep</th>
@@ -1764,10 +1765,11 @@
               <tbody id="dRefundHistory"></tbody>
             </table>
           </div>
-          <div class="kv-label" style="margin-bottom:6px">Paid Advertisement / Campaign Reports</div>
+          <div class="kv-label" style="margin-bottom:6px">Advertisement Performance Reports</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Paid-ad metrics only. Organic Property metrics are reported separately in Section 12.</div>
           <div class="mini-table-wrap">
             <table class="mini-table">
-              <thead><tr><th>Campaign</th><th>Status</th><th>Placement</th><th>Dates</th><th>Budget</th><th>Report</th></tr></thead>
+              <thead><tr><th>Campaign</th><th>Status</th><th>Placement</th><th>Dates</th><th>Ad IMP</th><th>Ad View</th><th>Ad CL</th><th>CTR (%)</th><th>Budget</th><th>Report</th></tr></thead>
               <tbody id="dCampaignReports"></tbody>
             </table>
           </div>
@@ -3689,9 +3691,9 @@
           ? activeOperational.map(p=>{
               const perf=propertyPerformance(p.id,operational.events),loc=[p.city,p.prefecture].filter(Boolean).join(", ")||"—",dom=p.createdAt?Math.max(0,Math.floor((Date.now()-Date.parse(p.createdAt))/86400000)):"—";
               const na='<span title="Requires Client Property-card analytics instrumentation">—</span>';
-              return `<tr><td>${esc(p.name||p.id)}</td><td>${esc(loc)}</td><td>${p.price?fmtYen(p.price):"—"}</td><td>${esc(p.subtype||"—")}</td><td>${badgeListStatus(p.saleStatus||"On Sale")}</td><td>${esc(p.floorPlan||"—")}</td><td>${p.floorArea||"—"}</td><td>${p.age||"—"}</td><td>${dom}</td><td>${perf.instrumented?fmtNum(perf.impressions):na}</td><td>${perf.instrumented?fmtNum(perf.clicks):na}</td><td>${perf.instrumented&&perf.ctr!=null?perf.ctr.toFixed(1):na}</td><td>${perf.instrumented?perf.saves:na}</td><td>${perf.inquiries}</td><td>${perf.instrumented&&perf.cvr!=null?perf.cvr.toFixed(1):na}</td><td><button class="btn btn-sm" type="button" onclick="openPropertyPerformanceReport(this,'${escAttr(p.id)}')"><i class="fas fa-chart-line"></i> Performance</button></td></tr>`;
+              return `<tr><td>${esc(p.name||p.id)}</td><td>${esc(loc)}</td><td>${p.price?fmtYen(p.price):"—"}</td><td>${esc(p.subtype||"—")}</td><td>${badgeListStatus(p.saleStatus||"On Sale")}</td><td>${esc(p.floorPlan||"—")}</td><td>${p.floorArea||"—"}</td><td>${p.age||"—"}</td><td>${dom}</td><td>${perf.instrumented?fmtNum(perf.impressions):na}</td><td>${perf.instrumented?fmtNum(perf.views):na}</td><td>${perf.instrumented?fmtNum(perf.clicks):na}</td><td>${perf.instrumented&&perf.ctr!=null?perf.ctr.toFixed(1):na}</td><td>${perf.instrumented?perf.saves:na}</td><td>${perf.inquiries}</td><td>${perf.instrumented&&perf.cvr!=null?perf.cvr.toFixed(1):na}</td><td><button class="btn btn-sm" type="button" onclick="openPropertyPerformanceReport(this,'${escAttr(p.id)}')"><i class="fas fa-file-export"></i> Export report</button></td></tr>`;
             }).join("")
-          : '<tr><td colspan="16" style="color:var(--text-muted)"><em>No published operational Property records for this Agency.</em></td></tr>';
+          : '<tr><td colspan="17" style="color:var(--text-muted)"><em>No published operational Property records for this Agency.</em></td></tr>';
 
         $("dCount12m").textContent = a.count12m;
         $("dCountAll").textContent = a.countAll;
@@ -3749,8 +3751,14 @@
               .join("")
           : '<tr><td colspan="4" style="color:var(--text-muted)"><em>No refunds.</em></td></tr>';
         $("dCampaignReports").innerHTML = operational.campaigns.length
-          ? operational.campaigns.map(row=>`<tr><td>${esc(row.name||row.campaignId)}</td><td>${esc(row.status||"—")}</td><td>${esc(row.placement||"—")}</td><td>${esc(row.dateRange||"—")}</td><td>${esc(row.budgetLabel||"—")}</td><td><button class="btn btn-sm" type="button" onclick="openCampaignPerformanceReport(this,'${escAttr(row.campaignId)}')"><i class="fas fa-chart-column"></i> Performance</button></td></tr>`).join("")
-          : '<tr><td colspan="6" style="color:var(--text-muted)"><em>No shared Campaign records for this Agency. Open Agency My Campaigns to sync the prototype records.</em></td></tr>';
+          ? operational.campaigns.map(row=>{
+              const adEvents=operational.events.filter(e=>String(e.campaignId||e.campaign||'')===String(row.campaignId));
+              const imp=adEvents.filter(e=>e.type==='ad_rendered').length,views=adEvents.filter(e=>e.type==='ad_viewed').length,clicks=adEvents.filter(e=>e.type==='ad_clicked').length;
+              const ready=adEvents.some(e=>['ad_rendered','ad_viewed','ad_clicked'].includes(e.type)),ctr=imp?clicks/imp*100:null;
+              const na='<span title="Requires paid-ad analytics instrumentation">—</span>';
+              return `<tr><td>${esc(row.name||row.campaignId)}</td><td>${esc(row.status||"—")}</td><td>${esc(row.placement||"—")}</td><td>${esc(row.dateRange||"—")}</td><td>${ready?fmtNum(imp):na}</td><td>${ready?fmtNum(views):na}</td><td>${ready?fmtNum(clicks):na}</td><td>${ready&&ctr!=null?ctr.toFixed(1):na}</td><td>${esc(row.budgetLabel||"—")}</td><td><button class="btn btn-sm" type="button" onclick="openCampaignPerformanceReport(this,'${escAttr(row.campaignId)}')"><i class="fas fa-file-export"></i> Export report</button></td></tr>`;
+            }).join("")
+          : '<tr><td colspan="10" style="color:var(--text-muted)"><em>No shared Campaign records for this Agency. Open Agency My Campaigns to sync the prototype records.</em></td></tr>';
 
         $("dInquiries").innerHTML = '<tr><td colspan="4" style="color:var(--text-muted)">Customer ↔ Agency conversations are not accessible to Platform users.</td></tr>';
 
