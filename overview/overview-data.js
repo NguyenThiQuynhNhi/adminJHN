@@ -56,9 +56,12 @@
   const properties=uniqueBy(propertySnapshots,'id');
 
   const evtDate=e=>(e.occurredAt||e.createdAt||'').slice(0,10);
-  const member=e=>['Customer','Agency'].includes(e.accountType);
-  const businessEvents=events.filter(e=>['Customer','Agency','Guest'].includes(e.accountType)&&e.portal!=='Admin'&&e.portal!=='Supportal');
-  const facts=businessEvents.map(e=>{
+  // Site/content/member analytics describe the Client experience only.
+  // Agency/Admin portal navigation must never inflate Client sessions, page views or member funnels.
+  const member=e=>e.accountType==='Customer';
+  const clientEvents=events.filter(e=>e.portal==='Client'&&['Customer','Guest'].includes(e.accountType));
+  const factEvents=[...clientEvents,...events.filter(e=>e.type==='inquiry_created'&&!clientEvents.includes(e))];
+  const facts=factEvents.map(e=>{
     const base={date:evtDate(e),propertyId:e.propertyId||null,agencyId:e.agencyId||null,agentId:e.agencyId||null,member:member(e),country:e.country||'',device:e.deviceType||'',language:e.language||'',channel:e.channel||'',section:e.page||'',exitSection:e.exitPage||'',placement:e.placement||'',adType:e.adType||'',option:e.option||'',campaign:e.campaign||'',hour:e.occurredAt?new Date(e.occurredAt).getHours():0,
       impressions:0,views:0,clicks:0,saves:0,inquiries:0,deals:0,verifiedClosings:0,searches:0,sessions:0,bounced:0,sessionSeconds:0,listingSeconds:0,pageViews:0,registrations:0,
       subscription:0,banner:0,sponsored:0,featured:0,appraisal:0,optionRevenue:0,purchases:0,messagesUser:0,messagesAgent:0,chats:0,replied:0,received:0,responseMinutes:0,appraisalRequests:0,appraisalSent:0,sent:0,read:0,marketingClicks:0,marketingCV:0,blocked:0};
@@ -90,8 +93,8 @@
     messages:(q.msgs||q.messages||[]).map(m=>({sender:/client|customer|them/i.test(m.sender)?'Client':'Agency',sentAt:m.sentAt||m.time||q.createdAt||null,businessHours:m.businessHours}))
   }));
 
-  const sessionStarts=businessEvents.filter(e=>e.type==='session_started');
-  const sessionEnds=businessEvents.filter(e=>e.type==='session_ended');
+  const sessionStarts=clientEvents.filter(e=>e.type==='session_started');
+  const sessionEnds=clientEvents.filter(e=>e.type==='session_ended');
   const accountSessions=sessionStarts.map(s=>{
     const end=sessionEnds.find(e=>e.sessionId===s.sessionId&&e.occurredAt>=s.occurredAt);
     return {accountId:s.accountId,date:evtDate(s),seconds:end?Math.max(0,(Date.parse(end.occurredAt)-Date.parse(s.occurredAt))/1000):null};
@@ -101,7 +104,7 @@
   accountSessions.forEach(s=>{if(!s.accountId||!s.date)return;const dates=sessionsByAccount.get(s.accountId)||[];if(!dates.includes(s.date))dates.push(s.date);sessionsByAccount.set(s.accountId,dates);});
   accounts.forEach(a=>{a.logins=(sessionsByAccount.get(a.id||a.customerId||a.agencyId)||[]).sort();});
   const guestMap=new Map();
-  businessEvents.filter(e=>e.accountType==='Guest').forEach(e=>{
+  clientEvents.filter(e=>e.accountType==='Guest').forEach(e=>{
     const id=e.anonymousVisitorId;if(!id)return;
     const row=guestMap.get(id)||{id,prefecture:e.prefecture||'',city:e.city||'',visits:[]};
     const d=evtDate(e);if(d&&!row.visits.includes(d))row.visits.push(d);guestMap.set(id,row);
