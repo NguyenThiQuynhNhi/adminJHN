@@ -130,6 +130,27 @@
     payment_errors:{source_ready:'mock',source_object:'Prototype payment telemetry'}
   };
 
+  const overviewMetricStatus=(id)=>{
+    const mock=new Set(['r22','r23','r24','r25','r26','r27']);
+    const ready=new Set([
+      'r32','r35','r36','r44','r47','r49','r52','r53','r54','r56','r57','r59','r60',
+      'r78','r79','r94','r95','r96','r97','r98','r99','r100','r102','r115'
+    ]);
+    const pendingVerification=new Set(['r104','r107','r112','r113','r114','r116','r117']);
+    const planMaster=new Set(['r71','r72','r73','r74','r75','r76','r81','r108','r109','r110','r111']);
+    const historicalEvents=new Set(['r30','r31','r91','r101','r103','r105']);
+    const appraisalDelivery=new Set(['r84']);
+    const instrumentation=new Set(['r37','r38','r39','r40','r42','r43','r45','r46','r48','r50','r51','r55','r58','r69','r70','r77','r80','r82','r83','r92','r93','r120','r121','r122','r123','r124','r125','r126','r127','r128','r130','r131','r132','r133','r134','r135','r136','r137','r139','r140','r141','r142','r143','r144','r145']);
+    if(mock.has(id))return {ready:'mock',note:'Prototype telemetry only; no backend health/payment integration is built in this repository.'};
+    if(ready.has(id))return {ready:true,note:'Calculated from operational records and/or canonical analytics events.'};
+    if(pendingVerification.has(id))return {ready:false,note:'Requires finalized transaction verification/cost semantics before production calculation.'};
+    if(planMaster.has(id))return {ready:false,note:'Requires Subscription Plan Master / payment or campaign records. Dashboard must not hard-code plan prices or limits.'};
+    if(historicalEvents.has(id))return {ready:false,note:'Requires persisted historical property lifecycle/price events; current-state records cannot reconstruct this trend.'};
+    if(appraisalDelivery.has(id))return {ready:false,note:'Requires one persisted appraisal_delivery record per Agency recipient.'};
+    if(instrumentation.has(id))return {ready:false,note:'Requires analytics instrumentation or an operational shared store that is not yet available.'};
+    return {ready:false,note:'No validated platform data lineage is registered for this metric yet.'};
+  };
+
   const defaultTelemetry={
     api:{status:'Operational',label:'Prototype health check'},
     database:{status:'Operational',label:'Prototype health check'},
@@ -189,5 +210,5 @@
     root.addEventListener('beforeunload',()=>emit('session_ended',{page:location.pathname+location.search}),{once:true});
   }
 
-  root.YuushiAnalytics={EVENT_KEY,TELEMETRY_KEY,masters,metricRegistry,read,write,emit,events,telemetry,setMockTelemetry,emitWithdrawal,bindPropertyCards,startPageInstrumentation,getVisitorId,getSessionId};
+  root.YuushiAnalytics={EVENT_KEY,TELEMETRY_KEY,masters,metricRegistry,overviewMetricStatus,read,write,emit,events,telemetry,setMockTelemetry,emitWithdrawal,bindPropertyCards,startPageInstrumentation,getVisitorId,getSessionId};
 })(typeof window!=='undefined'?window:globalThis);
