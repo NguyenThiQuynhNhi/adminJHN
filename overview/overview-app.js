@@ -129,8 +129,34 @@
       }));
       return M.result(output,['revenue','previousRevenue','mom'],'table','Completed payments by category; subscriptions by tier, banners by placement and options by product. Month-on-month compares the same selected date range in the prior month.');
     }
-    if(type==='users')return M.result(M.buckets(filters.start,filters.end,filters.unit).flatMap(b=>['Client','Agency'].map(type=>{const pool=users.filter(a=>a.type===type),withdrawals=pool.filter(a=>a.withdrawalReason&&a.withdrawnAt&&M.inPeriod(a.withdrawnAt,b.start,b.end)).length,newUsers=pool.filter(a=>M.inPeriod(a.registeredAt,b.start,b.end)).length;return {label:b.label+' · '+type,total:pool.filter(a=>a.registeredAt<=b.end&&(!a.withdrawnAt||a.withdrawnAt>b.end)).length,registrations:newUsers,inactive:M.inactiveCount(pool,b.end),withdrawals,netGrowth:newUsers-withdrawals};})),['total','registrations','inactive','withdrawals','netGrowth'],'table');
-    return M.result([{label:'Unresponded Messages',count:M.unrespondedMessages()},{label:'Property Complaints (Unprocessed)',count:6},{label:'Pending Ad Approvals',count:9},{label:'Fraud Detections',count:M.fraudCount(D.fraudFlags,enabledFraud)},{label:'Payment Errors',count:M.sum(M.paymentBreakdown(D.paymentErrors),'count')},{label:'Pending Agency Reviews',count:M.pendingAgencies()},{label:'Forgot password requests',count:8}],['count'],'table','Current operational queue snapshot, separate from historical reporting periods.');
+    if(type==='users'){
+      const allAccounts=D.accounts||[],withdrawEvents=(D.analyticsEvents||[]).filter(e=>e.type==='account_status_changed'&&e.newStatus==='Withdrawn');
+      return M.result(M.buckets(filters.start,filters.end,filters.unit).flatMap(b=>['Client','Agency'].map(accountType=>{
+        const pool=allAccounts.filter(a=>a.type===accountType);
+        const withdrawals=new Set(withdrawEvents.filter(e=>e.accountType===accountType&&M.inPeriod((e.withdrawnAt||e.occurredAt||'').slice(0,10),b.start,b.end)).map(e=>e.eventId||[e.accountId,e.occurredAt].join('|'))).size;
+        const newUsers=pool.filter(a=>a.registeredAt&&M.inPeriod(String(a.registeredAt).slice(0,10),b.start,b.end)).length;
+        const activeAtEnd=pool.filter(a=>a.registeredAt&&String(a.registeredAt).slice(0,10)<=b.end&&(!a.withdrawnAt||String(a.withdrawnAt).slice(0,10)>b.end)).length;
+        const sessionEvents=(D.analyticsEvents||[]).filter(e=>e.type==='session_started'&&e.accountType===accountType&&e.accountId);
+        const inactive=pool.filter(a=>{
+          if(!a.registeredAt||(a.withdrawnAt&&String(a.withdrawnAt).slice(0,10)<=b.end))return false;
+          const accountId=a.id||a.customerId||a.agencyId;
+          const last=sessionEvents.filter(e=>String(e.accountId)===String(accountId)&&String(e.occurredAt).slice(0,10)<=b.end).sort((x,y)=>String(y.occurredAt).localeCompare(String(x.occurredAt)))[0];
+          const baseline=last?String(last.occurredAt).slice(0,10):String(a.registeredAt).slice(0,10);
+          return (Date.parse(b.end)-Date.parse(baseline))/86400000>=30;
+        }).length;
+        return {label:b.label+' · '+accountType,total:activeAtEnd,registrations:newUsers,inactive,withdrawals,netGrowth:newUsers-withdrawals};
+      })),['total','registrations','inactive','withdrawals','netGrowth'],'table','Withdrawals use account_status_changed events. "Inactive" is an analytics segment (30+ days without a recorded session), not Withdrawn/Dormant status.');
+    }
+    const unresolvedReports=(D.reports||[]).filter(r=>['awaiting_agency_response','pending_admin_review'].includes(String(r.status||'').trim().toLowerCase().replace(/\s+/g,'_'))).length;
+    const pendingAds=(D.campaigns||[]).filter(r=>['pending review','pending','awaiting approval'].includes(String(r.status||'').trim().toLowerCase())).length;
+    return M.result([
+      {label:'Unresponded Messages',count:M.unrespondedMessages()},
+      {label:'Property Reports (Unprocessed)',count:unresolvedReports},
+      {label:'Pending Ad Approvals',count:pendingAds},
+      {label:'Fraud Detections',count:M.fraudCount(D.fraudFlags,enabledFraud)},
+      {label:'Payment Errors',count:M.sum(M.paymentBreakdown(D.paymentErrors),'count')},
+      {label:'Pending Agency Reviews',count:M.pendingAgencies()}
+    ],['count'],'table','Current operational queue snapshot. No literal/demo queue counts are used.');
   }
   const builderAxes={month:'Month',date:'Date',prefecture:'Prefecture',city:'City / Ward',transaction:'Transaction type',group:'Property group',subtype:'Property sub-type',station:'Station',line:'Railway line',structure:'Building structure',floorPlan:'Floor plan',member:'Member / Non-member',country:'Country',section:'Content section',adType:'Ad type',placement:'Ad placement'};
   const builderMeasures={impressions:'Impressions',clicks:'Clicks',saves:'Saves',inquiries:'Inquiries',deals:'Deals',sessions:'Sessions',searches:'Searches',ctr:'CTR (%)',cvr:'CVR (%)',revenue:'Total revenue (JPY)',subscription:'Subscription revenue (JPY)',banner:'Banner revenue (JPY)',sponsored:'Sponsored listing revenue (JPY)',appraisal:'Appraisal referral revenue (JPY)',optionRevenue:'Option revenue (JPY)'};
