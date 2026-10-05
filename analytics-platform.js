@@ -46,8 +46,7 @@
       ['incorrect_information','Incorrect information'],
       ['privacy_copyright_infringement','Privacy/Copyright infringement'],
       ['unauthorized_listing_own_property','Unauthorized listing of own property'],
-      ['unauthorized_use_own_images','Unauthorized use of own images'],
-      ['other','Other']
+      ['unauthorized_use_own_images','Unauthorized use of own images']
     ],
     reportDismissReasons:[
       ['issue_resolved','Issue resolved'],
