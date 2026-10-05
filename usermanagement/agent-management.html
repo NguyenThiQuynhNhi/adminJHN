@@ -1226,6 +1226,9 @@
           >
             <i class="fas fa-trash"></i> Delete account
           </button>
+          <button class="btn" type="button" onclick="openAgencySummaryReport(this)">
+            <i class="fas fa-file-arrow-down"></i> Agency report
+          </button>
           <button class="btn btn-star" type="button" onclick="saveAsLead()">
             <i class="fas fa-star"></i> Save as lead
           </button>
@@ -1582,6 +1585,7 @@
                   <th>Keep</th>
                   <th>CV</th>
                   <th>CVR (%)</th>
+                  <th>Report</th>
                 </tr>
               </thead>
               <tbody id="dActiveList"></tbody>
@@ -1747,7 +1751,7 @@
             </table>
           </div>
           <div class="kv-label" style="margin-bottom: 6px">Refund History</div>
-          <div class="mini-table-wrap">
+          <div class="mini-table-wrap" style="margin-bottom:14px">
             <table class="mini-table">
               <thead>
                 <tr>
@@ -1758,6 +1762,13 @@
                 </tr>
               </thead>
               <tbody id="dRefundHistory"></tbody>
+            </table>
+          </div>
+          <div class="kv-label" style="margin-bottom:6px">Paid Advertisement / Campaign Reports</div>
+          <div class="mini-table-wrap">
+            <table class="mini-table">
+              <thead><tr><th>Campaign</th><th>Status</th><th>Placement</th><th>Dates</th><th>Budget</th><th>Report</th></tr></thead>
+              <tbody id="dCampaignReports"></tbody>
             </table>
           </div>
         </section>
@@ -3501,6 +3512,46 @@
         }
       }
 
+      function readShared(key,fallback=[]) { try { const v=JSON.parse(localStorage.getItem(key)); return v??fallback; } catch { return fallback; } }
+      function agencyOperationalData(agencyId) {
+        const props=(readShared('yuushi.analytics.propertySnapshots',[])||[]).filter(p=>String(p.agencyId||'')===String(agencyId));
+        const inquiries=(readShared(YuushiWorkflow.keys.enquiries,[])||[]).filter(q=>String(q.agencyId||'')===String(agencyId));
+        const transactions=(readShared(YuushiWorkflow.keys.transactions,[])||[]).filter(t=>String(t.agencyId||'')===String(agencyId));
+        const campaigns=(readShared('yuushi.agencyCampaigns',[])||[]).filter(row=>String(row.agencyId||'')===String(agencyId));
+        const events=(readShared('yuushi.analytics.events.v1',[])||[]);
+        return {props,inquiries,transactions,campaigns,events};
+      }
+      function eventCount(events,type,propertyId) { return events.filter(e=>e.type===type&&(!propertyId||String(e.propertyId||'')===String(propertyId))).length; }
+      function propertyPerformance(propertyId,events) {
+        const impressions=eventCount(events,'property_card_rendered',propertyId),views=eventCount(events,'property_card_viewed',propertyId),clicks=eventCount(events,'property_card_clicked',propertyId),saves=eventCount(events,'property_saved',propertyId),inquiries=eventCount(events,'inquiry_created',propertyId);
+        const instrumented=events.some(e=>String(e.propertyId||'')===String(propertyId)&&['property_card_rendered','property_card_viewed','property_card_clicked','property_saved'].includes(e.type));
+        return {instrumented,impressions,views,clicks,saves,inquiries,ctr:impressions?clicks/impressions*100:null,cvr:clicks?inquiries/clicks*100:null};
+      }
+      function openAgencySummaryReport(button) {
+        if(!currentAgent)return;
+        const d=agencyOperationalData(currentAgent.id);
+        const joined=currentAgent.regDate||currentAgent.contractStart||'—';
+        button.dataset.exportContext=`Agency Summary · ${currentAgent.id} · ${currentAgent.company} · Joined ${joined} · Plan ${currentAgent.plan||'—'} · Current published listings ${d.props.filter(p=>p.publishStatus==='Published'&&!p.endedAt).length} · Recorded transactions ${d.transactions.length} · Campaign records ${d.campaigns.length}. Subscription/payment spend is included only when an operational ledger exists; no dashboard seed values are exported.`;
+        MockExport.open(button);
+      }
+      function openPropertyPerformanceReport(button,propertyId) {
+        const d=agencyOperationalData(currentAgent?.id),p=d.props.find(row=>String(row.id)===String(propertyId)),perf=propertyPerformance(propertyId,d.events);
+        button.dataset.exportContext=p
+          ? `Property Performance · ${p.id} · ${p.name||'—'} · Standard Listing IMP ${perf.instrumented?perf.impressions:'Requires Client Property-card instrumentation'} · Property Views ${perf.instrumented?perf.views:'Requires Client Property-card instrumentation'} · Property Clicks ${perf.instrumented?perf.clicks:'Requires Client Property-card instrumentation'} · Keep ${perf.instrumented?perf.saves:'Requires Client Property-card instrumentation'} · New Inquiries ${perf.inquiries}. Organic events only; paid Ad events are excluded.`
+          : 'Property Performance · Property record not found in the shared operational Property store.';
+        MockExport.open(button);
+      }
+      function openCampaignPerformanceReport(button,campaignId) {
+        const d=agencyOperationalData(currentAgent?.id),row=d.campaigns.find(x=>String(x.campaignId)===String(campaignId));
+        const adEvents=d.events.filter(e=>String(e.campaignId||e.campaign||'')===String(campaignId));
+        const imp=adEvents.filter(e=>e.type==='ad_rendered').length,views=adEvents.filter(e=>e.type==='ad_viewed').length,clicks=adEvents.filter(e=>e.type==='ad_clicked').length;
+        const ready=adEvents.some(e=>['ad_rendered','ad_viewed','ad_clicked'].includes(e.type));
+        button.dataset.exportContext=row
+          ? `Advertisement Performance · ${row.campaignId} · ${row.name} · Status ${row.status} · Placement ${row.placement||'—'} · ${ready?`Ad IMP ${imp} · Ad Views ${views} · Ad Clicks ${clicks}`:'Detailed performance: Requires paid-ad analytics instrumentation'} · Budget ${row.budgetLabel||'—'}.`
+          : 'Advertisement Performance · Campaign record not found.';
+        MockExport.open(button);
+      }
+
       function showDetail(id) {
         const a = agents.find((x) => x.id === id);
         if (!a || a.deletedAt) return;
@@ -3536,16 +3587,23 @@
           $("dMetaStatus").innerHTML = badgeStatus(a.status) + " " + alertHtml;
         }
 
-        $("dTotalLogins").textContent = fmtNum(a.totalLogins);
-        $("dLastLogin").textContent = a.lastLogin;
-        $("dAvgSession").textContent = a.avgSession;
-        $("dActiveListings").textContent = a.activeListings;
-        $("dSavedProps").textContent = a.savedProps;
-        $("dInqRecv30").textContent = a.inqRecv30;
-        $("dPropsInq30").textContent = a.propsInq30;
-        $("dClosed30").textContent = a.closed30;
-        $("dAppraisalReq30").textContent = a.apprReq30;
-        $("dAvgRespTime").textContent = a.avgRespTime;
+        const operational=agencyOperationalData(a.id);
+        const agencySessions=operational.events.filter(e=>e.type==='session_started'&&String(e.accountId||'')===String(a.id));
+        const lastSession=agencySessions.slice().sort((x,y)=>String(y.occurredAt).localeCompare(String(x.occurredAt)))[0];
+        const cutoff30=Date.now()-30*86400000;
+        const recentInquiries=operational.inquiries.filter(q=>Date.parse(q.createdAt||q.lastOpenedAt||0)>=cutoff30);
+        const recentTransactions=operational.transactions.filter(t=>Date.parse(t.soldDate||t.updatedAt||0)>=cutoff30);
+        const activeOperational=operational.props.filter(p=>p.publishStatus==='Published'&&!p.endedAt);
+        $("dTotalLogins").textContent = agencySessions.length || "—";
+        $("dLastLogin").textContent = lastSession?.occurredAt ? new Date(lastSession.occurredAt).toLocaleString() : "—";
+        $("dAvgSession").textContent = "—";
+        $("dActiveListings").textContent = activeOperational.length;
+        $("dSavedProps").textContent = "—";
+        $("dInqRecv30").textContent = recentInquiries.length;
+        $("dPropsInq30").textContent = new Set(recentInquiries.map(q=>q.propertyId).filter(Boolean)).size;
+        $("dClosed30").textContent = recentTransactions.length;
+        $("dAppraisalReq30").textContent = "—";
+        $("dAvgRespTime").textContent = "—";
 
         renderEditableSections(a);
 
@@ -3621,14 +3679,13 @@
               .join("")
           : '<tr><td colspan="2" style="color:var(--text-muted)"><em>No branches.</em></td></tr>';
 
-        $("dActiveList").innerHTML = a.activeList.length
-          ? a.activeList
-              .map(
-                (p) =>
-                  `<tr><td>${esc(p.title)}</td><td>${esc(p.loc)}</td><td>${fmtYen(p.price)}</td><td>${esc(p.cat)}</td><td>${badgeListStatus(p.status)}</td><td>${esc(p.br)}</td><td>${p.floor}</td><td>${p.age}</td><td>${p.dom}</td><td>${fmtNum(p.imp)}</td><td>${fmtNum(p.cl)}</td><td>${p.ctr}</td><td>${p.keep}</td><td>${p.cv}</td><td>${p.cvr}</td></tr>`,
-              )
-              .join("")
-          : '<tr><td colspan="15" style="color:var(--text-muted)"><em>No active listings.</em></td></tr>';
+        $("dActiveList").innerHTML = activeOperational.length
+          ? activeOperational.map(p=>{
+              const perf=propertyPerformance(p.id,operational.events),loc=[p.city,p.prefecture].filter(Boolean).join(", ")||"—",dom=p.createdAt?Math.max(0,Math.floor((Date.now()-Date.parse(p.createdAt))/86400000)):"—";
+              const na='<span title="Requires Client Property-card analytics instrumentation">—</span>';
+              return `<tr><td>${esc(p.name||p.id)}</td><td>${esc(loc)}</td><td>${p.price?fmtYen(p.price):"—"}</td><td>${esc(p.subtype||"—")}</td><td>${badgeListStatus(p.saleStatus||"On Sale")}</td><td>${esc(p.floorPlan||"—")}</td><td>${p.floorArea||"—"}</td><td>${p.age||"—"}</td><td>${dom}</td><td>${perf.instrumented?fmtNum(perf.impressions):na}</td><td>${perf.instrumented?fmtNum(perf.clicks):na}</td><td>${perf.instrumented&&perf.ctr!=null?perf.ctr.toFixed(1):na}</td><td>${perf.instrumented?perf.saves:na}</td><td>${perf.inquiries}</td><td>${perf.instrumented&&perf.cvr!=null?perf.cvr.toFixed(1):na}</td><td><button class="btn btn-sm" type="button" onclick="openPropertyPerformanceReport(this,'${escAttr(p.id)}')"><i class="fas fa-chart-line"></i> Performance</button></td></tr>`;
+            }).join("")
+          : '<tr><td colspan="16" style="color:var(--text-muted)"><em>No published operational Property records for this Agency.</em></td></tr>';
 
         $("dCount12m").textContent = a.count12m;
         $("dCountAll").textContent = a.countAll;
@@ -3685,6 +3742,9 @@
               )
               .join("")
           : '<tr><td colspan="4" style="color:var(--text-muted)"><em>No refunds.</em></td></tr>';
+        $("dCampaignReports").innerHTML = operational.campaigns.length
+          ? operational.campaigns.map(row=>`<tr><td>${esc(row.name||row.campaignId)}</td><td>${esc(row.status||"—")}</td><td>${esc(row.placement||"—")}</td><td>${esc(row.dateRange||"—")}</td><td>${esc(row.budgetLabel||"—")}</td><td><button class="btn btn-sm" type="button" onclick="openCampaignPerformanceReport(this,'${escAttr(row.campaignId)}')"><i class="fas fa-chart-column"></i> Performance</button></td></tr>`).join("")
+          : '<tr><td colspan="6" style="color:var(--text-muted)"><em>No shared Campaign records for this Agency. Open Agency My Campaigns to sync the prototype records.</em></td></tr>';
 
         $("dInquiries").innerHTML = '<tr><td colspan="4" style="color:var(--text-muted)">Customer ↔ Agency conversations are not accessible to Platform users.</td></tr>';
 
@@ -4680,7 +4740,7 @@
     </div>
 
     <div id="toastWrap" class="toast-wrap"></div>
-  <script>window.mockExportContext=(b)=>b.id==='histExport'?'Current property change log.':filtered.length+' filtered records.';</script>
+  <script>window.mockExportContext=(b)=>b.dataset.exportContext||((b.closest('#detailView')&&currentAgent)?('Agency detail · '+currentAgent.id+' · '+currentAgent.company):filtered.length+' filtered Agency records.');</script>
 <script src="../mock-export.js"></script>
 </body>
 </html>
