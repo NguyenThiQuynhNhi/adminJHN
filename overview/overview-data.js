@@ -64,12 +64,12 @@
   const facts=factEvents.map(e=>{
     const base={date:evtDate(e),propertyId:e.propertyId||null,agencyId:e.agencyId||null,agentId:e.agencyId||null,member:member(e),country:e.country||'',device:e.deviceType||'',language:e.language||'',channel:e.channel||'',section:e.page||'',exitSection:e.exitPage||'',placement:e.placement||'',adType:e.adType||'',option:e.option||'',campaign:e.campaign||'',hour:e.occurredAt?new Date(e.occurredAt).getHours():0,
       impressions:0,views:0,clicks:0,saves:0,inquiries:0,deals:0,verifiedClosings:0,searches:0,sessions:0,bounced:0,sessionSeconds:0,listingSeconds:0,pageViews:0,registrations:0,
-      subscription:0,banner:0,sponsored:0,featured:0,appraisal:0,optionRevenue:0,purchases:0,messagesUser:0,messagesAgent:0,chats:0,replied:0,received:0,responseMinutes:0,appraisalRequests:0,appraisalSent:0,sent:0,read:0,marketingClicks:0,marketingCV:0,blocked:0};
+      subscription:0,banner:0,sponsored:0,featured:0,appraisal:0,optionRevenue:0,purchases:0,messagesUser:0,messagesAgent:0,chats:0,replied:0,received:0,responseMinutes:0,appraisalRequests:0,appraisalSent:0,sent:0,read:0,marketingClicks:0,marketingCV:0,blocked:0,adImpressions:0,adViews:0,adClicks:0,adInquiries:0,adVerifiedClosings:0};
     if(e.type==='property_card_rendered')base.impressions=1;
     if(e.type==='property_card_viewed')base.views=1;
     if(e.type==='property_card_clicked')base.clicks=1;
     if(e.type==='property_saved')base.saves=1;
-    if(e.type==='inquiry_created')base.inquiries=1;
+    if(e.type==='inquiry_created'){base.inquiries=1;if(e.campaignId||e.campaign)base.adInquiries=1;}
     if(e.type==='search_submitted')base.searches=1;
     if(e.type==='page_view')base.pageViews=1;
     if(e.type==='session_started')base.sessions=1;
@@ -84,7 +84,7 @@
     const date=(t.soldDate||t.updatedAt||'').slice(0,10);if(!date)continue;
     facts.push({date,propertyId:t.propertyId||null,agencyId:t.agencyId||null,agentId:t.agencyId||null,member:true,country:'',device:'',language:'',channel:'',section:'Transaction',exitSection:'',placement:'',adType:'',option:'',campaign:'',hour:0,
       impressions:0,views:0,clicks:0,saves:0,inquiries:0,deals:1,verifiedClosings:0,searches:0,sessions:0,bounced:0,sessionSeconds:0,listingSeconds:0,pageViews:0,registrations:0,
-      subscription:0,banner:0,sponsored:0,featured:0,appraisal:0,optionRevenue:0,purchases:0,messagesUser:0,messagesAgent:0,chats:0,replied:0,received:0,responseMinutes:0,appraisalRequests:0,appraisalSent:0,sent:0,read:0,marketingClicks:0,marketingCV:0,blocked:0,
+      subscription:0,banner:0,sponsored:0,featured:0,appraisal:0,optionRevenue:0,purchases:0,messagesUser:0,messagesAgent:0,chats:0,replied:0,received:0,responseMinutes:0,appraisalRequests:0,appraisalSent:0,sent:0,read:0,marketingClicks:0,marketingCV:0,blocked:0,adImpressions:0,adViews:0,adClicks:0,adInquiries:0,adVerifiedClosings:0,
       transactionId:t.transactionId,transactionSource:t.transactionSource,verificationStatus:t.verificationStatus});
   }
 
@@ -133,6 +133,6 @@
     reports,transactions,campaigns,commerceTransactions,succeededPayments,appraisalDeliveries,analyticsEvents:events,places,groups,structures,countries,plans,prices,adTypes,options,
     telemetry,metricStatus:A.overviewMetricStatus
   };
-  const utilities={DAY,dayKey,addDays,hash:value=>{let n=2166136261;for(const char of String(value))n=Math.imul(n^char.charCodeAt(0),16777619);return n>>>0;}};
+  const utilities={DAY,dayKey,addDays};
   root.OverviewDemo={data,utilities};
 })(typeof window!=='undefined'?window:globalThis);
