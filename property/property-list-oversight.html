@@ -6728,8 +6728,41 @@
           },
         });
       }
+      function analyticsApi(){try{return window.top?.YuushiAnalytics||window.YuushiAnalytics||null;}catch{return window.YuushiAnalytics||null;}}
+      function analyticsAgencyId(p){
+        if(p?.agencyId)return p.agencyId;
+        try{
+          const rows=JSON.parse(localStorage.getItem('yuushi.admin.agencyDirectory')||'[]');
+          const hit=(Array.isArray(rows)?rows:[]).find(a=>[a.id,a.name,a.company].filter(Boolean).some(v=>String(v)===String(p?.agent)));
+          return hit?.id||null;
+        }catch{return null;}
+      }
+      function syncAnalyticsPropertySnapshots(){
+        try{
+          const current=properties.map(p=>({
+            id:p.id,name:p.name,agencyId:analyticsAgencyId(p),group:p.group,subtype:p.propType||p.subtype||'',
+            transaction:p.txType==='Rent'?'For Rent':p.txType==='Buy'?'For Sale':p.transaction||'',
+            prefecture:p.prefecture||'',city:p.city||'',station:p.station||'',structure:p.structure||'',
+            floorPlan:p.layout||p.floorPlan||'',floorArea:Number(p.exclusiveArea||p.floorArea||p.landArea||0)||null,
+            age:Number(p.age||p.buildingAge||0)||null,price:Number(p.priceBuy||p.rentMonthly||0)||null,
+            publishStatus:p.publishStatus||'',saleStatus:p.saleStatus||'',createdAt:p.datePublished||p.createdAt||p.dateUpdated||'',
+            endedAt:p.suspensionDate||p.endedAt||null,suspensionDate:p.suspensionDate||null,
+            suspensionReason:p.suspensionReason||null,endReason:p.suspensionReason||p.endReason||null
+          }));
+          const existing=JSON.parse(localStorage.getItem('yuushi.analytics.propertySnapshots')||'[]');
+          const map=new Map((Array.isArray(existing)?existing:[]).map(row=>[row.id,row]));
+          current.forEach(row=>map.set(row.id,{...map.get(row.id),...row}));
+          localStorage.setItem('yuushi.analytics.propertySnapshots',JSON.stringify([...map.values()]));
+        }catch{}
+      }
+      function emitPropertyEvent(type,p,extra={}){analyticsApi()?.emit(type,{propertyId:p?.id||null,agencyId:analyticsAgencyId(p),...extra});syncAnalyticsPropertySnapshots();}
+
       function commitSave() {
+        const before=originalProp?JSON.parse(JSON.stringify(originalProp)):null;
         currentProp.dateUpdated = new Date().toISOString().slice(0, 10);
+        if(before&&Number(before.priceBuy)!==Number(currentProp.priceBuy)) emitPropertyEvent('property_price_changed',currentProp,{oldPrice:Number(before.priceBuy)||null,newPrice:Number(currentProp.priceBuy)||null,changeSource:'admin_detail_edit'});
+        if(before&&before.publishStatus!==currentProp.publishStatus) emitPropertyEvent(currentProp.publishStatus==='Published'?'property_published':'property_status_changed',currentProp,{oldStatus:before.publishStatus,newStatus:currentProp.publishStatus,changeSource:'admin_detail_edit'});
+        syncAnalyticsPropertySnapshots();
         originalProp = JSON.parse(JSON.stringify(currentProp));
         editMode = false;
         renderDetail();
@@ -6799,9 +6832,9 @@
           if(!currentProp)return;
           if(['sold','sold-others'].includes(_suspReason)){
             closeSuspModal();
-            openSoldModal(payload=>{const agencyDeal=['Yuushi Client Transaction','External Client Transaction'].includes(payload.transactionSource),actor=agencyDeal?{closedByStaffId:null,closedByStaffName:'Agency closer not supplied',closedByRole:null}:{recordedByStaffId:'ADM-001',recordedByStaffName:'Platform Admin',recordedByRole:'Platform Admin'};Object.assign(currentProp,payload,{publishStatus:'Suspended',saleStatus:'Sold Out',suspensionReason:_suspReason,suspensionDate:payload.soldDate,dateUpdated:new Date().toISOString().slice(0,10)});const id='ADMIN-SALE-'+currentProp.id;YuushiWorkflow.upsert(YuushiWorkflow.keys.transactions,YuushiWorkflow.transaction({transactionId:id,propertyId:currentProp.id,propertyName:currentProp.name,transactionSource:payload.transactionSource,...actor,leadId:payload.leadId,agentSubmittedPrice:payload.finalSalePrice,finalSalePrice:null,soldDate:payload.soldDate,publishPrice:payload.publishPrice}),'transactionId');originalProp=JSON.parse(JSON.stringify(currentProp));renderDetail();renderList();toast('Sale information recorded. Sold listings cannot be re-activated.');});return;
+            openSoldModal(payload=>{const agencyDeal=['Yuushi Client Transaction','External Client Transaction'].includes(payload.transactionSource),actor=agencyDeal?{closedByStaffId:null,closedByStaffName:'Agency closer not supplied',closedByRole:null}:{recordedByStaffId:'ADM-001',recordedByStaffName:'Platform Admin',recordedByRole:'Platform Admin'};Object.assign(currentProp,payload,{publishStatus:'Suspended',saleStatus:'Sold Out',suspensionReason:_suspReason,suspensionDate:payload.soldDate,dateUpdated:new Date().toISOString().slice(0,10)});emitPropertyEvent('property_suspended',currentProp,{oldStatus:'Published',newStatus:'Suspended',reasonCode:_suspReason,suspensionDate:payload.soldDate,changeSource:'admin_listing_end'});const id='ADMIN-SALE-'+currentProp.id;YuushiWorkflow.upsert(YuushiWorkflow.keys.transactions,YuushiWorkflow.transaction({transactionId:id,propertyId:currentProp.id,propertyName:currentProp.name,transactionSource:payload.transactionSource,...actor,leadId:payload.leadId,agentSubmittedPrice:payload.finalSalePrice,finalSalePrice:null,soldDate:payload.soldDate,publishPrice:payload.publishPrice}),'transactionId');originalProp=JSON.parse(JSON.stringify(currentProp));renderDetail();renderList();toast('Sale information recorded. Sold listings cannot be re-activated.');});return;
           }
-          Object.assign(currentProp,{publishStatus:'Suspended',suspensionReason:_suspReason,suspensionDate:$("suspDate").value,suspensionNotes:$("suspNotes").value.trim(),dateUpdated:new Date().toISOString().slice(0,10)});originalProp=JSON.parse(JSON.stringify(currentProp));closeSuspModal();renderDetail();renderList();toast('Listing suspended. Sale Status remains On Sale.');
+          Object.assign(currentProp,{publishStatus:'Suspended',suspensionReason:_suspReason,suspensionDate:$("suspDate").value,suspensionNotes:$("suspNotes").value.trim(),dateUpdated:new Date().toISOString().slice(0,10)});emitPropertyEvent('property_suspended',currentProp,{oldStatus:'Published',newStatus:'Suspended',reasonCode:_suspReason,suspensionDate:$("suspDate").value,changeSource:'admin_listing_end'});originalProp=JSON.parse(JSON.stringify(currentProp));closeSuspModal();renderDetail();renderList();toast('Listing suspended. Sale Status remains On Sale.');
         });
       })();
 
@@ -6824,6 +6857,7 @@
               currentProp.suspensionNotes = undefined;
               currentProp.suspensionTxPrice = undefined;
               currentProp.suspensionPublicPrice = undefined;
+              emitPropertyEvent('property_published',currentProp,{oldStatus:'Suspended',newStatus:'Published',changeSource:'admin_reactivate'});
               originalProp = JSON.parse(JSON.stringify(currentProp));
               renderDetail();
               renderList();
@@ -6859,6 +6893,7 @@
               oldVal: wasRejected ? "Rejected" : "Pending Review",
               newVal: "Published",
             });
+            emitPropertyEvent('property_published',currentProp,{oldStatus:wasRejected?'Rejected':'Pending Review',newStatus:'Published',changeSource:'admin_approval'});
             originalProp = JSON.parse(JSON.stringify(currentProp));
             renderDetail();
             renderList();
@@ -6906,6 +6941,7 @@
             oldVal: oldStatus,
             newVal: "Rejected",
           });
+          emitPropertyEvent('property_status_changed',currentProp,{oldStatus,newStatus:'Rejected',changeSource:'admin_rejection',rejectCategory:cat});
           originalProp = JSON.parse(JSON.stringify(currentProp));
           close();
           renderDetail();
@@ -6922,9 +6958,12 @@
           actionLabel: "Delete",
           actionKind: "danger",
           onConfirm: () => {
+            const removed={...currentProp};
             const idx = properties.findIndex((p) => p.id === currentProp.id);
             if (idx >= 0) properties.splice(idx, 1);
             filtered = filtered.filter((p) => p.id !== currentProp.id);
+            analyticsApi()?.emit('property_removed',{propertyId:removed.id,agencyId:analyticsAgencyId(removed),removedAt:new Date().toISOString(),changeSource:'admin_manual_delete'});
+            syncAnalyticsPropertySnapshots();
             showList();
             renderList();
             toast("Listing deleted.", "error");
@@ -8144,6 +8183,7 @@
         });
       }
       YuushiMunicipality.normalizeAll(properties);
+      syncAnalyticsPropertySnapshots();
       FILT.region.cities = YuushiMunicipality.migrateFilterValues(FILT.region.cities);
       initFilters();
       // Real-time search: typing re-applies filters and resets to page 1.
