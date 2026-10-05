@@ -184,7 +184,12 @@
     if(id==='r79')return series(rows,r=>agentById.get(r.agentId).name,'deals',f);
     if(id==='r100')return timeline(['deals'],'bar');
     if(id==='r80')return result(agents.map(a=>{const ar=rows.filter(r=>r.agentId===a.id);return {label:a.name,listings:properties.filter(p=>p.agentId===a.id&&p.createdAt<=f.end&&(!p.endedAt||p.endedAt>f.end)).length,deals:sum(ar,'deals'),adSpend:ar.reduce((n,r)=>n+r.banner+r.sponsored+r.featured+r.appraisal,0),totalPayments:ar.reduce((n,r)=>n+amount(r),0),rating:a.rating};}),['listings','deals','adSpend','totalPayments','rating'],'table');
-    if(id==='r82'||id==='r84')return byProperty(f.breakdown||'prefecture',[id==='r82'?'appraisalRequests':'appraisalSent']);
+    if(id==='r82')return byProperty(f.breakdown||'prefecture',['appraisalRequests']);
+    if(id==='r84'){
+      const deliveries=(D.appraisalDeliveries||[]).filter(d=>{const date=(d.sentAt||'').slice(0,10);return date&&inPeriod(date,f.start,f.end);});
+      const key=f.breakdown==='subtype'?'propertyType':'propertyLocation';
+      return result(groupBy(deliveries,d=>d[key]||'Unknown',items=>({count:items.length})),['count'],f.breakdown==='subtype'?'bar':'donut','Each appraisal_delivery record represents one request actually delivered to one Agency. No request × N assumption is used.');
+    }
     if(id==='r83'){
       const allowed=[...new Set(Object.entries(D.groups).filter(([key,g])=>(!f.transaction||f.transaction==='All'||g.transaction===f.transaction)&&(!f.groups?.length||f.groups.includes(key))).flatMap(([,g])=>g.types))].filter(type=>!f.subtypes?.length||f.subtypes.includes(type));
       const pool=agents.filter(a=>a.appraisalRegistered&&a.appraisalTypes.some(type=>allowed.includes(type)));
