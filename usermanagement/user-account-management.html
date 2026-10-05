@@ -2485,6 +2485,22 @@
 
         const removedPhones=YuushiWorkflow.read(YuushiWorkflow.keys.phones,{});
         users.forEach(u=>{if(removedPhones[u.id])u.phone='';u.idVerify=u.phone&&String(u.phone).trim()?'Verified':'Not Verified';});
+        const USER_DIRECTORY_KEY='yuushi.admin.userDirectory';
+        function normalizedUserDate(value){
+          const match=String(value||'').match(/\d{4}-\d{2}-\d{2}/);return match?match[0]:null;
+        }
+        function syncUserDirectory(){
+          const snapshot=users.map(u=>({
+            id:u.id,type:'Client',fullName:u.fullName||'',status:u.status||'Active',
+            registeredAt:normalizedUserDate(u.regDate)||normalizedUserDate(u.createdAt),
+            withdrawnAt:u.status==='Withdrawn'?normalizedUserDate(u.withdrawal):null,
+            deletedAt:u.deletedAt||null,country:u.residentCountry||u.country||'',nationality:u.nationality||'',
+            lastLogin:normalizedUserDate(u.lastLogin)
+          }));
+          localStorage.setItem(USER_DIRECTORY_KEY,JSON.stringify(snapshot));
+          return snapshot;
+        }
+        syncUserDirectory();
         let filtered = users.filter(account => !account.deletedAt);
         let currentUser = null;
         let originalUser = null;
@@ -2651,6 +2667,7 @@
         }
 
         function renderList() {
+          syncUserDirectory();
           const tbody = $("listBody");
           const total = filtered.length;
           const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
