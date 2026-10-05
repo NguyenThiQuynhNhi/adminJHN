@@ -3520,13 +3520,33 @@
       function readShared(key,fallback=[]) { try { const v=JSON.parse(localStorage.getItem(key)); return v??fallback; } catch { return fallback; } }
       function hasShared(key) { try { return localStorage.getItem(key)!==null; } catch { return false; } }
       function frontendCampaignFallback(agencyId) {
-        if(String(agencyId)!=='AG-00000001') return [];
-        return [
-          {campaignId:'sponsored',agencyId,name:'Sponsored Search — 西新宿 / Apartment / Rank 1',status:'Active',placement:'Sponsored Search',dateRange:'Mar 1 → Mar 31',budgetLabel:'¥95,000',performanceSourceReady:false,source:'Agency My Campaigns FE fallback'},
-          {campaignId:'approved',agencyId,name:'Static Banner — Agency Search Banner',status:'Approved',placement:'Static Banner — Agency Search Banner',dateRange:'Apr 15 → May 15',budgetLabel:'¥48,000',performanceSourceReady:false,source:'Agency My Campaigns FE fallback'},
-          {campaignId:'pending',agencyId,name:'Homepage Carousel — New Development · Position 2',status:'Pending Review',placement:'Homepage Carousel — New Development',dateRange:'Apr 1 → Jun 30',budgetLabel:'¥185,900 pre-authorized',performanceSourceReady:false,source:'Agency My Campaigns FE fallback'},
-          {campaignId:'completed',agencyId,name:'City/Area Detail Banner — Shinjuku City',status:'Completed',placement:'City/Area Detail Banner — Shinjuku City',dateRange:'Jan 1 → Feb 1',budgetLabel:'¥56,000',performanceSourceReady:false,source:'Agency My Campaigns FE fallback'}
+        const n=Number(String(agencyId||'').match(/\d+$/)?.[0]||0);
+        if(!n)return [];
+        const products=[
+          ['Sponsored Search','Sponsored Search'],
+          ['Static Banner — Agency Search Banner','Static Banner — Agency Search Banner'],
+          ['Homepage Carousel — New Development','Homepage Carousel — New Development'],
+          ['Homepage Carousel — Featured Properties','Homepage Carousel — Featured Properties'],
+          ['In-Article Banner — Property Tips','In-Article Banner'],
+          ['Property Detail Banner','Property Detail Banner'],
+          ['City / Area Detail Banner — Shinjuku City','City / Area Detail Banner']
         ];
+        const count=n<=3?3:n<=10?2:1;
+        return Array.from({length:count},(_,i)=>{
+          const product=products[(n+i)%products.length],imp=2400+n*170+i*460,views=Math.round(imp*.63),clicks=Math.round(imp*(.055+i*.008)),status=['Active','Approved','Completed'][(n+i)%3];
+          return {
+            campaignId:'DEMO-AD-'+String(n).padStart(3,'0')+'-'+(i+1),
+            agencyId,
+            name:product[0],
+            status,
+            placement:product[1],
+            dateRange:i===0?'Sep 1 → Sep 30':'Aug 15 → Sep 15',
+            budgetLabel:'¥'+(48000+n*3500+i*12000).toLocaleString(),
+            mockPerformance:{impressions:imp,views,clicks},
+            performanceSourceReady:false,
+            source:'Admin Agency Detail frontend demo'
+          };
+        });
       }
       function agencyOperationalData(agencyId,agencyName='') {
         const props=(readShared('yuushi.analytics.propertySnapshots',[])||[]).filter(p=>String(p.agencyId||'')===String(agencyId));
@@ -3581,10 +3601,11 @@
       function openCampaignPerformanceReport(button,campaignId) {
         const d=agencyOperationalData(currentAgent?.id,currentAgent?.company||''),row=d.campaigns.find(x=>String(x.campaignId)===String(campaignId));
         const adEvents=d.events.filter(e=>String(e.campaignId||e.campaign||'')===String(campaignId));
-        const imp=adEvents.filter(e=>e.type==='ad_rendered').length,views=adEvents.filter(e=>e.type==='ad_viewed').length,clicks=adEvents.filter(e=>e.type==='ad_clicked').length;
-        const ready=adEvents.some(e=>['ad_rendered','ad_viewed','ad_clicked'].includes(e.type));
+        const eventImp=adEvents.filter(e=>e.type==='ad_rendered').length,eventViews=adEvents.filter(e=>e.type==='ad_viewed').length,eventClicks=adEvents.filter(e=>e.type==='ad_clicked').length;
+        const eventReady=adEvents.some(e=>['ad_rendered','ad_viewed','ad_clicked'].includes(e.type));
+        const perf=eventReady?{impressions:eventImp,views:eventViews,clicks:eventClicks}:row?.mockPerformance;
         button.dataset.exportContext=row
-          ? `Advertisement Performance · ${row.campaignId} · ${row.name} · Status ${row.status} · Placement ${row.placement||'—'} · ${ready?`Ad IMP ${imp} · Ad Views ${views} · Ad Clicks ${clicks}`:'Detailed performance: Requires paid-ad analytics instrumentation'} · Budget ${row.budgetLabel||'—'}.`
+          ? `Advertisement Performance · ${row.campaignId} · ${row.name} · Status ${row.status} · Placement ${row.placement||'—'} · Ad IMP ${perf?.impressions??'—'} · Ad Views ${perf?.views??'—'} · Ad Clicks ${perf?.clicks??'—'} · Budget ${row.budgetLabel||'—'}. ${eventReady?'Operational event data.':'Frontend prototype sample values.'}`
           : 'Advertisement Performance · Campaign record not found.';
         MockExport.open(button);
       }
@@ -3784,9 +3805,11 @@
         $("dCampaignReports").innerHTML = operational.campaigns.length
           ? operational.campaigns.map(row=>{
               const adEvents=operational.events.filter(e=>String(e.campaignId||e.campaign||'')===String(row.campaignId));
-              const imp=adEvents.filter(e=>e.type==='ad_rendered').length,views=adEvents.filter(e=>e.type==='ad_viewed').length,clicks=adEvents.filter(e=>e.type==='ad_clicked').length;
-              const ready=adEvents.some(e=>['ad_rendered','ad_viewed','ad_clicked'].includes(e.type)),ctr=imp?clicks/imp*100:null;
-              const na='<span title="Performance metrics are unavailable in the current frontend demo source">—</span>';
+              const eventImp=adEvents.filter(e=>e.type==='ad_rendered').length,eventViews=adEvents.filter(e=>e.type==='ad_viewed').length,eventClicks=adEvents.filter(e=>e.type==='ad_clicked').length;
+              const eventReady=adEvents.some(e=>['ad_rendered','ad_viewed','ad_clicked'].includes(e.type));
+              const perf=eventReady?{impressions:eventImp,views:eventViews,clicks:eventClicks}:row.mockPerformance;
+              const imp=perf?.impressions,views=perf?.views,clicks=perf?.clicks,ready=Number.isFinite(imp)&&Number.isFinite(views)&&Number.isFinite(clicks),ctr=ready&&imp?clicks/imp*100:null;
+              const na='<span title="No sample performance available">—</span>';
               return `<tr><td>${esc(row.name||row.campaignId)}</td><td>${esc(row.status||"—")}</td><td>${esc(row.placement||"—")}</td><td>${esc(row.dateRange||"—")}</td><td>${ready?fmtNum(imp):na}</td><td>${ready?fmtNum(views):na}</td><td>${ready?fmtNum(clicks):na}</td><td>${ready&&ctr!=null?ctr.toFixed(1):na}</td><td>${esc(row.budgetLabel||"—")}</td><td><button class="btn btn-sm" type="button" onclick="openCampaignPerformanceReport(this,'${escAttr(row.campaignId)}')"><i class="fas fa-file-export"></i> Export report</button></td></tr>`;
             }).join("")
           : '<tr><td colspan="10" style="color:var(--text-muted)"><em>No paid Advertisement/Campaign records for this Agency. Per-ad export is available when a campaign exists; no campaign is invented for reporting.</em></td></tr>';
