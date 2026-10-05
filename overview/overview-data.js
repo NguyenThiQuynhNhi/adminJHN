@@ -39,14 +39,21 @@
   const agencies=accounts.filter(a=>a.type==='Agency');
   const agents=agencies;
 
-  const transactions=read('yuushi.transactionVerificationRecords',[]);
-  const enquiries=read('yuushi.agencyEnquiryAssignments',[]);
-  const reportsObject=read('yuushi.c07.propertyReports',{});
-  const reports=Array.isArray(reportsObject)?reportsObject:Object.values(reportsObject||{});
+  const transactionRaw=read('yuushi.transactionVerificationRecords',null);
+  const transactions=Array.isArray(transactionRaw)?transactionRaw:[];
+  const transactionStoreReady=Array.isArray(transactionRaw);
+  const enquiryRaw=read('yuushi.agencyEnquiryAssignments',null);
+  const enquiries=Array.isArray(enquiryRaw)?enquiryRaw:[];
+  const enquiryStoreReady=Array.isArray(enquiryRaw);
+  const reportsRaw=read('yuushi.c07.propertyReports',null);
+  const reports=Array.isArray(reportsRaw)?reportsRaw:(reportsRaw&&typeof reportsRaw==='object'?Object.values(reportsRaw):[]);
+  const reportStoreReady=Array.isArray(reportsRaw)||(reportsRaw&&typeof reportsRaw==='object');
 
   // Monetization Admin is the prototype operational source for plans, ad bookings
   // and payment transactions. Overview must not maintain a second hard-coded catalog.
-  const commerce=read('yuushi-cms-v1',{plans:[],features:[],addons:[],slots:[],bookings:[],transactions:[]});
+  const commerceRaw=read('yuushi-cms-v1',null);
+  const commerce=commerceRaw&&typeof commerceRaw==='object'?commerceRaw:{plans:[],features:[],addons:[],slots:[],bookings:[],transactions:[]};
+  const commerceStoreReady=Boolean(commerceRaw&&typeof commerceRaw==='object');
   const plans=(commerce.plans||[]).filter(p=>p.status!=='Retired');
   const prices=Object.fromEntries(plans.map(p=>[p.name,Number(p.price)||0]));
   const adTypes=[...new Set((commerce.slots||[]).map(s=>String(s.product??'')).filter(Boolean))];
@@ -122,8 +129,12 @@
   });
   const guests=[...guestMap.values()];
 
-  const adminChats=read('yuushi.adminSupportThreads',[]);
-  const fraudFlags=read('yuushi.admin.fraudFlags',[]);
+  const adminChatRaw=read('yuushi.adminSupportThreads',null);
+  const adminChats=Array.isArray(adminChatRaw)?adminChatRaw:[];
+  const adminChatStoreReady=Array.isArray(adminChatRaw);
+  const fraudRaw=read('yuushi.admin.fraudFlags',null);
+  const fraudFlags=Array.isArray(fraudRaw)?fraudRaw:[];
+  const fraudStoreReady=Array.isArray(fraudRaw);
   const telemetry=A.telemetry();
   const paymentCategory=reason=>{
     const text=String(reason||'').toLowerCase();
@@ -143,6 +154,7 @@
     today,now,accounts,agencies,agents,subscriptions,adminChats,accountSessions,guests,properties,facts,chats,fraudFlags,paymentErrors,logs,
     reports,transactions,enquiries,campaigns,commerceTransactions,succeededPayments,appraisalDeliveries,analyticsEvents:events,places,groups,structures,countries,plans,prices,adTypes,options,
     customerDirectoryReady,agencyDirectoryReady,accountDirectoryReady,propertyStoreReady,appraisalDeliveryReady,
+    transactionStoreReady,enquiryStoreReady,reportStoreReady,commerceStoreReady,adminChatStoreReady,fraudStoreReady,
     telemetry,metricStatus:(id)=>{
       const accountMetrics=new Set(['r29','r42','r43','r44','r46','r55','r56','r69','r70','r71','r72','r73','r77','r80','r81','r83','r110']);
       const propertySnapshotMetrics=new Set(['r77','r92','r93','r101','r102']);
