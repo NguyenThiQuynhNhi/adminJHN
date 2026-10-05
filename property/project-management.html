@@ -7425,25 +7425,78 @@
         });
       }
 
+      function openProjectSuspendReasonModal(onConfirm) {
+        let modal=$("projectSuspendReasonModal");
+        if(!modal){
+          modal=document.createElement("div");
+          modal.className="modal-backdrop";
+          modal.id="projectSuspendReasonModal";
+          modal.innerHTML=`
+            <div class="modal-box" style="width:500px">
+              <div class="modal-header">
+                <h3 class="modal-title">Suspend project?</h3>
+                <button class="btn btn-ghost btn-sm" type="button" data-close-project-suspend><i class="fas fa-times"></i></button>
+              </div>
+              <div class="modal-body">
+                <div class="field-group">
+                  <label class="field-label" for="projectSuspendReason">Suspension reason <span class="req" style="color:var(--badge-red)">*</span></label>
+                  <select id="projectSuspendReason">
+                    <option value="">Select a reason...</option>
+                    <option value="seller-withdrew">Seller Withdrew — Did not want to sell</option>
+                    <option value="expired">Listing Expired — Contract period ended</option>
+                    <option value="legal">Legal Hold — Dispute or freeze</option>
+                  </select>
+                  <small id="projectSuspendReasonErr" style="display:none;color:var(--badge-red);font-size:11px">Suspension reason is required.</small>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn" type="button" data-close-project-suspend>Cancel</button>
+                <button class="btn btn-danger" type="button" id="projectSuspendConfirm">Suspend</button>
+              </div>
+            </div>`;
+          document.body.appendChild(modal);
+          modal.querySelectorAll("[data-close-project-suspend]").forEach(b=>b.onclick=()=>modal.classList.remove("open"));
+          modal.addEventListener("click",e=>{if(e.target===modal)modal.classList.remove("open");});
+        }
+        const select=modal.querySelector("#projectSuspendReason"),err=modal.querySelector("#projectSuspendReasonErr");
+        select.value="";err.style.display="none";
+        modal.querySelector("#projectSuspendConfirm").onclick=()=>{
+          if(!select.value){err.style.display="block";select.focus();return;}
+          const reason=select.value;modal.classList.remove("open");onConfirm(reason);
+        };
+        modal.classList.add("open");
+      }
       function toggleSuspend() {
         if (!currentProj) return;
         if(currentProj.publishStatus==='Suspended'&&currentProj.salesStatus==='Sold Out'){toast('Sold-out projects cannot be re-activated.','error');return;}
-        // Only valid from Published (suspend) or normal Suspended (re-activate).
         const suspending = currentProj.publishStatus === "Published";
-        const next = suspending ? "Suspended" : "Published";
+        if(suspending){
+          openProjectSuspendReasonModal((reason)=>{
+            currentProj.publishStatus="Suspended";
+            currentProj.suspensionReason=reason;
+            currentProj.suspensionDate=new Date().toISOString().slice(0,10);
+            originalProj.publishStatus="Suspended";
+            originalProj.suspensionReason=reason;
+            originalProj.suspensionDate=currentProj.suspensionDate;
+            renderDetail();renderList();toast("Project suspended.");
+          });
+          return;
+        }
         showConfirm({
-          title: suspending ? "Suspend project?" : "Re-activate project?",
-          body: suspending
-            ? `Suspend ${currentProj.id} (${currentProj.name})? The project will be hidden from public view until re-activated.`
-            : `Re-activate ${currentProj.id} (${currentProj.name})? The project will be visible publicly again.`,
-          confirmLabel: suspending ? "Suspend" : "Re-activate",
-          danger: suspending,
+          title: "Re-activate project?",
+          body: `Re-activate ${currentProj.id} (${currentProj.name})? The project will be visible publicly again.`,
+          confirmLabel: "Re-activate",
+          danger: false,
           onConfirm: () => {
-            currentProj.publishStatus = next;
-            originalProj.publishStatus = next;
+            currentProj.publishStatus = "Published";
+            currentProj.suspensionReason = null;
+            currentProj.suspensionDate = null;
+            originalProj.publishStatus = "Published";
+            originalProj.suspensionReason = null;
+            originalProj.suspensionDate = null;
             renderDetail();
             renderList();
-            toast(suspending ? "Project suspended." : "Project re-activated.");
+            toast("Project re-activated.");
           },
         });
       }
