@@ -74,7 +74,7 @@
       ['Pending Agency Reviews',M.pendingAgencies(),'agents']
     ];
     const users=M.platformAccounts(),customerUsers=users.filter(a=>a.type==='Client'),agentUsers=users.filter(a=>a.type==='Agency');
-    const currentMonth=M.monthStart(D.today),todayFacts=D.facts.filter(r=>r.date===D.today),yesterdayFacts=D.facts.filter(r=>r.date===U.addDays(D.today,-1)),todayInquiryCount=(D.chats||[]).filter(r=>r.date===D.today).length,yesterdayInquiryCount=(D.chats||[]).filter(r=>r.date===U.addDays(D.today,-1)).length;
+    const currentMonth=M.monthStart(D.today),inquiryCreatedDate=q=>String(q.createdAt||'').slice(0,10),todayInquiryCount=(D.enquiries||[]).filter(q=>inquiryCreatedDate(q)===D.today).length,yesterdayInquiryCount=(D.enquiries||[]).filter(q=>inquiryCreatedDate(q)===U.addDays(D.today,-1)).length;
     const withdrawal=M.withdrawalStats(D.accounts,currentMonth,D.today);
     const delta=(a,b)=>b?((a-b)/b*100).toFixed(1)+'% vs previous day':'No previous-day baseline';
     const mockValue=(value,unit='')=>Number.isFinite(Number(value))?number(Number(value),unit):'—';
