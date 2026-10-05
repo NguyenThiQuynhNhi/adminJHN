@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  try { sessionStorage.setItem('yuushi.activePortal','client'); } catch {}
   function ensureAnalytics() {
     if (window.YuushiAnalytics) { window.YuushiAnalytics.startPageInstrumentation?.(); return; }
     if (document.querySelector('script[data-yuushi-analytics]')) return;
