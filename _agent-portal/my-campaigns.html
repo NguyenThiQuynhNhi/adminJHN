@@ -933,10 +933,26 @@ const detailMap={
  rejected:[['Status','Rejected'],['Reason','Creative quality'],['Payment','Authorization released in full'],['Next action','Resubmit if still desired']],
  timeout:[['Status','Rejected (Timeout)'],['Reason','No Admin decision within 7 days'],['Payment','Authorization released automatically'],['Next action','Resubmit if still desired']]
 };
+function agencyIdForCampaigns(){try{return JSON.parse(localStorage.getItem('yuushi.agency.primaryAccount')||'null')?.id||'AG-00000001';}catch{return 'AG-00000001';}}
+function syncCampaignStore(){
+  try{
+    const key='yuushi.agencyCampaigns',existing=JSON.parse(localStorage.getItem(key)||'[]'),map=new Map((Array.isArray(existing)?existing:[]).map(r=>[r.campaignId,r]));
+    document.querySelectorAll('.campaign-card[data-campaign]').forEach(card=>{
+      const campaignId=card.dataset.campaign,title=card.querySelector('.card-title')?.textContent.trim()||campaignId,status=card.querySelector('.badge')?.textContent.trim()||card.dataset.status;
+      const note=card.querySelector('.small-note')?.textContent.trim()||'';
+      const rows=detailMap[campaignId]||[];
+      const field=name=>rows.find(r=>r[0]===name)?.[1]||'';
+      const row={campaignId,agencyId:agencyIdForCampaigns(),name:title,status,placement:field('Placement')||title,dateRange:field('Dates')||field('Requested dates')||note,budgetLabel:field('Locked price')||field('Pre-authorization')||note,updatedAt:new Date().toISOString(),performanceSourceReady:false};
+      map.set(campaignId,{...map.get(campaignId),...row});
+    });
+    localStorage.setItem(key,JSON.stringify([...map.values()]));
+  }catch{}
+}
 function openCampaignDetails(id){const rows=detailMap[id]||[];document.getElementById('campaignModalTitle').textContent='Campaign details';document.getElementById('campaignModalBody').innerHTML='<div class="summary-list">'+rows.map(r=>`<div class="summary-row"><div class="label">${r[0]}</div><div class="value">${r[1]}</div></div>`).join('')+'</div>';openModal('campaignModal');}
 function openCancelCampaign(btn){cancelTarget=btn.closest('.campaign-card');openModal('cancelCampaignModal');}
 function confirmCancelCampaign(){if(!cancelTarget)return;cancelTarget.dataset.status='rejected';cancelTarget.querySelector('.badge').className='badge neutral';cancelTarget.querySelector('.badge').textContent='Cancelled';cancelTarget.querySelector('.card-body').innerHTML='<div class="alert info" style="margin:0"><span class="alert-icon">✓</span><div class="alert-content"><div class="alert-title">Booking cancelled</div><div class="alert-text">The booking was cancelled while Pending Review. The card authorization has been released and no charge was made.</div></div></div>';closeModal('cancelCampaignModal');showToast('Booking cancelled','Pre-authorization released.');}
 
+syncCampaignStore();
 </script>
 </div>
 </body>
