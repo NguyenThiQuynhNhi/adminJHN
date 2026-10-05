@@ -95,6 +95,10 @@
     const end=sessionEnds.find(e=>e.sessionId===s.sessionId&&e.occurredAt>=s.occurredAt);
     return {accountId:s.accountId,date:evtDate(s),seconds:end?Math.max(0,(Date.parse(end.occurredAt)-Date.parse(s.occurredAt))/1000):null};
   });
+  // Account activity is derived from canonical session events, not a dashboard-only login seed.
+  const sessionsByAccount=new Map();
+  accountSessions.forEach(s=>{if(!s.accountId||!s.date)return;const dates=sessionsByAccount.get(s.accountId)||[];if(!dates.includes(s.date))dates.push(s.date);sessionsByAccount.set(s.accountId,dates);});
+  accounts.forEach(a=>{a.logins=(sessionsByAccount.get(a.id||a.customerId||a.agencyId)||[]).sort();});
   const guestMap=new Map();
   events.filter(e=>e.accountType==='Guest').forEach(e=>{
     const id=e.anonymousVisitorId;if(!id)return;
@@ -122,7 +126,7 @@
   const logs=read('yuushi.admin.systemIssues',[]);
   const data={
     today,now,accounts,agencies,agents,subscriptions,adminChats,accountSessions,guests,properties,facts,chats,fraudFlags,paymentErrors,logs,
-    reports,transactions,campaigns,commerceTransactions,succeededPayments,appraisalDeliveries,places,groups,structures,countries,plans,prices,adTypes,options,
+    reports,transactions,campaigns,commerceTransactions,succeededPayments,appraisalDeliveries,analyticsEvents:events,places,groups,structures,countries,plans,prices,adTypes,options,
     telemetry,metricStatus:A.overviewMetricStatus
   };
   const utilities={DAY,dayKey,addDays,hash:value=>{let n=2166136261;for(const char of String(value))n=Math.imul(n^char.charCodeAt(0),16777619);return n>>>0;}};
