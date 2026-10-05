@@ -155,6 +155,9 @@
     const appraisalDelivery=new Set(['r118']);
     const instrumentation=new Set(['r35','r36','r39','r40','r45','r46','r48','r49','r50','r51','r69','r70','r77','r80','r82','r83','r92','r93','r126','r127','r128','r130','r131','r132','r133','r134','r135','r136','r137','r139','r140','r141','r142','r143','r144','r145']);
     if(mock.has(id))return {ready:'mock',note:'Prototype telemetry only; no backend health/payment integration is built in this repository.'};
+    if(id==='r107')return {ready:false,note:'Platform CPA requires YUUSHI acquisition/marketing spend. Subscription/ad revenue is income and must not be used as the acquisition-cost numerator.'};
+    if(id==='r112')return {ready:false,note:'This is an Agency-facing subscription fee efficiency metric, not Platform CPA. Requires persisted subscription charges and the selected conversion records before calculation.'};
+    if(['r113','r114'].includes(id))return {ready:false,note:'Agency ad cost per conversion requires persisted ad spend plus paid-ad attributed conversion events. Organic listing events must not be reused.'};
     if(ready.has(id))return {ready:true,note:'Calculated from an operational shared store and/or a canonical event with a real producer in this prototype.'};
     if(propertyEngagement.has(id))return {ready:false,note:'Requires Customer listing instrumentation with a stable Property ID. Event contracts exist, but the current static Client listing cards do not provide that identity yet.'};
     if(adEvents.has(id))return {ready:false,note:'Requires paid-ad render/view/click producers. Organic Property events must not be reused for Ad metrics.'};
