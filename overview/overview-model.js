@@ -209,7 +209,10 @@
     if(id==='r113'||id==='r114')return result(groupBy(rows,id==='r113'?'adType':'placement',r=>{const cost=r.reduce((n,x)=>n+x.sponsored+x.banner+x.featured+x.appraisal,0),perf=adPerformance(r),cv=f.conversion==='Closings'?sum(r,'adVerifiedClosings'):perf.adInquiries;return {revenue:cost,conversions:cv,cpa:cv?cost/cv:null};}),['cpa','revenue','conversions'],'bar','Paid-ad attributed conversions only. Organic Property inquiries/closings are excluded.');
     if(id==='r115')return result(groupBy(rows,r=>periodKey(r.date,f.unit),adPerformance),['adImpressions','adViews','adClicks','adInquiries','adCtr','adCvr'],'line','Paid-ad events only. Organic Property events are excluded.');
     if(id==='r117')return result(groupBy(rows,'agentId',r=>{const spend=r.reduce((n,x)=>n+x.sponsored+x.banner+x.featured+x.appraisal,0),perf=adPerformance(r),cv=perf.adInquiries;return {...perf,revenue:spend,cpa:cv?spend/cv:null};}),['adImpressions','adViews','adClicks','adCtr','adInquiries','adCvr','cpa','revenue'],'table','Paid-ad events only; organic listing engagement is excluded.');
-    if(id==='r118')return result(groupBy(rows,r=>propertyById.get(r.propertyId).prefecture,r=>({appraisalRequests:sum(r,'appraisalRequests'),revenue:sum(r,'appraisal'),budget:1000000,utilization:ratio(sum(r,'appraisal'),1000000),blocked:sum(r,'blocked')})),['appraisalRequests','revenue','budget','utilization','blocked'],'heatmap');
+    if(id==='r118'){
+      const deliveries=(D.appraisalDeliveries||[]).filter(d=>{const date=(d.sentAt||'').slice(0,10);return date&&inPeriod(date,f.start,f.end);});
+      return result(groupBy(deliveries,d=>d.propertyLocation||'Unknown',items=>({appraisalSent:items.length,appraisalRequests:distinct(items,'requestId')})),['appraisalRequests','appraisalSent'],'heatmap','Operational appraisal delivery counts only. Billing, budget-cap utilization and block counts require a separate persisted billing/allocation source and are intentionally not fabricated.');
+    }
     if(id==='r120')return prices('prefecture');
     if(id==='r121')return perfs(r=>propertyById.get(r.propertyId).city+' · '+propertyById.get(r.propertyId).subtype,'heatmap');
     if(id==='r122'||id==='r123')return perfs(r=>{const p=propertyById.get(r.propertyId);return id==='r122'?p.city:p.line+' · '+p.station;},'table');
