@@ -38,7 +38,7 @@
     if(row){row.lastOpenedAt=W.now();W.upsert(W.keys.enquiries,row);return {record:row,created:false};}
     const id=W.next(rows,'INQ-');row={...data,...W.unassigned(),id,conversationId:id,assignedStaffId:null,createdAt:W.now(),status:'New',msgs:[]};
     W.upsert(W.keys.enquiries,row);
-    (root.YuushiAnalytics||root.top?.YuushiAnalytics)?.emit('inquiry_created',{inquiryId:id,conversationId:id,customerId:data.customerId,agencyId:data.agencyId,propertyId:data.propertyId,source:'Chat with Agency'});
+    (root.YuushiAnalytics||root.top?.YuushiAnalytics)?.emit('inquiry_created',{inquiryId:id,conversationId:id,customerId:data.customerId,agencyId:data.agencyId,propertyId:data.propertyId,source:'Chat with Agency',accountId:data.customerId||null,accountType:'Customer',portal:'Client'});
     return {record:row,created:true};
   }
   root.YuushiBA={staffKey,syncStaff,refreshStaff,setStaffStatus,openInquiry};refreshStaff();
