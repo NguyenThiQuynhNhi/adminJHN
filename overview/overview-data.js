@@ -164,7 +164,9 @@
       if(propertySnapshotMetrics.has(id)&&!propertyStoreReady)return {ready:false,note:'Operational Property snapshot store has not been synchronized from Property Management yet.'};
       if(enquiryMetrics.has(id)&&!enquiryStoreReady)return {ready:false,note:'Agency Inquiry/conversation store has not been synchronized yet.'};
       if(transactionMetrics.has(id)&&!transactionStoreReady)return {ready:false,note:'Agency-recorded Transaction store has not been synchronized yet.'};
-      if(id==='r84'&&!appraisalDeliveryReady)return {ready:false,note:'Appraisal delivery store has not been synchronized from Agency Appraisal Management yet.'};
+      if(['r84','r118'].includes(id))return appraisalDeliveryReady
+        ? {ready:true,note:'Calculated from persisted appraisal_delivery records; one row represents one request delivered to one Agency.'}
+        : {ready:false,note:'Appraisal delivery store has not been synchronized from Agency Appraisal Management yet.'};
       return A.overviewMetricStatus(id);
     }
   };
