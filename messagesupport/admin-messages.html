@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>sessionStorage.setItem("yuushi.activePortal", "platform");</script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>YUUSHI Admin — Messages</title>
@@ -2346,21 +2347,10 @@
       const AV = (n) => `https://i.pravatar.cc/150?img=${n}`;
 
       const baseAgentMessages = [
-        { sender: "them", text: "Hi Jack! I'm doing well, thanks. Can't wait for the weekend!", time: "10:30 AM" },
-        { sender: "me", text: "I know, right? Weekend plans are the best. Any exciting plans on your end?", time: "10:30 AM" },
-        { sender: "them", text: "Absolutely! I'm thinking of going for a hike on Saturday. How about you?", time: "10:30 AM" },
-        { sender: "me", text: "Hiking sounds amazing! I might catch up on some reading and also meet up with a few friends on Sunday.", time: "10:30 AM" },
-        { sender: "them", text: "That sounds like a great plan! Excited 😀", time: "10:30 AM" },
-        { sender: "me", text: "Can't wait for the weekend!", time: "10:30 AM", status: "failed" },
+        {sender:"them",text:"I need help with my YUUSHI account.",time:"10:24 AM"},
+        {sender:"me",text:"YUUSHI Support can help with your account request.",time:"10:25 AM"},
       ];
-
-      function genMsgs(name, preview) {
-        return [
-          { sender: "them", text: "Hi there! Thanks for getting in touch.", time: "10:24 AM" },
-          { sender: "me", text: "Hi " + name.split(" ")[0] + ", happy to help. What can I do for you?", time: "10:25 AM" },
-          { sender: "them", text: preview, time: "10:30 AM" },
-        ];
-      }
+      function genMsgs(){return baseAgentMessages.map(m=>({...m}));}
 
       const endUsers = [
         { id: "u1", name: "Liam Anderson", img: AV(11), time: "04:50 PM", preview: "I don't know", unread: 0, online: false, email: "liam.anderson@email.com", phone: "+81 90 1234 5678", saved: false, msgs: genMsgs("Liam Anderson", "I don't know") },
@@ -2379,6 +2369,8 @@
         { id: "a3", name: "Haruka Sato", img: AV(45), time: "09:12 AM", preview: "The inspection is confirmed.", unread: 3, online: true, blocked: false, company: "Osaka Homes – NAMBA", address: "1-5-2 Namba, Chuo Ward, Osaka 542-0076", response: "Within 30 min", saved: false, msgs: genMsgs("Haruka Sato", "The inspection is confirmed.") },
         { id: "a4", name: "Oliver Brown", img: AV(52), time: "Yesterday", preview: "Let's confirm the viewing time.", unread: 0, online: false, blocked: false, company: "Sydney Realty – BONDI", address: "84 Campbell Parade, Bondi Beach, NSW 2026", response: "Within 2 hours", saved: false, msgs: genMsgs("Oliver Brown", "Let's confirm the viewing time.") },
       ];
+
+      [...endUsers,...agents].forEach(c=>{c.conversationContext="platform-support";c.preview="YUUSHI account support";});
 
       const LANGS = [
         "English", "Spanish", "Japanese", "Italian", "Traditional Chinese", "Arabic",
@@ -2511,7 +2503,7 @@
               id, group: g, name: nm, propType, txType, prefecture: pref, city,
               priceM, rentMonthly, owner: newDev ? "Agency" : (seq % 3 === 0 ? "Direct Owner" : "Agency"),
               verif: seq % 4 === 0 ? "Pending" : "Verified",
-              status: seq % 5 === 0 ? "Members Only" : "Published",
+              status: "Published",
               newDev
             });
           }
@@ -2562,7 +2554,7 @@
         status: [], tx: "", type: [], region: { prefs: [], cities: [], stations: [] },
         priceMin: null, priceMax: null,
       };
-      const EP_STATUS_OPTS = ["Published", "Members Only"];
+      const EP_STATUS_OPTS = ["Published"];
       const EP_PRICE_PRESETS = [[0,20],[20,50],[50,100],[100,150],[150,200],[200,300],[300,500],[500,1000]];
 
       function buildEpStatusChecks() {
@@ -2911,6 +2903,7 @@
       }
 
       /* ============ STATE ============ */
+      const normalConversationRequested=new URLSearchParams(location.search).has("conversationId");
       let currentTab = "user";
       let current = null; // current conversation object
       let pinned = []; // [{name, text}]
@@ -2921,7 +2914,8 @@
       const $ = (id) => document.getElementById(id);
 
       function dataset() {
-        return currentTab === "user" ? endUsers : agents;
+        if(normalConversationRequested)return [];
+        return (currentTab === "user" ? endUsers : agents).filter(c=>c.conversationContext==="platform-support");
       }
 
       /* ============ SIDEBAR LIST ============ */
@@ -2971,18 +2965,10 @@
       function selectConvo(id) {
         const data = dataset();
         const c = data.find((x) => x.id === id);
-        if (!c) return;
+        if (!c || c.conversationContext!=="platform-support") return;
         current = c;
         c.unread = 0;
         pinned = [];
-        // seed demo pins for Grace Miller chat
-        if (c.name === "Grace Miller") {
-          pinned = [
-            { name: "Grace Miller", text: "Absolutely! I'm thinking of going for a hike on Saturday. How about you?" },
-            { name: "Grace Miller", text: "That sounds like a great plan! Excited 😀" },
-            { name: "Jack Raymonds", text: "I know, right? Weekend plans are the best. Any exciting plans on your end?" },
-          ];
-        }
         translatedIdx.clear();
         currentLang = "English";
         $("langLbl").textContent = "English";
@@ -3550,6 +3536,7 @@
 
       /* ============ INIT ============ */
       (function init() {
+        if(normalConversationRequested){document.body.innerHTML='<div style="padding:24px">Customer ↔ Agency conversations are not accessible to Platform users.</div>';return;}
         // Build static popover panel contents + wire popovers now that $ is defined
         buildEpStatusChecks();
         buildEpTypeChecks();

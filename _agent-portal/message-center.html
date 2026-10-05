@@ -2267,6 +2267,7 @@
     <div class="toast" id="toast"></div>
 
     <script src="automation-catalog.js"></script>
+    <script src="agency-permissions.js"></script>
     <script>
       const $ = (id) => document.getElementById(id);
 
@@ -3200,6 +3201,7 @@
       }
 
       function campAction(action, id) {
+        if(action!=="view"&&!requireMessageAction())return;
         $("globalActMenu").classList.remove("open");
         const c = campaigns.find((x) => x.id === id);
         if (action === "edit" || action === "view") { openBuilder(c); return; }
@@ -3301,6 +3303,7 @@
         else
           html += `<button class="btn btn-outline" onclick="saveDraft()">Save as Draft</button><button class="btn btn-navy" onclick="launchCampaign()">Launch Campaign</button>`;
         $("builderActions").innerHTML = html;
+        applyMessagePermissions();
         if (currentStep === 5) renderReview();
       }
 
@@ -3410,16 +3413,19 @@
       }
 
       function saveDraft() {
+        if(!requireMessageAction())return;
         persistCampaign("Draft");
         toast("Draft saved successfully.");
         closeBuilder();
       }
       function launchCampaign() {
+        if(!requireMessageAction())return;
         persistCampaign("Sent");
         toast("Message campaign launched successfully.");
         closeBuilder();
       }
       function persistCampaign(status) {
+        if(!requireMessageAction())return;
         const name = $("bName").value.trim() || "Untitled campaign";
         const schedV = document.querySelector(
           'input[name="sched"]:checked',
@@ -3485,6 +3491,7 @@
           .join("");
       }
       function deleteTemplate(id) {
+        if(!requireMessageAction())return;
         const t = templates.find((x) => x.id === id);
         if (!t) return;
         if (!confirm(`Delete template "${t.name}"? This cannot be undone.`))
@@ -3516,6 +3523,7 @@
         $("tpl-list").style.display = "block";
       }
       function saveTemplate() {
+        if(!requireMessageAction())return;
         const name = $("tName").value.trim();
         $("t-name").classList.toggle("invalid", !name);
         if (!name) return;
@@ -3719,6 +3727,7 @@
           .join("");
       }
       function toggleAuto(id, val) {
+        if(!requireMessageAction())return;
         const e = AutoStore.byId(id);
         if (!e || AutoStore.isLocked(e)) {
           renderAutomations();
@@ -3793,6 +3802,7 @@
       }
       
       function saveAutoDrawer() {
+        if(!requireMessageAction())return;
         if (!autoEditingId) return;
         AutoStore.save(autoEditingId, { chatBody: $("ad_rteBody").innerHTML });
         autoDirty = false;
@@ -4083,12 +4093,27 @@
         }
       });
 
+      function messageCenterAccess(action="view") {
+        const P=YuushiAgencyPermissions,a=P.actor();
+        return P.can({agencyId:a.agencyId||"AG-00000001",assignedStaffId:a.staffId||a.id},action,a);
+      }
+      function applyMessagePermissions(){
+        if(messageCenterAccess("reply"))return;
+        document.querySelectorAll('button[onclick*="launchCampaign"],button[onclick*="saveDraft"],button[onclick*="saveTemplate"],button[onclick*="saveAutoDrawer"],input[onchange*="toggleAuto"]').forEach(b=>{b.disabled=true;b.title="Reply permission is required.";});
+      }
+      function requireMessageAction(){if(messageCenterAccess("reply"))return true;toast("Reply permission is required.");return false;}
       /* ===================== INIT ===================== */
-      renderCampaigns();
-      renderTemplates();
-      renderAutomations();
-      refreshAutoTplSelect();
-      setTimeout(initChart, 30);
+      if(!messageCenterAccess()){
+        document.body.innerHTML='<div style="padding:24px;color:var(--text-muted)">Message access is not permitted for this role.</div>';
+      } else {
+        applyMessagePermissions();
+        renderCampaigns();
+        renderTemplates();
+        renderAutomations();
+        applyMessagePermissions();
+        refreshAutoTplSelect();
+        setTimeout(initChart, 30);
+      }
     </script>
   </body>
 </html>

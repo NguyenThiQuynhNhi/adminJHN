@@ -2175,6 +2175,7 @@
   <link rel="stylesheet" href="../dropdown-indicators.css">
 <script src="../mock-workflows.js"></script>
 <script src="../ba-workflows.js"></script>
+    <script src="agency-permissions.js"></script>
 </head>
   <body>
     <!-- ============ PANEL 1 — SIDEBAR ============ -->
@@ -2708,7 +2709,7 @@
               id, group: g, name: nm, propType, txType, prefecture: pref, city,
               priceM, rentMonthly, owner: newDev ? "Agency" : (seq % 3 === 0 ? "Direct Owner" : "Agency"),
               verif: seq % 4 === 0 ? "Pending" : "Verified",
-              status: seq % 5 === 0 ? "Members Only" : "Published",
+              status: "Published",
               newDev
             });
           }
@@ -2759,7 +2760,7 @@
         status: [], tx: "", type: [], region: { prefs: [], cities: [], stations: [] },
         priceMin: null, priceMax: null,
       };
-      const EP_STATUS_OPTS = ["Published", "Members Only"];
+      const EP_STATUS_OPTS = ["Published"];
       const EP_PRICE_PRESETS = [[0,20],[20,50],[50,100],[100,150],[150,200],[200,300],[300,500],[500,1000]];
 
       function buildEpStatusChecks() {
@@ -2978,6 +2979,7 @@
       }
 
       function openPropertyPicker() {
+        if(!requireReply())return;
         epSelectedId = null;
         epPage = 1;
         FILT_EP.status = []; FILT_EP.tx = ""; FILT_EP.type = []; FILT_EP.region = { prefs: [], cities: [], stations: [] };
@@ -2992,6 +2994,7 @@
       }
 
       function confirmEPPicker() {
+        if(!requireReply())return;
         const p = PROPERTY_POOL.find((x) => x.id === epSelectedId);
         if (!p) { toast("Select a property first"); return; }
         current.msgs.push({
@@ -3120,6 +3123,7 @@
 
       
       function openApprModal(id) {
+        if(!canChat(current))return;
         const a = APPRAISAL_TANAKA.id === id ? APPRAISAL_TANAKA : null;
         if (!a) return;
         $("aprSub").textContent = `Submitted by ${a.clientName} · Ref ${a.id}`;
@@ -3144,7 +3148,9 @@
       // `currentKind` reflects the active conversation: "admin" (the pinned
       // Platform Admin / Support thread) or "client" (an end-user thread).
       let currentKind = "client";
-      let currentUserRole = "ceo"; // "ceo" | "agent"  — demo default CEO
+      const messagePermissions = YuushiAgencyPermissions;
+      function canChat(c,action="view"){const a=messagePermissions.actor();return c?.kind==="admin" ? messagePermissions.can({agencyId:a.agencyId||"AG-00000001",assignedStaffId:a.staffId||a.id},action,a) : messagePermissions.can(c,action);}
+      function requireReply(){if(canChat(current,"reply") && current?.kind!=="admin")return true;toast("Reply permission is required.");return false;}
       let current = null; // current conversation object
       let pinned = []; // [{name, text}]
       let translatedIdx = new Set(); // indices of messages currently shown translated
@@ -3158,7 +3164,7 @@
   return [adminThread].concat(clients);
 }
       function findConvo(id) {
-        return allConvos().find((x) => x.id === id);
+        return allConvos().find((x) => x.id === id && canChat(x));
       }
 
       /* ============ SIDEBAR LIST ============ */
@@ -3181,7 +3187,7 @@ function groupClientsByAgent() {
     groups[a.id] = { agent: a, chats: [] };
   });
   
-  clients.forEach(c => {
+  clients.filter(c=>canChat(c)).forEach(c => {
     if (c.agentId && groups[c.agentId]) {
       groups[c.agentId].chats.push(c);
     }
@@ -3234,18 +3240,22 @@ function renderStaffView() {
   }
 }
 
+      function denyConversation(){
+        current=null; $("messages").textContent="Conversation access is not permitted for this role."; $("topName").textContent="No conversation access"; $("composerInput").disabled=true; document.querySelectorAll(".composer button").forEach(b=>b.disabled=true); $("infoBody")?.replaceChildren(); pinned=[];renderPins();$("topSub").textContent="";$("saveBtn").style.display="none";
+      }
       function syncAgencyInquiries(){
-        const signed=WAgency.read('yuushi.agencySignedInStaff',null);
+
         const rows=WAgency.read(WAgency.keys.enquiries).filter(r=>r.customerId&&r.propertyId);
         for(const r of rows){
-          if(currentUserRole!=='ceo' && (!signed || (r.assignedStaffId||r.assigneeId)!==signed.staffId))continue;
+
           let c=clients.find(c=>c.id===r.conversationId||c.id===r.id);
-          const data={...r,id:r.conversationId||r.id,kind:'client',name:r.customerName||r.customerId,img:AV(24),time:r.lastOpenedAt||r.createdAt,preview:r.preview||'Agency inquiry · '+r.propertyId,unread:0,online:false,saved:false,email:'',phone:'',ceoReadOnly:currentUserRole==='ceo',msgs:r.msgs||[]};
+          const data={...r,id:r.conversationId||r.id,kind:'client',name:r.customerName||r.customerId,img:AV(24),time:r.lastOpenedAt||r.createdAt,preview:r.preview||'Agency inquiry · '+r.propertyId,unread:0,online:false,saved:false,email:'',phone:'',msgs:r.msgs||[]};
           if(c)Object.assign(c,data);else clients.push(data);
         }
       }
+      clients.forEach(c=>{c.agencyId="AG-00000001";c.assignedStaffId=c.agentId||null;});
       const WAgency=YuushiWorkflow;
-      addEventListener('storage',e=>{if(e.key===WAgency.keys.enquiries){syncAgencyInquiries();renderList();if(current?.customerId)renderMessages();}});
+      addEventListener('storage',e=>{if([WAgency.keys.enquiries,messagePermissions.key,'yuushi.agencySignedInStaff'].includes(e.key)){syncAgencyInquiries();renderList();if(current && !canChat(current))denyConversation();else if(current){renderHeader();renderMessages();}}});
       function renderList() {
         syncAgencyInquiries();
         // Guard: check if elements exist
@@ -3256,7 +3266,7 @@ function renderStaffView() {
         if (!sbTabs || !searchInput || !convoList) return; // abort if elements missing
         
         // Nếu CEO, hiển thị tabs
-        sbTabs.style.display = currentUserRole === "ceo" ? "flex" : "none";
+        sbTabs.style.display = messagePermissions.isAdmin() ? "flex" : "none";
         
         if (sidebarView === "staff") {
           renderStaffView();
@@ -3314,10 +3324,10 @@ function renderStaffView() {
         };
 
         // 1) pinned Admin thread (always shown unless filtered out by search)
-        if (matches(adminThread)) list.appendChild(adminItem(adminThread));
+        if (canChat(adminThread) && matches(adminThread)) list.appendChild(adminItem(adminThread));
 
         // 2) client threads beneath
-        const clientMatches = clients.filter(matches);
+        const clientMatches = clients.filter(c=>canChat(c)&&matches(c));
         if (clientMatches.length) {
           const label = document.createElement("div");
           label.className = "list-section-label";
@@ -3334,7 +3344,7 @@ function renderStaffView() {
       /* ============ SELECT CONVERSATION ============ */
       function selectConvo(id) {
         const c = findConvo(id);
-        if (!c) return;
+        if (!c) { denyConversation(); return; }
         current = c;
         currentKind = c.kind;
         c.unread = 0;
@@ -3369,11 +3379,10 @@ function renderStaffView() {
 
         const isAdmin = currentKind === "admin";
         // Show role badge in chat-top (optional)
-        if (currentUserRole === "ceo") {
-          $("topName").textContent += " [CEO View]";
+        if (messagePermissions.isAdmin()) {
+          $("topName").textContent += " [Agency Admin]";
         }
-        const isCeoViewingAgent = currentKind === "client" && current.ceoReadOnly;
-        const composerDisabled = isAdmin || isCeoViewingAgent;
+        const composerDisabled = isAdmin || !canChat(current,"reply");
 
         // Disable composer
         $("composerInput").disabled = composerDisabled;
@@ -3394,7 +3403,7 @@ function renderStaffView() {
         // thread is the platform support team and cannot be saved as a lead.
         const saveBtn = $("saveBtn");
         const saveLbl = $("saveLbl");
-        if (isAdmin) {
+        if (isAdmin || !canChat(current,"reply")) {
           saveBtn.style.display = "none";
         } else {
           saveBtn.style.display = "";
@@ -3415,6 +3424,7 @@ function renderStaffView() {
         const box = $("messages");
         box.innerHTML = "";
         const c = current;
+        if (!canChat(c)) { denyConversation(); return; }
 
         box.insertAdjacentHTML("beforeend", `<div class="day-sep">Today</div>`);
 
@@ -3435,7 +3445,7 @@ function renderStaffView() {
           const avatar = isMe ? AV(60) : c.img;
 
           if (m.type === "appraisal") {
-            const showSuggestBtn = currentUserRole === "ceo" && !current.ceoReadOnly;
+            const showSuggestBtn = canChat(current,"assign");
             row.innerHTML = `<img class="m-av" src="${avatar}" alt="" /><div class="m-body"><div class="m-meta">${name} · ${m.time}</div>${renderAppraisalCard(m.appraisal, showSuggestBtn)}</div>`;
             box.appendChild(row);
             return;
@@ -3478,6 +3488,7 @@ function renderStaffView() {
       }
 
       function retry(i) {
+        if(!requireReply())return;
         current.msgs[i].status = "sent";
         renderMessages();
         toast("Message sent");
@@ -3486,6 +3497,7 @@ function renderStaffView() {
       // Manual translation: toggle a single message between original and the
       // currently selected language. There is NO automatic translation.
       function toggleTranslate(i) {
+        if(current && !canChat(current))return;
         if (translatedIdx.has(i)) translatedIdx.delete(i);
         else translatedIdx.add(i);
         renderMessages();
@@ -3497,6 +3509,7 @@ function renderStaffView() {
       }
 
       function sendMessage() {
+        if(!requireReply())return;
         const inp = $("composerInput");
         const text = inp.value.trim();
         if (!text) return;
@@ -3516,6 +3529,7 @@ function renderStaffView() {
 
       /* ============ PINS ============ */
       function renderPins() {
+        if(current && !canChat(current))return;
         const bar = $("pinBar");
         const rows = $("pinRows");
         if (!pinned.length) {
@@ -3531,7 +3545,7 @@ function renderStaffView() {
           <div class="pin-row ${idx > 0 ? "pin-extra" : ""}">
             <i class="fas fa-thumbtack"></i>
             <span class="ptxt"><b>${p.name}:</b> ${escapeHtml(p.text)}</span>
-            <span class="unpin" onclick="unpin(${idx})" title="Click → Remove Pin"><i class="fas fa-times"></i></span>
+            ${canChat(current,"reply")?`<span class="unpin" onclick="unpin(${idx})" title="Click → Remove Pin"><i class="fas fa-times"></i></span>`:""}
           </div>`
           )
           .join("");
@@ -3547,12 +3561,14 @@ function renderStaffView() {
       }
 
       function unpin(idx) {
+        if(!requireReply())return;
         pinned.splice(idx, 1);
         renderPins();
         renderMessages();
       }
 
       function clearPins() {
+        if(!requireReply())return;
         pinned = [];
         renderPins();
         renderMessages();
@@ -3560,11 +3576,13 @@ function renderStaffView() {
 
       /* ============ CONTEXT MENU ============ */
       function openCtx(e, i) {
+        if(current && !canChat(current))return;
         e.preventDefault();
         ctxMsgIndex = i;
         const menu = $("ctxMenu");
         const m = current.msgs[i];
         const already = pinned.some((p) => p.text === m.text);
+        $("ctxPin").style.display=canChat(current,"reply")?"":"none";
         $("ctxPinLbl").textContent = already ? "Unpin message" : "Pin message";
         $("ctxPin").querySelector("i").className = already ? "fas fa-star" : "far fa-star";
         menu.style.left = Math.min(e.clientX, window.innerWidth - 170) + "px";
@@ -3573,6 +3591,7 @@ function renderStaffView() {
       }
 
       function ctxPinAction() {
+        if(!requireReply())return;
         const m = current.msgs[ctxMsgIndex];
         const name = m.sender === "me" ? "Taro Tanaka" : current.name;
         const idx = pinned.findIndex((p) => p.text === m.text);
@@ -3587,6 +3606,7 @@ function renderStaffView() {
       }
 
       function ctxCopyAction() {
+        if(current && !canChat(current))return;
         const m = current.msgs[ctxMsgIndex];
         if (navigator.clipboard) navigator.clipboard.writeText(m.text).catch(() => {});
         $("ctxMenu").classList.remove("open");
@@ -3595,6 +3615,7 @@ function renderStaffView() {
 
       /* ============ SAVE → LEAD GROUP / LANG ============ */
       function toggleSave(e) {
+        if(!canChat(current,"reply")){toast("Message action permission is required.");return;}
         if (e) e.stopPropagation();
         $("langMenu").classList.remove("open");
         const pop = $("savePop");
@@ -3630,6 +3651,7 @@ function renderStaffView() {
       }
 
       function pickLeadGroup(gid) {
+        if(!canChat(current,"reply")){toast("Message action permission is required.");return;}
         const c = current;
         const g = leadGroupsForTab().find((x) => x.id === gid);
         if (!g) return;
@@ -3643,6 +3665,7 @@ function renderStaffView() {
       }
 
       function unsaveContact() {
+        if(!canChat(current,"reply")){toast("Message action permission is required.");return;}
         current.saved = false;
         current.leadGroup = null;
         $("savePop").classList.remove("open");
@@ -3680,6 +3703,7 @@ function renderStaffView() {
       }
 
       function renderInfo() {
+        if(current && !canChat(current))return;
         const c = current;
         $("infoAv").src = c.img;
         $("infoName").textContent = c.name;
@@ -3835,6 +3859,7 @@ function renderStaffView() {
       }
 
       function onAttach() {
+        if(!requireReply())return;
         const f = $("fileInput").files[0];
         if (f) toast("Attached: " + f.name);
         $("fileInput").value = "";
@@ -3892,6 +3917,7 @@ function renderStaffView() {
       ];
 
       function openSuggestAgentModal(aprId, clientName) {
+        if(!canChat(current,"assign")){toast("Assign permission is required.");return;}
         const modal = document.createElement("div");
         modal.className = "modal-ov open";
         modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
@@ -3914,6 +3940,7 @@ function renderStaffView() {
       }
 
       function confirmSuggestAgent(agentId, clientName, aprId) {
+        if(!canChat(current,"assign")){toast("Assign permission is required.");return;}
         const agent = AGENTS.find(a => a.id === agentId);
         if (!agent) return;
         
@@ -3923,6 +3950,8 @@ function renderStaffView() {
         if (!agentChat) {
           agentChat = {
             id: "agent-" + agentId + "-" + clientId,
+            agencyId: current.agencyId,
+            assignedStaffId: agentId,
             kind: "client",
             name: current.name,
             img: current.img,
@@ -3933,7 +3962,6 @@ function renderStaffView() {
             unread: 0,
             online: true,
             saved: false,
-            ceoReadOnly: true,
             agentId: agentId,
             msgs: [
               { sender: "them", text: "[Agent " + agent.name + " has been suggested to handle your request]", time: "Now" }

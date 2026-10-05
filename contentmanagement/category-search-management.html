@@ -1034,7 +1034,7 @@
           yieldMin: "", yieldMax: "",
           mgmtFeeMax: "", repairFundMax: "",
           floors: "", occupancy: "",
-          currentStatus: [], buildStatus: [], membersOnly: "", specialUpdates: [],
+          currentStatus: [], buildStatus: [], specialUpdates: [],
           buildingStructure: [], mgmtForm: "", floorsMin: "", floorsMax: "",
           unitsMin: "", unitsMax: "", manager: "", elevator: false,
           landRight: [], landUse: [], zoning: "",
@@ -1057,6 +1057,7 @@
       function normalizeFilter(f) {
         const b = blankFilter();
         const out = Object.assign(b, f || {});
+        delete out.membersOnly; // Retire the legacy property visibility filter from persisted configurations.
         out.features = Object.assign(blankFeatures(), (f && f.features) || {});
         [
           "regions",
@@ -2095,14 +2096,6 @@
               <div class="pills">${pillsHtml("fb-buildstatus", ["Newly-Built","Newly Built not yet occupied","Secondhand","Under Construction"], f.buildStatus||[])}</div>
             </div>
             <div class="field">
-              <label class="fl">Members only</label>
-              <div class="radio-row">
-                <label><input type="radio" name="fbMembers" value="" ${!f.membersOnly ? "checked" : ""}> Any</label>
-                <label><input type="radio" name="fbMembers" value="public" ${f.membersOnly==="public" ? "checked" : ""}> Public</label>
-                <label><input type="radio" name="fbMembers" value="members" ${f.membersOnly==="members" ? "checked" : ""}> Members only</label>
-              </div>
-            </div>
-            <div class="field">
               <label class="fl">Special updates</label>
               <div class="pills">${pillsHtml("fb-specialupdate", ["Price Reduction","Price Negotiable"], f.specialUpdates||[])}</div>
             </div>
@@ -2382,8 +2375,7 @@
 
         f.currentStatus = $$(".fb-status:checked", body).map(c => c.value);
         f.buildStatus = $$(".fb-buildstatus:checked", body).map(c => c.value);
-        const members = body.querySelector('input[name="fbMembers"]:checked');
-        f.membersOnly = members ? members.value : "";
+        delete f.membersOnly;
         f.specialUpdates = $$(".fb-specialupdate:checked", body).map(c => c.value);
 
         f.buildingStructure = $$(".fb-bldgstruct:checked", body).map(c => c.value);

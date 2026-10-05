@@ -22,7 +22,8 @@ class CDP:
  def recv(self):
   h=self.read(2);length=h[1]&127
   if length==126:length=struct.unpack('!H',self.read(2))[0]
-  if length==127:length=struct.unpack('!Q',self.read(8))[0]
+  elif length==127:length=struct.unpack('!Q',self.read(8))[0]
+  if length>20_000_000:raise RuntimeError('Unexpected WebSocket frame size: '+str(length)+' header '+h.hex())
   return json.loads(self.read(length))
  def call(self,method,params=None):
   self.n+=1;payload=json.dumps({'id':self.n,'method':method,'params':params or {}}).encode();mask=os.urandom(4);n=len(payload)
@@ -52,6 +53,6 @@ c=CDP();c.s.settimeout(60);c.call('Runtime.enable');c.call('Page.enable');c.call
 c.call('Page.navigate',{'url':'http://127.0.0.1:8766/_agent-portal/staff-management.html?baqa=1'})
 c.wait("document.readyState==='complete'&&typeof YuushiBA!=='undefined'")
 root=Path(__file__).resolve().parent
-for suite in ['ba-browser-checks.js','export-browser-checks.js']:
+for suite in sys.argv[1:] or ['ba-browser-checks.js','export-browser-checks.js','agency-message-browser-checks.js']:
  result=c.js((root/suite).read_text())
  print(suite,result)
