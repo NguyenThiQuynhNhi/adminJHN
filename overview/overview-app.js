@@ -60,27 +60,27 @@
   function renderKpi(){
     results.clear();
     const norm=value=>String(value||'').trim().toLowerCase().replace(/\s+/g,'_');
-    const unprocessedReports=(D.reports||[]).filter(r=>['awaiting_agency_response','pending_admin_review'].includes(norm(r.status))).length;
-    const pendingAds=(D.campaigns||[]).filter(r=>['pending_review','pending','awaiting_approval'].includes(norm(r.status))).length;
+    const unprocessedReports=D.reportStoreReady?(D.reports||[]).filter(r=>['awaiting_agency_response','pending_admin_review'].includes(norm(r.status))).length:'—';
+    const pendingAds=D.commerceStoreReady?(D.campaigns||[]).filter(r=>['pending_review','pending','awaiting_approval'].includes(norm(r.status))).length:'—';
     const telemetry=D.telemetry||{};
     const systemIssues=telemetry.systemIssues||{total:0,critical:0,error:0,warning:0};
     const paymentErrorCount=(D.paymentErrors||[]).filter(e=>!e.status||String(e.status).toLowerCase()==='unresolved').length;
     const alerts=[
-      ['Unresponded Messages',M.unrespondedMessages(),'unresponded'],
+      ['Unresponded Messages',D.adminChatStoreReady?M.unrespondedMessages():'—','unresponded'],
       ['Property Reports (Unprocessed)',unprocessedReports,'complaints'],
       ['Pending Ad Approvals',pendingAds,'ads'],
-      ['Fraud Detections',M.fraudCount(D.fraudFlags,enabledFraud),'fraud'],
+      ['Fraud Detections',D.fraudStoreReady?M.fraudCount(D.fraudFlags,enabledFraud):'—','fraud'],
       ['Payment Errors',paymentErrorCount,'payments'],
-      ['Pending Agency Reviews',M.pendingAgencies(),'agents']
+      ['Pending Agency Reviews',D.agencyDirectoryReady?M.pendingAgencies():'—','agents']
     ];
-    const users=M.platformAccounts(),customerUsers=users.filter(a=>a.type==='Client'),agentUsers=users.filter(a=>a.type==='Agency');
-    const currentMonth=M.monthStart(D.today),inquiryCreatedDate=q=>String(q.createdAt||'').slice(0,10),todayInquiryCount=(D.enquiries||[]).filter(q=>inquiryCreatedDate(q)===D.today).length,yesterdayInquiryCount=(D.enquiries||[]).filter(q=>inquiryCreatedDate(q)===U.addDays(D.today,-1)).length;
+    const users=D.accountDirectoryReady?M.platformAccounts():[],customerUsers=users.filter(a=>a.type==='Client'),agentUsers=users.filter(a=>a.type==='Agency');
+    const currentMonth=M.monthStart(D.today),inquiryCreatedDate=q=>String(q.createdAt||'').slice(0,10),todayInquiryCount=D.enquiryStoreReady?(D.enquiries||[]).filter(q=>inquiryCreatedDate(q)===D.today).length:null,yesterdayInquiryCount=D.enquiryStoreReady?(D.enquiries||[]).filter(q=>inquiryCreatedDate(q)===U.addDays(D.today,-1)).length:null;
     const withdrawal=M.withdrawalStats(D.accounts,currentMonth,D.today);
     const delta=(a,b)=>b?((a-b)/b*100).toFixed(1)+'% vs previous day':'No previous-day baseline';
     const mockValue=(value,unit='')=>Number.isFinite(Number(value))?number(Number(value),unit):'—';
     const mockNote=label=>label+' · prototype telemetry only; production source is backend/API.';
     const statusBadge=item=>{const status=item?.status||'Not configured';const cls=/operational|healthy|ok/i.test(status)?'green':'amber';return '<b class="badge '+cls+'">'+esc(status)+'</b>';};
-    const publishedCount=D.properties?.length?D.properties.filter(p=>(p.publishStatus||p.status)==='Published'&&!(p.endedAt||p.suspensionDate)).length:null;
+    const publishedCount=D.propertyStoreReady?D.properties.filter(p=>(p.publishStatus||p.status)==='Published'&&!(p.endedAt||p.suspensionDate)).length:null;
     const graphs=['r28','r29','r30','r31','r32'].map(id=>S.metrics.find(s=>s.id===id));
     document.getElementById('mainContent').innerHTML=`
       <div class="section-heading"><h2>Operational alerts</h2><button class="btn" id="fraudSettings">Fraud KPI settings</button></div>
