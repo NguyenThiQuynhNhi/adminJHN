@@ -18,13 +18,12 @@
   }
   function withdrawalStats(accounts,start,end) {
     const users=accounts.filter(a=>a.type==='Client');
-    return {withdrawals:users.filter(a=>a.withdrawalReason?.trim()&&a.withdrawnAt&&inPeriod(a.withdrawnAt,start,end)).length,
-      newlyInactive:users.filter(a=>inactivityEvents(a,end).some(d=>inPeriod(d,start,end))).length};
+    return {withdrawals:users.filter(a=>a.withdrawnAt&&inPeriod(a.withdrawnAt,start,end)).length};
   }
   function inactiveCount(accounts,at) {
     return accounts.filter(a=>a.registeredAt<=at&&(!a.withdrawnAt||a.withdrawnAt>at)).filter(a=> {
       const anchor=[a.registeredAt,...a.logins.filter(d=>d<=at)].sort().at(-1);
-      return U.addDays(anchor,90)<=at;
+      return U.addDays(anchor,30)<=at;
     }).length;
   }
   function errorLogs(logs,now=D.now) { return logs.filter(log=>['FATAL','CRITICAL','ERROR','WARN'].includes(log.severity)&&log.source!=='frontend'&&log.kind!=='validation'&&Date.parse(log.occurredAt||log.timestamp)>now-U.DAY&&Date.parse(log.occurredAt||log.timestamp)<=now); }
@@ -35,6 +34,21 @@
   function fraudCount(flags,enabled,alerts=root.OverviewSpec?.alerts||[]) {const fraudIds=new Set(alerts.filter(a=>a.fraud===true).map(a=>a.id));return new Set(flags.filter(f=>f.status==='unhandled'&&fraudIds.has(f.alertId)&&enabled[f.alertId]===true).map(f=>f.id)).size;}
   function paymentBreakdown(errors) {
     return ['Card declined','Authentication failure','Card expired','System / network error','Other'].map(category=>({category,count:new Set(errors.filter(e=>e.status==='unresolved'&&(e.category===category||(category==='Other'&&!['Card declined','Authentication failure','Card expired','System / network error'].includes(e.category)))).map(e=>e.id)).size}));
+  }
+  function responseBlocks(chats) {
+    return chats.flatMap(chat=>{
+      const messages=[...(chat.messages||[])].filter(m=>m.sentAt).sort((a,b)=>Date.parse(a.sentAt)-Date.parse(b.sentAt));
+      const blocks=[];let pending=null;
+      for(const message of messages){
+        if(message.sender==='Client'){pending={chatId:chat.id,agencyId:chat.agencyId||chat.agentId,lastClientAt:message.sentAt,businessHours:message.businessHours===true,answered:false,responseMinutes:null};continue;}
+        if(message.sender==='Agency'&&pending&&!pending.answered){
+          const minutes=(Date.parse(message.sentAt)-Date.parse(pending.lastClientAt))/60000;
+          if(Number.isFinite(minutes)&&minutes>=0){pending.answered=true;pending.responseMinutes=minutes;blocks.push(pending);pending=null;}
+        }
+      }
+      if(pending)blocks.push(pending);
+      return blocks;
+    });
   }
   function responseCycles(chats) {
     return chats.flatMap(chat=>{
@@ -48,6 +62,8 @@
   const agentById=new Map(D.agents.map(a=>[a.id,a]));
   function matchesProperty(p,f) {
     const includes=(key,value)=>!f[key]?.length||f[key].includes(String(value));
+    const hasPropertyFilter=(f.transaction&&f.transaction!=='All')||['groups','subtypes','prefectures','cities','stations','structures','floorPlans'].some(key=>f[key]?.length)||Boolean(f.line||f.walk||f.ageMin||f.ageMax||f.areaMin||f.areaMax||f.priceMin||f.priceMax);
+    if(!p)return !hasPropertyFilter;
     return (!f.transaction||f.transaction==='All'||p.transaction===f.transaction)&&includes('groups',p.group)&&includes('subtypes',p.subtype)&&includes('prefectures',p.prefecture)&&includes('cities',p.city)&&(!f.line||p.line===f.line)&&includes('stations',p.station)&&(!f.walk||p.walk<=Number(f.walk))&&includes('structures',p.structure)&&includes('floorPlans',p.floorPlan)&&(!f.ageMin||p.age>=Number(f.ageMin))&&(!f.ageMax||p.age<=Number(f.ageMax))&&(!f.areaMin||p.floorArea>=Number(f.areaMin))&&(!f.areaMax||p.floorArea<=Number(f.areaMax))&&(!f.priceMin||p.price>=Number(f.priceMin))&&(!f.priceMax||p.price<=Number(f.priceMax));
   }
   function filteredFacts(f) {return D.facts.filter(r=>inPeriod(r.date,f.start,f.end)&&matchesProperty(propertyById.get(r.propertyId),f)&&(f.membership!=='Members'||r.member)&&(f.membership!=='Non-Members'||!r.member));}
@@ -71,10 +87,10 @@
   function mrr(at=D.today,subscriptions=D.subscriptions) {return activeSubscriptions(at,subscriptions).reduce((n,s)=>n+(s.billingCycle==='Annual'?s.fee/12:s.billingCycle==='Monthly'?s.fee:0),0);}
   function sessionAverage(start,end,type) {const ids=new Set(platformAccounts(D.accounts,end).filter(a=>!type||a.type===type).map(a=>a.id));return average(D.accountSessions.filter(s=>ids.has(s.accountId)&&inPeriod(s.date,start,end)),'seconds');}
   function validateTarget(t) {const counts=['users','subscriptions','listings'],metrics=['totalRevenue','subscription','banner','sponsored','appraisal','optionRevenue',...counts];const date=d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&Number.isFinite(Date.parse(d+'T00:00:00Z'))&&new Date(d+'T00:00:00Z').toISOString().slice(0,10)===d;return metrics.includes(t.metric)&&date(t.start)&&date(t.end)&&t.end>=t.start&&Number.isFinite(t.value)&&t.value>0&&(!counts.includes(t.metric)||Number.isInteger(t.value));}
-  function amount(r) {return r.subscription+r.banner+r.sponsored+r.featured+r.appraisal+r.optionRevenue;}
-  function performance(rows) {return {impressions:sum(rows,'impressions'),clicks:sum(rows,'clicks'),saves:sum(rows,'saves'),inquiries:sum(rows,'inquiries'),deals:sum(rows,'deals'),ctr:ratio(sum(rows,'clicks'),sum(rows,'impressions')),cvr:ratio(sum(rows,'inquiries'),sum(rows,'clicks'))};}
-  const labels={impressions:'Impressions (IMP)',clicks:'Clicks (CL)',saves:'Saves (Keep)',inquiries:'Inquiries (CV)',deals:'Deals',ctr:'CTR',cvr:'CVR',sessions:'Sessions',members:'Members',guests:'Non-Members',registrations:'Registrations',subscription:'Subscription',banner:'Sponsored banner',sponsored:'Sponsored listing',featured:'Featured listing',appraisal:'Appraisal referral',optionRevenue:'Add-on / option purchases',revenue:'Revenue',count:'Count',dau:'DAU',wau:'WAU',mau:'MAU',seconds:'Seconds',withdrawals:'Withdrawals',newlyInactive:'Newly inactive users',price:'Average price',closingPrice:'Closing price',perSqm:'Price per m²',cpa:'CPA',utilization:'Utilization',responseRate:'Response rate',responseMinutes:'Response time (minutes)',sent:'Sent',read:'Read / Opened',marketingClicks:'Clicks',marketingCV:'Conversions',readRate:'Read / Open rate',clickRate:'Click-through rate',registrationCvr:'Registration CVR',purchases:'Purchases',purchasers:'Unique purchasers',budget:'Budget cap',blocked:'Blocked requests'};
-  Object.assign(labels,{customers:'Client DAU',agents:'Agency DAU',pageViews:'Page views',searches:'Searches',conversions:'Conversions',conversionRate:'Conversion rate',listingSeconds:'Viewing time per listing (seconds)',propertiesViewed:'Properties viewed per session',bounceRate:'Bounce rate',memberViews:'Member views',guestViews:'Guest views',memberSaves:'Member saves',guestSaves:'Guest saves',memberSearches:'Member searches',guestSearches:'Guest searches',memberInquiries:'Member inquiries',guestInquiries:'Guest inquiries',memberStepRate:'Member step conversion',guestStepRate:'Guest step conversion',chats:'Chats',messagesUser:'End-user messages',messagesAgent:'Agency messages',live:'Published listings',slots:'Listing slots',atCapacity:'Agencies at capacity',atCapacityRate:'Agencies at capacity (%)',listings:'Listings',adSpend:'Ad spend',totalPayments:'Total payments',rating:'Rating',appraisalRequests:'Appraisal requests',appraisalSent:'Requests sent to Agencies',days:'Days',contracts:'Contracts',ratio:'Supply / search ratio',total:'Total users',inactive:'Inactive users (90 days)',netGrowth:'Net growth',previousRevenue:'Previous month revenue',mom:'Month-on-month change',guestDau:'Guest DAU',guestWau:'Guest WAU',guestMau:'Guest MAU',memberShare:'Member session share',guestShare:'Guest session share',memberBounces:'Member bounces',guestBounces:'Guest bounces',memberSeconds:'Member session time (seconds)',guestSeconds:'Guest session time (seconds)',memberProperties:'Member properties viewed per session',guestProperties:'Guest properties viewed per session'});
+  function amount(r) {return ['subscription','banner','sponsored','featured','appraisal','optionRevenue'].reduce((n,key)=>n+(Number(r?.[key])||0),0);}
+  function performance(rows) {return {impressions:sum(rows,'impressions'),views:sum(rows,'views'),clicks:sum(rows,'clicks'),saves:sum(rows,'saves'),inquiries:sum(rows,'inquiries'),deals:sum(rows,'deals'),ctr:ratio(sum(rows,'clicks'),sum(rows,'impressions')),cvr:ratio(sum(rows,'inquiries'),sum(rows,'clicks'))};}
+  const labels={impressions:'Standard Listing Impressions (IMP)',views:'Property Views',clicks:'Property Clicks (CL)',saves:'Keep / Saves',inquiries:'Property Inquiries (CV)',deals:'Agency-recorded Deals',ctr:'CTR',cvr:'CVR',sessions:'Sessions',members:'Registered Members',guests:'Guests / Non-Members',registrations:'Registrations',subscription:'Subscription',banner:'Sponsored banner',sponsored:'Sponsored listing',featured:'Featured listing',appraisal:'Appraisal referral',optionRevenue:'Add-on / option purchases',revenue:'Revenue',count:'Count',dau:'DAU',wau:'WAU',mau:'MAU',seconds:'Seconds',withdrawals:'Withdrawals',price:'Average price',closingPrice:'Closing price',perSqm:'Price per m²',cpa:'CPA',utilization:'Utilization',responseRate:'Response rate',responseMinutes:'Response time (minutes)',sent:'Sent',read:'Read / Opened',marketingClicks:'Clicks',marketingCV:'Conversions',readRate:'Read / Open rate',clickRate:'Click-through rate',registrationCvr:'Registration CVR',purchases:'Purchases',purchasers:'Unique purchasers',budget:'Budget cap',blocked:'Blocked requests'};
+  Object.assign(labels,{customers:'Client DAU',agents:'Agency DAU',pageViews:'Page views',searches:'Searches',conversions:'Conversions',conversionRate:'Conversion rate',listingSeconds:'Viewing time per listing (seconds)',propertiesViewed:'Properties viewed per session',bounceRate:'Bounce rate',memberViews:'Member views',guestViews:'Guest views',memberSaves:'Member saves',guestSaves:'Guest saves',memberSearches:'Member searches',guestSearches:'Guest searches',memberInquiries:'Member inquiries',guestInquiries:'Guest inquiries',memberStepRate:'Member step conversion',guestStepRate:'Guest step conversion',chats:'Chats',messagesUser:'End-user messages',messagesAgent:'Agency messages',live:'Published listings',slots:'Listing slots',atCapacity:'Agencies at capacity',atCapacityRate:'Agencies at capacity (%)',listings:'Listings',adSpend:'Ad spend',totalPayments:'Total payments',rating:'Rating',appraisalRequests:'Appraisal requests',appraisalSent:'Requests sent to Agencies',days:'Days',contracts:'Contracts',ratio:'Supply / search ratio',total:'Total users',inactive:'Inactive Clients 30+ Days',netGrowth:'Net growth',previousRevenue:'Previous month revenue',mom:'Month-on-month change',guestDau:'Guest Unique Visitors · Daily',guestWau:'Guest Unique Visitors · 7-day',guestMau:'Guest Unique Visitors · 30-day',memberShare:'Member session share',guestShare:'Guest session share',memberBounces:'Member bounces',guestBounces:'Guest bounces',memberSeconds:'Member session time (seconds)',guestSeconds:'Guest session time (seconds)',memberProperties:'Member properties viewed per session',guestProperties:'Guest properties viewed per session'});
   const currencyKeys=new Set(['subscription','banner','sponsored','featured','appraisal','optionRevenue','revenue','price','closingPrice','perSqm','cpa','budget','adSpend','totalPayments','previousRevenue']);
   const percentKeys=new Set(['ctr','cvr','utilization','responseRate','readRate','clickRate','registrationCvr','rate','conversionRate','bounceRate','atCapacityRate','memberStepRate','guestStepRate','mom','memberShare','guestShare']);
   function result(rows,keys,kind='bar',note='') {return {rows,columns:keys.map(key=>({key,label:labels[key]||key,unit:currencyKeys.has(key)?'JPY':percentKeys.has(key)?'%':''})),kind,note};}
@@ -87,10 +103,12 @@
     return output;
   }
   function metric(spec,f) {
-    const id=spec.id,rows=filteredFacts(f),properties=D.properties.filter(p=>matchesProperty(p,f)),users=filteredAccounts(f,'Client'),agents=filteredAccounts(f,'Agency');
+    const id=spec.id,source=D.metricStatus?.(id);
+    if(source&&source.ready===false)return {rows:[],columns:[],kind:'unavailable',unavailable:true,note:source.note};
+    const rows=filteredFacts(f),properties=D.properties.filter(p=>matchesProperty(p,f)),users=filteredAccounts(f,'Client'),agents=filteredAccounts(f,'Agency');
     const timeline=(fields,kind='line')=>aggregate(rows,r=>periodKey(r.date,f.unit),fields,kind);
     const byProperty=(key,fields)=>aggregate(rows,r=>propertyById.get(r.propertyId)[key],fields);
-    const perfs=(key,kind='bar')=>result(groupBy(rows,key,performance),['impressions','clicks','saves','inquiries','deals','ctr','cvr'],kind);
+    const perfs=(key,kind='bar')=>result(groupBy(rows,key,performance),['impressions','views','clicks','saves','inquiries','deals','ctr','cvr'],kind);
     const accountTrend=(pool,cumulative=false)=>result(buckets(f.start,f.end,f.unit).map(b=>({label:b.label,count:pool.filter(a=>cumulative?a.registeredAt<=b.end:inPeriod(a.registeredAt,b.start,b.end)).length})),['count'],'line');
     const activeTrend=pool=>result(buckets(f.start,f.end,f.unit).map(b=>({label:b.label,dau:activity(pool,b.end,1),wau:activity(pool,b.end,7),mau:activity(pool,b.end,30)})),['dau','wau','mau'],'line','Unique accounts with a login in the trailing 1 / 7 / 30 days at each observation date.');
     const prices=(dimension='subtype',closing=false)=> {
@@ -125,7 +143,7 @@
     if(id==='r47'&&(!f.breakdown||f.breakdown==='composition'))return result(buckets(f.start,f.end,f.unit).map(b=>{const items=rows.filter(r=>inPeriod(r.date,b.start,b.end)),members=sum(items.filter(r=>r.member),'sessions'),guests=sum(items.filter(r=>!r.member),'sessions');return {label:b.label,members,guests,memberShare:ratio(members,members+guests),guestShare:ratio(guests,members+guests),registrationCvr:ratio(sum(items,'registrations'),members+guests)};}),['members','guests','registrationCvr','memberShare','guestShare'],'combo','Stacked member / guest sessions and registration conversion rate. Guest identities are cookie/session-based and may include repeat individuals.');
     if(id==='r47' && f.breakdown && !['composition','totals'].includes(f.breakdown)) {
       if(f.breakdown==='funnel') {
-        const keys=['sessions','clicks','saves','inquiries','deals'];
+        const keys=['sessions','views','clicks','saves','inquiries','deals'];
         return result(keys.map((key,i)=>{const members=rows.filter(r=>r.member),guests=rows.filter(r=>!r.member);return {label:labels[key],members:sum(members,key),guests:sum(guests,key),memberStepRate:i?ratio(sum(members,key),sum(members,keys[i-1])):100,guestStepRate:i?ratio(sum(guests,key),sum(guests,keys[i-1])):100};}),['members','guests','memberStepRate','guestStepRate'],'funnel');
       }
       return result(groupBy(rows,r=>r[f.breakdown]??propertyById.get(r.propertyId)[f.breakdown],items=>{const members=items.filter(r=>r.member),guests=items.filter(r=>!r.member);return {memberViews:sum(members,'pageViews'),guestViews:sum(guests,'pageViews'),memberSaves:sum(members,'saves'),guestSaves:sum(guests,'saves'),memberSearches:sum(members,'searches'),guestSearches:sum(guests,'searches'),memberInquiries:sum(members,'inquiries'),guestInquiries:sum(guests,'inquiries'),memberBounces:sum(members,'bounced'),guestBounces:sum(guests,'bounced'),memberSeconds:sum(members,'sessionSeconds')/Math.max(1,sum(members,'sessions')),guestSeconds:sum(guests,'sessionSeconds')/Math.max(1,sum(guests,'sessions')),memberProperties:sum(members,'clicks')/Math.max(1,sum(members,'sessions')),guestProperties:sum(guests,'clicks')/Math.max(1,sum(guests,'sessions'))};}),['memberViews','guestViews','memberSaves','guestSaves','memberSearches','guestSearches','memberInquiries','guestInquiries','memberBounces','guestBounces','memberSeconds','guestSeconds','memberProperties','guestProperties'],'paired');
@@ -138,13 +156,13 @@
     if(id==='r52')return timeline(['searches','clicks','saves','inquiries']);
     if(id==='r53')return series(rows,r=>String(propertyById.get(r.propertyId)[f.breakdown||'subtype']),'searches',f);
     if(id==='r54'){
-      const fields=['sessions','clicks','saves','inquiries','deals'];
+      const fields=['sessions','views','clicks','saves','inquiries','deals'];
       const previous=filteredFacts({...f,start:shiftMonth(f.start,-12),end:f.end});
       const output=result(buckets(f.start,f.end,f.unit).map(b=>{const current=rows.filter(r=>inPeriod(r.date,b.start,b.end)),month=previous.filter(r=>inPeriod(r.date,shiftMonth(b.start,-1),shiftMonth(b.end,-1))),year=previous.filter(r=>inPeriod(r.date,shiftMonth(b.start,-12),shiftMonth(b.end,-12)));return {label:b.label,...Object.fromEntries(fields.flatMap(key=>{const value=sum(current,key),pm=sum(month,key),py=sum(year,key);return [[key,value],[key+'Mom',pm?(value-pm)/pm*100:null],[key+'Yoy',py?(value-py)/py*100:null]];}))};}),fields,'line','Counts at each funnel stage with month-on-month and year-on-year changes in View data. Partial periods compare the same date range; missing baselines are shown as —.');
       output.columns.push(...fields.flatMap(key=>[{key:key+'Mom',label:labels[key]+' · MoM',unit:'%'},{key:key+'Yoy',label:labels[key]+' · YoY',unit:'%'}]));return output;
     }
-    if(id==='r55')return result(buckets(f.start,f.end,f.unit).map(b=>({label:b.label,count:inactiveCount(users,b.end)})),['count'],'line','Current stock of accounts without login for at least 90 days; withdrawn accounts excluded.');
-    if(id==='r56')return result(Array.from({length:12},(_,i)=>{const start=shiftMonth(monthStart(D.today),i-11),end=i===11?D.today:U.addDays(shiftMonth(start,1),-1);return {label:start.slice(0,7),...withdrawalStats(users,start,end)};}),['withdrawals','newlyInactive'],'line','Past 12 months. Current month is provisional (1st through today); completed months are finalized. Each series counts unique Clients separately.');
+    if(id==='r55')return result(buckets(f.start,f.end,f.unit).map(b=>({label:b.label,count:inactiveCount(users,b.end)})),['count'],'line','Analytics segment: active Customer accounts with no recorded login/activity for at least 30 days. Long-term Inactive (90+ days) and Dormant (180+ days) remain separate system-alert states.');
+    if(id==='r56')return result(Array.from({length:12},(_,i)=>{const start=shiftMonth(monthStart(D.today),i-11),end=i===11?D.today:U.addDays(shiftMonth(start,1),-1);return {label:start.slice(0,7),...withdrawalStats(users,start,end)};}),['withdrawals'],'line','Explicit Customer withdrawals only. Inactivity is not counted as withdrawal.');
     if(id==='r57')return result(groupBy(filteredChats(f),r=>periodKey(r.date,f.unit),items=>{const messages=chatMessages(items);return {chats:distinct(items,'id'),messagesUser:messages.filter(m=>m.sender==='Client').length,messagesAgent:messages.filter(m=>m.sender==='Agency').length};}),['chats','messagesUser','messagesAgent'],'line');
     if(id==='r58'){const messages=chatMessages(filteredChats(f)).filter(m=>m.sender==='Client');return result(groupBy(messages,m=>f.breakdown==='customerId'?m.customerId+' · '+m.country:m.country,items=>({messagesUser:items.length})),['messagesUser'],f.breakdown==='customerId'?'table':'bar','Client-sent Message records grouped by End User or the country stored on the End User profile.');}
     if(id==='r59'){const messages=chatMessages(filteredChats(f)).filter(m=>m.sender==='Agency');return result(groupBy(messages,'agencyId',items=>({messagesAgent:items.length})),['messagesAgent'],'bar','Agency-sent Message records grouped by Agency.');}
@@ -161,7 +179,7 @@
     }
     if(id==='r76')return result(groupBy(rows.filter(r=>r.purchases),r=>periodKey(r.date,f.unit)+' · '+r.option,r=>({purchasers:distinct(r,'agentId'),purchases:sum(r,'purchases'),revenue:sum(r,'optionRevenue')})),['purchases','purchasers','revenue'],'stacked','Purchases, unique purchasing Agencies and revenue per option in each period. Repeat purchases by one Agency count once in unique purchasers.');
     if(id==='r77')return result(groupBy(agents,a=>{const count=properties.filter(p=>p.agentId===a.id&&p.createdAt<=f.end&&(!p.endedAt||p.endedAt>f.end)).length;return count===0?'0':count<=5?'1–5':count<=10?'6–10':'11+';},r=>({count:r.length})),['count'],'bar');
-    if(id==='r78')return result(groupBy(rows,'agentId',r=>({responseRate:ratio(sum(r,'replied'),sum(r,'received')),responseMinutes:sum(r,'replied')?r.reduce((n,x)=>n+x.responseMinutes*x.replied,0)/sum(r,'replied'):0})),['responseRate','responseMinutes'],'scatter');
+    if(id==='r78'){const blocks=responseBlocks(filteredChats(f));return result(groupBy(blocks,b=>b.agencyId||'Unassigned',items=>{const answered=items.filter(x=>x.answered);return {responseRate:ratio(answered.length,items.length),responseMinutes:answered.length?answered.reduce((n,x)=>n+x.responseMinutes,0)/answered.length:null};}),['responseRate','responseMinutes'],'scatter','Response Rate = answered eligible waiting blocks / total eligible waiting blocks. Response Time uses the same waiting-block model.');}
     if(id==='r79')return series(rows,r=>agentById.get(r.agentId).name,'deals',f);
     if(id==='r100')return timeline(['deals'],'bar');
     if(id==='r80')return result(agents.map(a=>{const ar=rows.filter(r=>r.agentId===a.id);return {label:a.name,listings:properties.filter(p=>p.agentId===a.id&&p.createdAt<=f.end&&(!p.endedAt||p.endedAt>f.end)).length,deals:sum(ar,'deals'),adSpend:ar.reduce((n,r)=>n+r.banner+r.sponsored+r.featured+r.appraisal,0),totalPayments:ar.reduce((n,r)=>n+amount(r),0),rating:a.rating};}),['listings','deals','adSpend','totalPayments','rating'],'table');
@@ -173,10 +191,10 @@
     }
     if(id==='r92')return result(groupBy(properties,p=>p.prefecture+' · '+p.city,r=>({count:r.filter(p=>p.createdAt<=f.end&&(!p.endedAt||p.endedAt>f.end)).length})),['count'],'heatmap');
     if(id==='r93')return result(groupBy(properties,p=>p.transaction==='For Rent'?(p.price<150000?'Rent < ¥150k':p.price<300000?'Rent ¥150k–300k':'Rent ¥300k+'):(p.price<50000000?'Price < ¥50M':p.price<100000000?'Price ¥50M–100M':'Price ¥100M+'),r=>({count:r.length})),['count']);
-    if(['r94','r95','r96','r98'].includes(id))return timeline([{r94:'impressions',r95:'clicks',r96:'saves',r98:'inquiries'}[id]]);
+    if(['r94','r95','r96','r98'].includes(id))return {...timeline([{r94:'impressions',r95:'clicks',r96:'saves',r98:'inquiries'}[id]]),note:'Organic listing events only. Paid advertisement events are excluded.'};
     if(id==='r97'||id==='r99')return result(groupBy(rows,r=>periodKey(r.date,f.unit),performance),[id==='r97'?'ctr':'cvr'],'line','Calculated from total numerator ÷ total denominator, not the mean of individual rates.');
     if(id==='r101')return result(groupBy(properties.filter(p=>p.endedAt&&inPeriod(p.endedAt,f.start,f.end)),'subtype',r=>({days:r.reduce((n,p)=>n+(Date.parse(p.endedAt)-Date.parse(p.createdAt))/U.DAY,0)/r.length})),['days']);
-    if(id==='r102')return result(groupBy(properties.filter(p=>p.endedAt&&inPeriod(p.endedAt,f.start,f.end)),'endReason',r=>({count:r.length})),['count'],'donut');
+    if(id==='r102'){const allowed=new Map((root.YuushiAnalytics?.masters.listingEndReasons||[]).map(([code,label])=>[code,label]));const ended=properties.filter(p=>(p.suspensionDate||p.endedAt)&&inPeriod(p.suspensionDate||p.endedAt,f.start,f.end)&&allowed.has(p.suspensionReason||p.endReason));return result(groupBy(ended,p=>allowed.get(p.suspensionReason||p.endReason),r=>({count:r.length})),['count'],'donut','Canonical Property listing-end reasons only.');}
     if(id==='r103'||id==='r104')return prices('subtype',id==='r104');
     if(id==='r105')return prices('age');
     if(['r107','r112','r116'].includes(id))return result(groupBy(rows,r=>periodKey(r.date,f.unit),r=> {const spend=r.reduce((n,x)=>n+(id==='r112'?x.subscription:id==='r116'?x.banner+x.sponsored+x.featured+x.appraisal:amount(x)),0);const cv=sum(r,f.conversion==='Closings'?'verifiedClosings':'inquiries');return {revenue:spend,conversions:cv,cpa:cv?spend/cv:null};}),['cpa','revenue','conversions'],'line','CPA denominator: '+(f.conversion==='Closings'?'verified closings':'inquiries')+'. No conversions are shown as no data rather than an infinite CPA.');
@@ -202,5 +220,5 @@
     if(id==='r137')return result(groupBy(rows,r=>(f.breakdown==='campaign'?r.campaign+' · ':'')+(r.member?'In-platform':'Email'),r=>({sent:sum(r,'sent'),read:sum(r,'read'),marketingClicks:sum(r,'marketingClicks'),marketingCV:sum(r,'marketingCV'),readRate:ratio(sum(r,'read'),sum(r,'sent')),clickRate:ratio(sum(r,'marketingClicks'),sum(r,'read'))})),['sent','read','marketingClicks','marketingCV','readRate','clickRate'],'funnel');
     throw new Error('Metric renderer is not implemented: '+id);
   }
-  root.OverviewModel={platformAccounts,pendingAgencies,unrespondedMessages,activeSubscriptions,mrr,sessionAverage,validateTarget,sum,ratio,average,distinct,monthStart,shiftMonth,inPeriod,inactivityEvents,withdrawalStats,inactiveCount,errorLogs,systemIssueSummary,fraudCount,paymentBreakdown,responseCycles,chatMessages,matchesProperty,filteredFacts,filteredChats,filteredAccounts,groupBy,buckets,activity,amount,performance,result,metric};
+  root.OverviewModel={platformAccounts,pendingAgencies,unrespondedMessages,activeSubscriptions,mrr,sessionAverage,validateTarget,sum,ratio,average,distinct,monthStart,shiftMonth,inPeriod,inactivityEvents,withdrawalStats,inactiveCount,errorLogs,systemIssueSummary,fraudCount,paymentBreakdown,responseCycles,responseBlocks,chatMessages,matchesProperty,filteredFacts,filteredChats,filteredAccounts,groupBy,buckets,activity,amount,performance,result,metric};
 })(typeof window!=='undefined'?window:globalThis);
