@@ -77,7 +77,8 @@
     let portal='';try{portal=sessionStorage.getItem('yuushi.activePortal')||'';}catch{}
     if(portal==='client'){
       const client=read('yuushi.client.account',null);
-      return client&&!client.deletedAt
+      let signedIn=false;try{signedIn=sessionStorage.getItem('yuushi.client.previewSignedIn')==='true';}catch{}
+      return signedIn&&client&&!client.deletedAt
         ? {accountId:client.id||client.customerId||null,accountType:'Customer',portal:'Client'}
         : {accountId:null,accountType:'Guest',portal:'Client'};
     }
@@ -188,6 +189,16 @@
     });
   }
 
+  function bindAdCards(container=document){
+    const rendered=new WeakSet(),viewed=new WeakSet();
+    const base=el=>({adId:el.dataset.adId||null,campaignId:el.dataset.campaignId||el.dataset.adId||null,campaign:el.dataset.campaignId||el.dataset.adId||null,propertyId:el.dataset.propertyId||null,agencyId:el.dataset.agencyId||null,adType:el.dataset.adType||'',placement:el.dataset.placement||'',paid:true,page:location.pathname});
+    const scan=()=>container.querySelectorAll?.('[data-analytics-ad][data-ad-id], [data-analytics-ad][data-campaign-id]').forEach(el=>{if(!rendered.has(el)){rendered.add(el);emit('ad_rendered',base(el));}observer?.observe(el);});
+    const observer='IntersectionObserver'in root?new IntersectionObserver(entries=>{for(const entry of entries){if(!entry.isIntersecting||entry.intersectionRatio<0.5||viewed.has(entry.target))continue;viewed.add(entry.target);emit('ad_viewed',base(entry.target));}},{threshold:[0.5]}):null;
+    scan();
+    const mo='MutationObserver'in root?new MutationObserver(scan):null;mo?.observe(container.documentElement||container,{childList:true,subtree:true});
+    container.addEventListener?.('click',e=>{const el=e.target.closest?.('[data-analytics-ad][data-ad-id], [data-analytics-ad][data-campaign-id]');if(el)emit('ad_clicked',base(el));},true);
+  }
+
   function bindPropertyCards(container=document){
     const seenRendered=new WeakSet(),seenViewed=new WeakSet();
     const renderCard=card=>{
@@ -228,8 +239,9 @@
     }
     emit('page_view',{page,referrer:document.referrer||'',deviceType:innerWidth<768?'Mobile':innerWidth<1100?'Tablet':'Desktop',language:navigator.language||''});
     bindPropertyCards(document);
+    bindAdCards(document);
     root.addEventListener('beforeunload',()=>emit('session_ended',{page}),{once:true});
   }
 
-  root.YuushiAnalytics={EVENT_KEY,TELEMETRY_KEY,masters,metricRegistry,overviewMetricStatus,read,write,emit,events,telemetry,setMockTelemetry,emitWithdrawal,bindPropertyCards,startPageInstrumentation,getVisitorId,getSessionId};
+  root.YuushiAnalytics={EVENT_KEY,TELEMETRY_KEY,masters,metricRegistry,overviewMetricStatus,read,write,emit,events,telemetry,setMockTelemetry,emitWithdrawal,bindPropertyCards,bindAdCards,startPageInstrumentation,getVisitorId,getSessionId};
 })(typeof window!=='undefined'?window:globalThis);
