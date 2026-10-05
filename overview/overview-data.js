@@ -23,15 +23,18 @@
     for(const row of rows||[]){const id=typeof key==='function'?key(row):row?.[key];if(id!=null)map.set(id,{...map.get(id),...row});}
     return [...map.values()];
   }
-  const clientCurrent=read('yuushi.client.account',null);
-  const withdrawnClients=read('yuushi.client.withdrawnAccounts',[]);
-  const agencyPrimary=read('yuushi.agency.primaryAccount',null);
-  const agencyDirectory=read('yuushi.admin.agencyDirectory',[]);
+  // Platform-wide account KPIs use Admin-managed shared directories.
+  // A browser-local Customer/Agency profile is not a valid substitute for the complete platform population.
+  const userDirectoryRaw=read('yuushi.admin.userDirectory',null);
+  const agencyDirectoryRaw=read('yuushi.admin.agencyDirectory',null);
+  const userDirectory=Array.isArray(userDirectoryRaw)?userDirectoryRaw:[];
+  const agencyDirectory=Array.isArray(agencyDirectoryRaw)?agencyDirectoryRaw:[];
+  const customerDirectoryReady=Array.isArray(userDirectoryRaw);
+  const agencyDirectoryReady=Array.isArray(agencyDirectoryRaw);
+  const accountDirectoryReady=customerDirectoryReady&&agencyDirectoryReady;
   const accounts=uniqueBy([
-    ...(clientCurrent?[{...clientCurrent,type:'Client',registeredAt:clientCurrent.registeredAt||clientCurrent.createdAt||null,withdrawnAt:clientCurrent.withdrawnAt||null}]:[]),
-    ...withdrawnClients.map(a=>({...a,type:'Client',registeredAt:a.registeredAt||a.createdAt||null,withdrawnAt:a.withdrawnAt||a.deletedAt||null})),
-    ...agencyDirectory.map(a=>({...a,type:'Agency',name:a.name||a.company||a.id,registeredAt:a.registeredAt||a.createdAt||null})),
-    ...(agencyPrimary?[{...agencyPrimary,type:'Agency',name:agencyPrimary.name||agencyPrimary.company||agencyPrimary.id,registeredAt:agencyPrimary.registeredAt||agencyPrimary.createdAt||null,withdrawnAt:agencyPrimary.withdrawnAt||null}]:[])
+    ...userDirectory.map(a=>({...a,type:'Client',registeredAt:a.registeredAt||a.createdAt||null,withdrawnAt:a.withdrawnAt||null})),
+    ...agencyDirectory.map(a=>({...a,type:'Agency',name:a.name||a.company||a.id,registeredAt:a.registeredAt||a.createdAt||null,withdrawnAt:a.withdrawnAt||null}))
   ],a=>a.id||a.customerId||a.agencyId);
   const agencies=accounts.filter(a=>a.type==='Agency');
   const agents=agencies;
@@ -135,7 +138,8 @@
   const data={
     today,now,accounts,agencies,agents,subscriptions,adminChats,accountSessions,guests,properties,facts,chats,fraudFlags,paymentErrors,logs,
     reports,transactions,campaigns,commerceTransactions,succeededPayments,appraisalDeliveries,analyticsEvents:events,places,groups,structures,countries,plans,prices,adTypes,options,
-    telemetry,metricStatus:A.overviewMetricStatus
+    customerDirectoryReady,agencyDirectoryReady,accountDirectoryReady,
+    telemetry,metricStatus:(id)=>{const accountMetrics=new Set(['r29','r42','r43','r44','r46','r55','r56','r69','r70','r71','r72','r73','r77','r80','r81','r83','r110']);if(accountMetrics.has(id)&&!accountDirectoryReady)return {ready:false,note:'Platform-wide Customer/Agency directory has not been synchronized from Admin User/Agency Management yet.'};return A.overviewMetricStatus(id);}
   };
   const utilities={DAY,dayKey,addDays};
   root.OverviewDemo={data,utilities};
