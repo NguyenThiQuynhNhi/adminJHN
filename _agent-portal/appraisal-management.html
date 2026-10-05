@@ -438,6 +438,31 @@
         },
       ];
 
+      function currentAgencyIdForAppraisals(){
+        try{
+          const account=JSON.parse(localStorage.getItem('yuushi.agency.primaryAccount')||'null');
+          return account?.id||account?.agencyId||'AG-00000001';
+        }catch{return 'AG-00000001';}
+      }
+      function syncAppraisalDeliveries(){
+        const key='yuushi.appraisalDeliveries',agencyId=currentAgencyIdForAppraisals();
+        let existing=[];try{existing=JSON.parse(localStorage.getItem(key)||'[]');}catch{}
+        const map=new Map((Array.isArray(existing)?existing:[]).map(row=>[row.deliveryId,row]));
+        APPRAISALS.forEach(a=>{
+          const deliveryId=a.id+'|'+agencyId,property=a.propertyInfo||{};
+          const row={
+            deliveryId,requestId:a.id,agencyId,
+            sentAt:a.received?new Date(a.received+'T00:00:00+09:00').toISOString():new Date().toISOString(),
+            propertyType:property.propertyType||property.subType||'',
+            propertyLocation:property.locationManual||property.buildingName||'',
+            status:a.status||'In Progress'
+          };
+          map.set(deliveryId,{...map.get(deliveryId),...row});
+        });
+        localStorage.setItem(key,JSON.stringify([...map.values()]));
+      }
+      syncAppraisalDeliveries();
+
       let sortKey = "received", sortDir = "desc", rowsPerPage = 10, page = 1;
       let currentId = null;
 
