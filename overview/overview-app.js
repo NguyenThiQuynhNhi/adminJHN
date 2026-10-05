@@ -49,19 +49,61 @@
   function renderAnalytics(){results.clear();const metrics=metricsForPage();document.getElementById('filterSummary').textContent=filters.start+' – '+filters.end+' · '+filters.transaction+' · '+filters.membership;document.getElementById('mainContent').innerHTML=`<div class="section-heading"><h2>${esc(pages[page][0])}</h2><span class="chart-count">${metrics.length} metrics</span></div><div class="section-links">${metrics.map(s=>`<a href="#metric-${s.id}">${esc(s.title)}</a>`).join('')}</div><div class="chart-grid">${metrics.map(chartCard).join('')}</div>`;}
   function kcard(label,value,note='',klass=''){return `<div class="card ${klass}"><div class="metric-label">${esc(label)}</div><div class="metric-value">${value}</div><div class="muted">${esc(note)}</div></div>`;}
   function renderKpi(){
-    results.clear();const alerts=[['Unresponded Messages',M.unrespondedMessages(),'unresponded'],['Property Complaints (Unprocessed)',6,'complaints'],['Pending Ad Approvals',9,'ads'],['Fraud Detections',M.fraudCount(D.fraudFlags,enabledFraud),'fraud'],['Payment Errors',M.sum(M.paymentBreakdown(D.paymentErrors),'count'),'payments'],['Pending Agency Reviews',M.pendingAgencies(),'agents']];
+    results.clear();
+    const norm=value=>String(value||'').trim().toLowerCase().replace(/\s+/g,'_');
+    const unprocessedReports=(D.reports||[]).filter(r=>['awaiting_agency_response','pending_admin_review'].includes(norm(r.status))).length;
+    const pendingAds=(D.campaigns||[]).filter(r=>['pending_review','pending','awaiting_approval'].includes(norm(r.status))).length;
+    const telemetry=D.telemetry||{};
+    const systemIssues=telemetry.systemIssues||{total:0,critical:0,error:0,warning:0};
+    const paymentErrorCount=(telemetry.paymentErrors||[]).filter(e=>!e.status||String(e.status).toLowerCase()==='unresolved').length;
+    const alerts=[
+      ['Unresponded Messages',M.unrespondedMessages(),'unresponded'],
+      ['Property Reports (Unprocessed)',unprocessedReports,'complaints'],
+      ['Pending Ad Approvals',pendingAds,'ads'],
+      ['Fraud Detections',M.fraudCount(D.fraudFlags,enabledFraud),'fraud'],
+      ['Payment Errors',paymentErrorCount,'payments'],
+      ['Pending Agency Reviews',M.pendingAgencies(),'agents']
+    ];
     const users=M.platformAccounts(),customerUsers=users.filter(a=>a.type==='Client'),agentUsers=users.filter(a=>a.type==='Agency');
-    const currentMonth=M.monthStart(D.today),mtdFacts=D.facts.filter(r=>M.inPeriod(r.date,currentMonth,D.today)),todayFacts=D.facts.filter(r=>r.date===D.today),yesterdayFacts=D.facts.filter(r=>r.date===U.addDays(D.today,-1));
-    const revenue=rows=>rows.reduce((n,r)=>n+M.amount(r),0),mrr=M.mrr(),withdrawal=M.withdrawalStats(D.accounts,currentMonth,D.today),systemIssues=M.systemIssueSummary(D.logs);
-    const prevMtd=D.facts.filter(r=>M.inPeriod(r.date,M.shiftMonth(currentMonth,-1),M.shiftMonth(D.today,-1)));
-    const prevMrr=M.mrr(M.shiftMonth(D.today,-1));
-    const monthlyDelta=(a,b)=>b?((a-b)/b*100).toFixed(1)+'% vs same period last month':'No prior-month baseline';
+    const currentMonth=M.monthStart(D.today),todayFacts=D.facts.filter(r=>r.date===D.today),yesterdayFacts=D.facts.filter(r=>r.date===U.addDays(D.today,-1));
+    const withdrawal=M.withdrawalStats(D.accounts,currentMonth,D.today);
     const delta=(a,b)=>b?((a-b)/b*100).toFixed(1)+'% vs previous day':'No previous-day baseline';
+    const mockValue=(value,unit='')=>Number.isFinite(Number(value))?number(Number(value),unit):'—';
+    const mockNote=label=>label+' · prototype telemetry only; production source is backend/API.';
+    const statusBadge=item=>{const status=item?.status||'Not configured';const cls=/operational|healthy|ok/i.test(status)?'green':'amber';return '<b class="badge '+cls+'">'+esc(status)+'</b>';};
+    const publishedCount=D.properties?.length?D.properties.filter(p=>(p.publishStatus||p.status)==='Published'&&!(p.endedAt||p.suspensionDate)).length:null;
     const graphs=['r28','r29','r30','r31','r32'].map(id=>S.metrics.find(s=>s.id===id));
-    document.getElementById('mainContent').innerHTML=`<div class="section-heading"><h2>Operational alerts</h2><button class="btn" id="fraudSettings">Fraud KPI settings</button></div><div class="cards six">${alerts.map(([label,count,key])=>`<button type="button" class="card alert-card ${['ads','agents'].includes(key)?'amber':'red'}" data-alert="${key}"><div class="metric-label">${label}</div><div class="metric-value">${count}</div><span class="muted">Review details →</span></button>`).join('')}</div><div class="section-heading"><h2>System status</h2><span class="muted">Service availability</span></div><div class="status-strip"><span>API <b class="badge green">Operational</b></span><span>Database <b class="badge green">Operational</b></span><span>Stripe <b class="badge amber">Degraded</b></span><span>System Issues · 24h <button class="btn" data-alert="logs">${systemIssues.total} →</button> <small>Critical ${systemIssues.critical} · Error ${systemIssues.error} · Warning ${systemIssues.warning}</small></span></div><div class="section-heading"><h2>Platform KPIs</h2><div class="inline-fields"><label>Account type <select id="kpiUserType"><option>All</option><option>Client</option><option>Agency</option></select></label><label>Active window <select id="kpiActiveWindow"><option value="1">DAU</option><option value="7">WAU</option><option value="30">MAU</option></select></label></div></div><div class="cards">${kcard('Total Users',users.length,'Excludes withdrawn accounts · '+customerUsers.length+' Clients / '+agentUsers.length+' Agencies')}${kcard('Active Users','<span id="kpiActiveValue">'+M.activity(users,D.today,1)+'</span>','Unique logins in the selected window')}${kcard('Avg Session Time',number(M.sessionAverage(currentMonth,D.today))+'s','Current month · Client/Agency breakdown below')}${kcard("Today's Revenue",number(revenue(todayFacts),'JPY'),delta(revenue(todayFacts),revenue(yesterdayFacts)))}${kcard('MTD Revenue',number(revenue(mtdFacts),'JPY'),monthlyDelta(revenue(mtdFacts),revenue(prevMtd))+' · '+currentMonth+' through '+D.today)}${kcard('MRR',number(mrr,'JPY'),monthlyDelta(mrr,prevMrr)+' · Active Agency subscriptions: monthly fee + annual fee ÷ 12')}${kcard('Total Listed Properties',D.properties.filter(p=>p.createdAt<=D.today&&(!p.endedAt||p.endedAt>D.today)).length,delta(D.properties.filter(p=>p.createdAt<=D.today&&(!p.endedAt||p.endedAt>D.today)).length,D.properties.filter(p=>p.createdAt<=U.addDays(D.today,-1)&&(!p.endedAt||p.endedAt>U.addDays(D.today,-1))).length))}${kcard("Today's Inquiries",M.sum(todayFacts,'inquiries'),delta(M.sum(todayFacts,'inquiries'),M.sum(yesterdayFacts,'inquiries'))+' · Property Inquiries from Clients to Agencies')}</div><div class="section-heading"><h2>Account changes this month</h2><span class="badge amber">Provisional · ${currentMonth} – ${D.today}</span></div><div class="cards">${kcard('Withdrawals this month',withdrawal.withdrawals,'Explicit withdrawal with a stated reason','red')}${kcard('Newly inactive users this month',withdrawal.newlyInactive,'Newly crossed 90 days without login; counted once per month','amber')}${kcard('Client Avg Session Time',number(M.sessionAverage(currentMonth,D.today,'Client'))+'s','Member Client sessions · month to date')}${kcard('Agency Avg Session Time',number(M.sessionAverage(currentMonth,D.today,'Agency'))+'s','Agency sessions · month to date')}</div><p class="muted">The two account-change cards are separate metrics. Current-month figures finalize at month-end.</p><div class="section-heading"><h2>Targets and progress</h2><button class="btn" id="targetSettings">Set targets</button></div><div id="targetCards"></div><div class="section-heading"><h2>Trends</h2><a href="end-user-stats-dashboard.html#metric-r56">View withdrawal history →</a></div><div class="chart-grid">${graphs.map(chartCard).join('')}</div>`;
+    document.getElementById('mainContent').innerHTML=`
+      <div class="section-heading"><h2>Operational alerts</h2><button class="btn" id="fraudSettings">Fraud KPI settings</button></div>
+      <div class="cards six">${alerts.map(([label,count,key])=>`<button type="button" class="card alert-card ${['ads','agents'].includes(key)?'amber':'red'}" data-alert="${key}"><div class="metric-label">${label}</div><div class="metric-value">${count}</div><span class="muted">Review details →</span></button>`).join('')}</div>
+      <div class="section-heading"><h2>System status</h2><span class="muted">Prototype telemetry · no backend health integration in this repository</span></div>
+      <div class="status-strip">
+        <span>API ${statusBadge(telemetry.api)}</span>
+        <span>Database ${statusBadge(telemetry.database)}</span>
+        <span>Stripe ${statusBadge(telemetry.paymentGateway)}</span>
+        <span>System Issues · 24h <button class="btn" data-alert="logs">${Number(systemIssues.total)||0} →</button> <small>Critical ${Number(systemIssues.critical)||0} · Error ${Number(systemIssues.error)||0} · Warning ${Number(systemIssues.warning)||0}</small></span>
+      </div>
+      <div class="section-heading"><h2>Platform KPIs</h2><div class="inline-fields"><label>Account type <select id="kpiUserType"><option>All</option><option>Client</option><option>Agency</option></select></label><label>Active window <select id="kpiActiveWindow"><option value="1">DAU</option><option value="7">WAU</option><option value="30">MAU</option></select></label></div></div>
+      <div class="cards">
+        ${kcard('Total Users',users.length,'Excludes withdrawn accounts · '+customerUsers.length+' Clients / '+agentUsers.length+' Agencies')}
+        ${kcard('Active Users','<span id="kpiActiveValue">'+M.activity(users,D.today,1)+'</span>','Registered accounts with recorded login/activity in selected window')}
+        ${kcard('Avg Session Time',mockValue(telemetry.avgSessionSeconds)+'s',mockNote('Avg Session Time'))}
+        ${kcard("Today's Revenue",mockValue(telemetry.todayRevenue,'JPY'),mockNote("Today's Revenue"))}
+        ${kcard('MTD Revenue',mockValue(telemetry.mtdRevenue,'JPY'),mockNote('MTD Revenue'))}
+        ${kcard('MRR','—','Requires Subscription Plan Master + active recurring payment/subscription records. Dashboard must not hard-code plan prices.')}
+        ${kcard('Total Listed Properties',publishedCount==null?'—':publishedCount,publishedCount==null?'Requires operational/shared Property store.':'Published listings from persisted Property records only.')}
+        ${kcard("Today's Inquiries",M.sum(todayFacts,'inquiries'),delta(M.sum(todayFacts,'inquiries'),M.sum(yesterdayFacts,'inquiries'))+' · NEW Client → Agency property inquiries only; duplicate reopen does not increment')}
+      </div>
+      <div class="section-heading"><h2>Account changes this month</h2><span class="badge amber">Provisional · ${currentMonth} – ${D.today}</span></div>
+      <div class="cards">
+        ${kcard('Withdrawals this month',withdrawal.withdrawals,'Explicit account_status_changed → Withdrawn only. Suspend/Ban and inactivity are excluded.','red')}
+      </div>
+      <div class="section-heading"><h2>Targets and progress</h2><button class="btn" id="targetSettings">Set targets</button></div><div id="targetCards"></div>
+      <div class="section-heading"><h2>Trends</h2><a href="end-user-stats-dashboard.html#metric-r56">View withdrawal history →</a></div><div class="chart-grid">${graphs.map(chartCard).join('')}</div>`;
     renderTargets();
     document.getElementById('fraudSettings').onclick=openFraudSettings;document.getElementById('targetSettings').onclick=openTargetSettings;
-    const update=()=>{const type=document.getElementById('kpiUserType').value,days=Number(document.getElementById('kpiActiveWindow').value);document.getElementById('kpiActiveValue').textContent=M.activity(users.filter(a=>type==='All'||a.type===type),D.today,days);};document.getElementById('kpiUserType').onchange=update;document.getElementById('kpiActiveWindow').onchange=update;
+    const update=()=>{const type=document.getElementById('kpiUserType').value,days=Number(document.getElementById('kpiActiveWindow').value);document.getElementById('kpiActiveValue').textContent=M.activity(users.filter(a=>type==='All'||a.type===type),D.today,days);};
+    document.getElementById('kpiUserType').onchange=update;document.getElementById('kpiActiveWindow').onchange=update;
   }
   function openDialog(title,html){const d=document.getElementById('overviewDialog');document.getElementById('dialogTitle').textContent=title;document.getElementById('dialogBody').innerHTML=html;d.showModal();}
   function openFraudSettings(){openDialog('Fraud KPI · alert inclusion',`<p class="muted">Count unique flags with status “unhandled” for enabled alert types. Turning an item off excludes it from this KPI; it does not disable detection or delete flags.</p><form id="fraudForm">${S.alerts.filter(a=>a.fraud).map(a=>`<label class="switch-row"><input type="checkbox" name="${a.id}" ${enabledFraud[a.id]?'checked':''}><span><strong>${esc(a.name)}</strong><p>${esc(a.trigger)}</p><p>${esc(a.target.replace(/\bAgent\b/g,'Agency'))}</p></span></label>`).join('')}<p class="muted">Other automated alerts are not classified as Fraud in the workbook.</p><button type="submit" class="btn primary">Save KPI settings</button></form>`);document.getElementById('fraudForm').onsubmit=e=>{e.preventDefault();S.alerts.filter(a=>a.fraud).forEach(a=>enabledFraud[a.id]=e.target.elements[a.id].checked);storage.set('fraudKpi',enabledFraud);document.getElementById('overviewDialog').close();renderKpi();toast('Fraud KPI settings saved.');};}
