@@ -17,10 +17,6 @@
   const structures=[];
   const countries=[];
   const places=[];
-  const plans=[];
-  const prices={};
-  const adTypes=[];
-  const options=[];
 
   function uniqueBy(rows,key){
     const map=new Map();
@@ -44,8 +40,17 @@
   const enquiries=read('yuushi.agencyEnquiryAssignments',[]);
   const reportsObject=read('yuushi.c07.propertyReports',{});
   const reports=Array.isArray(reportsObject)?reportsObject:Object.values(reportsObject||{});
+
+  // Monetization Admin is the prototype operational source for plans, ad bookings
+  // and payment transactions. Overview must not maintain a second hard-coded catalog.
+  const commerce=read('yuushi-cms-v1',{plans:[],features:[],addons:[],slots:[],bookings:[],transactions:[]});
+  const plans=(commerce.plans||[]).filter(p=>p.status!=='Retired');
+  const prices=Object.fromEntries(plans.map(p=>[p.name,Number(p.price)||0]));
+  const adTypes=[...new Set((commerce.slots||[]).map(s=>String(s.product??'')).filter(Boolean))];
+  const options=(commerce.addons||[]).map(a=>a.name).filter(Boolean);
   const subscriptions=read('yuushi.subscriptionRecords',[]);
-  const campaigns=read('yuushi.adCampaigns',read('yuushi.agencyCampaigns',[]));
+  const campaigns=Array.isArray(commerce.bookings)?commerce.bookings:[];
+  const commerceTransactions=Array.isArray(commerce.transactions)?commerce.transactions:[];
   const appraisalDeliveries=read('yuushi.appraisalDeliveries',[]);
   const propertySnapshots=read('yuushi.analytics.propertySnapshots',[]);
   const properties=uniqueBy(propertySnapshots,'id');
@@ -101,11 +106,23 @@
   const adminChats=read('yuushi.adminSupportThreads',[]);
   const fraudFlags=read('yuushi.admin.fraudFlags',[]);
   const telemetry=A.telemetry();
-  const paymentErrors=telemetry.paymentErrors||[];
+  const paymentCategory=reason=>{
+    const text=String(reason||'').toLowerCase();
+    if(/declin|insufficient/.test(text))return 'Card declined';
+    if(/auth/.test(text))return 'Authentication failure';
+    if(/expir/.test(text))return 'Card expired';
+    if(/network|system|connection|api/.test(text))return 'System / network error';
+    return 'Other';
+  };
+  const operationalPaymentErrors=commerceTransactions
+    .filter(t=>String(t.status).toLowerCase()==='failed')
+    .map(t=>({id:t.id,category:paymentCategory(t.reason),status:'unresolved',code:t.reason||'',occurredAt:t.date?new Date(t.date+'T00:00:00Z').toISOString():null}));
+  const paymentErrors=[...operationalPaymentErrors,...(telemetry.paymentErrors||[])];
+  const succeededPayments=commerceTransactions.filter(t=>['succeeded','success'].includes(String(t.status).toLowerCase())&&['Charge','Capture'].includes(t.event));
   const logs=read('yuushi.admin.systemIssues',[]);
   const data={
     today,now,accounts,agencies,agents,subscriptions,adminChats,accountSessions,guests,properties,facts,chats,fraudFlags,paymentErrors,logs,
-    reports,transactions,campaigns,appraisalDeliveries,places,groups,structures,countries,plans,prices,adTypes,options,
+    reports,transactions,campaigns,commerceTransactions,succeededPayments,appraisalDeliveries,places,groups,structures,countries,plans,prices,adTypes,options,
     telemetry,metricStatus:A.overviewMetricStatus
   };
   const utilities={DAY,dayKey,addDays,hash:value=>{let n=2166136261;for(const char of String(value))n=Math.imul(n^char.charCodeAt(0),16777619);return n>>>0;}};
