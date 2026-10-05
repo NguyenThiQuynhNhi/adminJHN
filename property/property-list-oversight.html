@@ -2215,6 +2215,9 @@
           </button>
         </div>
         <div class="detail-toolbar-right" id="toolbarView">
+          <button class="btn" type="button" onclick="openCurrentPropertyPerformanceReport(this)">
+            <i class="fas fa-chart-line"></i> Performance report
+          </button>
           <button class="btn" type="button" onclick="enterEditMode()">
             <i class="fas fa-edit"></i> Edit
           </button>
@@ -7008,6 +7011,16 @@
         renderDetail();
       }
 
+      function openCurrentPropertyPerformanceReport(button) {
+        if(!currentProp)return;
+        let events=[];try{events=JSON.parse(localStorage.getItem('yuushi.analytics.events.v1')||'[]')||[];}catch{}
+        const rows=events.filter(e=>String(e.propertyId||'')===String(currentProp.id));
+        const count=type=>rows.filter(e=>e.type===type).length;
+        const engagementReady=rows.some(e=>['property_card_rendered','property_card_viewed','property_card_clicked','property_saved'].includes(e.type));
+        const inquiries=count('inquiry_created'),impressions=count('property_card_rendered'),views=count('property_card_viewed'),clicks=count('property_card_clicked'),saves=count('property_saved');
+        button.dataset.exportContext=`Property Performance · ${currentProp.id} · ${currentProp.name||'—'} · Status ${currentProp.publishStatus||'—'} · Sale Status ${currentProp.saleStatus||'—'} · ${engagementReady?`Standard Listing IMP ${impressions} · Property Views ${views} · Property Clicks ${clicks} · Keep ${saves}`:'Organic engagement requires Customer Property-card instrumentation with a stable Property ID'} · New Inquiries ${inquiries}. Paid Ad events are excluded.`;
+        MockExport.open(button);
+      }
       function exportCsv() { const button=document.querySelector('[onclick*="exportCsv"],#btnExportCsv,#exportBtn'); if(button&&!button.disabled)MockExport.open(button); }
 
       // Navigate to Project Management module (Groups 5/6).
@@ -8201,7 +8214,7 @@
         } catch (e) {}
       })();
     </script>
-  <script>window.mockExportContext=(b)=>b.id==='histExport'?'Current property change log.':filtered.length+' filtered records.';</script>
+  <script>window.mockExportContext=(b)=>b.dataset.exportContext||(b.id==='histExport'?'Current property change log.':filtered.length+' filtered Property records.');</script>
 <script src="../mock-export.js"></script>
 </body>
 </html>
