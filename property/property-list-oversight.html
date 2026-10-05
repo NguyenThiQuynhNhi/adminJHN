@@ -4967,41 +4967,6 @@
         });
       })();
 
-      (function seedPerformance() {
-        const AD_NAMES = [
-          { id: "AD-001", name: "Homepage Banner Top", type: "Banner #1" },
-          { id: "AD-002", name: "Search Results Sidebar", type: "Banner #2" },
-          { id: "AD-003", name: "Property Detail Related", type: "Banner #3" },
-          { id: "AD-004", name: "Email Newsletter Slot", type: "Banner #4" },
-          { id: "AD-005", name: "Mobile App Featured", type: "Banner #5" },
-          { id: "AD-006", name: "New Dev Spotlight", type: "Banner #6" },
-          { id: "AD-007", name: "Investor Dashboard Widget", type: "Banner #7" },
-        ];
-        properties.forEach((p, i) => {
-          if (p.performance) return;
-          // Standard listing metrics — deterministic per index
-          const imp   = 1200 + ((i * 317) % 8000);
-          const views = Math.round(imp * (0.18 + (i % 7) * 0.03));
-          const clicks= Math.round(views * (0.22 + (i % 5) * 0.04));
-          const keep  = Math.round(clicks * (0.08 + (i % 4) * 0.02));
-          // Ads — 0 to 3 ads per property, deterministic
-          const adCount = i % 4; // 0,1,2,3
-          const ads = [];
-          for (let a = 0; a < adCount; a++) {
-            const ad = AD_NAMES[(i + a) % AD_NAMES.length];
-            const aImp   = 800 + (((i + a) * 211) % 5000);
-            const aViews = Math.round(aImp * (0.15 + (a % 4) * 0.04));
-            const aClicks= Math.round(aViews * (0.20 + (a % 3) * 0.05));
-            const aKeep  = Math.round(aClicks * (0.07 + (a % 4) * 0.02));
-            ads.push({
-              adId: ad.id, adName: ad.name, adType: ad.type,
-              impressions: aImp, views: aViews, clicks: aClicks, keep: aKeep,
-            });
-          }
-          p.performance = { standardListing: { impressions: imp, views, clicks, keep }, ads };
-        });
-      })();
-
       (function normalizeSuspensionData() {
         properties.forEach((p) => {
           if (p.publishStatus === "Suspended" && !p.suspensionReason) {
@@ -5876,150 +5841,51 @@
       }
 
       function renderPerformance(prop) {
-        const perf = prop.performance || {};
-        const sl   = perf.standardListing || {};
-        const ads  = Array.isArray(perf.ads) ? perf.ads : [];
+        const perf=propertyPerformanceFromEvents(prop.id);
+        const sl=perf.organic;
+        const pct=(n,d)=>d?(n/d*100).toFixed(1)+'%':'—';
+        const n=v=>Number(v||0).toLocaleString('en-US');
 
-        // Runtime calculations — never stored as %, always derived
-        function ctr(clicks, impressions) {
-          if (!impressions) return "—";
-          return (clicks / impressions * 100).toFixed(1) + "%";
-        }
-        function kpr(keep, clicks) {
-          if (!clicks) return "—";
-          return (keep / clicks * 100).toFixed(1) + "%";
-        }
-        function ratePillCls(pct) {
-          if (pct === "—") return "badge-gray";
-          const n = parseFloat(pct);
-          if (n >= 10) return "badge-active";
-          if (n >= 5)  return "badge-amber";
-          return "badge-closed";
-        }
-        function metricRow(label, imp, views, clicks, keep) {
-          const ctrVal = ctr(clicks, imp);
-          const kprVal = kpr(keep, clicks);
-          return `
-            <tr>
-              <td style="font-weight:600;color:var(--text-main)">${esc(label)}</td>
-              <td>${(imp   || 0).toLocaleString()}</td>
-              <td>${(views || 0).toLocaleString()}</td>
-              <td>${(clicks|| 0).toLocaleString()}</td>
-              <td><span class="badge ${ratePillCls(ctrVal)}" style="font-size:11px">${esc(ctrVal)}</span></td>
-              <td>${(keep  || 0).toLocaleString()}</td>
-              <td><span class="badge ${ratePillCls(kprVal)}" style="font-size:11px">${esc(kprVal)}</span></td>
-            </tr>`;
-        }
+        const organicTable=perf.organicReady ? `
+          <div class="perf-block">
+            <div class="perf-block-head"><i class="fas fa-list-ul"></i> Standard Listing <span style="font-size:11px;font-weight:500;color:var(--text-muted)">— organic only</span></div>
+            <div style="overflow-x:auto"><table class="perf-table">
+              <thead><tr><th>Standard Listing Impressions</th><th>Property Views</th><th>Property Clicks</th><th>CTR</th><th>Keep / Saves</th><th>Keep Rate</th><th>Property Inquiries</th></tr></thead>
+              <tbody><tr><td>${n(sl.impressions)}</td><td>${n(sl.views)}</td><td>${n(sl.clicks)}</td><td>${pct(sl.clicks,sl.impressions)}</td><td>${n(sl.keep)}</td><td>${pct(sl.keep,sl.clicks)}</td><td>${n(sl.inquiries)}</td></tr></tbody>
+            </table></div>
+          </div>` : `
+          <div class="notice" style="margin-bottom:14px"><strong>Standard Listing performance: Requires analytics instrumentation.</strong><br>
+          No valid organic card exposure/click events with this Property ID are available yet. Do not substitute Property Detail loads or generated counters.</div>`;
 
-        // Combined totals
-        let totImp = sl.impressions || 0, totViews = sl.views || 0,
-            totClicks = sl.clicks || 0, totKeep = sl.keep || 0;
-        ads.forEach(a => {
-          totImp    += a.impressions || 0;
-          totViews  += a.views       || 0;
-          totClicks += a.clicks      || 0;
-          totKeep   += a.keep        || 0;
-        });
-
-        const thead = `
-          <thead>
-            <tr style="background:var(--bg-header-soft)">
-              <th style="min-width:160px">Source</th>
-              <th>Impressions</th>
-              <th>Views</th>
-              <th>Clicks</th>
-              <th>CTR</th>
-              <th>Keep</th>
-              <th>KPR</th>
-            </tr>
-          </thead>`;
-
-        // Per Ad rows
-        const adRows = ads.length
-          ? ads.map(a => metricRow(
-              `${esc(a.adName)} (${esc(a.adType)})`,
-              a.impressions, a.views, a.clicks, a.keep
-            )).join("")
-          : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:14px;font-size:12px">
-              <i class="fas fa-circle-info"></i> This property has not been placed in any ads yet.
-            </td></tr>`;
+        const adRows=perf.ads.map(a=>`<tr>
+          <td><strong>${esc(a.name)}</strong>${a.adType?' · '+esc(a.adType):''}</td>
+          <td>${n(a.impressions)}</td><td>${n(a.views)}</td><td>${n(a.clicks)}</td>
+          <td>${pct(a.clicks,a.impressions)}</td><td>${n(a.inquiries)}</td><td>${pct(a.inquiries,a.clicks)}</td>
+        </tr>`).join('');
+        const paidTable=perf.adReady ? `
+          <div class="perf-block">
+            <div class="perf-block-head"><i class="fas fa-rectangle-ad"></i> Paid Advertisement Performance <span style="font-size:11px;font-weight:500;color:var(--text-muted)">— paid only</span></div>
+            <div style="overflow-x:auto"><table class="perf-table">
+              <thead><tr><th>Campaign / Ad</th><th>Ad Impressions</th><th>Ad Views</th><th>Ad Clicks</th><th>Ad CTR</th><th>Ad-attributed Inquiries</th><th>Ad CVR</th></tr></thead>
+              <tbody>${adRows}</tbody>
+            </table></div>
+          </div>` : `
+          <div class="notice"><strong>Paid Advertisement performance: Requires ad instrumentation.</strong><br>
+          No paid ad render/view/click events are available for this Property. Organic listing metrics are never reused as Ad metrics.</div>`;
 
         return `
           <style>
-            .perf-table { width:100%; border-collapse:collapse; font-size:12.5px; }
-            .perf-table th { padding:9px 12px; font-size:11px; font-weight:700; color:var(--text-muted);
-              text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; text-align:left; }
-            .perf-table td { padding:10px 12px; border-top:1px solid var(--border-soft);
-              color:var(--text-main); vertical-align:middle; }
-            .perf-block { border:1px solid var(--border-subtle); border-radius:var(--r-md);
-              overflow:hidden; margin-bottom:14px; }
-            .perf-block-head { padding:9px 14px; background:var(--bg-header-soft);
-              border-bottom:1px solid var(--border-subtle); display:flex; align-items:center;
-              gap:8px; font-size:12.5px; font-weight:700; color:var(--text-main); }
-            .perf-block-head i { color:var(--accent); width:16px; text-align:center; }
-            .perf-total-row td { background:var(--bg-card-warm); font-weight:700;
-              border-top:2px solid var(--border-warm); }
+            .perf-table{width:100%;border-collapse:collapse;font-size:12.5px}
+            .perf-table th{padding:9px 12px;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;text-align:left}
+            .perf-table td{padding:10px 12px;border-top:1px solid var(--border-soft);color:var(--text-main);vertical-align:middle}
+            .perf-block{border:1px solid var(--border-subtle);border-radius:var(--r-md);overflow:hidden;margin-bottom:14px}
+            .perf-block-head{padding:9px 14px;background:var(--bg-header-soft);border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--text-main)}
+            .perf-block-head i{color:var(--accent);width:16px;text-align:center}
           </style>
-
-          <div style="margin-bottom:10px;font-size:12px;color:var(--text-muted)">
-            <i class="fas fa-circle-info"></i>
-            CTR = Clicks ÷ Impressions · KPR = Keep ÷ Clicks · Metrics are read-only and updated daily.
+          <div style="margin-bottom:10px;font-size:12px;color:var(--text-muted)"><i class="fas fa-circle-info"></i>
+            Organic: Impression = card rendered, View = card visible in viewport, Click = organic card click. Paid Ad events are tracked separately and are not combined into organic totals.
           </div>
-
-          <!-- 1. Standard Listing -->
-          <div class="perf-block">
-            <div class="perf-block-head">
-              <i class="fas fa-list-ul"></i> Standard Listing
-              <span style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:4px">
-                — organic search &amp; browse performance
-              </span>
-            </div>
-            <div style="overflow-x:auto">
-              <table class="perf-table">
-                ${thead}
-                <tbody>
-                  ${metricRow("Standard Listing", sl.impressions, sl.views, sl.clicks, sl.keep)}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- 2. Per Ad -->
-          <div class="perf-block">
-            <div class="perf-block-head">
-              <i class="fas fa-rectangle-ad"></i> Per Ad
-              <span style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:4px">
-                — ${ads.length} active ad slot${ads.length !== 1 ? "s" : ""}
-              </span>
-            </div>
-            <div style="overflow-x:auto">
-              <table class="perf-table">
-                ${thead}
-                <tbody>${adRows}</tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- 3. Combined Total -->
-          <div class="perf-block">
-            <div class="perf-block-head">
-              <i class="fas fa-sigma"></i> Combined Total
-              <span style="font-size:11px;font-weight:500;color:var(--text-muted);margin-left:4px">
-                — Standard Listing + all Ads
-              </span>
-            </div>
-            <div style="overflow-x:auto">
-              <table class="perf-table">
-                ${thead}
-                <tbody>
-                  <tr class="perf-total-row">
-                    ${metricRow("Total", totImp, totViews, totClicks, totKeep)
-                      .replace("<tr>", "").replace("</tr>", "")}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>`;
+          ${organicTable}${paidTable}`;
       }
 
       // ========================================================================
@@ -6369,15 +6235,14 @@
           return false;
         if (F.sales.length && !F.sales.includes(p.saleStatus || "On Sale"))
           return false;
-        if (F.keepMin != null || F.keepMax != null) {
-          const k = (p.performance && p.performance.standardListing && p.performance.standardListing.keep) || 0;
+        if (F.keepMin != null || F.keepMax != null || F.clickMin != null || F.clickMax != null) {
+          const eventPerf=propertyPerformanceFromEvents(p.id);
+          if (!eventPerf.organicReady) return false;
+          const k=eventPerf.organic.keep, clicks=eventPerf.organic.clicks;
           if (F.keepMin != null && k < F.keepMin) return false;
           if (F.keepMax != null && k > F.keepMax) return false;
-        }
-        if (F.clickMin != null || F.clickMax != null) {
-          const c = (p.performance && p.performance.standardListing && p.performance.standardListing.clicks) || 0;
-          if (F.clickMin != null && c < F.clickMin) return false;
-          if (F.clickMax != null && c > F.clickMax) return false;
+          if (F.clickMin != null && clicks < F.clickMin) return false;
+          if (F.clickMax != null && clicks > F.clickMax) return false;
         }
         if (F.yieldMin != null) {
           const y = p.estGrossYield ?? p.grossYield ?? p.curGrossYield ?? null;
@@ -6759,6 +6624,38 @@
         }catch{}
       }
       function emitPropertyEvent(type,p,extra={}){analyticsApi()?.emit(type,{propertyId:p?.id||null,agencyId:analyticsAgencyId(p),...extra});syncAnalyticsPropertySnapshots();}
+
+      function propertyPerformanceFromEvents(propertyId){
+        const api=analyticsApi();
+        const events=api?.events?.()||[];
+        const organicTypes=new Set(['property_card_rendered','property_card_viewed','property_card_clicked','property_saved','inquiry_created']);
+        const organicEvents=events.filter(e=>String(e.propertyId||'')===String(propertyId)&&organicTypes.has(e.type));
+        const count=type=>organicEvents.filter(e=>e.type===type).length;
+        const organic={
+          impressions:count('property_card_rendered'),
+          views:count('property_card_viewed'),
+          clicks:count('property_card_clicked'),
+          keep:count('property_saved'),
+          inquiries:count('inquiry_created')
+        };
+        const paidEvents=events.filter(e=>String(e.propertyId||'')===String(propertyId)&&['ad_rendered','ad_viewed','ad_clicked','ad_inquiry_created'].includes(e.type));
+        const adMap=new Map();
+        paidEvents.forEach(e=>{
+          const id=e.campaignId||e.adId||e.campaign||'Unidentified campaign';
+          const row=adMap.get(id)||{id,name:e.campaignName||e.adName||String(id),adType:e.adType||'',impressions:0,views:0,clicks:0,inquiries:0};
+          if(e.type==='ad_rendered')row.impressions++;
+          if(e.type==='ad_viewed')row.views++;
+          if(e.type==='ad_clicked')row.clicks++;
+          if(e.type==='ad_inquiry_created')row.inquiries++;
+          adMap.set(id,row);
+        });
+        return {
+          organic,
+          organicReady:organicEvents.some(e=>['property_card_rendered','property_card_viewed','property_card_clicked','property_saved'].includes(e.type)),
+          ads:[...adMap.values()],
+          adReady:paidEvents.length>0
+        };
+      }
 
       function commitSave() {
         const before=originalProp?JSON.parse(JSON.stringify(originalProp)):null;
