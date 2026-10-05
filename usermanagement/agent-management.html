@@ -1637,11 +1637,13 @@
                   <th>Age (yr)</th>
                   <th>DoM</th>
                   <th>IMP</th>
+                  <th>View</th>
                   <th>CL</th>
                   <th>CTR</th>
                   <th>Keep</th>
                   <th>CV</th>
                   <th>CVR</th>
+                  <th>Report</th>
                 </tr>
               </thead>
               <tbody id="dCompletedList"></tbody>
@@ -3549,6 +3551,13 @@
           : 'Property Performance · Property record not found in the shared operational Property store.';
         MockExport.open(button);
       }
+      function openLegacyPropertyPerformanceReport(button,kind,index) {
+        if(!currentAgent)return;
+        const list=kind==='completed'?(currentAgent.completedList||[]):(currentAgent.activeList||[]);
+        const p=list[index];if(!p)return;
+        button.dataset.exportContext=`Property Performance · ${p.title||'—'} · Standard Listing IMP ${p.imp??'—'} · Property Views unavailable in legacy Admin demo data · Property Clicks ${p.cl??'—'} · Keep ${p.keep??'—'} · New Inquiries ${p.cv??'—'}. Organic Property metrics only; this fallback uses existing Admin demo listing metrics because no shared operational Property snapshot exists for this Agency.`;
+        MockExport.open(button);
+      }
       function openCampaignPerformanceReport(button,campaignId) {
         const d=agencyOperationalData(currentAgent?.id,currentAgent?.company||''),row=d.campaigns.find(x=>String(x.campaignId)===String(campaignId));
         const adEvents=d.events.filter(e=>String(e.campaignId||e.campaign||'')===String(campaignId));
@@ -3693,7 +3702,9 @@
               const na='<span title="Requires Client Property-card analytics instrumentation">—</span>';
               return `<tr><td>${esc(p.name||p.id)}</td><td>${esc(loc)}</td><td>${p.price?fmtYen(p.price):"—"}</td><td>${esc(p.subtype||"—")}</td><td>${badgeListStatus(p.saleStatus||"On Sale")}</td><td>${esc(p.floorPlan||"—")}</td><td>${p.floorArea||"—"}</td><td>${p.age||"—"}</td><td>${dom}</td><td>${perf.instrumented?fmtNum(perf.impressions):na}</td><td>${perf.instrumented?fmtNum(perf.views):na}</td><td>${perf.instrumented?fmtNum(perf.clicks):na}</td><td>${perf.instrumented&&perf.ctr!=null?perf.ctr.toFixed(1):na}</td><td>${perf.instrumented?perf.saves:na}</td><td>${perf.inquiries}</td><td>${perf.instrumented&&perf.cvr!=null?perf.cvr.toFixed(1):na}</td><td><button class="btn btn-sm" type="button" onclick="openPropertyPerformanceReport(this,'${escAttr(p.id)}')"><i class="fas fa-file-export"></i> Export report</button></td></tr>`;
             }).join("")
-          : '<tr><td colspan="17" style="color:var(--text-muted)"><em>No published operational Property records for this Agency.</em></td></tr>';
+          : (a.activeList||[]).length
+            ? (a.activeList||[]).map((p,index)=>`<tr><td>${esc(p.title)}</td><td>${esc(p.loc)}</td><td>${fmtYen(p.price)}</td><td>${esc(p.cat)}</td><td>${badgeListStatus(p.status)}</td><td>${esc(p.br)}</td><td>${p.floor}</td><td>${p.age}</td><td>${p.dom}</td><td>${fmtNum(p.imp)}</td><td><span title="Property View was not captured in the legacy Admin demo dataset">—</span></td><td>${fmtNum(p.cl)}</td><td>${p.ctr}</td><td>${p.keep}</td><td>${p.cv}</td><td>${p.cvr}</td><td><button class="btn btn-sm" type="button" onclick="openLegacyPropertyPerformanceReport(this,'active',${index})"><i class="fas fa-file-export"></i> Export report</button></td></tr>`).join("")
+            : '<tr><td colspan="17" style="color:var(--text-muted)"><em>No Property records for this Agency.</em></td></tr>';
 
         $("dCount12m").textContent = a.count12m;
         $("dCountAll").textContent = a.countAll;
@@ -3758,7 +3769,7 @@
               const na='<span title="Requires paid-ad analytics instrumentation">—</span>';
               return `<tr><td>${esc(row.name||row.campaignId)}</td><td>${esc(row.status||"—")}</td><td>${esc(row.placement||"—")}</td><td>${esc(row.dateRange||"—")}</td><td>${ready?fmtNum(imp):na}</td><td>${ready?fmtNum(views):na}</td><td>${ready?fmtNum(clicks):na}</td><td>${ready&&ctr!=null?ctr.toFixed(1):na}</td><td>${esc(row.budgetLabel||"—")}</td><td><button class="btn btn-sm" type="button" onclick="openCampaignPerformanceReport(this,'${escAttr(row.campaignId)}')"><i class="fas fa-file-export"></i> Export report</button></td></tr>`;
             }).join("")
-          : '<tr><td colspan="10" style="color:var(--text-muted)"><em>No shared Campaign records for this Agency. Open Agency My Campaigns to sync the prototype records.</em></td></tr>';
+          : '<tr><td colspan="10" style="color:var(--text-muted)"><em>No paid Advertisement/Campaign records for this Agency. Per-ad export is available when a campaign exists; no campaign is invented for reporting.</em></td></tr>';
 
         $("dInquiries").innerHTML = '<tr><td colspan="4" style="color:var(--text-muted)">Customer ↔ Agency conversations are not accessible to Platform users.</td></tr>';
 
@@ -3858,10 +3869,10 @@
           ? dataToShow
               .map(
                 (p) =>
-                  `<tr><td>${esc(p.title)}</td><td>${esc(p.loc)}</td><td>${fmtYen(p.price)}</td><td>${esc(p.cat)}</td><td>${badgeListStatus(p.status)}</td><td>${esc(p.br)}</td><td>${p.floor}</td><td>${p.age}</td><td>${p.dom}</td><td>${fmtNum(p.imp)}</td><td>${fmtNum(p.cl)}</td><td>${p.ctr}</td><td>${p.keep}</td><td>${p.cv}</td><td>${p.cvr}</td></tr>`,
+                  `<tr><td>${esc(p.title)}</td><td>${esc(p.loc)}</td><td>${fmtYen(p.price)}</td><td>${esc(p.cat)}</td><td>${badgeListStatus(p.status)}</td><td>${esc(p.br)}</td><td>${p.floor}</td><td>${p.age}</td><td>${p.dom}</td><td>${fmtNum(p.imp)}</td><td><span title="Property View was not captured in the legacy Admin demo dataset">—</span></td><td>${fmtNum(p.cl)}</td><td>${p.ctr}</td><td>${p.keep}</td><td>${p.cv}</td><td>${p.cvr}</td><td><button class="btn btn-sm" type="button" onclick="openLegacyPropertyPerformanceReport(this,'completed',${a.completedList.indexOf(p)})"><i class="fas fa-file-export"></i> Export report</button></td></tr>`,
               )
               .join("")
-          : '<tr><td colspan="15" style="color:var(--text-muted)"><em>No completed transactions.</em></td></tr>';
+          : '<tr><td colspan="17" style="color:var(--text-muted)"><em>No completed transactions.</em></td></tr>';
       }
 
       // Section 19 — Legal & Agreements (read-only).
