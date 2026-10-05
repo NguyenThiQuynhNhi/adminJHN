@@ -3518,6 +3518,16 @@
       }
 
       function readShared(key,fallback=[]) { try { const v=JSON.parse(localStorage.getItem(key)); return v??fallback; } catch { return fallback; } }
+      function hasShared(key) { try { return localStorage.getItem(key)!==null; } catch { return false; } }
+      function frontendCampaignFallback(agencyId) {
+        if(String(agencyId)!=='AG-00000001') return [];
+        return [
+          {campaignId:'sponsored',agencyId,name:'Sponsored Search — 西新宿 / Apartment / Rank 1',status:'Active',placement:'Sponsored Search',dateRange:'Mar 1 → Mar 31',budgetLabel:'¥95,000',performanceSourceReady:false,source:'Agency My Campaigns FE fallback'},
+          {campaignId:'approved',agencyId,name:'Static Banner — Agency Search Banner',status:'Approved',placement:'Static Banner — Agency Search Banner',dateRange:'Apr 15 → May 15',budgetLabel:'¥48,000',performanceSourceReady:false,source:'Agency My Campaigns FE fallback'},
+          {campaignId:'pending',agencyId,name:'Homepage Carousel — New Development · Position 2',status:'Pending Review',placement:'Homepage Carousel — New Development',dateRange:'Apr 1 → Jun 30',budgetLabel:'¥185,900 pre-authorized',performanceSourceReady:false,source:'Agency My Campaigns FE fallback'},
+          {campaignId:'completed',agencyId,name:'City/Area Detail Banner — Shinjuku City',status:'Completed',placement:'City/Area Detail Banner — Shinjuku City',dateRange:'Jan 1 → Feb 1',budgetLabel:'¥56,000',performanceSourceReady:false,source:'Agency My Campaigns FE fallback'}
+        ];
+      }
       function agencyOperationalData(agencyId,agencyName='') {
         const props=(readShared('yuushi.analytics.propertySnapshots',[])||[]).filter(p=>String(p.agencyId||'')===String(agencyId));
         const inquiries=(readShared(YuushiWorkflow.keys.enquiries,[])||[]).filter(q=>String(q.agencyId||'')===String(agencyId));
@@ -3527,9 +3537,17 @@
         const adminBookings=((commerce&&Array.isArray(commerce.bookings))?commerce.bookings:[])
           .filter(row=>agencyName&&String(row.account||'').toLowerCase()===String(agencyName).toLowerCase())
           .map(row=>({campaignId:row.id,agencyId,name:row.title||row.id,status:row.status,placement:row.destination||'',dateRange:[row.start,row.end].filter(Boolean).join(' → '),budgetLabel:Number.isFinite(Number(row.price))?('¥'+Number(row.price).toLocaleString()):'',source:'Admin Advertising Booking'}));
-        const campaigns=[...new Map([...sharedCampaigns,...adminBookings].map(row=>[row.campaignId,row])).values()];
+        const fallbackCampaigns=frontendCampaignFallback(agencyId);
+        const campaigns=[...new Map([...fallbackCampaigns,...sharedCampaigns,...adminBookings].map(row=>[row.campaignId,row])).values()];
         const events=(readShared('yuushi.analytics.events.v1',[])||[]);
-        return {props,inquiries,transactions,campaigns,events};
+        const ready={
+          props:hasShared('yuushi.analytics.propertySnapshots'),
+          inquiries:hasShared(YuushiWorkflow.keys.enquiries),
+          transactions:hasShared(YuushiWorkflow.keys.transactions),
+          events:hasShared('yuushi.analytics.events.v1'),
+          campaigns:hasShared('yuushi.agencyCampaigns')||hasShared('yuushi-cms-v1')
+        };
+        return {props,inquiries,transactions,campaigns,events,ready};
       }
       function eventCount(events,type,propertyId) { return events.filter(e=>e.type===type&&(!propertyId||String(e.propertyId||'')===String(propertyId))).length; }
       function propertyPerformance(propertyId,events) {
@@ -3541,7 +3559,9 @@
         if(!currentAgent)return;
         const d=agencyOperationalData(currentAgent.id,currentAgent.company);
         const joined=currentAgent.regDate||currentAgent.contractStart||'—';
-        button.dataset.exportContext=`Agency Summary · ${currentAgent.id} · ${currentAgent.company} · Joined ${joined} · Plan ${currentAgent.plan||'—'} · Current published listings ${d.props.filter(p=>p.publishStatus==='Published'&&!p.endedAt).length} · Recorded transactions ${d.transactions.length} · Campaign records ${d.campaigns.length}. Subscription/payment spend is included only when an operational ledger exists; no dashboard seed values are exported.`;
+        const listingCount=d.ready.props?d.props.filter(p=>p.publishStatus==='Published'&&!p.endedAt).length:(currentAgent.activeList||[]).length;
+        const transactionCount=d.ready.transactions?d.transactions.length:(currentAgent.completedList||[]).length;
+        button.dataset.exportContext=`Agency Summary · ${currentAgent.id} · ${currentAgent.company} · Joined ${joined} · Plan ${currentAgent.plan||'—'} · Current listings ${listingCount} · Recorded transactions ${transactionCount} · Campaign records ${d.campaigns.length}. Frontend demo fallback is used only when the shared operational store is unavailable.`;
         MockExport.open(button);
       }
       function openPropertyPerformanceReport(button,propertyId) {
@@ -3611,16 +3631,16 @@
         const recentInquiries=operational.inquiries.filter(q=>Date.parse(q.createdAt||q.lastOpenedAt||0)>=cutoff30);
         const recentTransactions=operational.transactions.filter(t=>Date.parse(t.soldDate||t.updatedAt||0)>=cutoff30);
         const activeOperational=operational.props.filter(p=>p.publishStatus==='Published'&&!p.endedAt);
-        $("dTotalLogins").textContent = agencySessions.length || "—";
-        $("dLastLogin").textContent = lastSession?.occurredAt ? new Date(lastSession.occurredAt).toLocaleString() : "—";
-        $("dAvgSession").textContent = "—";
-        $("dActiveListings").textContent = activeOperational.length;
-        $("dSavedProps").textContent = "—";
-        $("dInqRecv30").textContent = recentInquiries.length;
-        $("dPropsInq30").textContent = new Set(recentInquiries.map(q=>q.propertyId).filter(Boolean)).size;
-        $("dClosed30").textContent = recentTransactions.length;
-        $("dAppraisalReq30").textContent = "—";
-        $("dAvgRespTime").textContent = "—";
+        $("dTotalLogins").textContent = operational.ready.events ? (agencySessions.length || "—") : (a.totalLogins || "—");
+        $("dLastLogin").textContent = operational.ready.events ? (lastSession?.occurredAt ? new Date(lastSession.occurredAt).toLocaleString() : "—") : (a.lastLogin || "—");
+        $("dAvgSession").textContent = operational.ready.events ? "—" : (a.avgSession || "—");
+        $("dActiveListings").textContent = operational.ready.props ? activeOperational.length : (a.activeList||[]).length;
+        $("dSavedProps").textContent = operational.ready.events ? "—" : (a.savedProps ?? "—");
+        $("dInqRecv30").textContent = operational.ready.inquiries ? recentInquiries.length : (a.inqRecv30 ?? "—");
+        $("dPropsInq30").textContent = operational.ready.inquiries ? new Set(recentInquiries.map(q=>q.propertyId).filter(Boolean)).size : (a.propsInq30 ?? "—");
+        $("dClosed30").textContent = operational.ready.transactions ? recentTransactions.length : (a.closed30 ?? "—");
+        $("dAppraisalReq30").textContent = a.apprReq30 ?? "—";
+        $("dAvgRespTime").textContent = a.avgRespTime || "—";
 
         renderEditableSections(a);
 
@@ -3766,7 +3786,7 @@
               const adEvents=operational.events.filter(e=>String(e.campaignId||e.campaign||'')===String(row.campaignId));
               const imp=adEvents.filter(e=>e.type==='ad_rendered').length,views=adEvents.filter(e=>e.type==='ad_viewed').length,clicks=adEvents.filter(e=>e.type==='ad_clicked').length;
               const ready=adEvents.some(e=>['ad_rendered','ad_viewed','ad_clicked'].includes(e.type)),ctr=imp?clicks/imp*100:null;
-              const na='<span title="Requires paid-ad analytics instrumentation">—</span>';
+              const na='<span title="Performance metrics are unavailable in the current frontend demo source">—</span>';
               return `<tr><td>${esc(row.name||row.campaignId)}</td><td>${esc(row.status||"—")}</td><td>${esc(row.placement||"—")}</td><td>${esc(row.dateRange||"—")}</td><td>${ready?fmtNum(imp):na}</td><td>${ready?fmtNum(views):na}</td><td>${ready?fmtNum(clicks):na}</td><td>${ready&&ctr!=null?ctr.toFixed(1):na}</td><td>${esc(row.budgetLabel||"—")}</td><td><button class="btn btn-sm" type="button" onclick="openCampaignPerformanceReport(this,'${escAttr(row.campaignId)}')"><i class="fas fa-file-export"></i> Export report</button></td></tr>`;
             }).join("")
           : '<tr><td colspan="10" style="color:var(--text-muted)"><em>No paid Advertisement/Campaign records for this Agency. Per-ad export is available when a campaign exists; no campaign is invented for reporting.</em></td></tr>';
