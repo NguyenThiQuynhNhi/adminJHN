@@ -2671,23 +2671,7 @@
           <button class="confirm-close" type="button" id="rejectClose"><i class="fas fa-times"></i></button>
         </div>
         <div class="confirm-body" style="padding: 18px">
-          <div class="field-group" style="margin-bottom: 12px">
-            <label class="field-label">Reject category <span class="required">*</span></label>
-            <select class="edit-input" id="rejectCategorySelect">
-              <option value="">Select a reason…</option>
-              <option value="Incomplete information">Incomplete information</option>
-              <option value="Inappropriate content">Inappropriate content</option>
-              <option value="Duplicate listing">Duplicate listing</option>
-              <option value="Invalid license">Invalid license</option>
-              <option value="Poor image quality">Poor image quality</option>
-              <option value="Policy violation">Policy violation</option>
-            </select>
-            <span class="field-error hidden" id="rejectCategoryErr" style="color:var(--status-danger-text);font-size:11.5px">Please select a reason.</span>
-          </div>
-          <div class="field-group">
-            <label class="field-label">Notes (optional)</label>
-            <textarea class="edit-input" id="rejectNotesInput" style="min-height:60px" placeholder="Additional detail for the agency…"></textarea>
-          </div>
+          <p style="margin:0">Reject this listing and return it to the Agency for correction?</p>
         </div>
         <div class="confirm-footer">
           <button class="btn" type="button" id="rejectCancel">Cancel</button>
@@ -6441,10 +6425,7 @@
           alerts.push({
             kind: "danger",
             icon: "fa-circle-xmark",
-            msg:
-              "This listing was rejected. Reason: " +
-              esc(p.rejectCategory || "—") +
-              (p.rejectNotes ? ". " + esc(p.rejectNotes) : ""),
+            msg: "This listing was rejected.",
           });
         // Prominent Sold-Out record card (shown ABOVE the section cards).
         let soldCardHtml = "";
@@ -6794,9 +6775,6 @@
       
       function rejectListing() {
         if (!currentProp) return;
-        $("rejectCategorySelect").value = "";
-        $("rejectNotesInput").value = "";
-        $("rejectCategoryErr").classList.add("hidden");
         $("rejectModal").classList.add("open");
       }
       (function wireRejectModal() {
@@ -6809,17 +6787,12 @@
           if (e.key === "Escape" && modal.classList.contains("open")) close();
         });
         $("rejectConfirmBtn").addEventListener("click", () => {
-          const cat = $("rejectCategorySelect").value;
-          if (!cat) {
-            $("rejectCategoryErr").classList.remove("hidden");
-            return;
-          }
           if (!currentProp) return;
           const today = new Date().toISOString().slice(0, 10);
           const oldStatus = currentProp.publishStatus;
           currentProp.publishStatus = "Rejected";
-          currentProp.rejectCategory = cat;
-          currentProp.rejectNotes = $("rejectNotesInput").value.trim();
+          currentProp.rejectCategory = undefined;
+          currentProp.rejectNotes = undefined;
           currentProp.dateUpdated = today;
           currentProp.changeHistory = currentProp.changeHistory || [];
           currentProp.changeHistory.unshift({
@@ -6831,7 +6804,7 @@
             oldVal: oldStatus,
             newVal: "Rejected",
           });
-          emitPropertyEvent('property_status_changed',currentProp,{oldStatus,newStatus:'Rejected',changeSource:'admin_rejection',rejectCategory:cat});
+          emitPropertyEvent('property_status_changed',currentProp,{oldStatus,newStatus:'Rejected',changeSource:'admin_rejection'});
           originalProp = JSON.parse(JSON.stringify(currentProp));
           close();
           renderDetail();
