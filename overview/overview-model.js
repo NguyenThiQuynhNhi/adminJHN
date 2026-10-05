@@ -17,12 +17,12 @@
     });
   }
   function withdrawalStats(accounts,start,end) {
-    const users=accounts.filter(a=>a.type==='Client');
-    return {withdrawals:users.filter(a=>a.withdrawnAt&&inPeriod(a.withdrawnAt,start,end)).length};
+    const events=(D.analyticsEvents||[]).filter(e=>e.type==='account_status_changed'&&e.newStatus==='Withdrawn'&&e.accountType==='Customer'&&inPeriod((e.withdrawnAt||e.occurredAt||'').slice(0,10),start,end));
+    return {withdrawals:new Set(events.map(e=>e.eventId||[e.accountId,e.withdrawnAt||e.occurredAt].join('|'))).size};
   }
   function inactiveCount(accounts,at) {
     return accounts.filter(a=>a.registeredAt<=at&&(!a.withdrawnAt||a.withdrawnAt>at)).filter(a=> {
-      const anchor=[a.registeredAt,...a.logins.filter(d=>d<=at)].sort().at(-1);
+      const anchor=[a.registeredAt,...(a.logins||[]).filter(d=>d<=at)].filter(Boolean).sort().at(-1);
       return U.addDays(anchor,30)<=at;
     }).length;
   }
@@ -79,13 +79,13 @@
     return date;
   }
   function buckets(start,end,unit='Monthly') {const values=new Map();for(let d=start;d<=end;d=U.addDays(d,1)){const key=periodKey(d,unit);if(!values.has(key))values.set(key,{label:key,start:d,end:d});else values.get(key).end=d;}return [...values.values()];}
-  function activity(accounts,end,days) {accounts=platformAccounts(accounts,end);const start=U.addDays(end,1-days);return accounts.filter(a=>(!a.withdrawnAt||a.withdrawnAt>end)&&a.logins.some(d=>inPeriod(d,start,end))).length;}
+  function activity(accounts,end,days) {accounts=platformAccounts(accounts,end);const start=U.addDays(end,1-days);return accounts.filter(a=>(!a.withdrawnAt||a.withdrawnAt>end)&&(a.logins||[]).some(d=>inPeriod(d,start,end))).length;}
   function platformAccounts(accounts=D.accounts,at=D.today) {return [...new Map(accounts.filter(a=>['Client','Agency'].includes(a.type)&&a.registeredAt<=at&&(!a.withdrawnAt||a.withdrawnAt>at)).map(a=>[a.id,a])).values()];}
   function pendingAgencies(accounts=D.accounts) {return accounts.filter(a=>a.type==='Agency'&&a.status==='Pending').length;}
   function unrespondedMessages(chats=D.adminChats) {return chats.filter(c=>c.recipient==='YUUSHI Admin'&&c.status==='unresponded').length;}
   function activeSubscriptions(at=D.today,subscriptions=D.subscriptions) {const ids=new Set(platformAccounts(D.accounts,at).filter(a=>a.type==='Agency').map(a=>a.id));return subscriptions.filter(s=>ids.has(s.agencyId)&&s.status==='Active'&&s.recurring&&s.start<=at&&(!s.end||s.end>at));}
   function mrr(at=D.today,subscriptions=D.subscriptions) {return activeSubscriptions(at,subscriptions).reduce((n,s)=>n+(s.billingCycle==='Annual'?s.fee/12:s.billingCycle==='Monthly'?s.fee:0),0);}
-  function sessionAverage(start,end,type) {const ids=new Set(platformAccounts(D.accounts,end).filter(a=>!type||a.type===type).map(a=>a.id));return average(D.accountSessions.filter(s=>ids.has(s.accountId)&&inPeriod(s.date,start,end)),'seconds');}
+  function sessionAverage(start,end,type) {const ids=new Set(platformAccounts(D.accounts,end).filter(a=>!type||a.type===type).map(a=>a.id));const sessions=D.accountSessions.filter(s=>ids.has(s.accountId)&&inPeriod(s.date,start,end)&&Number.isFinite(s.seconds));return sessions.length?average(sessions,'seconds'):null;}
   function validateTarget(t) {const counts=['users','subscriptions','listings'],metrics=['totalRevenue','subscription','banner','sponsored','appraisal','optionRevenue',...counts];const date=d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&Number.isFinite(Date.parse(d+'T00:00:00Z'))&&new Date(d+'T00:00:00Z').toISOString().slice(0,10)===d;return metrics.includes(t.metric)&&date(t.start)&&date(t.end)&&t.end>=t.start&&Number.isFinite(t.value)&&t.value>0&&(!counts.includes(t.metric)||Number.isInteger(t.value));}
   function amount(r) {return ['subscription','banner','sponsored','featured','appraisal','optionRevenue'].reduce((n,key)=>n+(Number(r?.[key])||0),0);}
   function performance(rows) {return {impressions:sum(rows,'impressions'),views:sum(rows,'views'),clicks:sum(rows,'clicks'),saves:sum(rows,'saves'),inquiries:sum(rows,'inquiries'),deals:sum(rows,'deals'),ctr:ratio(sum(rows,'clicks'),sum(rows,'impressions')),cvr:ratio(sum(rows,'inquiries'),sum(rows,'clicks'))};}
@@ -216,7 +216,7 @@
     }
     if(id==='r127')return result(buckets(f.start,f.end,f.unit).flatMap(b=>groupBy(properties,p=>p.city+' · '+p.subtype,ps=>{const ids=new Set(ps.map(p=>p.id)),searches=sum(rows.filter(r=>ids.has(r.propertyId)&&inPeriod(r.date,b.start,b.end)),'searches'),listings=ps.filter(p=>p.createdAt<=b.end&&(!p.endedAt||p.endedAt>b.end)).length;return {listings,searches,ratio:searches?listings/searches:null};}).map(r=>({...r,label:b.label+' · '+r.label}))),['listings','searches','ratio'],'heatmap','Published inventory at period-end divided by searches during the period, by city and property type.');
     if(id==='r128')return aggregate(rows,r=>r.country+' · '+String(r.hour).padStart(2,'0')+':00',['sessions'],'heatmap');
-    if(id==='r130') {const vals=['clicks','saves','inquiries','deals'].map(k=>sum(rows,k));return result(vals.map((count,i)=>({label:['Property views','Saves (Keep)','Inquiries','Deals'][i],count,rate:i?ratio(count,vals[i-1]):100})),['count','rate'],'funnel');}
+    if(id==='r130') {const keys=['sessions','views','clicks','saves','inquiries','deals'],vals=keys.map(k=>sum(rows,k));return result(vals.map((count,i)=>({label:['Sessions','Property Views','Property Clicks','Keep / Saves','Property Inquiries','Agency-recorded Deals'][i],count,rate:i?ratio(count,vals[i-1]):100})),['count','rate'],'funnel','Six-step organic funnel. Paid advertisement events are excluded.');}
     if(id==='r137')return result(groupBy(rows,r=>(f.breakdown==='campaign'?r.campaign+' · ':'')+(r.member?'In-platform':'Email'),r=>({sent:sum(r,'sent'),read:sum(r,'read'),marketingClicks:sum(r,'marketingClicks'),marketingCV:sum(r,'marketingCV'),readRate:ratio(sum(r,'read'),sum(r,'sent')),clickRate:ratio(sum(r,'marketingClicks'),sum(r,'read'))})),['sent','read','marketingClicks','marketingCV','readRate','clickRate'],'funnel');
     throw new Error('Metric renderer is not implemented: '+id);
   }
