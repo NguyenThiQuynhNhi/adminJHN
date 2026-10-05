@@ -94,14 +94,14 @@
       </div>
       <div class="section-heading"><h2>Platform KPIs</h2><div class="inline-fields"><label>Account type <select id="kpiUserType"><option>All</option><option>Client</option><option>Agency</option></select></label><label>Active window <select id="kpiActiveWindow"><option value="1">DAU</option><option value="7">WAU</option><option value="30">MAU</option></select></label></div></div>
       <div class="cards">
-        ${kcard('Total Users',users.length,'Excludes withdrawn accounts · '+customerUsers.length+' Clients / '+agentUsers.length+' Agencies')}
-        ${kcard('Active Users','<span id="kpiActiveValue">'+M.activity(users,D.today,1)+'</span>','Registered accounts with recorded login/activity in selected window')}
+        ${kcard('Total Users',D.accountDirectoryReady?users.length:'—',D.accountDirectoryReady?'Excludes withdrawn accounts · '+customerUsers.length+' Clients / '+agentUsers.length+' Agencies':'Requires synchronized Customer + Agency directories')}
+        ${kcard('Active Users','<span id="kpiActiveValue">'+(D.accountDirectoryReady?M.activity(users,D.today,1):'—')+'</span>',D.accountDirectoryReady?'Registered accounts with recorded login/activity in selected window':'Requires synchronized account directory + activity events')}
         ${kcard('Avg Session Time',Number.isFinite(Number(telemetry.avgSessionSeconds))?mockValue(telemetry.avgSessionSeconds)+'s':'—',mockNote('Avg Session Time'))}
         ${kcard("Today's Revenue",mockValue(telemetry.todayRevenue,'JPY'),mockNote("Today's Revenue"))}
         ${kcard('MTD Revenue',mockValue(telemetry.mtdRevenue,'JPY'),mockNote('MTD Revenue'))}
         ${kcard('MRR','—','Requires Subscription Plan Master + active recurring payment/subscription records. Dashboard must not hard-code plan prices.')}
         ${kcard('Total Listed Properties',publishedCount==null?'—':publishedCount,publishedCount==null?'Requires operational/shared Property store.':'Published listings from persisted Property records only.')}
-        ${kcard("Today's Inquiries",todayInquiryCount,delta(todayInquiryCount,yesterdayInquiryCount)+' · NEW Client → Agency property inquiries only; duplicate reopen does not increment')}
+        ${kcard("Today's Inquiries",todayInquiryCount==null?'—':todayInquiryCount,todayInquiryCount==null?'Requires synchronized Inquiry store':delta(todayInquiryCount,yesterdayInquiryCount)+' · NEW Client → Agency property inquiries only; duplicate reopen does not increment')}
       </div>
       <div class="section-heading"><h2>Account changes this month</h2><span class="badge amber">Provisional · ${currentMonth} – ${D.today}</span></div>
       <div class="cards">
@@ -111,7 +111,7 @@
       <div class="section-heading"><h2>Trends</h2><a href="end-user-stats-dashboard.html#metric-r56">View withdrawal history →</a></div><div class="chart-grid">${graphs.map(chartCard).join('')}</div>`;
     renderTargets();
     document.getElementById('fraudSettings').onclick=openFraudSettings;document.getElementById('targetSettings').onclick=openTargetSettings;
-    const update=()=>{const type=document.getElementById('kpiUserType').value,days=Number(document.getElementById('kpiActiveWindow').value);document.getElementById('kpiActiveValue').textContent=M.activity(users.filter(a=>type==='All'||a.type===type),D.today,days);};
+    const update=()=>{const type=document.getElementById('kpiUserType').value,days=Number(document.getElementById('kpiActiveWindow').value);document.getElementById('kpiActiveValue').textContent=D.accountDirectoryReady?M.activity(users.filter(a=>type==='All'||a.type===type),D.today,days):'—';};
     document.getElementById('kpiUserType').onchange=update;document.getElementById('kpiActiveWindow').onchange=update;
   }
   function openDialog(title,html){const d=document.getElementById('overviewDialog');document.getElementById('dialogTitle').textContent=title;document.getElementById('dialogBody').innerHTML=html;d.showModal();}
