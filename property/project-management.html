@@ -4153,33 +4153,6 @@
           n++;
         }
       })();
-      (function seedProjectPerformance() {
-        const AD_NAMES = [
-          { id: "AD-001", name: "Homepage Banner Top", type: "Banner #1" },
-          { id: "AD-002", name: "Search Results Sidebar", type: "Banner #2" },
-          { id: "AD-003", name: "Project Detail Related", type: "Banner #3" },
-          { id: "AD-004", name: "Email Newsletter Slot", type: "Banner #4" },
-          { id: "AD-005", name: "Mobile App Featured", type: "Banner #5" },
-        ];
-        projects.forEach((p, i) => {
-          if (p.performance) return;
-          const imp = 1500 + ((i * 331) % 9000);
-          const views = Math.round(imp * (0.2 + (i % 6) * 0.03));
-          const clicks = Math.round(views * (0.24 + (i % 5) * 0.04));
-          const keep = Math.round(clicks * (0.09 + (i % 4) * 0.02));
-          const adCount = i % 4;
-          const ads = [];
-          for (let a = 0; a < adCount; a++) {
-            const ad = AD_NAMES[(i + a) % AD_NAMES.length];
-            const aImp = 900 + (((i + a) * 223) % 5000);
-            const aViews = Math.round(aImp * (0.16 + (a % 4) * 0.04));
-            const aClicks = Math.round(aViews * (0.21 + (a % 3) * 0.05));
-            const aKeep = Math.round(aClicks * (0.08 + (a % 4) * 0.02));
-            ads.push({ adId: ad.id, adName: ad.name, adType: ad.type, impressions: aImp, views: aViews, clicks: aClicks, keep: aKeep });
-          }
-          p.performance = { standardListing: { impressions: imp, views, clicks, keep }, ads };
-        });
-      })();
       // ========================================================================
       // STATE + HELPERS
       // ========================================================================
@@ -4192,6 +4165,26 @@
       let currentPage = 1;
 
       const $ = (id) => document.getElementById(id);
+      function analyticsApi(){try{return window.top?.YuushiAnalytics||window.YuushiAnalytics||null;}catch{return window.YuushiAnalytics||null;}}
+      function projectPerformanceFromEvents(projectId){
+        const events=analyticsApi()?.events?.()||[];
+        const organicTypes=new Set(['project_card_rendered','project_card_viewed','project_card_clicked','project_saved','project_inquiry_created']);
+        const organicEvents=events.filter(e=>String(e.projectId||'')===String(projectId)&&organicTypes.has(e.type));
+        const count=type=>organicEvents.filter(e=>e.type===type).length;
+        const organic={impressions:count('project_card_rendered'),views:count('project_card_viewed'),clicks:count('project_card_clicked'),keep:count('project_saved'),inquiries:count('project_inquiry_created')};
+        const paidEvents=events.filter(e=>String(e.projectId||'')===String(projectId)&&['ad_rendered','ad_viewed','ad_clicked','ad_inquiry_created'].includes(e.type));
+        const map=new Map();
+        paidEvents.forEach(e=>{
+          const id=e.campaignId||e.adId||e.campaign||'Unidentified campaign';
+          const row=map.get(id)||{id,name:e.campaignName||e.adName||String(id),adType:e.adType||'',impressions:0,views:0,clicks:0,inquiries:0};
+          if(e.type==='ad_rendered')row.impressions++;
+          if(e.type==='ad_viewed')row.views++;
+          if(e.type==='ad_clicked')row.clicks++;
+          if(e.type==='ad_inquiry_created')row.inquiries++;
+          map.set(id,row);
+        });
+        return {organic,organicReady:organicEvents.some(e=>['project_card_rendered','project_card_viewed','project_card_clicked','project_saved'].includes(e.type)),ads:[...map.values()],adReady:paidEvents.length>0};
+      }
       const esc = (s) =>
         String(s ?? "").replace(
           /[&<>"']/g,
@@ -5986,15 +5979,14 @@
           return false;
         if (F.sales.length && !F.sales.includes(p.salesStatus || "On Sale"))
           return false;
-        if (F.keepMin != null || F.keepMax != null) {
-          const k = (p.performance && p.performance.standardListing && p.performance.standardListing.keep) || 0;
-          if (F.keepMin != null && k < F.keepMin) return false;
-          if (F.keepMax != null && k > F.keepMax) return false;
-        }
-        if (F.clickMin != null || F.clickMax != null) {
-          const c = (p.performance && p.performance.standardListing && p.performance.standardListing.clicks) || 0;
-          if (F.clickMin != null && c < F.clickMin) return false;
-          if (F.clickMax != null && c > F.clickMax) return false;
+        if (F.keepMin != null || F.keepMax != null || F.clickMin != null || F.clickMax != null) {
+          const eventPerf=projectPerformanceFromEvents(p.id);
+          if (!eventPerf.organicReady) return false;
+          const keep=eventPerf.organic.keep, clicks=eventPerf.organic.clicks;
+          if (F.keepMin != null && keep < F.keepMin) return false;
+          if (F.keepMax != null && keep > F.keepMax) return false;
+          if (F.clickMin != null && clicks < F.clickMin) return false;
+          if (F.clickMax != null && clicks > F.clickMax) return false;
         }
         if (F.yieldMin != null) {
           const y = projYieldMax(p);
