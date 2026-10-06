@@ -154,7 +154,7 @@
     const historicalEvents=new Set(['r30','r31','r91','r103','r105','r120']);
     const appraisalDelivery=new Set(['r118']);
     const instrumentation=new Set(['r35','r36','r39','r40','r45','r46','r48','r49','r50','r51','r69','r70','r77','r80','r82','r83','r92','r93','r126','r127','r128','r130','r131','r132','r133','r134','r135','r136','r137','r139','r140','r141','r142','r143','r144','r145']);
-    if(mock.has(id))return {ready:'mock',note:'Prototype telemetry only; no backend health/payment integration is built in this repository.'};
+    if(mock.has(id))return {ready:'mock',note:'Operational telemetry is not currently available for this metric.'};
     if(id==='r107')return {ready:false,note:'Platform CPA requires YUUSHI acquisition/marketing spend. Subscription/ad revenue is income and must not be used as the acquisition-cost numerator.'};
     if(id==='r112')return {ready:false,note:'This is an Agency-facing subscription fee efficiency metric, not Platform CPA. Requires persisted subscription charges and the selected conversion records before calculation.'};
     if(['r113','r114'].includes(id))return {ready:false,note:'Agency ad cost per conversion requires persisted ad spend plus paid-ad attributed conversion events. Organic listing events must not be reused.'};
@@ -166,9 +166,9 @@
     if(planMaster.has(id))return {ready:false,note:'Requires Subscription Plan Master and/or persisted payment/campaign spend records. Dashboard must not hard-code plan prices or limits.'};
     if(historicalEvents.has(id))return {ready:false,note:'Property lifecycle/price events are now emitted prospectively; historical trend remains unavailable until sufficient event history exists.'};
     if(appraisalDelivery.has(id))return {ready:false,note:'Requires one persisted appraisal_delivery record per Agency recipient; the current Appraisal page still uses page-local records.'};
-    if(instrumentation.has(id))return {ready:false,note:'Requires an analytics event producer or operational shared store that is not yet wired for this metric.'};
+    if(instrumentation.has(id))return {ready:false,note:'No validated analytics source is currently available for this metric.'};
     if(id==='r101')return {ready:true,note:'Uses persisted Property listing start/end dates from the operational Property snapshot store.'};
-    return {ready:false,note:'No validated platform data lineage is registered for this metric yet.'};
+    return {ready:false,note:'No validated data is currently available for this metric.'};
   };
 
   const defaultTelemetry={
