@@ -17,33 +17,22 @@ Source: [property-list-oversight.html](../property-list-oversight.html), the cur
 
 ---
 
-## Part 1 — Alerts subsystem (added)
+## Property notifications
 
-Per-listing **alert detectors** are pure functions `(listing) => alert | null`; each alert is `{ key, id, entityId, severity, title, desc, actionLabel, actionFn }`. `computeAlerts(p)` runs all detectors, drops nulls and muted non-critical alerts, and sorts by severity; `computeAllAlerts()` aggregates across every listing; `activeAlertIdSet()` returns the ids that have ≥1 active alert (used by the filter pill).
+Current workflow-backed Property notifications are intentionally limited to actionable business states:
 
-**7 detector types** (`ALERT_DETECTORS` array):
+| Notification | Trigger |
+|---|---|
+| Property rejected by Admin | `publishStatus === "Rejected"`; displays canonical rejection reason. |
+| Property suspended by Admin | `publishStatus === "Suspended" && suspendedBy === "Admin"`; displays suspension reason and Admin note when present. |
+| Property report requires response | An Agency-visible report is in `awaiting_agency_response`. |
+| Property pending Admin review | `publishStatus === "Pending Review"`. |
 
-| Detector | Severity | Trigger |
-|---|---|---|
-| `detStale` — Stale listing | warning | Published, active > 90 days, and `inquiries30d === 0`. |
-| `detMissingField` — Missing required field | warning | Published and missing any of: 3D view (`has3D===false`), floor plan (`floorPlan===false`), English translation (`englishTranslation===false`). |
-| `detLicenseExpiry` — Agency license expiry approaching | critical | `licenseExpiry` within 0–60 days and the agent has active listings. |
-| `detPendingTooLong` — Pending approval too long | critical | `publishStatus === "Pending Review"` for > 48 hours. |
-| `detFlagged` — Flagged for rectification | critical | `flagged` truthy (shows `flagNote`). |
-| `detPriceAnomaly` — Price anomaly | warning | `priceBuy` more than ±25% vs the same-`propType` average in the same prefecture (`areaAverageFor`). |
-| `detDuplicate` — Duplicate detected | warning | Another listing with the same `chome` + `houseNo` and area within ±2㎡. |
+Notifications are aggregated into `yuushi.notif.property` for the Agency shell bell. Admin suspension sample data includes an explicit reason so the flow is visible during review.
 
-**Severity → existing badge classes** (`alertSeverityBadge`): critical → `badge-rejected`, warning → `badge-pending`, info → `badge-gray`.
+The UI does not expose explanatory business-rule labels; notification text is operational (event/status/reason/action).
 
-**UI surfaces** (single refresh entry point `refreshAlertsUI()` → banner + bell + pill):
-- **Banner stack** — `#alertBanner` at the top of the list shows the top 3 (sorted critical-first) plus a "Show all alerts (N)" / "Show fewer alerts" toggle (`renderAlertBanner` / `toggleBanner`). Clicking a row jumps to the listing detail.
-- **Shell bell** — `renderBell()` publishes `yuushi.notif.property`; the shell header displays Property/Project notifications. Legacy dropdown helper functions remain but are not the current list-header bell UI.
-- **Filter pill** — `#alertPill` ("Needs attention", count `#alertPillCnt`) in the toolbar toggles `alertFilterOn`, narrowing the list to entities in `activeAlertIdSet()` (`toggleAlertFilter`).
-- **Detail view** — per-listing alerts render into `#dAlerts`.
 
-**Dismiss = 7-day mute** (`muteAlert` / `isAlertMuted`), stored in localStorage **`yuushi.ploAlertMutes`** as `{ alertKey: expiryMs }`; expired mutes are pruned lazily. **Critical alerts cannot be dismissed** (no × button) — only resolved by their action. Each alert's **primary action** reuses an existing flow: edit mode (`showDetail` + `enterEditMode`) for stale/missing/price/flagged, `openConfirm(...)` confirmations for pending-escalation / duplicate compare; feedback via `toast()`.
-
----
 
 ## Part 2 — Edit refinements (added)
 
