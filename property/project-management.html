@@ -7648,6 +7648,22 @@
       applyFilters(); // initial filter/sort pass + chips + badges
       setPrjView(prjView); // applies persisted Table/Grid view + renders
 
+      // Deep-link / moderation handoff: open the full Project Management detail UI.
+      try {
+        const params=new URLSearchParams(location.search);
+        const pid=params.get("projectId")||params.get("id");
+        if(pid){
+          if(!projects.some(p=>String(p.id)===String(pid))){
+            const raw=sessionStorage.getItem("yuushi.viewRecord");
+            if(raw){
+              const rec=JSON.parse(raw);
+              if(rec&&String(rec.id)===String(pid)){projects.unshift(YuushiMunicipality.normalizeMunicipality(rec));filtered=projects.slice();}
+            }
+          }
+          if(projects.some(p=>String(p.id)===String(pid))) showDetail(pid);
+        }
+      } catch(e) {}
+
       // Auto-create handoff: if Property Management redirected here with intent
       // to create a Group 5/6 project, open the create flow immediately.
       try {
