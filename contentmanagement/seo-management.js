@@ -56,7 +56,24 @@ const SEO = (() => {
   function saveBar(){return `<p class="error" id="formError" role="alert"></p><div class="actions"><span id="saveState" class="muted">${dirty?'Unsaved changes':'Saved settings'}</span><button type="button" id="discard">Discard changes</button><button class="primary" type="submit">Save settings</button></div>`;}
   function renderType(k){const t=types[k],r=records.find(r=>r.type===k);return `<div class="section-head"><h2>${t.label} SEO</h2><span class="badge">Independent configuration</span></div><div class="layout"><form id="settings"><section class="card"><h2>Search Appearance</h2>${field('Meta Title Template','title',draft.title)}${field('Meta Description Template','description',draft.description,true)}${field('SEO Keywords','keywords',draft.keywords,false,'Configuration data only. Separate keywords with commas.')}<strong>Available variables</strong><p class="muted">Click a variable to insert it into the selected template field.</p>${t.source?`<p class="muted">${esc(t.source)}</p>`:''}<div class="chips">${t.vars.map(v=>`<button type="button" data-var="${v}">{${v}}</button>`).join('')}</div><small>Empty or unresolved templates use Global defaults.</small></section><section class="card"><h2>Social Sharing / Open Graph</h2><p><strong>OG Title:</strong> Uses resolved Meta Title.</p><p><strong>OG Description:</strong> Uses resolved Meta Description.</p><label>OG Image source<select name="image">${options(t.images,draft.image)}</select></label></section><section class="card"><h2>Indexing</h2><label>Indexing default<select name="indexing">${options(['inherit','Index, Follow','Noindex, Follow'],draft.indexing)}</select></label><small>Global default: ${esc(global.indexing)}</small></section>${saveBar()}</form><aside class="preview"><p class="muted">Configuration sample: ${esc(r.name)}</p><div id="preview">${previewHTML(resolve(r,draft,global))}</div></aside></div>`;}
   function renderInsight(){return `<div class="section-head"><h2>Insight SEO</h2></div><div class="summary-grid">${Object.entries(types).filter(([,t])=>t.group==='Insight').map(([key,t])=>`<section class="card"><h2>${t.label}</h2><p>Independent SEO configuration and previews.</p><button data-open="${key}">Configure ${t.label}</button></section>`).join('')}</div>`;}
-  function switchTab(next){if(dirty&&!confirm('Discard unsaved SEO settings?'))return;tab=next;dirty=false;draft=tab==='global'?copy(global):types[tab]?copy(configs[tab]):null;lastField='title';document.querySelectorAll('[data-tab]').forEach(b=>{b.classList.toggle('selected',b.dataset.tab===tab);b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false');});render();}
+  function switchTab(next){
+    if(dirty&&!confirm('Discard unsaved SEO settings?'))return;
+    tab=next;dirty=false;draft=tab==='global'?copy(global):types[tab]?copy(configs[tab]):null;lastField='title';
+    const insightFamily=tab==='insight'||types[tab]?.group==='Insight';
+    document.querySelectorAll('.seo-primary-nav [data-tab]').forEach(b=>{
+      const selected=b.dataset.tab===tab||(b.dataset.tab==='insight'&&insightFamily);
+      b.classList.toggle('selected',selected);
+      b.setAttribute('aria-current',selected?'page':'false');
+    });
+    document.querySelectorAll('.seo-secondary-nav [data-tab]').forEach(b=>{
+      const selected=b.dataset.tab===tab;
+      b.classList.toggle('selected',selected);
+      b.setAttribute('aria-current',selected?'page':'false');
+    });
+    const subnav=$('insightSubnav');
+    if(subnav)subnav.hidden=!insightFamily;
+    render();
+  }
   function collect(form){const result={...draft};for(const el of form.elements)if(el.name)result[el.name]=el.type==='checkbox'?el.checked:el.value;return result;}
   function updateDraft(){draft=collect($('settings'));dirty=true;$('saveState').textContent='Unsaved changes';if(types[tab])$('preview').innerHTML=previewHTML(resolve(records.find(r=>r.type===tab),draft,global));}
   function validate(value,isGlobal=false){if(isGlobal){if(!value.siteName.trim()||!value.description.trim())return 'Site Name and Default Meta Description are required.';if(!safeURL(value.image,true))return 'Upload a valid default OG image.';}return '';}
