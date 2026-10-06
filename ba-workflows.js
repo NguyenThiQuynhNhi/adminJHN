@@ -34,7 +34,12 @@
     if(!data.customerId||!data.agencyId||!data.propertyId)throw Error('Customer, Agency and Property are required.');
     const rows=W.read(W.keys.enquiries);
     const match=r=>String(r.customerId||r.clientId)===String(data.customerId)&&String(r.agencyId)===String(data.agencyId)&&String(r.propertyId)===String(data.propertyId);
-    let row=rows.find(match)||W.read(W.keys.leadRecords).find(match);
+    const closedStatuses=new Set(['closed','closed won','closed lost','resolved','cancelled','canceled','rejected','withdrawn']);
+    // JHN Q&A: only a still-active Inquiry may be reopened. A closed Inquiry
+    // remains historical; a subsequent request creates a new Inquiry record.
+    // A Lead is not an Inquiry and must not be reused as the conversation record.
+    let row=rows.filter(match).filter(r=>!closedStatuses.has(String(r.status||'').trim().toLowerCase()))
+      .sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')))[0];
     if(row){row.lastOpenedAt=W.now();W.upsert(W.keys.enquiries,row);return {record:row,created:false};}
     const id=W.next(rows,'INQ-');row={...data,...W.unassigned(),id,conversationId:id,assignedStaffId:null,createdAt:W.now(),status:'New',msgs:[]};
     W.upsert(W.keys.enquiries,row);
