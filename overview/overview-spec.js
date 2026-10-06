@@ -304,7 +304,7 @@ window.OverviewSpec = {
       "page": "KPI Dashboard",
       "title": "Inquiry & Deal Trend",
       "definition": "Daily trend of Property Inquiry and Agency deal counts.",
-      "calculation": "Daily count of Property Inquiries across Agencies and Agency-recorded deals. Inquiry: Client to Agency through Chat with Agency from Property Detail. Deal: recorded or confirmed at Agency level under the existing Transaction business model.",
+      "calculation": "Daily count of Property Inquiries across Agencies and Agency-recorded deals. Inquiry: Client to Agency through Chat with Agency from Property Detail. Deal: eligible Yuushi Client Transaction only; external/off-platform transaction records are excluded from deal counts.",
       "chart": "Bar chart",
       "period": "Past 30 days",
       "outOfScope": false
@@ -523,7 +523,7 @@ window.OverviewSpec = {
       "row": 54,
       "page": "Analytics - End User Statistics",
       "title": "Site-wide Funnel Metrics Trend",
-      "definition": "Monthly trend of five site-wide funnel metrics displayed in a single chart: total sessions, property views (CL), saves (Keep), inquiries (CV), and deals. Provides a top-level overview of the entire conversion funnel.",
+      "definition": "Monthly trend of six site-wide funnel metrics: sessions, organic Property Views (organic Property Cards visible in viewport), organic Property Clicks (CL), Keep / Saves, Property Inquiries (CV), and eligible Yuushi deals; exclude external/off-platform transactions. Provides a top-level overview of the entire conversion funnel.",
       "calculation": "Monthly total for each metric. Displayed alongside month-on-month and year-on-year percentage change.",
       "chart": "Line chart (5 metrics as multiple series). Each metric can be toggled ON/OFF individually.",
       "period": "Monthly / Custom period (default: past 12 months)",
@@ -788,7 +788,7 @@ window.OverviewSpec = {
       "page": "Analytics - Agency Statistics",
       "title": "Deal Count Trend",
       "definition": "Monthly deal count trend per Agency (Agency-reported, Phase 1)",
-      "calculation": "Monthly count based on Agency-reported deals",
+      "calculation": "Monthly count of eligible Yuushi Client Transactions reported by Agencies; exclude external/off-platform deals",
       "chart": "Bar chart",
       "period": "Monthly and Custom Period",
       "outOfScope": false
@@ -975,7 +975,7 @@ window.OverviewSpec = {
       "page": "Analytics - Property Statistics",
       "title": "Deal Count Trend",
       "definition": "Monthly deal count trend",
-      "calculation": "Monthly count by deal report date",
+      "calculation": "Monthly count of eligible Yuushi Client Transactions by deal report date; exclude external/off-platform deals",
       "chart": "Bar chart",
       "period": "Default: monthly. Period unit (daily / weekly / monthly / quarterly / yearly / custom) and comparison axis (vs previous month, vs previous year, etc.) can be changed via common filter axes 3 and 4.",
       "outOfScope": false
