@@ -4670,32 +4670,6 @@
       const PAGE_SIZE = 50;
       let currentPage = 1;
 
-      // Canonical project-list filter state. Keep aligned with Admin Project Management.
-      const FILT = {
-        tx: "",
-        ptypes: [],
-        region: { prefectures: [], cities: [] },
-        railway: { stations: [] },
-        beds: [],
-        sizeMin: null,
-        sizeMax: null,
-        priceMin: null,
-        priceMax: null,
-        statuses: [],
-        sales: [],
-        yieldMin: null,
-        landMin: null,
-        landMax: null,
-        keepMin: null,
-        keepMax: null,
-        clickMin: null,
-        clickMax: null,
-        developer: "",
-        completionFrom: "",
-        completionTo: "",
-        search: "",
-        sort: "updateLatest",
-      };
 
       // Bulk-edit selection (EDIT REFINEMENTS group A). Persists across
       // re-render / pagination / filtering as a Set of project ids.
@@ -7242,6 +7216,830 @@
           }
         }, 350);
       }
+
+      function renderPagination(totalPages) {
+        const wrap = $("pagination");
+        if (totalPages <= 1) {
+          wrap.style.display = "none";
+          wrap.innerHTML = "";
+          return;
+        }
+        wrap.style.display = "flex";
+        const btn = (label, page, opts = {}) => {
+          const cls = "pg-btn" + (opts.on ? " on" : "");
+          const dis = opts.disabled ? "disabled" : "";
+          return `<button type="button" class="${cls}" ${dis} onclick="gotoPage(${page})">${label}</button>`;
+        };
+        let html = btn('<i class="fas fa-chevron-left"></i>', currentPage - 1, {
+          disabled: currentPage === 1,
+        });
+        // Window of page numbers with ellipses.
+        const pages = [];
+        const add = (p) => pages.push(p);
+        add(1);
+        const lo = Math.max(2, currentPage - 1);
+        const hi = Math.min(totalPages - 1, currentPage + 1);
+        if (lo > 2) pages.push("…");
+        for (let p = lo; p <= hi; p++) add(p);
+        if (hi < totalPages - 1) pages.push("…");
+        if (totalPages > 1) add(totalPages);
+        pages.forEach((p) => {
+          if (p === "…") {
+            html += `<span class="pg-ellipsis">…</span>`;
+          } else {
+            html += btn(String(p), p, { on: p === currentPage });
+          }
+        });
+        html += btn('<i class="fas fa-chevron-right"></i>', currentPage + 1, {
+          disabled: currentPage === totalPages,
+        });
+        wrap.innerHTML = html;
+      }
+      function gotoPage(p) {
+        currentPage = p;
+        renderList();
+        window.scrollTo(0, 0);
+      }
+      window.gotoPage = gotoPage;
+
+      // ========================================================================
+      // FILTER STATE + REFERENCE DATA (PART B / C)
+      // ========================================================================
+      const FILT = {
+        tx: "",
+        ptypes: [],
+        region: { prefectures: [], cities: [] }, // cities: "Pref|municipalityCode"
+        railway: { stations: [] }, // "Pref|Line|Station"
+        beds: [],
+        sizeMin: null,
+        sizeMax: null,
+        priceMin: null,
+        priceMax: null,
+        statuses: [],
+        sales: [],
+        yieldMin: null,
+        landMin: null,
+        landMax: null,
+        keepMin: null,
+        keepMax: null,
+        clickMin: null,
+        clickMax: null,
+        developer: "", // advanced-only (Developer free text)
+        completionFrom: "", // advanced-only
+        completionTo: "", // advanced-only
+        search: "",
+        sort: "updateLatest",
+      };
+
+      // Property type groups for popover + advanced modal (G5 + G6).
+      const PTYPE_GROUPS = [
+        { label: "G5 — New Dev Apartments", items: OPT.propType5 },
+        { label: "G6 — New Dev Houses", items: OPT.propType6 },
+      ];
+
+      // Railway seed (2-3 lines per major prefecture, 3-5 stations each).
+      const RAILWAY = {
+        Tokyo: {
+          "JR Yamanote Line": ["Shibuya", "Shinjuku", "Tokyo", "Ueno", "Ebisu"],
+          "Ginza Line": ["Omotesando", "Shibuya", "Asakusa", "Ginza"],
+          "Hanzomon Line": ["Aoyama-Itchome", "Shibuya", "Otemachi"],
+        },
+        Osaka: {
+          "Midosuji Line": ["Umeda", "Namba", "Shinsaibashi", "Tennoji"],
+          "JR Osaka Loop Line": ["Osaka", "Tennoji", "Kyobashi"],
+        },
+        Kanagawa: {
+          "JR Tokaido Line": ["Yokohama", "Kawasaki", "Ofuna"],
+          "Tokyu Toyoko Line": ["Yokohama", "Hiyoshi", "Musashi-Kosugi"],
+        },
+        Hokkaido: {
+          "Sapporo Namboku Line": [
+            "Sapporo",
+            "Odori",
+            "Susukino",
+            "Nakajima-Koen",
+          ],
+          "Sapporo Tozai Line": ["Odori", "Maruyama-Koen", "Shin-Sapporo"],
+        },
+        Fukuoka: {
+          "Fukuoka Kuko Line": ["Hakata", "Tenjin", "Fukuoka Airport"],
+          "Fukuoka Hakozaki Line": ["Nakasu-Kawabata", "Kaizuka"],
+        },
+        Aichi: {
+          "Nagoya Higashiyama Line": ["Nagoya", "Sakae", "Hoshigaoka"],
+          "JR Chuo Line": ["Nagoya", "Chikusa", "Ozone"],
+        },
+      };
+
+      // Preset definitions (PART B)
+      const SIZE_PRESETS = [
+        [0, 20],
+        [20, 30],
+        [30, 40],
+        [40, 50],
+        [50, 60],
+        [60, 70],
+        [70, 80],
+        [80, 100],
+        [100, 150],
+      ];
+      const PRICE_PRESETS = [
+        [0, 20],
+        [20, 30],
+        [30, 40],
+        [40, 60],
+        [60, 80],
+        [80, 100],
+        [100, 150],
+        [150, 200],
+        [200, 300],
+        [300, 500],
+      ];
+      const SORT_OPTS = [
+        { v: "priceAsc", l: "Price Low → High" },
+        { v: "priceDesc", l: "Price High → Low" },
+        { v: "ageNewest", l: "Building Age Newest → Oldest" },
+        { v: "ageOldest", l: "Building Age Oldest → Newest" },
+        { v: "uploadLatest", l: "Upload Date Latest → Oldest" },
+        { v: "updateLatest", l: "Last Update Latest → Oldest" },
+        { v: "sizeLargest", l: "Size Largest → Smallest" },
+        { v: "sizeSmallest", l: "Size Smallest → Largest" },
+      ];
+      const SORT_LABEL = Object.fromEntries(SORT_OPTS.map((o) => [o.v, o.l]));
+
+      // ------------------------------------------------------------------------
+      // Per-project derived values used for filtering / sorting.
+      // ------------------------------------------------------------------------
+      function projBedMax(p) {
+        const units = p.group === 5 ? p.floorPlanTypes || [] : p.lots || [];
+        let max = null;
+        units.forEach((u) => {
+          let b = u.fpBedrooms;
+          if (b == null || b === "") {
+            const m = String(u.layout || "").match(/^(\d+)/);
+            b = m ? Number(m[1]) : null;
+          }
+          if (b != null && (max == null || Number(b) > max)) max = Number(b);
+        });
+        return max;
+      }
+      function projSizeMax(p) {
+        const s = projectSummary(p) || {};
+        return s.areaHi != null ? Number(s.areaHi) : null;
+      }
+      function projPriceLo(p) {
+        const s = projectSummary(p) || {};
+        return s.priceLo != null ? Number(s.priceLo) : null;
+      }
+      function projPriceHi(p) {
+        const s = projectSummary(p) || {};
+        return s.priceHi != null ? Number(s.priceHi) : null;
+      }
+      function projYieldMax(p) {
+        const units = p.group === 5 ? p.floorPlanTypes || [] : p.lots || [];
+        let max = null;
+        units.forEach((u) => {
+          const y = u.estGrossYield;
+          if (y != null && y !== "" && (max == null || Number(y) > max))
+            max = Number(y);
+        });
+        return max;
+      }
+      function projLandArea(p) {
+        return p.siteArea != null && p.siteArea !== ""
+          ? Number(p.siteArea)
+          : p.landArea != null && p.landArea !== ""
+            ? Number(p.landArea)
+            : null;
+      }
+
+      // ------------------------------------------------------------------------
+      // Filter predicate (PART B/C) — Region OR Railway combine OR.
+      // ------------------------------------------------------------------------
+      function matchesFilter(p) {
+        const F = FILT;
+        if (F.tx && (p.transactionType || "Buy") !== F.tx) return false;
+        if (F.ptypes.length && !F.ptypes.includes(p.propType)) return false;
+        if (
+          F.region.prefectures.length ||
+          F.region.cities.length ||
+          F.railway.stations.length
+        ) {
+          const regHit =
+            F.region.prefectures.includes(p.prefecture) ||
+            F.region.cities.includes(YuushiMunicipality.filterValue(p.prefecture, p.municipalityCode));
+          const railHit = F.railway.stations.some((s) => {
+            const access = (p.poi && p.poi.access) || [];
+            return access.some(
+              (a) => s === p.prefecture + "|" + a.line + "|" + a.station,
+            );
+          });
+          if (!regHit && !railHit) return false;
+        }
+        if (F.beds.length) {
+          const b = projBedMax(p);
+          const ok = F.beds.some((n) =>
+            n === 5 ? b != null && b >= 5 : b === n,
+          );
+          if (!ok) return false;
+        }
+        if (F.sizeMin != null || F.sizeMax != null) {
+          const s = projSizeMax(p);
+          if (s == null) return false;
+          if (F.sizeMin != null && s < F.sizeMin) return false;
+          if (F.sizeMax != null && s > F.sizeMax) return false;
+        }
+        if (F.priceMin != null || F.priceMax != null) {
+          const lo = (F.priceMin || 0) * 1000000;
+          const hi = F.priceMax != null ? F.priceMax * 1000000 : Infinity;
+          const pLo = projPriceLo(p);
+          const pHi = projPriceHi(p);
+          if (pLo == null && pHi == null) return false;
+          // Overlap test between [pLo,pHi] and [lo,hi].
+          if ((pHi ?? pLo) < lo || (pLo ?? pHi) > hi) return false;
+        }
+        if (F.statuses.length && !F.statuses.includes(p.publishStatus))
+          return false;
+        if (F.sales.length && !F.sales.includes(p.salesStatus || "On Sale"))
+          return false;
+        if (F.keepMin != null || F.keepMax != null || F.clickMin != null || F.clickMax != null) {
+          const eventPerf=projectPerformanceFromEvents(p.id);
+          if (!eventPerf.organicReady) return false;
+          const keep=eventPerf.organic.keep, clicks=eventPerf.organic.clicks;
+          if (F.keepMin != null && keep < F.keepMin) return false;
+          if (F.keepMax != null && keep > F.keepMax) return false;
+          if (F.clickMin != null && clicks < F.clickMin) return false;
+          if (F.clickMax != null && clicks > F.clickMax) return false;
+        }
+        if (F.yieldMin != null) {
+          const y = projYieldMax(p);
+          if (y == null || y < F.yieldMin) return false;
+        }
+        if (F.landMin != null || F.landMax != null) {
+          const la = projLandArea(p);
+          if (la == null) return false;
+          if (F.landMin != null && la < F.landMin) return false;
+          if (F.landMax != null && la > F.landMax) return false;
+        }
+        if (F.developer) {
+          if (
+            !(p.developer || "")
+              .toLowerCase()
+              .includes(F.developer.toLowerCase())
+          )
+            return false;
+        }
+        if (F.completionFrom && (p.completionDate || "") < F.completionFrom)
+          return false;
+        if (F.completionTo && (p.completionDate || "") > F.completionTo)
+          return false;
+        if (F.search) {
+          const q = F.search.toLowerCase().trim();
+          const blob = [
+            p.name,
+            p.nameRomaji,
+            p.id,
+            p.agent,
+            p.prefecture,
+            p.city,
+            p.chome,
+            p.propType,
+          ]
+            .join(" ")
+            .toLowerCase();
+          if (!blob.includes(q)) return false;
+        }
+        return true;
+      }
+
+      function sortFiltered(arr) {
+        const a = arr.slice();
+        const cmpNum = (x) => (x == null || x === "" ? -Infinity : Number(x));
+        const dateVal = (d) => (d ? new Date(d).getTime() : 0);
+        const priceOf = (p) => projPriceLo(p) ?? projPriceHi(p) ?? 0;
+        const sizeOf = (p) => projSizeMax(p) ?? 0;
+        switch (FILT.sort) {
+          case "priceAsc":
+            a.sort((x, y) => priceOf(x) - priceOf(y));
+            break;
+          case "priceDesc":
+            a.sort((x, y) => priceOf(y) - priceOf(x));
+            break;
+          case "ageNewest":
+            a.sort(
+              (x, y) => dateVal(y.completionDate) - dateVal(x.completionDate),
+            );
+            break;
+          case "ageOldest":
+            a.sort(
+              (x, y) => dateVal(x.completionDate) - dateVal(y.completionDate),
+            );
+            break;
+          case "uploadLatest":
+            a.sort(
+              (x, y) => dateVal(y.datePublished) - dateVal(x.datePublished),
+            );
+            break;
+          case "sizeLargest":
+            a.sort((x, y) => sizeOf(y) - sizeOf(x));
+            break;
+          case "sizeSmallest":
+            a.sort((x, y) => cmpNum(projSizeMax(x)) - cmpNum(projSizeMax(y)));
+            break;
+          case "updateLatest":
+          default:
+            a.sort((x, y) => dateVal(y.dateUpdated) - dateVal(x.dateUpdated));
+            break;
+        }
+        return a;
+      }
+
+      function applyFilters() {
+        FILT.search = $("fSearch").value;
+        filtered = sortFiltered(projects.filter(matchesFilter));
+        currentPage = 1; // any filter change → page 1
+        renderChips();
+        renderFilterBadges();
+        renderList();
+      }
+      function resetFilters() {
+        FILT.tx = "";
+        FILT.ptypes = [];
+        FILT.region = { prefectures: [], cities: [] };
+        FILT.railway = { stations: [] };
+        FILT.beds = [];
+        FILT.sizeMin = null;
+        FILT.sizeMax = null;
+        FILT.keepMin = null;
+        FILT.keepMax = null;
+        FILT.clickMin = null;
+        FILT.clickMax = null;
+        FILT.priceMin = null;
+        FILT.priceMax = null;
+        FILT.statuses = [];
+        FILT.sales = [];
+        FILT.yieldMin = null;
+        FILT.landMin = null;
+        FILT.landMax = null;
+        FILT.developer = "";
+        FILT.completionFrom = "";
+        FILT.completionTo = "";
+        FILT.search = "";
+        FILT.sort = "updateLatest";
+        $("fSearch").value = "";
+        $("fTx").value = "";
+        $("fPriceMin").value = "";
+        $("fPriceMax").value = "";
+        $("sizeFrom").value = "";
+        $("sizeTo").value = "";
+        $("fKeepMin").value = "";
+        $("fKeepMax").value = "";
+        $("fClickMin").value = "";
+        $("fClickMax").value = "";
+        buildSortRadios();
+        syncFilterUI();
+        applyFilters();
+      }
+
+      // ========================================================================
+      // POPOVER FILTER BAR — builders, sync, commit, chips, wiring (PART B)
+      // ========================================================================
+      function buildPtypeChecks() {
+        $("ptypeChecks").innerHTML = PTYPE_GROUPS.map(
+          (g) =>
+            `<div class="pop-group-title">${esc(g.label)}</div><div class="pop-checks">` +
+            g.items
+              .map(
+                (t) =>
+                  `<label class="pop-row"><input type="checkbox" data-ptype value="${escAttr(t)}"><span>${esc(t)}</span></label>`,
+              )
+              .join("") +
+            `</div>`,
+        ).join("");
+      }
+      function buildBedChecks() {
+        $("bedChecks").innerHTML = [1, 2, 3, 4, 5]
+          .map(
+            (n) =>
+              `<label class="pop-row"><input type="checkbox" data-bed value="${n}"><span>${n === 5 ? "5+" : n} bedroom${n > 1 ? "s" : ""}</span></label>`,
+          )
+          .join("");
+      }
+      function buildStatusChecks() {
+        $("statusChecks").innerHTML = OPT.publish
+          .map(
+            (s) =>
+              `<label class="pop-row"><input type="checkbox" data-status value="${escAttr(s)}"><span>${esc(s)}</span></label>`,
+          )
+          .join("");
+      }
+      function buildSaleChecks() {
+        $("saleChecks").innerHTML = OPT.salesStatus
+          .map(
+            (s) =>
+              `<label class="pop-row"><input type="checkbox" data-sale value="${escAttr(s)}"><span>${esc(s)}</span></label>`,
+          )
+          .join("");
+      }
+      function buildPresets() {
+        $("sizePresets").innerHTML = SIZE_PRESETS.map(
+          ([a, b]) =>
+            `<button class="pop-preset" type="button" data-size-preset data-a="${a}" data-b="${b}">${a}–${b}</button>`,
+        ).join("");
+        $("pricePresets").innerHTML = PRICE_PRESETS.map(
+          ([a, b]) =>
+            `<button class="pop-preset" type="button" data-price-preset data-a="${a}" data-b="${b}">${a}–${b}</button>`,
+        ).join("");
+      }
+      function buildSortRadios() {
+        $("sortRadios").innerHTML = SORT_OPTS.map(
+          (o) =>
+            `<label class="pop-row"><input type="radio" name="sortopt" data-sort value="${o.v}" ${o.v === FILT.sort ? "checked" : ""}><span>${esc(o.l)}</span></label>`,
+        ).join("");
+      }
+      function buildRegionTree() {
+        $("regionTree").innerHTML = OPT.prefectures
+          .map((pref) => {
+            const cities = YuushiMunicipality.namesByPrefecture[pref] || [];
+            return `
+            <div class="pop-tree-node" data-pref-node="${escAttr(pref)}">
+              <label class="pop-row">
+                <i class="fas fa-caret-right pop-tree-toggle" data-tree-toggle></i>
+                <input type="checkbox" data-region-pref value="${escAttr(pref)}">
+                <span>${esc(pref)}</span>
+              </label>
+              <div class="pop-tree-children">
+                ${cities
+                  .map(
+                    (c) =>
+                      `<label class="pop-row"><input type="checkbox" data-region-city value="${escAttr(YuushiMunicipality.filterValue(pref, c))}" data-pref="${escAttr(pref)}"><span>${esc(c)}</span></label>`,
+                  )
+                  .join("")}
+              </div>
+            </div>`;
+          })
+          .join("");
+      }
+      function buildRailwayTree() {
+        $("railwayTree").innerHTML = Object.keys(RAILWAY)
+          .map((pref) => {
+            const lines = RAILWAY[pref];
+            return `
+            <div class="pop-tree-node" data-pref-node="${escAttr(pref)}">
+              <label class="pop-row">
+                <i class="fas fa-caret-right pop-tree-toggle" data-tree-toggle></i>
+                <span>${esc(pref)}</span>
+              </label>
+              <div class="pop-tree-children">
+                ${Object.keys(lines)
+                  .map(
+                    (line) => `
+                  <div class="pop-tree-node">
+                    <label class="pop-row">
+                      <i class="fas fa-caret-right pop-tree-toggle" data-tree-toggle></i>
+                      <span>${esc(line)}</span>
+                    </label>
+                    <div class="pop-tree-children">
+                      ${lines[line]
+                        .map(
+                          (st) =>
+                            `<label class="pop-row"><input type="checkbox" data-railway-station value="${escAttr(pref + "|" + line + "|" + st)}"><span>${esc(st)}</span></label>`,
+                        )
+                        .join("")}
+                    </div>
+                  </div>`,
+                  )
+                  .join("")}
+              </div>
+            </div>`;
+          })
+          .join("");
+      }
+
+      function syncFilterUI() {
+        $("fTx").value = FILT.tx;
+        document.querySelectorAll("[data-ptype]").forEach((el) => {
+          el.checked = FILT.ptypes.includes(el.value);
+        });
+        document.querySelectorAll("[data-bed]").forEach((el) => {
+          el.checked = FILT.beds.includes(Number(el.value));
+        });
+        document.querySelectorAll("[data-status]").forEach((el) => {
+          el.checked = FILT.statuses.includes(el.value);
+        });
+        document.querySelectorAll("[data-sale]").forEach((el) => {
+          el.checked = FILT.sales.includes(el.value);
+        });
+        document.querySelectorAll("[data-region-pref]").forEach((el) => {
+          el.checked = FILT.region.prefectures.includes(el.value);
+        });
+        document.querySelectorAll("[data-region-city]").forEach((el) => {
+          el.checked = FILT.region.cities.includes(el.value);
+        });
+        document.querySelectorAll("[data-railway-station]").forEach((el) => {
+          el.checked = FILT.railway.stations.includes(el.value);
+        });
+        $("sizeFrom").value = FILT.sizeMin ?? "";
+        $("sizeTo").value = FILT.sizeMax ?? "";
+        $("fKeepMin").value = FILT.keepMin ?? "";
+        $("fKeepMax").value = FILT.keepMax ?? "";
+        $("fClickMin").value = FILT.clickMin ?? "";
+        $("fClickMax").value = FILT.clickMax ?? "";
+        $("fPriceMin").value = FILT.priceMin ?? "";
+        $("fPriceMax").value = FILT.priceMax ?? "";
+        document.querySelectorAll("[data-sort]").forEach((el) => {
+          el.checked = el.value === FILT.sort;
+        });
+      }
+
+      function commitPtype() {
+        FILT.ptypes = Array.from(
+          document.querySelectorAll("[data-ptype]:checked"),
+        ).map((el) => el.value);
+      }
+      function commitBed() {
+        FILT.beds = Array.from(
+          document.querySelectorAll("[data-bed]:checked"),
+        ).map((el) => Number(el.value));
+      }
+      function commitStatus() {
+        FILT.statuses = Array.from(
+          document.querySelectorAll("[data-status]:checked"),
+        ).map((el) => el.value);
+      }
+      function commitSale() {
+        FILT.sales = Array.from(
+          document.querySelectorAll("[data-sale]:checked"),
+        ).map((el) => el.value);
+      }
+      function commitRegion() {
+        FILT.region.prefectures = Array.from(
+          document.querySelectorAll("[data-region-pref]:checked"),
+        ).map((el) => el.value);
+        FILT.region.cities = Array.from(
+          document.querySelectorAll("[data-region-city]:checked"),
+        ).map((el) => el.value);
+        FILT.railway.stations = Array.from(
+          document.querySelectorAll("[data-railway-station]:checked"),
+        ).map((el) => el.value);
+      }
+      function commitSize() {
+        FILT.sizeMin =
+          $("sizeFrom").value === "" ? null : Number($("sizeFrom").value);
+        FILT.sizeMax =
+          $("sizeTo").value === "" ? null : Number($("sizeTo").value);
+      }
+      function commitPrice() {
+        FILT.priceMin =
+          $("fPriceMin").value === "" ? null : Number($("fPriceMin").value);
+        FILT.priceMax =
+          $("fPriceMax").value === "" ? null : Number($("fPriceMax").value);
+      }
+      function commitKeep() {
+        FILT.keepMin = $("fKeepMin").value === "" ? null : Number($("fKeepMin").value);
+        FILT.keepMax = $("fKeepMax").value === "" ? null : Number($("fKeepMax").value);
+      }
+      function commitClick() {
+        FILT.clickMin = $("fClickMin").value === "" ? null : Number($("fClickMin").value);
+        FILT.clickMax = $("fClickMax").value === "" ? null : Number($("fClickMax").value);
+      }
+
+      function renderFilterBadges() {
+        const set = (key, n) => {
+          const el = document.querySelector(`[data-cnt="${key}"]`);
+          if (!el) return;
+          el.textContent = n;
+          el.classList.toggle("hidden", !n);
+          const btn = el.closest(".pop-btn");
+          if (btn) btn.classList.toggle("active", !!n);
+        };
+        set("ptype", FILT.ptypes.length);
+        set(
+          "region",
+          FILT.region.prefectures.length +
+            FILT.region.cities.length +
+            FILT.railway.stations.length,
+        );
+        set("bed", FILT.beds.length);
+        set("size", FILT.sizeMin != null || FILT.sizeMax != null ? 1 : 0);
+        set("keep", FILT.keepMin != null || FILT.keepMax != null ? 1 : 0);
+        set("click", FILT.clickMin != null || FILT.clickMax != null ? 1 : 0);
+        set("price", FILT.priceMin != null || FILT.priceMax != null ? 1 : 0);
+        set("status", FILT.statuses.length);
+        set("sale", FILT.sales.length);
+      }
+
+      function renderChips() {
+        const chips = [];
+        const add = (label, summary, onClear) =>
+          chips.push({ label, summary, onClear });
+        if (FILT.tx) add("Buy/Rent", FILT.tx, () => (FILT.tx = ""));
+        if (FILT.ptypes.length)
+          add(
+            "Property Type",
+            FILT.ptypes.join(", "),
+            () => (FILT.ptypes = []),
+          );
+        const regBits = []
+          .concat(FILT.region.prefectures)
+          .concat(FILT.region.cities.map((c) => c.split("|")[1]))
+          .concat(FILT.railway.stations.map((s) => s.split("|")[2]));
+        if (regBits.length)
+          add("Region/Station", regBits.join(", "), () => {
+            FILT.region = { prefectures: [], cities: [] };
+            FILT.railway = { stations: [] };
+          });
+        if (FILT.beds.length)
+          add(
+            "Bedroom",
+            FILT.beds.map((n) => (n === 5 ? "5+" : n)).join(", "),
+            () => (FILT.beds = []),
+          );
+        if (FILT.sizeMin != null || FILT.sizeMax != null)
+          add("Size", `${FILT.sizeMin ?? 0}–${FILT.sizeMax ?? "∞"} m²`, () => {
+            FILT.sizeMin = null;
+            FILT.sizeMax = null;
+          });
+        if (FILT.priceMin != null || FILT.priceMax != null)
+          add(
+            "Price",
+            `¥${FILT.priceMin ?? 0}M–${FILT.priceMax != null ? FILT.priceMax + "M" : "∞"}`,
+            () => {
+              FILT.priceMin = null;
+              FILT.priceMax = null;
+            },
+          );
+        if (FILT.statuses.length)
+          add(
+            "Publish Status",
+            FILT.statuses.join(", "),
+            () => (FILT.statuses = []),
+          );
+        if (FILT.sales.length)
+          add("Sale Status", FILT.sales.join(", "), () => (FILT.sales = []));
+        if (FILT.yieldMin != null)
+          add("Yield", FILT.yieldMin + "%+", () => (FILT.yieldMin = null));
+        if (FILT.landMin != null || FILT.landMax != null)
+          add(
+            "Land Area",
+            `${FILT.landMin ?? 0}–${FILT.landMax ?? "∞"} m²`,
+            () => {
+              FILT.landMin = null;
+              FILT.landMax = null;
+            },
+          );
+        if (FILT.developer)
+          add("Developer", FILT.developer, () => (FILT.developer = ""));
+        if (FILT.completionFrom || FILT.completionTo)
+          add(
+            "Completion",
+            `${FILT.completionFrom || "…"} → ${FILT.completionTo || "…"}`,
+            () => {
+              FILT.completionFrom = "";
+              FILT.completionTo = "";
+            },
+          );
+        if (FILT.sort !== "updateLatest")
+          add("Sort", SORT_LABEL[FILT.sort], () => {
+            FILT.sort = "updateLatest";
+            buildSortRadios();
+          });
+
+        const row = $("chipRow");
+        if (!chips.length) {
+          row.className = "chip-row hidden";
+          row.innerHTML = "";
+          return;
+        }
+        row.className = "chip-row";
+        row.innerHTML =
+          chips
+            .map(
+              (c, i) =>
+                `<span class="fchip"><b>${esc(c.label)}:</b> ${esc(c.summary)} <button type="button" data-chip="${i}" aria-label="Remove">&times;</button></span>`,
+            )
+            .join("") +
+          `<button class="chip-clear" type="button" id="chipClearAll">Clear all filters</button>`;
+        row.querySelectorAll("[data-chip]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            chips[Number(btn.dataset.chip)].onClear();
+            syncFilterUI();
+            applyFilters();
+          });
+        });
+        $("chipClearAll").addEventListener("click", resetFilters);
+      }
+
+      function closeAllPops(commit) {
+        document.querySelectorAll(".pop-wrap.open").forEach((w) => {
+          if (commit) commitPopState(w.dataset.pop);
+          w.classList.remove("open");
+        });
+      }
+      function commitPopState(name) {
+        if (name === "ptype") commitPtype();
+        else if (name === "bed") commitBed();
+        else if (name === "status") commitStatus();
+        else if (name === "sale") commitSale();
+        else if (name === "region") commitRegion();
+        else if (name === "size") commitSize();
+        else if (name === "price") commitPrice();
+        else if (name === "keep") commitKeep();
+        else if (name === "click") commitClick();
+        // sort commits on radio change directly
+        applyFilters();
+      }
+      (function wirePopovers() {
+        document.querySelectorAll(".pop-wrap[data-pop]").forEach((wrap) => {
+          const name = wrap.dataset.pop;
+          wrap
+            .querySelector("[data-pop-toggle]")
+            .addEventListener("click", (e) => {
+              e.stopPropagation();
+              const isOpen = wrap.classList.contains("open");
+              closeAllPops(true);
+              if (!isOpen) wrap.classList.add("open");
+            });
+          const done = wrap.querySelector("[data-pop-done]");
+          if (done)
+            done.addEventListener("click", () => {
+              commitPopState(name);
+              wrap.classList.remove("open");
+            });
+          wrap
+            .querySelector("[data-pop-panel]")
+            .addEventListener("click", (e) => e.stopPropagation());
+        });
+        document.addEventListener("click", () => closeAllPops(true));
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") closeAllPops(true);
+        });
+      })();
+
+      (function wireRegion() {
+        const wrap = document.querySelector('[data-pop="region"]');
+        wrap.querySelectorAll("[data-rtab]").forEach((tab) => {
+          tab.addEventListener("click", () => {
+            wrap
+              .querySelectorAll(".pop-tab")
+              .forEach((t) => t.classList.remove("on"));
+            tab.classList.add("on");
+            wrap
+              .querySelectorAll(".pop-tabpane")
+              .forEach((p) => p.classList.remove("on"));
+            wrap
+              .querySelector(`[data-rpane="${tab.dataset.rtab}"]`)
+              .classList.add("on");
+          });
+        });
+      })();
+
+      // Tree toggle (expand/collapse) — delegated
+      document.addEventListener("click", (e) => {
+        const t = e.target.closest("[data-tree-toggle]");
+        if (t) {
+          e.preventDefault();
+          e.stopPropagation();
+          t.closest(".pop-tree-node").classList.toggle("open");
+        }
+      });
+      // Prefecture checkbox auto-checks its cities (compact bar + advanced modal)
+      document.addEventListener("change", (e) => {
+        const pref =
+          e.target.closest("[data-region-pref]") ||
+          e.target.closest("[data-adv-region-pref]");
+        if (pref) {
+          const node = pref.closest("[data-pref-node]");
+          node
+            .querySelectorAll("[data-region-city],[data-adv-region-city]")
+            .forEach((c) => (c.checked = pref.checked));
+        }
+      });
+
+      // Size/Price presets
+      document.addEventListener("click", (e) => {
+        const sp = e.target.closest("[data-size-preset]");
+        if (sp) {
+          $("sizeFrom").value = sp.dataset.a;
+          $("sizeTo").value = sp.dataset.b;
+        }
+        const pp = e.target.closest("[data-price-preset]");
+        if (pp) {
+          $("fPriceMin").value = pp.dataset.a;
+          $("fPriceMax").value = pp.dataset.b;
+        }
+      });
+
+      // Sort radios apply + close immediately
+      document.addEventListener("change", (e) => {
+        const r = e.target.closest("[data-sort]");
+        if (r) {
+          FILT.sort = r.value;
+          closeAllPops(false);
+          applyFilters();
+        }
+      });
+
 
       // ========================================================================
       // Create modal
