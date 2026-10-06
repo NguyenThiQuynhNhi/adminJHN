@@ -2,14 +2,33 @@
 
 Source: [admin-messages.html](../admin-messages.html), current working-tree implementation.
 
-Access: Messages → Messages Box, or shell chat shortcut. The filename remains `admin-messages.html`.
+## Current behavior
 
-Three panels: conversation list, chat/composer, contact/info panel. Default demo role is CEO (`currentUserRole = "ceo"`), with **Agency Message / Agents Message** tabs. Agency Message shows pinned Platform Admin plus client conversations; Agents Message groups client conversations by staff. CEO review threads marked `ceoReadOnly` disable composing; the header identifies CEO View.
+Messages → Messages Box. Three-panel conversation UI with Agency Message / Agents Message views, local sending, property insertion, appraisal cards, templates and attachment handling.
 
-Messages support local sending, failed-message retry, pin/unpin/clear, copy feedback, emoji/templates, attachments and manual translation controls. `pseudoTranslate()` returns the original text. The plus menu includes a property picker with search/filter/grid/table selection; property and appraisal cards are rendered in chat. Appraisal detail and PDF controls are mock interactions.
+Agency Admin inquiry actions are enabled (`view/reply/assign/close`). Platform Admin pinned support thread remains non-replyable.
 
-CEO Suggest Agent on eligible appraisal cards opens the staff picker; `confirmSuggestAgent()` creates/selects a local staff/client conversation marked read-only for CEO. This does not implement a server assignment or create an Agency-owned Inquiry entity.
+## Plus menu
 
-Save Client uses the legacy `yuushiLeadGroups` / `yuushiLeads` localStorage store; the Platform Admin thread cannot be saved as a client. This store is not the page-local data in Contacts or Groups. Client info includes name/email/phone and Media / Files / Links. Message delivery, attachment upload and translation are simulated; conversation changes reset on reload.
+The composer `+` menu contains:
 
-Evidence: `renderList`, `renderStaffView`, `selectConvo`, `renderHeader`, `sendMessage`, `renderMessages`, `openPropertyPicker`, `renderAppraisalCard`, `confirmSuggestAgent`.
+- **Add work content** — opens the Agency File Library picker.
+- **Upload images and files** — uploads a new file to the shared Agency File Library, then sends its file reference in Chat.
+- Insert Property.
+- Message Templates.
+
+Existing files are reused by the same `fileId`; they are not duplicated per Chat. If a stored file is deleted, the Chat message remains and the attachment displays **No longer available**.
+
+## Agency File Library integration
+
+Shared implementation: [agency-file-library.js](../agency-file-library.js).
+
+Metadata is persisted in localStorage and file binary data in IndexedDB for the prototype. File ownership is Agency-wide; delete is allowed for uploader or Agency Admin. Storage usage/caps follow the current plan model in the shared file-library layer.
+
+## Suggest Agent
+
+`Suggest Agent` on an eligible appraisal card opens the staff picker. Selecting a staff member calls `confirmSuggestAgent(agentId, clientName)`, creates/selects the staff/client conversation and shows `Forwarded to {Agent}`. The earlier broken unquoted appraisal-id argument was removed.
+
+## Persistence boundary
+
+Conversation and attachment behavior is implemented for frontend review. File Library persistence is browser-local; there is no production storage/API in this prototype.
