@@ -38,14 +38,26 @@
   }
   function calendar(records){return records.map(row=>({...row,scheduledActionAt:scheduledAt(row)})).sort((a,b)=>(time(a.scheduledActionAt)||Infinity)-(time(b.scheduledActionAt)||Infinity));}
   function soldListings(store){
-    const listings=store.properties.map(p=>({...p,publishedDate:p.datePublished,confirmedSoldAt:soldDate(p,store.leads),dealType:p.intent==='Rent'?'Rental':'Sale',reason:p.suspensionReason||'Not applicable'}));
-    const units=store.transactions.filter(t=>t.unitId&&t.dealType==='Sale'&&t.status==='closed').map(t=>({...t,id:t.unitId}));
-    return [...listings,...units].filter(p=>p.dealType==='Sale'&&Number.isFinite(time(p.confirmedSoldAt)));
+    // Average Days to Close must use the same on-platform, eligible Sale population
+    // as Total Sales Value. A locally marked Sold listing or an external sale
+    // without an eligible Yuushi transaction does not earn a sales KPI.
+    const properties=new Map((store.properties||[]).map(p=>[String(p.id),p]));
+    const projects=new Map((store.projects||[]).map(p=>[String(p.id),p]));
+    return closedSales(store.transactions||[]).map(t=>{
+      const listing=properties.get(String(t.propertyId))||projects.get(String(t.projectId));
+      return {...t,id:t.unitId||t.id,
+        publishedDate:t.publishedDate||listing?.datePublished||null,
+        confirmedSoldAt:t.confirmedSoldAt||t.transactionDate||null};
+    }).filter(t=>Number.isFinite(time(t.publishedDate))&&Number.isFinite(time(t.confirmedSoldAt))&&time(t.confirmedSoldAt)>=time(t.publishedDate));
   }
-  // Existing Inquiry contexts are counted as stored; repeated client actions are not simulated.
-  // Final repeated-Inquiry creation/reuse behavior remains a client decision.
+  // Q&A confirmed: repeated Chat with Agency reopens the active Client–Property
+  // Inquiry; it does not create a new record. A new Inquiry may be created
+  // when the previous Inquiry has been closed and a new request is submitted.
+  // Dashboard counts persisted Inquiry creation records, not CTA clicks/messages.
   const inquiryRecords=records=>records;
-  // Raw observations are counted for this frontend. Final repeated-View deduplication is pending.
+  // Q&A confirmed event-based Views: count new organic viewport exposures.
+  // The event producer must suppress repeated callbacks while a card remains
+  // continuously visible; do NOT deduplicate by Client/day/session.
   const countViews=events=>events.length;
   root.AgencyDashboardRules={countViews,inquiryRecords,soldListings,responseCycles,inquiryViewing,soldDate,closedSales,attributedStaff,scheduledAt,calendar};
 })(window);
