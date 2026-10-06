@@ -24,9 +24,9 @@ Licensing & legal information includes **License Verification**:
 - Supplementary Document
 - `Submit for Verification`
 
-File types follow the platform-wide upload policy. Agency must complete all required Agency Profile fields and attach both required verification documents before submission.
+Agency must complete all required Agency Profile fields and attach both required verification documents before submission.
 
-Submission creates a record in localStorage `yuushi.agencyLicenseVerificationRequests`, updates `yuushi.agencyVerificationState` to `Pending Review`, and makes the request visible to Admin → Agency License Verification. Admin status changes are synced back to Agency Profile through the same local prototype bridge.
+Submission creates a verification request, updates the Agency verification status to `Pending Review`, and makes the request available in Admin → Agency License Verification. Admin status changes are reflected back in Agency Profile.
 
 ## Profile completeness
 
