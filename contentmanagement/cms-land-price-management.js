@@ -199,7 +199,40 @@
   ];
   const storageGet = (key, fallback) => { try { const value = localStorage.getItem(key); return value === null ? fallback : JSON.parse(value); } catch (_) { return fallback; } };
   const storageSet = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) {} };
+  const MARKET_TREND_SEEDED_KEY = "yuushi.cms.marketTrend.seeded";
+  const defaultMarketDatasets = [
+    {
+      id:"MT-20261006-001",
+      name:"Tokyo 23 Wards Market Trend",
+      fileName:"tokyo_23_wards_market_trend.csv",
+      uploadedAt:"2026-10-06",
+      validationStatus:"Valid",
+      headers:[],
+      mappings:[
+        {municipalityCode:"13101",municipalityName:"Chiyoda-ku",areaGroup:"Tokyo 23 Wards"},
+        {municipalityCode:"13103",municipalityName:"Minato-ku",areaGroup:"Tokyo 23 Wards"},
+        {municipalityCode:"13113",municipalityName:"Shibuya-ku",areaGroup:"Tokyo 23 Wards"}
+      ]
+    },
+    {
+      id:"MT-20261006-002",
+      name:"Yokohama / Kawasaki Market Trend",
+      fileName:"yokohama_kawasaki_market_trend.csv",
+      uploadedAt:"2026-10-06",
+      validationStatus:"Valid",
+      headers:[],
+      mappings:[
+        {municipalityCode:"14109",municipalityName:"Yokohama-shi Kohoku-ku",areaGroup:"Yokohama / Kawasaki"},
+        {municipalityCode:"14104",municipalityName:"Yokohama-shi Naka-ku",areaGroup:"Yokohama / Kawasaki"}
+      ]
+    }
+  ];
   let marketDatasets = storageGet(MARKET_TREND_DATASETS_KEY, []);
+  if (!localStorage.getItem(MARKET_TREND_SEEDED_KEY) && (!Array.isArray(marketDatasets) || marketDatasets.length === 0)) {
+    marketDatasets = JSON.parse(JSON.stringify(defaultMarketDatasets));
+    storageSet(MARKET_TREND_DATASETS_KEY, marketDatasets);
+    localStorage.setItem(MARKET_TREND_SEEDED_KEY, "1");
+  }
   let activeDatasetId = null;
   let replacingDatasetId = null;
   const saveMarketDatasets = () => storageSet(MARKET_TREND_DATASETS_KEY, marketDatasets);
