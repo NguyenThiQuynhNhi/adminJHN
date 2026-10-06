@@ -1,4 +1,4 @@
-// Popular Neighbourhoods and Land Prices — fixed MLIT Area Guide configuration.
+// Popular Neighbourhoods and Station Price Ranking — Area Guide configuration.
 (() => {
   const root = document.getElementById("cms-land-data");
   if (!root) return;
@@ -89,12 +89,11 @@
     const yoy = seededNumber(key + "-yoy", -850, 950) / 100;
     return {n, previousYearN, median, q1:median - spread, q3:median + spread, yoy};
   }
-  const scope = `<div class="fixed-scope"><strong>Fixed Area Guide scope</strong><span>MLIT Type: 中古マンション等</span><span>Exclusive Floor Area: 30–80 m²</span><span>Building Age: within 40 years at the transaction period</span><span>Metric: Median Price per m²</span></div>`;
-  const metadata = `<div class="benchmark-meta"><span><strong>Source:</strong> MLIT Real Estate Information Library (Real Estate Transaction Price Information)</span><span><strong>Target Period:</strong> ${PERIOD}</span><span><strong>Retrieval Date:</strong> ${RETRIEVED}</span></div><div class="benchmark-disclaimer">This information is a reference figure only and does not indicate the appropriate price of any individual property.</div>`;
   const band = row => `¥${fmt(row.q1)}–¥${fmt(row.q3)}`;
   function yoy(row) {
     if (row.n < 30 || row.previousYearN < 30) return '<span class="muted-value">—</span>';
-    const up = row.yoy >= 0;
+    if (row.yoy === 0) return '<span class="change-neutral">0.00%</span>';
+    const up = row.yoy > 0;
     return `<span class="${up ? "change-up" : "change-down"}">${up ? "↑ +" : "↓ -"}${Math.abs(row.yoy).toFixed(2)}%</span>`;
   }
   function persist() { set("landata.pn.assign", pnAssign); set("landata.lp.assign", lpAssign); }
@@ -141,7 +140,11 @@
     const pool = (assignSection === "pn" ? areas : stations).filter(x => x.cityId === cityId);
     const assigned = new Set(assignSection === "pn" ? pnAssign.filter(x => x.cityId === cityId).map(x => x.areaId) : lpAssign.filter(x => x.cityId === cityId).map(x => x.stationId));
     const available = pool.filter(x => !assigned.has(x.id));
-    $("assign-items-body").innerHTML = available.map(item => `<label class="item-list-row"><input type="checkbox" value="${item.id}"><span>${esc(item.name)}</span>${assignSection === "lp" ? `<small>MLIT station ID: ${esc(item.mlitStationId)}</small>` : ""}</label>`).join("") || '<div class="item-list-empty">Everything is already assigned to this city.</div>';
+    $("assign-items-body").innerHTML = available.map(item => {
+      const key = assignSection === "lp" ? `station-${item.mlitStationId}-${PERIOD}` : `area-${item.id}-${PERIOD}`;
+      const dataAvailable = mlitBenchmark(key).n >= 20;
+      return `<label class="item-list-row ${dataAvailable ? "" : "is-unavailable"}"><input type="checkbox" value="${item.id}" ${dataAvailable ? "" : "disabled"}><span>${esc(item.name)}</span>${dataAvailable ? "" : '<small class="availability-warning">No available data</small>'}</label>`;
+    }).join("") || '<div class="item-list-empty">Everything is already assigned to this city.</div>';
     $("assign-items-block").style.display = available.length ? "" : "none";
     $("assign-empty-hint").style.display = available.length ? "none" : "";
   }
@@ -186,8 +189,6 @@
   function setLpTab(id) { lpActiveCity = id; renderTabs(); renderLp(); }
   function renderAll() { renderPn(); renderTabs(); renderLp(); }
 
-  // Property Detail Market Trend is a separate CSV feature. Its final schema is
-  // pending, so this mock validates structure only and keeps mapping per dataset.
   const municipalities = [
     {municipalityCode:"13101", name:"Chiyoda-ku"},
     {municipalityCode:"13103", name:"Minato-ku"},
@@ -213,12 +214,16 @@
     }
     values.push(current.trim()); return values;
   }
+  const MARKET_TREND_HEADERS = [
+    "Transaction month","Area group name","Property type","Value","Unit","Value type","Price nature",
+    "Area type","Size band","Year-on-year change (%)","Transaction count","Source name","Retrieval date","Aggregation conditions"
+  ];
   function validateMarketCsv(text) {
     const lines = String(text).replace(/^\uFEFF/, "").split(/\r?\n/).filter(line => line.trim());
     if (lines.length < 2) return {valid:false, message:"The CSV must contain a header row and at least one data row."};
     const headers = parseCsvLine(lines[0]);
-    if (!headers.length || headers.some(header => !header)) return {valid:false, message:"The CSV header contains an empty column name."};
-    if (new Set(headers.map(header => header.toLowerCase())).size !== headers.length) return {valid:false, message:"The CSV header contains duplicate column names."};
+    const exact = headers.length === MARKET_TREND_HEADERS.length && headers.every((header,index) => header === MARKET_TREND_HEADERS[index]);
+    if (!exact) return {valid:false, message:"Invalid CSV format. Use the required 14-column Market Trend template without adding, removing, renaming or reordering columns."};
     return {valid:true, headers};
   }
   function nextDatasetId() {
@@ -285,8 +290,6 @@
   }
 
   window.cmsLandData = {closeModal, openAssignModal, openAssignModalForCity, onCitySearchInput, selectAssignCity, onAssignCityChange, confirmAssign, clearCityAssignments, removePnAssignment, removeLpAssignment, setLpTab, replaceMarketDataset, deleteMarketDataset, openMarketMapping, addMarketMapping, removeMarketMapping};
-  root.querySelectorAll(".mlit-scope-slot").forEach(el => { el.innerHTML = scope; });
-  root.querySelectorAll(".benchmark-meta-slot").forEach(el => { el.innerHTML = metadata; });
   root.querySelectorAll(".modal-backdrop").forEach(el => el.addEventListener("click", e => { if (e.target === el) el.classList.remove("open"); }));
   document.addEventListener("click", e => { if (!e.target.closest(".city-search-wrap") && $("assign-city-dropdown")) $("assign-city-dropdown").style.display = "none"; });
   window.addEventListener("resize", () => { if ($("assign-city-dropdown")?.style.display !== "none") positionDropdown(); });
