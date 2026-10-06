@@ -5447,6 +5447,10 @@
           buildStatus: "Secondhand",
           moveIn: "Available Now",
           publishStatus: "Suspended",
+          suspendedBy: "Admin",
+          adminSuspendReason: "privacy_copyright_infringement",
+          suspensionDate: "2026-05-19",
+          suspensionNotes: "Uploaded listing photos were reported as unauthorized use of third-party images.",
           datePublished: "2026-03-20",
           dateUpdated: "2026-05-19",
           specialUpdates: [],
@@ -5533,6 +5537,33 @@
             "Compact studio close to Shinjuku Station. Pet-friendly building, fibre internet included.",
         },
       ];
+
+      (function seedPropertyReportNotification() {
+        try {
+          const key = "yuushi.c07.propertyReports";
+          const all = JSON.parse(localStorage.getItem(key) || "{}");
+          if (!all["RPT-2026-001"]) {
+            all["RPT-2026-001"] = {
+              id: "RPT-2026-001",
+              propertyId: "PROP-58210",
+              propertyTitle: "Toyosu Bayside Tower",
+              reason: "Incorrect property information",
+              createdAt: "2026-10-05T03:20:00.000Z",
+              updatedAt: "2026-10-05T03:20:00.000Z",
+              status: "awaiting_agency_response",
+              description: "Property information requires Agency review.",
+              evidence: [],
+              responses: [],
+              clarification: "",
+              audit: [
+                {at:"2026-10-05T03:20:00.000Z",by:"Customer",action:"submitted",detail:"Report submitted."},
+                {at:"2026-10-05T03:20:00.000Z",by:"System",action:"awaiting_agency_response",detail:"Sent to Agency for response."}
+              ]
+            };
+            localStorage.setItem(key, JSON.stringify(all));
+          }
+        } catch (e) {}
+      })();
 
       // ========================================================================
       // DETERMINISTIC FILLER SEED — pads the demo list past 50 rows so the
@@ -5948,38 +5979,76 @@
         return sum / peers.length;
       }
 
-      // Workflow-backed Agency alerts only.
+      // Workflow-backed Agency Property notifications.
+      const ADMIN_REASON_LABELS = {
+        property_already_sold: "Property already sold",
+        incorrect_information: "Incorrect information",
+        privacy_copyright_infringement: "Privacy/Copyright infringement",
+        unauthorized_listing_own_property: "Unauthorized listing of own property",
+        unauthorized_use_own_images: "Unauthorized use of own images",
+      };
       function detAdminRejectedState(p) {
         if (p.publishStatus !== "Rejected") return null;
-        const labels = {
-          property_already_sold:"Property already sold",
-          incorrect_information:"Incorrect information",
-          privacy_copyright_infringement:"Privacy/Copyright infringement",
-          unauthorized_listing_own_property:"Unauthorized listing of own property",
-          unauthorized_use_own_images:"Unauthorized use of own images",
-        };
-        const reason = labels[p.rejectCategory] || p.rejectCategory || "Rejection reason unavailable";
+        const reason = ADMIN_REASON_LABELS[p.rejectCategory] || p.rejectCategory || "Reason unavailable";
         return {
           key: "rejected:" + p.id,
           id: "rejected",
           entityId: p.id,
           severity: "critical",
-          title: "Rejected by Admin",
+          title: "Property rejected by Admin",
           desc: "Reason: " + reason,
-          actionLabel: "Open listing",
+          actionLabel: "View property",
           actionFn: () => showDetail(p.id),
         };
       }
       function detAdminSuspendedState(p) {
         if (p.publishStatus !== "Suspended" || p.suspendedBy !== "Admin") return null;
+        const reasonCode = p.adminSuspendReason || p.rejectCategory || p.suspensionReason;
+        const reason = ADMIN_REASON_LABELS[reasonCode] || reasonCode || "Reason unavailable";
+        const note = String(p.suspensionNotes || "").trim();
         return {
           key: "admin-suspended:" + p.id,
           id: "admin-suspended",
           entityId: p.id,
           severity: "critical",
-          title: "Suspended by YUUSHI Admin",
-          desc: p.suspensionNotes || "This listing is suspended and must be submitted for Admin re-review before publication.",
-          actionLabel: "View details",
+          title: "Property suspended by Admin",
+          desc: "Reason: " + reason + (note ? " · " + note : ""),
+          actionLabel: "View property",
+          actionFn: () => showDetail(p.id),
+        };
+      }
+      function detPendingAdminReview(p) {
+        if (p.publishStatus !== "Pending Review") return null;
+        return {
+          key: "pending-review:" + p.id,
+          id: "pending-review",
+          entityId: p.id,
+          severity: "warning",
+          title: "Property pending Admin review",
+          desc: p.dateUpdated ? "Submitted / updated: " + p.dateUpdated : "Waiting for Admin review.",
+          actionLabel: "View property",
+          actionFn: () => showDetail(p.id),
+        };
+      }
+      function reportForProperty(propertyId) {
+        try {
+          const all = JSON.parse(localStorage.getItem("yuushi.c07.propertyReports") || "{}");
+          return Object.values(all).find(r => r && r.propertyId === propertyId && r.status === "awaiting_agency_response") || null;
+        } catch (e) {
+          return null;
+        }
+      }
+      function detReportResponseRequired(p) {
+        const report = reportForProperty(p.id);
+        if (!report) return null;
+        return {
+          key: "report-response:" + report.id,
+          id: "report-response",
+          entityId: p.id,
+          severity: "warning",
+          title: "Property report requires response",
+          desc: "Reason: " + (report.reason || "Reported listing issue"),
+          actionLabel: "Review report",
           actionFn: () => showDetail(p.id),
         };
       }
@@ -5987,6 +6056,8 @@
       const ALERT_DETECTORS = [
         detAdminRejectedState,
         detAdminSuspendedState,
+        detReportResponseRequired,
+        detPendingAdminReview,
       ];
 
       // ---- aggregation ----
