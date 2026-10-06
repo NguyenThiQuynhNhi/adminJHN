@@ -2,6 +2,19 @@
 
 > Updated 2026-10-06: Profile verification/completeness status, Agency verification submission bridge, Messages File Library, Project filter restoration, Dashboard embedded-nav cleanup, Q&A-confirmed metric rules, Property notification expansion, and related Admin verification/Area Guide changes are reflected in the current handoff set.
 
+## Latest code-derived delta — 2026-10-06
+
+This section is regenerated from the current implementation after the latest reconciliation work.
+
+- **Dashboard:** when loaded inside the Agency shell, the Dashboard's internal workspace sidebar is hidden to avoid duplicate navigation. Dashboard switching remains available from the embedded header. The selector still exposes 29 approved metrics. Organic and Paid Property performance are separate; Property View is the Q&A-confirmed organic viewport exposure; Sales Value by Staff uses **Closed By**; External/off-platform transactions are excluded from Yuushi Sales KPIs.
+- **Projects:** the missing filter/pagination engine was restored. `FILT`, `buildPtypeChecks()`, `applyFilters()`, `renderPagination()` and related filter wiring are present again.
+- **Messages Box:** Agency Admin may reply/assign/close Inquiry conversations. The `+` menu supports **Add work content**, **Upload images and files**, Insert Property and Message Templates. Suggest Agent now forwards correctly to the selected staff conversation.
+- **File Library:** Agency-wide reusable file storage is available under Messages. Existing files reuse one `fileId` across chats; deleting a library file leaves chat messages but renders the attachment unavailable.
+- **Agency Profile:** header shows verification status and profile-completion percentage only; explanatory eligibility/business-rule copy is not shown. Agency Profile contains the license-document upload + Submit for Verification entry point. Withdraw from YUUSHI belongs to Agency Profile, not My Profile.
+- **Property notifications:** current operational notifications include Admin rejection with reason, Admin suspension with reason/note, Property Report requiring Agency response, and Pending Admin Review.
+- **Inquiry creation:** repeated Chat with Agency reopens an active Client–Property Inquiry. A later request after the prior Inquiry is closed creates a new Inquiry; Lead records are not reused as Inquiry records.
+- **Open client item:** Transaction Verification mismatch / Client says transaction not completed is still pending JHN confirmation and must not be silently finalized in code/SRS.
+
 The current working-tree HTML and referenced JavaScript are the implementation source of truth. This is a frontend mockup; a success message does not establish a backend operation. Page-specific documents identify simulations and persistence limits. `agency-dashboard-source.js` exposes read-only previews of module records; it does not persist business data or synchronize every module to the Dashboard store.
 
 The shell is [index.html](../index.html); see [shell behavior](agent-portal__index.md). The following map is derived from its `data-content` links. Dashboard and CRM Activities are expandable groups, not additional standalone pages.
