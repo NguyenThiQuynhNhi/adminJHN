@@ -89,11 +89,18 @@
         background: var(--info-bg);
         color: var(--muted);
       }
-      .mode-pill.editing {
-        background: #fff3df;
-        color: var(--accent-hover);
-        border: 1px solid #ecdfc6;
-      }
+      .mode-pill.success { background: var(--success-bg); color: var(--success); border: 1px solid #bfdcc9; }
+      .mode-pill.warning { background: #fff3df; color: var(--accent-hover); border: 1px solid #ecdfc6; }
+      .profile-statuses { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+      .eligibility-line { margin:5px 0 0; font-size:12px; color:var(--muted); text-align:right; }
+      .verification-box { margin-top:18px; padding:16px; border:1px solid var(--border); border-radius:10px; background:#faf9f6; }
+      .verification-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:12px; }
+      .verification-head h3 { margin:0 0 4px; font-size:14px; }
+      .verification-docs { display:grid; gap:10px; }
+      .verification-doc { display:grid; grid-template-columns:minmax(180px,1fr) auto; gap:12px; align-items:center; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:#fff; }
+      .verification-doc strong { display:block; font-size:12.5px; }
+      .verification-doc small { color:var(--muted); }
+      .verification-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; flex-wrap:wrap; }
 
       /* TABS */
       .tabs {
@@ -774,7 +781,13 @@
         <div>
           <h1>Profile</h1>
         </div>
-        <span class="mode-pill" id="mode-pill">View mode</span>
+        <div>
+          <div class="profile-statuses">
+            <span class="mode-pill" id="verification-pill">Verification: —</span>
+            <span class="mode-pill" id="completeness-pill">Profile: —</span>
+          </div>
+          <p class="eligibility-line" id="eligibility-line"></p>
+        </div>
       </div>
 
       <!-- TABS -->
@@ -836,6 +849,7 @@
               </label>
               <input
                 type="text"
+                id="agency-company-name"
                 maxlength="255"
                 value="Anna Real Estate Co., Ltd."
                 disabled
@@ -868,7 +882,7 @@
 
             <div class="field full">
               <label>Representative Name <span class="req">*</span></label>
-              <input type="text" maxlength="255" value="Taro Tanaka" disabled />
+              <input type="text" id="agency-representative-name" maxlength="255" value="Taro Tanaka" disabled />
             </div>
 
             <div class="field full">
@@ -904,7 +918,7 @@ Family-run agency serving Tokyo's Shibuya and Setagaya wards since 1998. Special
           <div class="field-grid">
             <div class="field">
               <label>Operational Email <span class="req">*</span></label>
-              <input type="email" value="admin@anna-fudosan.co.jp" disabled />
+              <input type="email" id="agency-operational-email" value="admin@anna-fudosan.co.jp" disabled />
             </div>
             <div class="field">
               <label>Inquiry Email — Main <span class="req">*</span> </label>
@@ -916,7 +930,7 @@ Family-run agency serving Tokyo's Shibuya and Setagaya wards since 1998. Special
             </div>
             <div class="field">
               <label>Representative Phone <span class="req">*</span></label>
-              <input type="tel" value="+81.3.6427.8451" disabled />
+              <input type="tel" id="agency-representative-phone" value="+81.3.6427.8451" disabled />
             </div>
             <div class="field full">
               <label>Public Phone Number </label>
@@ -1233,11 +1247,11 @@ Family-run agency serving Tokyo's Shibuya and Setagaya wards since 1998. Special
               <label
                 >Real Estate License Number <span class="req">*</span></label
               >
-              <input type="text" value="東京都知事(3)第00000号" disabled />
+              <input type="text" id="agency-license-number" value="東京都知事(3)第00000号" disabled />
             </div>
             <div class="field">
               <label>License Expiry Date <span class="req">*</span></label>
-              <input type="date" value="2028-03-31" disabled />
+              <input type="date" id="agency-license-expiry" value="2028-03-31" disabled />
             </div>
             <div class="field">
               <label>Real Estate Association</label>
@@ -1255,10 +1269,39 @@ Family-run agency serving Tokyo's Shibuya and Setagaya wards since 1998. Special
               <label>Headquarters Address <span class="req">*</span> </label>
               <input
                 type="text"
+                id="agency-headquarters-address"
                 maxlength="255"
                 value="〒150-0002 Tokyo, Shibuya-ku, Shibuya 3-12-7"
                 disabled
               />
+            </div>
+          </div>
+
+          <div class="verification-box" id="license-verification">
+            <div class="verification-head">
+              <div>
+                <h3>License Verification</h3>
+                <p class="hint" style="margin:0">Upload the required verification documents, then submit the complete package for Admin review and OCR comparison.</p>
+              </div>
+              <span class="mode-pill" id="verification-card-status">—</span>
+            </div>
+            <div class="verification-docs">
+              <div class="verification-doc">
+                <div><strong>Real Estate Transaction Business License *</strong><small id="verification-license-name">No file selected</small></div>
+                <div><button class="btn btn-ghost btn-small" type="button" onclick="document.getElementById('verification-license').click()">Choose file</button><input id="verification-license" type="file" hidden onchange="onVerificationFile(this,'verification-license-name')" /></div>
+              </div>
+              <div class="verification-doc">
+                <div><strong>Real Estate Transaction Agent Certificate *</strong><small id="verification-certificate-name">No file selected</small></div>
+                <div><button class="btn btn-ghost btn-small" type="button" onclick="document.getElementById('verification-certificate').click()">Choose file</button><input id="verification-certificate" type="file" hidden onchange="onVerificationFile(this,'verification-certificate-name')" /></div>
+              </div>
+              <div class="verification-doc">
+                <div><strong>Supplementary Document</strong><small id="verification-supplement-name">No file selected</small></div>
+                <div><button class="btn btn-ghost btn-small" type="button" onclick="document.getElementById('verification-supplement').click()">Choose file</button><input id="verification-supplement" type="file" hidden onchange="onVerificationFile(this,'verification-supplement-name')" /></div>
+              </div>
+            </div>
+            <p class="hint">File types follow the platform-wide upload policy.</p>
+            <div class="verification-actions">
+              <button class="btn btn-primary" type="button" id="submit-verification-btn" onclick="submitVerification()">Submit for Verification</button>
             </div>
           </div>
 
@@ -1421,6 +1464,12 @@ Family-run agency serving Tokyo's Shibuya and Setagaya wards since 1998. Special
               </select>
             </div>
           </div>
+        </div>
+
+        <div class="card" id="agency-withdrawal-card">
+          <div class="card-head"><div class="card-title">Agency account</div></div>
+          <p class="hint">Voluntary withdrawal is available to the primary Agency account. Active work reassignment is handled separately.</p>
+          <button class="btn btn-danger-ghost" type="button" onclick="openAgencyWithdrawal()">Withdraw from YUUSHI</button>
         </div>
       </section>
 
@@ -1599,12 +1648,6 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
         </div>
       </section>
 
-      <div class="card" id="agency-withdrawal-card">
-        <div class="card-head"><div class="card-title">Agency account</div></div>
-        <p class="hint">Voluntary withdrawal is available to the primary Agency account. Active work reassignment is handled separately.</p>
-        <button class="btn btn-danger-ghost" type="button" onclick="openAgencyWithdrawal()">Withdraw from YUUSHI</button>
-      </div>
-
       <!-- BOTTOM ACTION BAR -->
       <div class="action-bar">
         <button
@@ -1692,6 +1735,110 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
       let editing = false,
         dirty = false;
 
+      const AGENCY_ID = "AG-00000001";
+      const VERIFICATION_QUEUE_KEY = "yuushi.agencyLicenseVerificationRequests";
+      const VERIFICATION_STATE_KEY = "yuushi.agencyVerificationState";
+      const PROFILE_ELIGIBILITY_KEY = "yuushi.agencyProfileEligibility";
+      const verificationFiles = { license: null, certificate: null, supplement: null };
+
+      function getVerificationState() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(VERIFICATION_STATE_KEY) || "null");
+          if (saved && saved.agencyId === AGENCY_ID) return saved;
+        } catch {}
+        return { agencyId: AGENCY_ID, status: "Approved", updatedAt: new Date().toISOString(), seeded: true };
+      }
+      function profileCompletion() {
+        const labels = [...document.querySelectorAll("#panel-agency label .req")];
+        let total = 0, complete = 0;
+        labels.forEach(req => {
+          const field = req.closest(".field");
+          if (!field) return;
+          total++;
+          const multi = field.querySelector("[data-multi]");
+          if (multi) {
+            if (multi.querySelector(".chip")) complete++;
+            return;
+          }
+          const input = field.querySelector("input:not([type=file]),textarea,select");
+          if (input && String(input.value || "").trim()) complete++;
+        });
+        return total ? Math.round((complete / total) * 100) : 100;
+      }
+      function updateProfileStatus() {
+        const state = getVerificationState();
+        const completion = profileCompletion();
+        const verified = state.status === "Approved";
+        const eligible = verified && completion === 100;
+        const verificationPill = document.getElementById("verification-pill");
+        const cardPill = document.getElementById("verification-card-status");
+        const completenessPill = document.getElementById("completeness-pill");
+        verificationPill.textContent = "Verification: " + (verified ? "Verified" : state.status);
+        verificationPill.className = "mode-pill " + (verified ? "success" : "warning");
+        cardPill.textContent = verified ? "Verified" : state.status;
+        cardPill.className = "mode-pill " + (verified ? "success" : "warning");
+        completenessPill.textContent = "Profile: " + completion + "% complete";
+        completenessPill.className = "mode-pill " + (completion === 100 ? "success" : "warning");
+        document.getElementById("eligibility-line").textContent =
+          eligible ? "Agency scoring and Property upload are available." :
+          "Agency scoring and Property upload require Verified status and 100% profile completion.";
+        localStorage.setItem(PROFILE_ELIGIBILITY_KEY, JSON.stringify({agencyId:AGENCY_ID,verified,completion,eligible,updatedAt:new Date().toISOString()}));
+        const submit = document.getElementById("submit-verification-btn");
+        if (submit) submit.textContent = verified ? "Submit updated verification" : "Submit for Verification";
+      }
+      function onVerificationFile(input, labelId) {
+        const file = input.files && input.files[0];
+        document.getElementById(labelId).textContent = file ? file.name + " · " + Math.max(1,Math.round(file.size/1024)) + " KB" : "No file selected";
+        if (input.id === "verification-license") verificationFiles.license = file;
+        if (input.id === "verification-certificate") verificationFiles.certificate = file;
+        if (input.id === "verification-supplement") verificationFiles.supplement = file;
+      }
+      function submitVerification() {
+        const completion = profileCompletion();
+        if (completion < 100) {
+          toast("Complete all required Agency Profile information before submitting verification.", "error");
+          return;
+        }
+        if (!verificationFiles.license || !verificationFiles.certificate) {
+          toast("Upload the business license and agent certificate before submitting.", "error");
+          return;
+        }
+        const now = new Date().toISOString();
+        const requestId = "LVR-" + Date.now().toString(36).toUpperCase();
+        const docs = [
+          ["Real Estate Transaction Business License", verificationFiles.license],
+          ["Real Estate Transaction Agent Certificate", verificationFiles.certificate],
+          ["Supplementary Document", verificationFiles.supplement]
+        ].filter(([,file])=>file).map(([type,file],i)=>({
+          id:"doc-"+(i+1), type, name:file.name, format:(file.name.split(".").pop()||"").toUpperCase(),
+          size:Number((file.size/1024/1024).toFixed(2)), uploaded:now.slice(0,10), scan:"Pending"
+        }));
+        const request = {
+          id:requestId, agencyId:AGENCY_ID,
+          agency:document.getElementById("agency-company-name").value.trim(),
+          submitted:now.slice(0,10), updated:now, status:"Pending Review",
+          ocrStatus:"Processing", external:"Not Checked", documentReviewStatus:"Pending",
+          registered:{
+            "License Number":document.getElementById("agency-license-number").value.trim(),
+            "Expiration Date":document.getElementById("agency-license-expiry").value,
+            "Company Name":document.getElementById("agency-company-name").value.trim(),
+            "Representative Name":document.getElementById("agency-representative-name").value.trim(),
+            "Address":document.getElementById("agency-headquarters-address").value.trim(),
+            "Phone Number":document.getElementById("agency-representative-phone").value.trim()
+          },
+          email:document.getElementById("agency-operational-email").value.trim(),
+          documents:docs
+        };
+        let queue=[];
+        try { queue=JSON.parse(localStorage.getItem(VERIFICATION_QUEUE_KEY)||"[]"); if(!Array.isArray(queue))queue=[]; } catch {}
+        queue = queue.filter(r=>r.agencyId!==AGENCY_ID || ["Approved","Denied"].includes(r.status));
+        queue.unshift(request);
+        localStorage.setItem(VERIFICATION_QUEUE_KEY,JSON.stringify(queue));
+        localStorage.setItem(VERIFICATION_STATE_KEY,JSON.stringify({agencyId:AGENCY_ID,status:"Pending Review",requestId,updatedAt:now}));
+        updateProfileStatus();
+        toast("Verification package submitted. Admin review and OCR processing have started.");
+      }
+
       const tabs = document.querySelectorAll(".tab");
       const panels = document.querySelectorAll(".panel");
       tabs.forEach((t) =>
@@ -1718,8 +1865,6 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
         document.getElementById("edit-btn").style.display = "none";
         document.getElementById("save-btn").style.display = "";
         document.getElementById("cancel-btn").style.display = "";
-        document.getElementById("mode-pill").textContent = "Editing…";
-        document.getElementById("mode-pill").classList.add("editing");
         dirty = false;
         // Detect dirty on input
         document.querySelectorAll("main input,main textarea,main select").forEach((el) => {
@@ -1728,6 +1873,7 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
           });
           el.addEventListener("change", () => {
             dirty = true;
+            if (el.closest("#panel-agency")) updateProfileStatus();
           });
         });
       }
@@ -1745,8 +1891,6 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
         document.getElementById("edit-btn").style.display = "";
         document.getElementById("save-btn").style.display = "none";
         document.getElementById("cancel-btn").style.display = "none";
-        document.getElementById("mode-pill").textContent = "View mode";
-        document.getElementById("mode-pill").classList.remove("editing");
       }
       function askCancel() {
         if (dirty) {
@@ -1783,6 +1927,7 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
           return;
         }
         exitEdit();
+        updateProfileStatus();
         toast("Profile updated successfully.");
       }
 
@@ -2042,6 +2187,8 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
           setTimeout(() => el.remove(), 300);
         }, 3000);
       }
+
+      updateProfileStatus();
 
       const agencyWithdrawalKey = 'yuushi.agency.primaryAccount';
       const agencyWithdrawalModal = document.getElementById('agency-withdrawal-modal');
