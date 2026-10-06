@@ -379,7 +379,7 @@
         white-space: nowrap;
       }
 
-      /* Status badges (Security Q&A / 2FA view) */
+      /* Status badges (2FA view) */
       .policy-badge {
         display: inline-block;
         font-size: 11px;
@@ -875,11 +875,18 @@
                 <th scope="row">Failed Lockout</th>
                 <td colspan="3">5 failed attempts → Lock 1 hour<br><small>Consecutive failed logins. A successful password reset immediately unlocks the account.</small></td>
               </tr>
-              <tr><th scope="row">Password History</th><td>3</td><td>3</td><td>1</td></tr>
-              <tr><th scope="row">Keep Login Session</th><td>Not retained / N/A</td><td>6 months</td><td>6 months</td></tr>
-              <tr><th scope="row">Session Timeout</th><td>30 minutes inactivity</td><td>None</td><td>None</td></tr>
-              <tr><th scope="row">Security Q&amp;A</th><td>Not applicable</td><td>Not applicable</td><td>Required<br><small>Recovery fallback when phone/SMS is unavailable.</small></td></tr>
-              <tr><th scope="row">2FA</th><td>Mandatory (Email OTP)<br><small>Cannot be disabled by users or role configuration.</small></td><td>Optional (Email OTP)<br><small>User may enable it.</small></td><td>Optional (Email OTP)<br><small>User may enable it.</small></td></tr>
+              <tr><th scope="row">Password History</th><td><div class="cell-view" id="view-passwordHistory-admin"></div><div class="cell-edit session-edit" id="cell-passwordHistory-admin"><input id="passwordHistory-admin" class="edit-input" type="number" min="0" max="20" step="1"><div class="inline-error">Enter a valid value.</div></div></td><td><div class="cell-view" id="view-passwordHistory-agent"></div><div class="cell-edit session-edit" id="cell-passwordHistory-agent"><input id="passwordHistory-agent" class="edit-input" type="number" min="0" max="20" step="1"><div class="inline-error">Enter a valid value.</div></div></td><td><div class="cell-view" id="view-passwordHistory-customer"></div><div class="cell-edit session-edit" id="cell-passwordHistory-customer"><input id="passwordHistory-customer" class="edit-input" type="number" min="0" max="20" step="1"><div class="inline-error">Enter a valid value.</div></div></td></tr>
+              <tr><th scope="row">Keep Login Session</th>
+                <td><span class="muted">Not retained / N/A</span></td>
+                <td><div class="cell-view" id="view-sessionMonths-agent"></div><div class="cell-edit session-edit" id="cell-sessionMonths-agent"><input id="sessionMonths-agent" class="edit-input" type="number" min="1" max="60" step="1"><span class="unit-label">months</span><div class="inline-error">Enter a valid value.</div></div></td>
+                <td><div class="cell-view" id="view-sessionMonths-customer"></div><div class="cell-edit session-edit" id="cell-sessionMonths-customer"><input id="sessionMonths-customer" class="edit-input" type="number" min="1" max="60" step="1"><span class="unit-label">months</span><div class="inline-error">Enter a valid value.</div></div></td>
+              </tr>
+              <tr><th scope="row">Session Timeout</th>
+                <td><div class="cell-view" id="view-inactivityMinutes-admin"></div><div class="cell-edit session-edit" id="cell-inactivityMinutes-admin"><input id="inactivityMinutes-admin" class="edit-input" type="number" min="1" max="1440" step="1"><span class="unit-label">minutes</span><div class="inline-error">Enter a valid value.</div></div></td>
+                <td><span class="muted">N/A<br><small>Keep Login Session applies.</small></span></td>
+                <td><span class="muted">N/A<br><small>Keep Login Session applies.</small></span></td>
+              </tr>
+              <tr><th scope="row">2FA</th><td><div class="cell-view" id="view-twoFa-admin"></div><div class="cell-edit" id="cell-twoFa-admin"><select id="twoFa-admin" class="edit-input"><option value="on">ON</option><option value="off">OFF</option></select></div></td><td><div class="cell-view" id="view-twoFa-agent"></div><div class="cell-edit" id="cell-twoFa-agent"><select id="twoFa-agent" class="edit-input"><option value="on">ON</option><option value="off">OFF</option></select></div></td><td><div class="cell-view" id="view-twoFa-customer"></div><div class="cell-edit" id="cell-twoFa-customer"><select id="twoFa-customer" class="edit-input"><option value="on">ON</option><option value="off">OFF</option></select></div></td></tr>
               <tr><th scope="row">Active Session</th><td colspan="3">Only one active session per account. Successful login on a new device invalidates the previous session. A suspicious materially different device/IP/country login may raise a Multi-Device Login signal; this does not permit concurrent sessions.<br><small>Policy only; enforcement requires the authentication backend.</small></td></tr>
             </tbody>
           </table>
@@ -977,7 +984,6 @@
             sessionMonths: null,
             inactivityMinutes: 30,
             passwordHistory: 3,
-            securityQaMandatory: false,
             twoFaMandatory: true,
           },
           agent: {
@@ -985,7 +991,6 @@
             complexity: allComplexity(),
             sessionMonths: 6,
             passwordHistory: 3,
-            securityQaMandatory: false,
             twoFaMandatory: false,
           },
           customer: {
@@ -993,7 +998,6 @@
             complexity: allComplexity(),
             sessionMonths: 6,
             passwordHistory: 1,
-            securityQaMandatory: true,
             twoFaMandatory: false,
           },
         },
@@ -1039,7 +1043,14 @@
           complexityInputs: complexityInputs,
           complexityView: document.getElementById("view-complexity-" + r),
           complexityCell: document.getElementById("cell-complexity-" + r),
-
+          passwordHistoryInput: document.getElementById("passwordHistory-" + r),
+          passwordHistoryView: document.getElementById("view-passwordHistory-" + r),
+          sessionMonthsInput: document.getElementById("sessionMonths-" + r),
+          sessionMonthsView: document.getElementById("view-sessionMonths-" + r),
+          inactivityMinutesInput: document.getElementById("inactivityMinutes-" + r),
+          inactivityMinutesView: document.getElementById("view-inactivityMinutes-" + r),
+          twoFaInput: document.getElementById("twoFa-" + r),
+          twoFaView: document.getElementById("view-twoFa-" + r),
         };
       });
 
@@ -1087,8 +1098,10 @@
         if (raw.minChars != null) out.minChars = raw.minChars;
         if ("complexity" in raw)
           out.complexity = normalizeComplexity(raw.complexity);
-        // Finalized session, history, recovery and 2FA policies are fixed.
-
+        if (raw.passwordHistory != null) out.passwordHistory = Number(raw.passwordHistory);
+        if (role !== "admin" && raw.sessionMonths != null) out.sessionMonths = Number(raw.sessionMonths);
+        if (role === "admin" && raw.inactivityMinutes != null) out.inactivityMinutes = Number(raw.inactivityMinutes);
+        if (raw.twoFaMandatory != null) out.twoFaMandatory = !!raw.twoFaMandatory;
         return out;
       }
 
@@ -1121,7 +1134,7 @@
           migrated.maxSavedSearches = old.maxSavedSearches;
 
         // Migrate any prior-shape per-role policy if present, normalizing
-        // old complexity/securityQA/twoFa fields into the new shape.
+        // old complexity/2FA fields into the new shape.
         if (old.passwordPolicy && typeof old.passwordPolicy === "object") {
           ROLES.forEach((r) => {
             migrated.passwordPolicy[r] = normalizePolicy(
@@ -1196,6 +1209,10 @@
           COMPLEXITY_KEYS.forEach((k) => {
             m.complexityInputs[k].checked = !!(p.complexity && p.complexity[k]);
           });
+          if (m.passwordHistoryInput) m.passwordHistoryInput.value = String(p.passwordHistory ?? 0);
+          if (r !== "admin" && m.sessionMonthsInput) m.sessionMonthsInput.value = String(p.sessionMonths ?? 6);
+          if (r === "admin" && m.inactivityMinutesInput) m.inactivityMinutesInput.value = String(p.inactivityMinutes ?? 30);
+          if (m.twoFaInput) m.twoFaInput.value = p.twoFaMandatory ? "on" : "off";
         });
         refreshMatrixViews();
       }
@@ -1211,11 +1228,10 @@
           passwordPolicy[r] = {
             minChars: Number(m.minCharsInput.value),
             complexity: complexity,
-            sessionMonths: defaults.passwordPolicy[r].sessionMonths,
-            ...(r === "admin" ? { inactivityMinutes: 30 } : {}),
-            passwordHistory: defaults.passwordPolicy[r].passwordHistory,
-            securityQaMandatory: r === "customer",
-            twoFaMandatory: r === "admin",
+            sessionMonths: r === "admin" ? null : Number(m.sessionMonthsInput.value),
+            ...(r === "admin" ? { inactivityMinutes: Number(m.inactivityMinutesInput.value) } : {}),
+            passwordHistory: Number(m.passwordHistoryInput.value),
+            twoFaMandatory: m.twoFaInput.value === "on",
           };
         });
         return {
@@ -1254,7 +1270,10 @@
             m.complexityView.textContent = "— None required";
             m.complexityView.className = "cell-view complexity-none";
           }
-
+          if (m.passwordHistoryView) m.passwordHistoryView.textContent = m.passwordHistoryInput.value || "0";
+          if (r !== "admin" && m.sessionMonthsView) m.sessionMonthsView.textContent = (m.sessionMonthsInput.value || "0") + " months";
+          if (r === "admin" && m.inactivityMinutesView) m.inactivityMinutesView.textContent = (m.inactivityMinutesInput.value || "0") + " minutes inactivity";
+          if (m.twoFaView) setBadge(m.twoFaView, m.twoFaInput.value === "on", "ON · Email OTP", "OFF");
         });
       }
 
@@ -1332,6 +1351,19 @@
             return false;
           }
         }
+        ROLES.forEach((r) => {
+          const m = matrix[r];
+          const history = Number(m.passwordHistoryInput.value);
+          if (!Number.isInteger(history) || history < 0 || history > 20) { markCellError(m.passwordHistoryInput); ok = false; }
+          if (r !== "admin") {
+            const months = Number(m.sessionMonthsInput.value);
+            if (!Number.isInteger(months) || months < 1 || months > 60) { markCellError(m.sessionMonthsInput); ok = false; }
+          }
+          if (r === "admin") {
+            const minutes = Number(m.inactivityMinutesInput.value);
+            if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) { markCellError(m.inactivityMinutesInput); ok = false; }
+          }
+        });
         return ok;
       }
 
@@ -1353,6 +1385,10 @@
           COMPLEXITY_KEYS.forEach((k) => {
             m.complexityInputs[k].disabled = !on;
           });
+          if (m.passwordHistoryInput) m.passwordHistoryInput.disabled = !on;
+          if (m.sessionMonthsInput) m.sessionMonthsInput.disabled = !on;
+          if (m.inactivityMinutesInput) m.inactivityMinutesInput.disabled = !on;
+          if (m.twoFaInput) m.twoFaInput.disabled = !on;
         });
         if (on) {
           els.matrixTable.classList.add("matrix-editing");
@@ -1448,6 +1484,10 @@
           COMPLEXITY_KEYS.forEach((k) => {
             m.complexityInputs[k].addEventListener("change", live);
           });
+          [m.passwordHistoryInput,m.sessionMonthsInput,m.inactivityMinutesInput,m.twoFaInput].filter(Boolean).forEach(el=>{
+            el.addEventListener("input", live);
+            el.addEventListener("change", live);
+          });
         });
 
         // Clear an individual field's error as soon as it gets a value
@@ -1462,7 +1502,7 @@
         // Clear a matrix cell error when its validated input changes
         ROLES.forEach((r) => {
           const m = matrix[r];
-          [m.minCharsInput].forEach((inp) => {
+          [m.minCharsInput,m.passwordHistoryInput,m.sessionMonthsInput,m.inactivityMinutesInput].filter(Boolean).forEach((inp) => {
             const handler = () => {
               const td = inp.closest("td");
               if (td) td.classList.remove("field-error");
