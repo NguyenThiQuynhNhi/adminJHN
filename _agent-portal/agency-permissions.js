@@ -198,7 +198,7 @@
             f.actions.forEach((a) => (p[f.key].actions[a] = true));
           }),
         );
-        p.inquiries.actions = {view:true, reply:false, assign:false, close:false};
+        p.inquiries.actions = {view:true, reply:true, assign:true, close:true};
         return p;
       }
       function salesAccess() {
