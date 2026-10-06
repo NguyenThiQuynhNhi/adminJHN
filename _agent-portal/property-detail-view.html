@@ -696,7 +696,7 @@
       // localStorage connects these static pages; it is not an authorization/security boundary.
       window.C07 = {
         key: 'yuushi.c07.propertyReports',
-        labels: { awaiting_agency_response:'Awaiting Agency Response', pending_admin_review:'Pending Admin review', suspended:'Suspended', dismissed:'Dismissed' },
+        labels: { awaiting_agency_response:'Awaiting Agency Response', pending_admin_review:'Pending', suspended:'Suspended', dismissed:'Dismissed' },
         read() { try { return JSON.parse(localStorage.getItem(this.key) || '{}'); } catch { return {}; } },
         save(record) { const all = this.read(); all[record.id] = record; localStorage.setItem(this.key, JSON.stringify(all)); },
         unresolved(r) { return ['awaiting_agency_response','pending_admin_review'].includes(r.status); },
@@ -796,14 +796,16 @@
             <p>${esc(r.description)}</p>
             <p><b>Shared evidence:</b> ${(r.evidence || []).filter(a => a.agencySafe === true).map(a => esc(a.label) + ' (mock attachment)').join(', ') || 'No Customer evidence cleared for Agency sharing.'}</p>
             ${r.clarification && r.status === 'awaiting_agency_response' ? `<p><b>Clarification required:</b> ${esc(r.clarification)}</p>` : ''}
-            ${latest ? `<p><b>Last response:</b> ${esc(latest.explanation)}<br><b>Corrective action:</b> ${esc(latest.correctiveAction)}<br><b>Response date:</b> ${esc(latest.at)}<br><b>Agency evidence:</b> ${latest.files.map(f => esc(f.name) + ' (mock file)').join(', ') || 'None'}</p>` : ''}
+            ${latest ? `<p><b>Last response:</b> ${esc(latest.explanation)}<br><b>Response date:</b> ${esc(latest.at)}<br><b>Agency evidence:</b> ${latest.files.map(f => esc(f.name) + ' (mock file)').join(', ') || 'None'}</p>` : ''}
             ${r.status === 'awaiting_agency_response' ? `<form data-c07-response="${esc(r.id)}">
-              <button class="btn btn-secondary" type="button" data-c07-correct>Correct property using existing editor</button>
-              <label>Agency Response / Explanation *<textarea name="explanation" maxlength="4000" required></textarea></label>
-              <label>Corrective action taken *<textarea name="correctiveAction" maxlength="4000" required placeholder="Describe the correction, or explain why no change is needed."></textarea></label>
-              <label>Agency evidence (optional)<input type="file" name="evidence" multiple></label>
-              <button class="btn btn-primary" type="submit">Submit Response</button>
-            </form>` : `<p>${r.status === 'pending_admin_review' ? 'Response submitted. Awaiting the final Admin decision.' : 'Final decision recorded by Admin.'}</p>`}
+              <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0">
+                <button class="btn btn-secondary" type="button" data-c07-correct><i class="fas fa-pen"></i> Edit Property</button>
+                <label class="btn btn-secondary" style="cursor:pointer;margin:0"><i class="fas fa-upload"></i> Upload Evidence<input type="file" name="evidence" multiple required style="display:none"></label>
+              </div>
+              <label>Agency Response / Explanation *<textarea name="explanation" maxlength="4000" required placeholder="Explain the correction or provide context for Admin review."></textarea></label>
+              <div class="c07-file-list" data-c07-file-list style="font-size:12px;color:#666;margin:8px 0">No evidence selected.</div>
+              <button class="btn btn-primary" type="submit">Submit for Admin Review</button>
+            </form>` : `<p>${r.status === 'pending_admin_review' ? 'Evidence submitted. Status: Pending.' : 'Final decision recorded by Admin.'}</p>`}
           </article>`;
         }).join('') : '<p>No reports for this property.</p>';
         document.querySelectorAll('[data-c07-correct]').forEach(button => button.addEventListener('click', () => {
@@ -813,7 +815,10 @@
           const key = Object.keys(demoProperties).find(key => demoProperties[key].id === propertyId);
           if (key) enterEditMode(demoProperties[key]);
         }));
-        document.querySelectorAll('[data-c07-response]').forEach(form => form.addEventListener('submit', event => {
+        document.querySelectorAll('[data-c07-response]').forEach(form => {
+          const input=form.elements.evidence, list=form.querySelector('[data-c07-file-list]');
+          input?.addEventListener('change',()=>{const files=Array.from(input.files||[]);list.textContent=files.length?files.map(f=>f.name).join(', '):'No evidence selected.';});
+          form.addEventListener('submit', event => {
           event.preventDefault();
           const feedback = document.getElementById('c07Feedback');
           const report = C07.read()[form.dataset.c07Response];
@@ -821,16 +826,17 @@
             feedback.textContent = 'Report status changed. Review the latest status before responding.'; c07RenderReports(propertyId); return;
           }
           const explanation = form.elements.explanation.value.trim();
-          const correctiveAction = form.elements.correctiveAction.value.trim();
-          if (!explanation || !correctiveAction) { feedback.textContent = 'Enter an explanation and corrective action.'; return; }
           const files = Array.from(form.elements.evidence.files).map(f => ({name:f.name, size:f.size, type:f.type}));
-          report.responses.push({explanation, correctiveAction, files, at:new Date().toISOString()});
+          if (!explanation) { feedback.textContent = 'Enter an Agency response / explanation.'; return; }
+          if (!files.length) { feedback.textContent = 'Upload at least one evidence file before submitting.'; return; }
+          report.responses.push({explanation, files, at:new Date().toISOString()});
           report.status = 'pending_admin_review';
-          C07.event(report, 'agency_response', 'Agency response and corrective action submitted.', 'Agency');
+          C07.event(report, 'agency_response', 'Agency response and evidence submitted.', 'Agency');
           try { C07.save(report); } catch { feedback.textContent = 'Unable to save response. Please try again.'; return; }
           c07RenderReports(propertyId);
           feedback.textContent = 'Response saved in the mock. Pending Admin review.';
-        }));
+          });
+        });
       }
       document.addEventListener('DOMContentLoaded', () => {
         const params = new URLSearchParams(location.search);
