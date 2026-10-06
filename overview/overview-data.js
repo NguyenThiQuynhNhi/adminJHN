@@ -94,10 +94,16 @@
     return base;
   }).filter(r=>r.date);
 
+  // Align Admin deal counts with the Agency's currently eligible Yuushi transaction
+  // population. External/off-platform deals and unresolved mismatches are excluded.
+  // The final dispute/evidence resolution workflow still requires JHN confirmation.
   for(const t of transactions){
-    const date=(t.soldDate||t.updatedAt||'').slice(0,10);if(!date)continue;
+    const date=(t.transactionDate||t.soldDate||t.updatedAt||'').slice(0,10);if(!date)continue;
+    const completed=t.status==='closed'||(t.status==='suspended'&&t.suspensionReason==='Sold');
+    const matched=t.verificationStatus==='Matched'||(t.verificationStatus==='Admin Resolved'&&t.adminResolutionAccepted===true);
+    const eligible=t.transactionSource==='Yuushi Client Transaction'&&completed&&matched;
     facts.push({date,propertyId:t.propertyId||null,agencyId:t.agencyId||null,agentId:t.agencyId||null,member:true,country:'',device:'',language:'',channel:'',section:'Transaction',exitSection:'',placement:'',adType:'',option:'',campaign:'',hour:0,
-      impressions:0,views:0,clicks:0,saves:0,inquiries:0,deals:t.transactionSource==='Yuushi Client Transaction'?1:0,verifiedClosings:0,searches:0,sessions:0,bounced:0,sessionSeconds:0,listingSeconds:0,pageViews:0,registrations:0,
+      impressions:0,views:0,clicks:0,saves:0,inquiries:0,deals:eligible?1:0,verifiedClosings:0,searches:0,sessions:0,bounced:0,sessionSeconds:0,listingSeconds:0,pageViews:0,registrations:0,
       subscription:0,banner:0,sponsored:0,featured:0,appraisal:0,optionRevenue:0,purchases:0,messagesUser:0,messagesAgent:0,chats:0,replied:0,received:0,responseMinutes:0,appraisalRequests:0,appraisalSent:0,sent:0,read:0,marketingClicks:0,marketingCV:0,blocked:0,adImpressions:0,adViews:0,adClicks:0,adInquiries:0,adVerifiedClosings:0,
       transactionId:t.transactionId,transactionSource:t.transactionSource,verificationStatus:t.verificationStatus});
   }
