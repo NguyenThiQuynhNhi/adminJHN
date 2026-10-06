@@ -1052,7 +1052,8 @@ a:hover {
                   <button type="button" class="rte-btn" data-cmd="formatBlock" data-val="blockquote" title="Quote"><i class="fa-solid fa-quote-right"></i></button>
                   <span class="rte-sep"></span>
                   <button type="button" class="rte-btn" data-cmd="createLink" title="Insert link"><i class="fa-solid fa-link"></i></button>
-                  <button type="button" class="rte-btn" data-cmd="insertImage" title="Insert image"><i class="fa-solid fa-image"></i></button>
+                  <button type="button" class="rte-btn" data-cmd="insertMedia" title="Insert image or video"><i class="fa-solid fa-photo-film"></i></button>
+                  <input id="blogRteMediaPicker" type="file" accept="image/*,video/*" hidden />
                   <button type="button" class="rte-btn" data-cmd="insertHorizontalRule" title="Divider"><i class="fa-solid fa-ruler-horizontal"></i></button>
                 </div>
                 <div
@@ -3099,9 +3100,13 @@ a:hover {
           if (cmd === "createLink") {
             const url = prompt("Link URL:");
             if (url) document.execCommand("createLink", false, url);
-          } else if (cmd === "insertImage") {
-            const url = prompt("Image URL:");
-            if (url) document.execCommand("insertImage", false, url);
+          } else if (cmd === "insertMedia") {
+            const picker = document.getElementById("blogRteMediaPicker");
+            if (picker) {
+              picker.value = "";
+              picker.click();
+            }
+            return;
           } else if (cmd === "formatBlock") {
             document.execCommand("formatBlock", false, btn.dataset.val);
           } else {
@@ -3109,6 +3114,31 @@ a:hover {
           }
           updateBlogVideoStatusFlag();
         });
+        const mediaPicker = document.getElementById("blogRteMediaPicker");
+        if (mediaPicker) {
+          mediaPicker.addEventListener("change", () => {
+            const file = mediaPicker.files && mediaPicker.files[0];
+            if (!file) return;
+            const isImage = file.type.startsWith("image/");
+            const isVideo = file.type.startsWith("video/");
+            if (!isImage && !isVideo) {
+              showToast("Please select an image or video file.", "error");
+              return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+              editor.focus();
+              const src = String(reader.result || "");
+              const safeName = String(file.name || "media").replace(/[&<>"']/g, "");
+              const html = isVideo
+                ? '<video controls preload="metadata" data-upload-name="' + safeName + '" style="max-width:100%;height:auto"><source src="' + src + '" type="' + file.type + '"></video><p><br></p>'
+                : '<img src="' + src + '" alt="' + safeName + '" data-upload-name="' + safeName + '" style="max-width:100%;height:auto"><p><br></p>';
+              document.execCommand("insertHTML", false, html);
+              updateBlogVideoStatusFlag();
+            };
+            reader.readAsDataURL(file);
+          });
+        }
         const blockSel = document.getElementById("blogRteBlock");
         if (blockSel) {
           blockSel.addEventListener("change", () => {
