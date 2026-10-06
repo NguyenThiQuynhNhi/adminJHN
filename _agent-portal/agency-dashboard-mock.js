@@ -93,7 +93,7 @@
       ...appraisals.map(r=>({...r,date:r.received,activityType:'appraisal',title:'Appraisal Request · '+r.client})),
       ...viewing.filter(r=>['Scheduled','Confirmed'].includes(r.status)).map(r=>({...r,date:r.createdAt,activityType:'viewing',title:'Viewing Scheduled · '+r.property})),
       ...offers.filter(r=>r.status==='Accepted').map(r=>({...r,date:r.acceptedAt,activityType:'offer',title:'Offer Accepted · '+r.property})),
-      ...transactions.filter(r=>r.status==='closed'||r.dealType==='Sale'&&r.suspensionReason==='Sold').map(r=>({...r,date:r.transactionDate,activityType:'transaction',title:'Deal Closed · '+r.property}))
+      ...R.closedSales(transactions).map(r=>({...r,date:r.transactionDate,activityType:'transaction',title:'Deal Closed · '+r.property}))
     ];
     const events=eventSources.map(r=>({...r,id:'EVENT-'+r.id})).sort((a,b)=>M.time(b.date)-M.time(a.date));
     return {viewEvents,properties,propertyPerformance,projects,leads,appraisals,entitlements,contacts,groups,viewing,task,jobs,calls,emails,sms,comments,calendar,offers,transactions,agreements,inquiries,messageEvents,responseTimes,campaigns,adPerformance,subscription,billing,staff,profile,events,profileEvents};
