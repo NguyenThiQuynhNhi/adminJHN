@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Messages — Agency Portal</title>
+    <script src="agency-file-library.js"></script>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
@@ -2171,6 +2172,19 @@
           display: none;
         }
       }
+    
+      /* ============ FILE LIBRARY ============ */
+      .file-card{min-width:290px;max-width:420px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:11px 12px;display:flex;align-items:center;gap:11px}
+      .mrow.me .file-card{background:#fffaf5}
+      .file-card-icon{width:38px;height:38px;border-radius:9px;background:#f3eee7;color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+      .file-card-main{min-width:0;flex:1}.file-card-name{font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .file-card-meta{font-size:11px;color:var(--text-sec);margin-top:3px}.file-card-btn{border:0;background:transparent;color:var(--accent);cursor:pointer;font-size:15px;padding:7px}
+      .wc-modal{width:min(820px,94vw);max-height:82vh;display:flex;flex-direction:column}.wc-toolbar{display:flex;gap:9px;padding:12px 16px;border-bottom:1px solid var(--border)}
+      .wc-toolbar input,.wc-toolbar select{border:1px solid var(--border);border-radius:8px;padding:9px 10px;font:inherit;background:#fff}.wc-toolbar input{flex:1}
+      .wc-list{overflow:auto;padding:10px 16px;min-height:250px}.wc-row{display:grid;grid-template-columns:32px minmax(0,1fr) 100px 120px;gap:10px;align-items:center;padding:10px 6px;border-bottom:1px solid #eee8df}
+      .wc-name{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wc-sub{font-size:11px;color:var(--text-sec);margin-top:3px}.wc-foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+      .wc-empty{text-align:center;padding:42px 15px;color:var(--text-sec)}
+
     </style>
   <link rel="stylesheet" href="../dropdown-indicators.css">
 <script src="../mock-workflows.js"></script>
@@ -2254,15 +2268,16 @@
           placeholder="Type message..."
           onkeydown="if(event.key==='Enter'){event.preventDefault();sendMessage();}"
         />
-        <input type="file" id="fileInput" hidden onchange="onAttach()" />
+        <input type="file" id="fileInput" hidden multiple onchange="onAttach()" />
         <div class="plus-menu-wrap">
           <button class="comp-icon" id="plusBtn" onclick="togglePlusMenu(event)" title="More">
             <i class="fas fa-plus"></i>
           </button>
           <div class="plus-pop" id="plusPop">
+            <div class="plus-item" onclick="closePlusMenu();openWorkContent()"><i class="fas fa-folder-open"></i> Add work content</div>
+            <div class="plus-item" onclick="closePlusMenu();document.getElementById('fileInput').click()"><i class="fas fa-upload"></i> Upload images and files</div>
             <div class="plus-item" onclick="closePlusMenu();openPropertyPicker()"><i class="fas fa-building"></i> Insert Property</div>
             <div class="plus-item" onclick="closePlusMenu();toggleTpl(event)"><i class="fas fa-clipboard-list"></i> Message Templates</div>
-            <div class="plus-item" onclick="closePlusMenu();document.getElementById('fileInput').click()"><i class="fas fa-paperclip"></i> Attach File</div>
           </div>
         </div>
         <button class="send-btn" onclick="sendMessage()">
@@ -2300,6 +2315,27 @@
       </div>
       <div class="ctx-item" onclick="ctxCopyAction()">
         <i class="far fa-copy"></i> Copy message
+      </div>
+    </div>
+
+    <!-- FILE LIBRARY PICKER -->
+    <div class="modal-ov" id="workContentModal" onclick="if(event.target===this)closeWorkContent()">
+      <div class="modal wc-modal">
+        <div class="ep-head">
+          <div><h3>Add work content</h3><div style="font-size:12px;color:var(--text-sec);margin-top:3px">Reuse files already stored in your Agency File Library.</div></div>
+          <button class="ep-x" onclick="closeWorkContent()">×</button>
+        </div>
+        <div class="wc-toolbar">
+          <input id="wcSearch" placeholder="Search file name or uploader" oninput="renderWorkContent()" />
+          <select id="wcType" onchange="renderWorkContent()">
+            <option value="">All types</option><option>Document</option><option>PDF</option><option>Spreadsheet</option><option>Image</option><option>Video</option><option>Other</option>
+          </select>
+        </div>
+        <div class="wc-list" id="wcList"></div>
+        <div class="wc-foot">
+          <span id="wcUsage" style="font-size:12px;color:var(--text-sec)"></span>
+          <div style="display:flex;gap:8px"><button class="btn btn-sm" onclick="closeWorkContent()">Cancel</button><button class="btn btn-primary btn-sm" id="wcSendBtn" onclick="sendSelectedWorkContent()">Send selected</button></div>
+        </div>
       </div>
     </div>
 
@@ -3450,6 +3486,20 @@ function renderStaffView() {
             box.appendChild(row);
             return;
           }
+          if (m.type === "file") {
+            const file = YuushiAgencyFiles.get(m.fileId);
+            const available = !!file;
+            const fname = file?.name || m.fileName || "Attachment";
+            const fsize = file ? YuushiAgencyFiles.fmtBytes(file.size) : (m.fileSizeLabel || "");
+            const cat = file?.category || m.fileCategory || "File";
+            const icon = cat==="Video"?"fa-video":cat==="Image"?"fa-image":cat==="PDF"?"fa-file-pdf":cat==="Spreadsheet"?"fa-file-excel":"fa-file-lines";
+            row.innerHTML = `<img class="m-av" src="${avatar}" alt="" /><div class="m-body"><div class="m-meta">${isMe ? m.time+" · "+name : name+" · "+m.time}</div>
+              <div class="file-card"><div class="file-card-icon"><i class="fas ${icon}"></i></div><div class="file-card-main"><div class="file-card-name">${escapeHtml(fname)}</div><div class="file-card-meta">${available ? escapeHtml(cat+" · "+fsize) : "No longer available"}</div></div>
+              <button class="file-card-btn" ${available?"":"disabled"} onclick="downloadChatFile('${escapeHtml(m.fileId)}')" title="${available?"Download":"No longer available"}"><i class="fas fa-download"></i></button></div>
+            </div>`;
+            box.appendChild(row);
+            return;
+          }
 
           const srcLang = m.lang || "English";
           const isTranslated = translatedIdx.has(i);
@@ -3858,11 +3908,51 @@ function renderStaffView() {
         $("composerInput").focus();
       }
 
-      function onAttach() {
+      const selectedWorkFiles = new Set();
+      async function onAttach() {
         if(!requireReply())return;
-        const f = $("fileInput").files[0];
-        if (f) toast("Attached: " + f.name);
-        $("fileInput").value = "";
+        const input=$("fileInput"), files=Array.from(input.files||[]);
+        if(!files.length)return;
+        try{
+          const added=await YuushiAgencyFiles.addFiles(files);
+          for(const row of added) sendFileReference(row);
+          toast(added.length+" file"+(added.length===1?"":"s")+" uploaded and sent.");
+        }catch(e){toast(e.message||"Upload failed.");}
+        input.value="";
+      }
+      function sendFileReference(file){
+        if(!file||!current||!requireReply())return;
+        YuushiAgencyFiles.markShared(file.id,current.id);
+        const msg={sender:"me",type:"file",fileId:file.id,fileName:file.name,fileCategory:file.category,fileSizeLabel:YuushiAgencyFiles.fmtBytes(file.size),time:nowTime()};
+        current.msgs.push(msg);
+        current.preview="[File] "+file.name;
+        if(current.customerId){const row=WAgency.read(WAgency.keys.enquiries).find(r=>r.id===current.id);if(row){row.msgs=current.msgs;row.preview=current.preview;WAgency.upsert(WAgency.keys.enquiries,row);}}
+        renderMessages();renderList();
+      }
+      async function downloadChatFile(id){try{await YuushiAgencyFiles.download(id)}catch(e){toast(e.message||"This attachment is no longer available.")}}
+      function openWorkContent(){
+        if(!requireReply())return;
+        selectedWorkFiles.clear();$("wcSearch").value="";$("wcType").value="";
+        $("workContentModal").classList.add("open");renderWorkContent();
+      }
+      function closeWorkContent(){$("workContentModal").classList.remove("open");selectedWorkFiles.clear()}
+      function toggleWorkFile(id,checked){checked?selectedWorkFiles.add(id):selectedWorkFiles.delete(id);renderWorkContent(false)}
+      function renderWorkContent(rebuild=true){
+        let rows=YuushiAgencyFiles.rows(),q=($("wcSearch").value||"").trim().toLowerCase(),type=$("wcType").value;
+        if(q)rows=rows.filter(r=>(r.name+" "+r.uploaderName).toLowerCase().includes(q));
+        if(type)rows=rows.filter(r=>r.category===type);
+        rows.sort((a,b)=>String(b.uploadedAt).localeCompare(String(a.uploadedAt)));
+        if(rebuild){
+          $("wcList").innerHTML=rows.length?rows.map(r=>`<label class="wc-row"><input type="checkbox" ${selectedWorkFiles.has(r.id)?"checked":""} onchange="toggleWorkFile('${r.id}',this.checked)"><div><div class="wc-name">${escapeHtml(r.name)}</div><div class="wc-sub">Uploaded by ${escapeHtml(r.uploaderName)} · ${new Date(r.uploadedAt).toLocaleDateString()}</div></div><div>${escapeHtml(r.category)}</div><div>${YuushiAgencyFiles.fmtBytes(r.size)}</div></label>`).join(""):`<div class="wc-empty"><i class="fas fa-folder-open" style="font-size:26px;margin-bottom:8px"></i><div><strong>No files available.</strong></div><div style="margin-top:5px">Use “Upload images and files” to add a new file.</div></div>`;
+        }
+        const usage=YuushiAgencyFiles.usage();$("wcUsage").textContent=YuushiAgencyFiles.fmtBytes(usage.used)+" of "+YuushiAgencyFiles.fmtBytes(usage.limit)+" used";
+        $("wcSendBtn").disabled=selectedWorkFiles.size===0;$("wcSendBtn").textContent=selectedWorkFiles.size?"Send selected ("+selectedWorkFiles.size+")":"Send selected";
+      }
+      function sendSelectedWorkContent(){
+        if(!requireReply())return;
+        const files=[...selectedWorkFiles].map(id=>YuushiAgencyFiles.get(id)).filter(Boolean);
+        files.forEach(sendFileReference);closeWorkContent();
+        if(files.length)toast(files.length+" existing file"+(files.length===1?"":"s")+" sent without re-uploading.");
       }
 
       /* ============ HELPERS ============ */
@@ -3875,6 +3965,7 @@ function renderStaffView() {
         closePlusMenu();
         closePropertyPicker();
         closeApprModal();
+        closeWorkContent();
       }
 
       function toast(msg) {
