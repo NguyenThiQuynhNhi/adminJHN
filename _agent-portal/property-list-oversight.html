@@ -6243,14 +6243,44 @@
         };
       }
 
+      function detAdminRejectedState(p) {
+        if (p.publishStatus !== "Rejected") return null;
+        const labels = {
+          property_already_sold:"Property already sold",
+          incorrect_information:"Incorrect information",
+          privacy_copyright_infringement:"Privacy/Copyright infringement",
+          unauthorized_listing_own_property:"Unauthorized listing of own property",
+          unauthorized_use_own_images:"Unauthorized use of own images",
+        };
+        const reason = labels[p.rejectCategory] || p.rejectCategory || "Rejection reason unavailable";
+        return {
+          key: "rejected:" + p.id,
+          id: "rejected",
+          entityId: p.id,
+          severity: "critical",
+          title: "Rejected by Admin",
+          desc: reason + (p.rejectNotes ? ". " + p.rejectNotes : ""),
+          actionLabel: "View rejection details",
+          actionFn: () => showDetail(p.id),
+        };
+      }
+      function detAdminSuspendedState(p) {
+        if (p.publishStatus !== "Suspended" || p.suspendedBy !== "Admin") return null;
+        return {
+          key: "admin-suspended:" + p.id,
+          id: "admin-suspended",
+          entityId: p.id,
+          severity: "critical",
+          title: "Suspended by YUUSHI Admin",
+          desc: p.suspensionNotes || "This listing is suspended and must be submitted for Admin re-review before publication.",
+          actionLabel: "View details",
+          actionFn: () => showDetail(p.id),
+        };
+      }
+
       const ALERT_DETECTORS = [
-        detStale,
-        detMissingField,
-        detLicenseExpiry,
-        detPendingTooLong,
-        detFlagged,
-        detPriceAnomaly,
-        detDuplicate,
+        detAdminRejectedState,
+        detAdminSuspendedState,
       ];
 
       // ---- aggregation ----
