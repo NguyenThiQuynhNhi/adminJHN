@@ -1370,11 +1370,11 @@
         if (!p) return;
         openRejectModal({
           subtitle: "Listing ID: " + p.id,
-          onConfirm(reason,notes) {
+          onConfirm(reason) {
             p.status = "Rejected";
             p.reason = reason;
-            p.decisionNote = notes || "";
-            logDecision(p, "Rejected", rejectReasonLabel(reason)+(notes?": "+notes:""));
+            p.decisionNote = "";
+            logDecision(p, "Rejected", rejectReasonLabel(reason));
             persistQueue();
             Toast.err("Listing rejected. Agent " + p.agent + " has been notified.");
             $("detailPage").classList.add("hidden");
@@ -1468,29 +1468,25 @@
               </select>
               <span id="rejectCatErr" class="ux-field-error" style="display:none">Please select a reason.</span>
             </div>
-            <div style="margin-bottom:14px">
-              <label for="rejectNote" style="display:block;font-size:11.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px">Details</label>
-              <textarea id="rejectNote" style="width:100%;min-height:80px;padding:9px 12px;border:1px solid var(--border-warm);border-radius:var(--r-md);font-size:13px;font-family:inherit;background:var(--bg-card);resize:vertical" placeholder="Add details for the Agency…"></textarea>
-            </div>
             <div class="ux-modal-actions">
               <button type="button" class="ux-btn" id="rejectCancel">Cancel</button>
               <button type="button" class="ux-btn danger" id="rejectOk">Reject</button>
             </div>
           </div>`;
         document.body.appendChild(modal);
-        const sub=modal.querySelector("#rejectSub"),cat=modal.querySelector("#rejectCategory"),note=modal.querySelector("#rejectNote"),catErr=modal.querySelector("#rejectCatErr"),noteErr=modal.querySelector("#rejectNoteErr"),noteReq=modal.querySelector("#rejectNoteReq");
+        const sub=modal.querySelector("#rejectSub"),cat=modal.querySelector("#rejectCategory"),catErr=modal.querySelector("#rejectCatErr");
         let cb=null;
         const close=()=>{modal.classList.remove("open");cb=null;};
         modal.querySelector("#rejectCancel").onclick=close;
         modal.addEventListener("click",e=>{if(e.target===modal)close();});
         cat.addEventListener("change",()=>{catErr.style.display="none";});
         modal.querySelector("#rejectOk").onclick=()=>{
-          const reason=cat.value,details=note.value.trim();
+          const reason=cat.value;
           if(!reason){catErr.style.display="block";cat.focus();return;}
           
-          const done=cb;close();if(done)done(reason,details);
+          const done=cb;close();if(done)done(reason);
         };
-        window.openRejectModal=opts=>{sub.textContent=opts.subtitle||"";cat.value="";note.value="";catErr.style.display="none";cb=typeof opts.onConfirm==="function"?opts.onConfirm:null;modal.classList.add("open");setTimeout(()=>cat.focus(),40);};
+        window.openRejectModal=opts=>{sub.textContent=opts.subtitle||"";cat.value="";catErr.style.display="none";cb=typeof opts.onConfirm==="function"?opts.onConfirm:null;modal.classList.add("open");setTimeout(()=>cat.focus(),40);};
       })();
 
       document.addEventListener("DOMContentLoaded", () => {
