@@ -1,9 +1,142 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Reviews Management — YUUSHI Agent</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"><style>:root{--bg:#f7f2e9;--card:#fffdf8;--line:#e5d9c0;--text:#3b2f2a;--accent:#a85f3b;--muted:#7d7069}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px Arial,sans-serif}main{padding:28px;max-width:1400px;margin:auto}h1{margin:0 0 8px}.sub{color:var(--muted);margin-bottom:22px}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:18px}.hidden{display:none!important}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%}th,td{padding:12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{font-size:12px;color:var(--muted)}button{font:inherit;border:1px solid var(--line);border-radius:7px;background:#fff;padding:8px 12px;cursor:pointer}.primary{background:var(--accent);color:#fff;border-color:var(--accent)}.head{display:flex;align-items:center;gap:12px;margin-bottom:18px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}.grid div{border:1px solid var(--line);border-radius:8px;padding:12px}.grid small{color:var(--muted)}.grid p{margin:5px 0 0;font-weight:600}.badge{display:inline-block;padding:4px 8px;border-radius:14px;background:#fff1cc;color:#8a5b00}.event{border-left:2px solid #c4a25f;padding:8px 12px;margin:8px 0}.actions{display:flex;gap:8px;flex-wrap:wrap}</style></head><body><main><section id="list"><h1>Reviews Management</h1><p class="sub">Review transaction verification cases and submit evidence for exceptions.</p><div class="card table-wrap"><table><thead><tr><th>Transaction ID</th><th>Property / Project / Type / Lot</th><th>Client</th><th>Agency Price</th><th>Client Price</th><th>Status</th><th>Updated</th><th>Action</th></tr></thead><tbody id="rows"></tbody></table></div></section><section id="detail" class="hidden"></section></main><script src="../mock-workflows.js"></script><script>
-const W=YuushiWorkflow;W.seedTransactionCases();const $=id=>document.getElementById(id);let currentId=null;const reviewRows=()=>W.read(W.keys.transactions).filter(t=>t.transactionSource==='Yuushi Client Transaction'&&(t.verificationStatus||t.clientResponseState==='awaiting'));
-function render(){const rows=reviewRows();$('rows').innerHTML=rows.map(t=>`<tr><td>${W.esc(t.transactionId)}</td><td>${W.esc(t.propertyName)}</td><td>${W.esc(t.clientName||'—')}</td><td>${W.money(t.agentSubmittedPrice)}</td><td>${W.money(t.clientSubmittedPrice)}</td><td>${W.statusBadge(t.verificationStatus||'Awaiting Client')}</td><td>${W.esc(t.updatedAt||'—')}</td><td><button data-id="${W.esc(t.transactionId)}">View</button></td></tr>`).join('')||'<tr><td colspan="8">No review transactions.</td></tr>';$('rows').querySelectorAll('button').forEach(b=>b.onclick=()=>show(b.dataset.id));}
-function actor(t){return t.closedByStaffId?['Closed By',t.closedByStaffName,t.closedByRole]:['Recorded By',t.recordedByStaffName,t.recordedByRole]}
-function show(id){const t=W.read(W.keys.transactions).find(x=>x.transactionId===id);if(!t)return;currentId=id;const a=actor(t),exception=['Mismatch / Needs Review'].includes(t.verificationStatus);$('list').classList.add('hidden');$('detail').classList.remove('hidden');$('detail').innerHTML=`<div class="head"><button id="back">← Back</button><h1>${W.esc(t.transactionId)}</h1>${W.statusBadge(t.verificationStatus||'Awaiting Client')}</div><div class="card"><h2>Transaction Review</h2><div class="grid">${[['Source',t.transactionSource],['Asset',t.propertyName],['Sold Date',t.soldDate],[a[0],(a[1]||'—')+(a[2]?' · '+a[2]:'')],['Agency-entered Price',W.money(t.agentSubmittedPrice)],['Client-entered Price',W.money(t.clientSubmittedPrice)],['Listed Price',W.money(t.listedPrice)],['Review',t.review?`${t.review.rating}/5 · ${t.review.comment||'No comment'}`:'—']].map(x=>`<div><small>${x[0]}</small><p>${W.esc(x[1]||'—')}</p></div>`).join('')}</div></div>${exception?'<div class="card"><h2>Exception Evidence</h2><p>Use this workspace to submit evidence for an existing exception state.</p><button class="primary" id="evidence">Submit Evidence</button></div>':''}<div class="card"><h2>Timeline</h2>${W.timeline(t.timeline)}</div>`;$('back').onclick=back;if(exception)$('evidence').onclick=submitEvidence;}
-function back(){$('detail').classList.add('hidden');$('list').classList.remove('hidden');currentId=null;render()}
-function submitEvidence(){const t=W.read(W.keys.transactions).find(x=>x.transactionId===currentId);W.modal('Submit Exception Evidence','<label>Agency Explanation<textarea id="reason" required maxlength="1000" placeholder="Explain why the transaction details should be reviewed."></textarea></label><label>Evidence file<input type="file" id="file" required></label>',d=>{const reason=d.querySelector('#reason').value.trim(),file=d.querySelector('#file').files[0];if(!reason||!file)throw Error('Agency Explanation and evidence file are required.');const at=W.now(),ticketId=W.next(W.read(W.keys.tickets),'TK-DISPUTE-'),evidence={filename:file.name,size:file.size,type:file.type,lastModified:file.lastModified,receivedAt:at};W.upsert(W.keys.tickets,{...W.unassigned(),id:ticketId,name:t.agencyName,email:'agency@example.test',category:'Transaction Exception Evidence',status:'Open',created:at.slice(0,10),title:'Transaction Exception · '+t.propertyName,transactionId:t.transactionId,propertyId:t.propertyId,agencyId:t.agencyId,disputeReason:reason,evidence,messages:[]});W.updateTransaction(t.transactionId,'Agency submitted exception evidence',{verificationStatus:'Evidence Submitted',disputeTicketId:ticketId,disputeReason:reason,evidence},W.currentAgencyActor().name);show(t.transactionId);W.notify('Exception evidence submitted.');},'Submit evidence')}
-render();
-</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Reviews Management — YUUSHI Agency</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="../dropdown-indicators.css">
+  <style>
+    :root{
+      --bg-page:#f5f5f5;--bg-card:#fff;--bg-card-warm:#fffaf2;--bg-row-hover:#faf6ee;--bg-header-soft:#faf6ee;
+      --text-primary:#1a1a1a;--text-muted:#7a6a5c;--border-default:#e0e0e0;--border-warm:#eadccd;--border-soft:#f0f0f0;
+      --color-primary:#8b7340;--color-primary-hover:#6d5a32;--status-success-text:#2a7a2a;--status-success-bg:#d4f0d4;
+      --status-warning-text:#c87a2a;--status-warning-bg:#fff3d4;--status-danger-text:#b23b3b;--status-danger-bg:#fbe9e9;
+      --status-neutral-text:#666;--status-neutral-bg:#e8e8e8;--r-sm:6px;--r-md:8px;--r-lg:12px;--r-full:999px;
+      --shadow-card:0 10px 30px rgba(115,72,39,.05);--font-stack:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    }
+    *{box-sizing:border-box}html,body{margin:0;padding:0}
+    body{padding:clamp(16px,2.5vw,24px);font-family:var(--font-stack);background:var(--bg-page);color:var(--text-primary);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased}
+    h1{margin:0 0 4px;font-size:22px;font-weight:700;letter-spacing:.02em}h2{margin:0;font-size:14px}
+    .page-subtitle{margin:0 0 16px;font-size:12px;color:var(--text-muted)}
+    .page-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+    .card{background:var(--bg-card);border-radius:var(--r-lg);border:1px solid var(--border-default);padding:18px;box-shadow:var(--shadow-card);margin-bottom:16px}
+    .card-title{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:1px solid var(--border-soft)}
+    .card-title i{color:var(--color-primary);font-size:13px;width:18px;text-align:center}
+    .data-table-wrap{overflow-x:auto}
+    .data-table{width:100%;border-collapse:collapse;font-size:12px}
+    .data-table thead{background:var(--bg-header-soft)}
+    .data-table th,.data-table td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border-soft);vertical-align:middle;white-space:nowrap}
+    .data-table th{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em}
+    .data-table tbody tr{transition:background .12s}.data-table tbody tr:hover{background:var(--bg-row-hover)}
+    .btn{border-radius:var(--r-md);border:1px solid var(--border-default);padding:8px 14px;font-size:13px;background:var(--bg-card);cursor:pointer;display:inline-flex;gap:6px;align-items:center;justify-content:center;color:var(--text-primary);font-family:inherit;font-weight:500;min-height:36px}
+    .btn:hover{background:var(--bg-row-hover)}.btn-primary{background:var(--color-primary);border-color:var(--color-primary);color:#fff}.btn-primary:hover{background:var(--color-primary-hover);border-color:var(--color-primary-hover)}
+    .btn-sm{padding:5px 10px;font-size:12px;min-height:30px}
+    .hidden{display:none!important}
+    .detail-toolbar{position:sticky;top:0;background:var(--bg-page);padding:10px 0;z-index:5;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+    .detail-toolbar h1{font-size:20px;margin:0}.detail-toolbar .badge{margin-left:auto}
+    .detail-hero{background:var(--bg-card-warm);border:1px solid var(--border-warm);border-radius:var(--r-lg);padding:18px;box-shadow:var(--shadow-card);margin-bottom:16px}
+    .detail-name{font-size:18px;font-weight:700;margin-bottom:5px}.detail-meta{font-size:12px;color:var(--text-muted)}
+    .kv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px 16px}
+    .kv{display:flex;flex-direction:column;gap:4px;min-width:0}.kv-label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em}.kv-value{font-size:13px;color:var(--text-primary);word-break:break-word}
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:var(--r-full);font-size:11px;font-weight:600;background:var(--status-warning-bg);color:var(--status-warning-text);white-space:nowrap}
+    .event{border-left:2px solid var(--color-primary);padding:8px 12px;margin:8px 0;background:var(--bg-card-warm);border-radius:0 var(--r-sm) var(--r-sm) 0}
+    .muted{color:var(--text-muted);font-size:12px}.actions{display:flex;gap:8px;flex-wrap:wrap}
+    @media(max-width:720px){body{padding:14px}.card{padding:14px}.detail-toolbar .badge{margin-left:0}}
+  </style>
+</head>
+<body>
+  <section id="list">
+    <div class="page-header">
+      <div>
+        <h1>Reviews Management</h1>
+        <p class="page-subtitle">Review Yuushi Client transaction verification cases and submit evidence when a price mismatch requires review.</p>
+      </div>
+    </div>
+    <section class="card">
+      <div class="card-title"><i class="fas fa-star-half-stroke"></i> Transaction Reviews</div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Transaction ID</th><th>Property / Project / Type / Lot</th><th>Client</th><th>Agency Price</th><th>Client Price</th><th>Status</th><th>Updated</th><th>Action</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+  <section id="detail" class="hidden"></section>
+
+  <script src="../mock-workflows.js"></script>
+  <script>
+    const W=YuushiWorkflow;W.seedTransactionCases();
+    const $=id=>document.getElementById(id);
+    let currentId=null;
+    const reviewRows=()=>W.read(W.keys.transactions).filter(t=>t.transactionSource==='Yuushi Client Transaction'&&(t.verificationStatus||t.clientResponseState==='awaiting'));
+
+    function render(){
+      const rows=reviewRows();
+      $('rows').innerHTML=rows.map(t=>`<tr>
+        <td><strong>${W.esc(t.transactionId)}</strong></td>
+        <td>${W.esc(t.propertyName)}</td>
+        <td>${W.esc(t.clientName||'—')}</td>
+        <td>${W.money(t.agentSubmittedPrice)}</td>
+        <td>${W.money(t.clientSubmittedPrice)}</td>
+        <td>${W.statusBadge(t.verificationStatus||'Awaiting Client')}</td>
+        <td>${W.esc(t.updatedAt||'—')}</td>
+        <td><button class="btn btn-sm" data-id="${W.esc(t.transactionId)}"><i class="fas fa-eye"></i> View</button></td>
+      </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted)">No review transactions.</td></tr>';
+      $('rows').querySelectorAll('button[data-id]').forEach(b=>b.onclick=()=>show(b.dataset.id));
+    }
+
+    function actor(t){return t.closedByStaffId?['Closed By',t.closedByStaffName,t.closedByRole]:['Recorded By',t.recordedByStaffName,t.recordedByRole]}
+
+    function show(id){
+      const t=W.read(W.keys.transactions).find(x=>x.transactionId===id);if(!t)return;
+      currentId=id;
+      const a=actor(t),exception=['Mismatch / Needs Review'].includes(t.verificationStatus);
+      $('list').classList.add('hidden');$('detail').classList.remove('hidden');
+      $('detail').innerHTML=`
+        <div class="detail-toolbar">
+          <button class="btn" id="back"><i class="fas fa-arrow-left"></i> Back to list</button>
+          <h1>${W.esc(t.transactionId)}</h1>
+          ${W.statusBadge(t.verificationStatus||'Awaiting Client')}
+        </div>
+        <div class="detail-hero">
+          <div class="detail-name">${W.esc(t.propertyName||'Transaction Review')}</div>
+          <div class="detail-meta">${W.esc(t.transactionSource||'—')} · Sold ${W.esc(t.soldDate||'—')}</div>
+        </div>
+        <section class="card">
+          <div class="card-title"><i class="fas fa-receipt"></i> Transaction Review</div>
+          <div class="kv-grid">
+            ${[['Source',t.transactionSource],['Asset',t.propertyName],['Sold Date',t.soldDate],[a[0],(a[1]||'—')+(a[2]?' · '+a[2]:'')],['Agency-entered Price',W.money(t.agentSubmittedPrice)],['Client-entered Price',W.money(t.clientSubmittedPrice)],['Listed Price',W.money(t.listedPrice)],['Review',t.review?`${t.review.rating}/5 · ${t.review.comment||'No comment'}`:'—']].map(x=>`<div class="kv"><div class="kv-label">${x[0]}</div><div class="kv-value">${W.esc(x[1]||'—')}</div></div>`).join('')}
+          </div>
+        </section>
+        ${exception?`<section class="card">
+          <div class="card-title"><i class="fas fa-file-shield"></i> Exception Evidence</div>
+          <p class="muted">Submit supporting evidence for the current price mismatch before Admin review.</p>
+          <div class="actions"><button class="btn btn-primary" id="evidence"><i class="fas fa-upload"></i> Submit Evidence</button></div>
+        </section>`:''}
+        <section class="card">
+          <div class="card-title"><i class="fas fa-clock-rotate-left"></i> Timeline</div>
+          ${W.timeline(t.timeline)}
+        </section>`;
+      $('back').onclick=back;
+      if(exception)$('evidence').onclick=submitEvidence;
+    }
+
+    function back(){$('detail').classList.add('hidden');$('list').classList.remove('hidden');currentId=null;render()}
+
+    function submitEvidence(){
+      const t=W.read(W.keys.transactions).find(x=>x.transactionId===currentId);
+      W.modal('Submit Exception Evidence','<label>Agency Explanation<textarea id="reason" required maxlength="1000" placeholder="Explain why the transaction details should be reviewed."></textarea></label><label>Evidence file<input type="file" id="file" required></label>',d=>{
+        const reason=d.querySelector('#reason').value.trim(),file=d.querySelector('#file').files[0];
+        if(!reason||!file)throw Error('Agency Explanation and evidence file are required.');
+        const at=W.now(),ticketId=W.next(W.read(W.keys.tickets),'TK-DISPUTE-'),evidence={filename:file.name,size:file.size,type:file.type,lastModified:file.lastModified,receivedAt:at};
+        W.upsert(W.keys.tickets,{...W.unassigned(),id:ticketId,name:t.agencyName,email:'agency@example.test',category:'Transaction Exception Evidence',status:'Open',created:at.slice(0,10),title:'Transaction Exception · '+t.propertyName,transactionId:t.transactionId,propertyId:t.propertyId,agencyId:t.agencyId,disputeReason:reason,evidence,messages:[]});
+        W.updateTransaction(t.transactionId,'Agency submitted exception evidence',{verificationStatus:'Evidence Submitted',disputeTicketId:ticketId,disputeReason:reason,evidence},W.currentAgencyActor().name);
+        show(t.transactionId);W.notify('Exception evidence submitted.');
+      },'Submit evidence');
+    }
+    render();
+  </script>
+</body>
+</html>
