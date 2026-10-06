@@ -1,5 +1,7 @@
 # YUUSHI Agency Portal — current client-review handoff
 
+> Updated 2026-10-06: Profile verification/completeness status, Agency verification submission bridge, Messages File Library, Project filter restoration, Dashboard embedded-nav cleanup, Q&A-confirmed metric rules, Property notification expansion, and related Admin verification/Area Guide changes are reflected in the current handoff set.
+
 The current working-tree HTML and referenced JavaScript are the implementation source of truth. This is a frontend mockup; a success message does not establish a backend operation. Page-specific documents identify simulations and persistence limits. `agency-dashboard-source.js` exposes read-only previews of module records; it does not persist business data or synchronize every module to the Dashboard store.
 
 The shell is [index.html](../index.html); see [shell behavior](agent-portal__index.md). The following map is derived from its `data-content` links. Dashboard and CRM Activities are expandable groups, not additional standalone pages.
@@ -33,6 +35,7 @@ The shell is [index.html](../index.html); see [shell behavior](agent-portal__ind
 | Contacts | [contact-management.html](../contact-management.html) | [Contacts](agent-portal__contact-management.md) |
 | Groups | [group-management.html](../group-management.html) | [Groups](agent-portal__group-management.md) |
 | Messages Box | [admin-messages.html](../admin-messages.html) | [Messages Box](agent-portal__admin-messages.md) |
+| File Library | [file-library.html](../file-library.html) | [File Library](agent-portal__file-library.md) |
 | Message Center | [message-center.html](../message-center.html) | [Message Center](agent-portal__message-center.md) |
 
 ## Agency
