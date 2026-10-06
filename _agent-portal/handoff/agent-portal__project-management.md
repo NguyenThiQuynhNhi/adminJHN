@@ -17,6 +17,14 @@ Source: [project-management.html](../project-management.html), the current Agent
 
 ---
 
+## Filter / pagination runtime repair — 2026-10-06
+
+The Agency Project page now contains the complete current filter/pagination engine. The earlier broken state where `initFilters()` called a missing `buildPtypeChecks()` is resolved.
+
+Current runtime includes `FILT`, property-type checkbox construction, popover/filter synchronization, `applyFilters()`, sorting, pagination and `renderPagination()`. This section reflects the executable Agency page, not the earlier partial handoff.
+
+---
+
 ## Part 1 — Alerts subsystem (added)
 
 Per-project **alert detectors** are pure functions `(project) => alert | null`; each alert is `{ key, id, entityId, severity, title, desc, actionLabel, actionFn }`. `computeAlerts(p)` runs all detectors, drops nulls and muted non-critical alerts; aggregation/active-id helpers mirror the Properties screen.
