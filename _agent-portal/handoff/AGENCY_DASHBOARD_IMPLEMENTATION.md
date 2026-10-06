@@ -38,7 +38,7 @@ Add Widget contains exactly these 29 selectable metrics. The runtime definitions
 | 97 | Property Clicks |
 | 98 | Organic Keep / Saves |
 | 103 | Top Listings by Conversion |
-| 104 | Combined Property Performance |
+| 104 | Organic vs Paid Property Performance |
 | 118 | Sell-through Rate |
 | 149 | Appraisal Conversion Rate |
 | 220 | Offer Acceptance Rate |
@@ -135,8 +135,16 @@ create/edit/save/reload/duplicate/remove, exports, drill-down, stored-layout mig
 suppression and mobile overflow. It restores the tested localStorage keys even on failure.
 No external test harness or generated screenshot files are required.
 
-## Pending BA decisions — unchanged
+## Confirmed calculation rules updated 2026-10-06
 
-1. Sales Value by Staff attribution: internally isolated; no user-facing attribution selector.
-2. Repeated Inquiry for the same Client + Agency + Property: reuse-versus-create remains undecided.
-3. Repeated Property View counting: no approved Client/Property/Day/Session deduplication policy.
+- **Property View** = organic Property Card becomes visible in the viewport. A Property Detail page load alone is not a Property View.
+- Repeated valid viewport exposures are counted after the card leaves and re-enters; no Client/day/session deduplication.
+- Organic and Paid Advertisement metrics remain separate. Metric #104 is **Organic vs Paid Property Performance**; no Organic + Paid combined total.
+- Repeated `Chat with Agency` reopens an existing active Client–Property Inquiry; after the previous Inquiry is closed, a later request creates a new Inquiry.
+- Sales KPIs exclude External/off-platform transactions.
+- **Sales Value by Staff** attribution uses `closedByStaffId` / **Closed By**.
+- Average Days to Close uses the same eligible Yuushi Sale population as Total Sales Value.
+
+## Still pending
+
+Transaction Verification mismatch / Client says transaction not completed remains pending JHN confirmation. Do not silently resolve its final status, evidence/dispute lifecycle, statistics inclusion, or review eligibility until JHN confirms.
