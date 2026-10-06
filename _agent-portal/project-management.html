@@ -4563,9 +4563,8 @@
               " development).",
           };
           if (publish === "Rejected") {
-            base.rejectCategory = "Incomplete documentation";
-            base.rejectNotes =
-              "Auto-generated demo rejection — re-submit with valid documents.";
+            base.rejectCategory = "incorrect_information";
+            base.rejectNotes = "Project information requires correction before publication.";
           }
           if (group === 5) {
             const tCount = 2 + (seed % 3);
@@ -6220,83 +6219,9 @@
       // PURE DETECTORS — each returns an alert object or null.
       // ====================================================================
       // SHARED #1 — Stale listing (>90 days, no recent interest) → warning
-      function detStale(p) {
-        const updAge = _daysFromNow(p.dateUpdated);
-        if (updAge == null || -updAge <= 90) return null;
-        const interestAge = _daysFromNow(p.lastInterestAt);
-        if (interestAge != null && -interestAge < 60) return null; // recent interest
-        return {
-          key: `${p.id}:stale`,
-          id: "stale",
-          entityId: p.id,
-          severity: "warning",
-          title: "Stale listing",
-          desc: `No update in ${-updAge} days and no recent buyer interest.`,
-          actionLabel: "Review listing",
-          actionFn: () => showDetail(p.id),
-        };
-      }
       // SHARED #2 — Missing required field → warning ("Complete listing")
-      function detMissingField(p) {
-        const missing = (p.missingRequired || []).filter(Boolean);
-        if (!missing.length) return null;
-        return {
-          key: `${p.id}:missing`,
-          id: "missing",
-          entityId: p.id,
-          severity: "warning",
-          title: "Missing required field",
-          desc: `Incomplete: ${missing.join(", ")}.`,
-          actionLabel: "Complete listing",
-          actionFn: () => {
-            showDetail(p.id);
-            enterEditMode();
-          },
-        };
-      }
       // SHARED #3 — License expiry approaching (≤60 days) → critical
-      function detLicense(p) {
-        const d = _daysFromNow(p.licenseExpiry);
-        if (d == null || d > 60) return null;
-        return {
-          key: `${p.id}:license`,
-          id: "license",
-          entityId: p.id,
-          severity: "critical",
-          title: "Agency license expiry approaching",
-          desc:
-            d < 0
-              ? `Agency license expired ${-d} days ago.`
-              : `Agency license expires in ${d} days.`,
-          actionLabel: "Renew license",
-          actionFn: () =>
-            toast("See Agency Profile §3.6 to renew the license.", "error"),
-        };
-      }
       // SHARED #4 — Approval pending over 48 hours (>48h) → critical
-      function detPendingLong(p) {
-        if (p.publishStatus !== "Pending Review") return null;
-        const hrs = _hoursSince(p.submittedAt);
-        if (hrs == null || hrs <= 48) return null;
-        return {
-          key: `${p.id}:pending`,
-          id: "pending",
-          entityId: p.id,
-          severity: "critical",
-          title: "Approval pending over 48 hours",
-          desc: `Awaiting review for ${Math.round(hrs / 24)} days (> 48h).`,
-          actionLabel: "Send reminder",
-          actionFn: () =>
-            showConfirm({
-              title: "Send approval reminder",
-              body: `Escalate the pending approval for ${p.name} (${p.id}) to the review team?`,
-              confirmLabel: "Send reminder",
-              danger: false,
-              onConfirm: () =>
-                toast("Reminder sent to the review team.", "success"),
-            }),
-        };
-      }
       // SHARED #5 — Rejected by Admin → critical
       function detAdminRejected(p) {
         if (p.publishStatus !== "Rejected") return null;
@@ -6341,164 +6266,12 @@
         };
       }
       // SHARED #6 — Price anomaly (±25% vs area avg) → warning
-      function detPriceAnomaly(p) {
-        const avg = Number(p.areaAvgPrice);
-        if (!avg) return null;
-        const lo = projPriceLo(p);
-        if (lo == null) return null;
-        const diff = (lo - avg) / avg;
-        if (Math.abs(diff) < 0.25) return null;
-        const pct = Math.round(diff * 100);
-        return {
-          key: `${p.id}:price`,
-          id: "price",
-          entityId: p.id,
-          severity: "warning",
-          title: "Price anomaly",
-          desc: `Entry price is ${pct > 0 ? "+" : ""}${pct}% vs the area average (${fmtYenShort(avg)}).`,
-          actionLabel: "Review pricing",
-          actionFn: () => showDetail(p.id),
-        };
-      }
       // SHARED #7 — Sold-but-not-closed → warning (opens Mark-as-Sold modal)
-      function detSoldNotClosed(p) {
-        if (!p.soldNotClosed) return null;
-        return {
-          key: `${p.id}:soldnotclosed`,
-          id: "soldnotclosed",
-          entityId: p.id,
-          severity: "warning",
-          title: "Sold but not closed",
-          desc: "All units marked sold but the closing record is incomplete.",
-          actionLabel: "Record closing",
-          actionFn: () =>
-            openSoldModal({
-              unitName: p.name,
-              onConfirm: (payload) => {
-                p.soldNotClosed = false;
-                toast(
-                  `Closing recorded for ${p.name} at ${fmtYen(payload.price)}.`,
-                  "success",
-                );
-                refreshAlerts();
-              },
-            }),
-        };
-      }
       // SHARED #8 — Duplicate detected → warning (side-by-side via confirm)
-      function detDuplicate(p) {
-        if (!p.duplicateOf) return null;
-        const twin = projects.find((x) => x.id === p.duplicateOf);
-        const score = p.duplicateScore
-          ? ` (${Math.round(p.duplicateScore * 100)}% match)`
-          : "";
-        return {
-          key: `${p.id}:dup`,
-          id: "dup",
-          entityId: p.id,
-          severity: "warning",
-          title: "Duplicate detected",
-          desc: `Looks like a duplicate of ${twin ? twin.name : p.duplicateOf}${score}.`,
-          actionLabel: "Compare",
-          actionFn: () =>
-            showConfirm({
-              title: "Possible duplicate",
-              body: `${p.name} (${p.id}) closely matches ${twin ? twin.name + " (" + twin.id + ")" : p.duplicateOf}${score}. Open ${p.name} to review?`,
-              confirmLabel: "Open this listing",
-              danger: false,
-              onConfirm: () => showDetail(p.id),
-            }),
-        };
-      }
       // PROJECT #9 — Phase completion overdue → warning
-      function detPhaseOverdue(p) {
-        const phases = p.phases || [];
-        const overdue = phases.find(
-          (ph) =>
-            ph.status === "In construction" &&
-            ph.plannedCompletion &&
-            new Date(ph.plannedCompletion) < new Date(),
-        );
-        if (!overdue) return null;
-        const d = -_daysFromNow(overdue.plannedCompletion);
-        return {
-          key: `${p.id}:phase`,
-          id: "phase",
-          entityId: p.id,
-          severity: "warning",
-          title: "Phase completion overdue",
-          desc: `${overdue.name} is ${d} days past its planned completion but still in construction.`,
-          actionLabel: "Update phase status",
-          actionFn: () => {
-            showDetail(p.id);
-            enterEditMode();
-          },
-        };
-      }
       // PROJECT #10 — All units sold but project still Public → info
-      function detAllUnitsSold(){ return null; }
-
       // PROJECT #11 — Sales slowing (>70% unsold after 12 months) → warning
-      function detSalesSlowing(p) {
-        const launch = _daysFromNow(p.launchDate);
-        if (launch == null || -launch < 365) return null;
-        const units = projUnits(p);
-        if (!units.length) return null;
-        const unsold = units.filter((u) => u.saleStatus !== "Sold Out").length;
-        const ratio = unsold / units.length;
-        if (ratio <= 0.7) return null;
-        return {
-          key: `${p.id}:slowing`,
-          id: "slowing",
-          entityId: p.id,
-          severity: "warning",
-          title: "Sales slowing",
-          desc: `${Math.round(ratio * 100)}% of units unsold ${Math.round(-launch / 30)} months after launch.`,
-          actionLabel: "Review pricing strategy",
-          actionFn: () =>
-            showConfirm({
-              title: "Review pricing strategy",
-              body: `Sales for ${p.name} have stalled (${Math.round(ratio * 100)}% unsold). Review the pricing strategy?`,
-              confirmLabel: "Open listing",
-              danger: false,
-              onConfirm: () => showDetail(p.id),
-            }),
-        };
-      }
       // PROJECT #12 — Document expired / expiring ≤30 days → critical
-      function detDocExpired(p) {
-        const docs = p.permits || [];
-        let worst = null;
-        docs.forEach((dc) => {
-          const d = _daysFromNow(dc.expiry);
-          if (d == null || d > 30) return;
-          if (worst == null || d < worst.d) worst = { d, doc: dc };
-        });
-        if (!worst) return null;
-        const dc = worst.doc;
-        return {
-          key: `${p.id}:doc`,
-          id: "doc",
-          entityId: p.id,
-          severity: "critical",
-          title: "Document expired",
-          desc:
-            worst.d < 0
-              ? `${dc.type} expired ${-worst.d} days ago.`
-              : `${dc.type} expires in ${worst.d} days.`,
-          actionLabel: "Upload renewed document",
-          actionFn: () =>
-            showConfirm({
-              title: "Upload renewed document",
-              body: `Upload a renewed ${dc.type} for ${p.name} (${p.id})?`,
-              confirmLabel: "Upload",
-              danger: false,
-              onConfirm: () =>
-                toast(`Renewed ${dc.type} uploaded for ${p.name}.`, "success"),
-            }),
-        };
-      }
-
       const ALERT_DETECTORS = [
         detAdminRejected,
         detAdminSuspended,
