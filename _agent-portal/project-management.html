@@ -4697,11 +4697,6 @@
         if (p1042) {
           used.add(p1042.id);
           p1042.submittedAt = tsMin(-5 * DAY); // pending > 48h
-          p1042.flagged = {
-            by: "Sato Admin",
-            reason: "Incorrect information",
-            at: tsMin(-2 * DAY),
-          };
           p1042.areaAvgPrice = 62000000; // area avg; Type A min 35M ⇒ -43%
         }
 
@@ -4774,23 +4769,6 @@
           pSlow.publishStatus = "Published";
           pSlow.salesStatus = "On Sale";
           pSlow.floorPlanTypes.forEach((t) => (t.saleStatus = "On Sale")); // 100% unsold
-        }
-
-        // #12 Document expired — building permit / completion cert expired.
-        const pDoc = pick((x) => x.group === 5);
-        if (pDoc) {
-          pDoc.permits = [
-            {
-              type: "Building Permit",
-              number: "確認番号2024-東京-EXP01",
-              expiry: iso(-12 * DAY), // expired
-            },
-            {
-              type: "Completion Certificate",
-              number: "検査済証2025-008",
-              expiry: iso(20 * DAY), // expiring ≤30 days
-            },
-          ];
         }
       })();
 
@@ -6321,23 +6299,45 @@
       }
       // SHARED #5 — Rejected by Admin → critical
       function detAdminRejected(p) {
-        if (!p.flagged) return null;
+        if (p.publishStatus !== "Rejected") return null;
         return {
-          key: `${p.id}:flagged`,
-          id: "flagged",
+          key: `${p.id}:rejected`,
+          id: "rejected",
           entityId: p.id,
           severity: "critical",
           title: "Rejected by Admin",
-          desc: `${p.flagged.reason || "Rejection reason unavailable."} — Rejected by ${p.flagged.by || "Admin"}`,
+          desc: p.rejectNotes || "This project was rejected by YUUSHI Admin.",
           actionLabel: "View rejection details",
-          actionFn: () =>
-            showConfirm({
-              title: "Rejection details",
-              body: `${p.flagged.reason || "Please rectify this listing."} (rejected by ${p.flagged.by || "Admin"}).`,
-              confirmLabel: "Open listing",
-              danger: false,
-              onConfirm: () => showDetail(p.id),
-            }),
+          actionFn: () => showDetail(p.id),
+        };
+      }
+      function detAdminSuspended(p) {
+        if (p.publishStatus !== "Suspended" || p.suspendedBy !== "Admin") return null;
+        return {
+          key: `${p.id}:admin-suspended`,
+          id: "admin-suspended",
+          entityId: p.id,
+          severity: "critical",
+          title: "Suspended by YUUSHI Admin",
+          desc: p.suspensionNotes || "This project is suspended and cannot be re-activated directly by the Agency.",
+          actionLabel: "View details",
+          actionFn: () => showDetail(p.id),
+        };
+      }
+      function detNewDevelopmentExpiry(p) {
+        const e = expiryInfo(p);
+        if (!e || e.daysLeft > 30) return null;
+        return {
+          key: `${p.id}:listing-expiry`,
+          id: "listing-expiry",
+          entityId: p.id,
+          severity: e.daysLeft < 0 ? "critical" : "warning",
+          title: e.daysLeft < 0 ? "New Development listing expired" : "New Development listing expires soon",
+          desc: e.daysLeft < 0
+            ? `Listing expired on ${e.expiryDate} (Completion Date + 365 days).`
+            : `Listing will expire on ${e.expiryDate} in ${e.daysLeft} days (Completion Date + 365 days).`,
+          actionLabel: "Open project",
+          actionFn: () => showDetail(p.id),
         };
       }
       // SHARED #6 — Price anomaly (±25% vs area avg) → warning
@@ -6500,17 +6500,9 @@
       }
 
       const ALERT_DETECTORS = [
-        detStale,
-        detMissingField,
-        detLicense,
-        detPendingLong,
         detAdminRejected,
-        detPriceAnomaly,
-        detSoldNotClosed,
-        detDuplicate,
-        detPhaseOverdue,
-        detSalesSlowing,
-        detDocExpired,
+        detAdminSuspended,
+        detNewDevelopmentExpiry,
       ];
 
       // Run all detectors for one project; drop nulls + muted non-critical.
