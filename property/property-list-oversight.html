@@ -2683,10 +2683,6 @@
             </select>
             <span class="field-error hidden" id="rejectCategoryErr" style="color:var(--status-danger-text);font-size:11.5px">Please select a reason.</span>
           </div>
-          <div class="field-group">
-            <label class="field-label" for="rejectNotesInput">Details</label>
-            <textarea class="edit-input" id="rejectNotesInput" style="min-height:72px" placeholder="Add details for the Agency…"></textarea>
-          </div>
         </div>
         <div class="confirm-footer">
           <button class="btn" type="button" id="rejectCancel">Cancel</button>
@@ -6801,7 +6797,6 @@
       function rejectListing() {
         if (!currentProp) return;
         $("rejectCategorySelect").value="";
-        $("rejectNotesInput").value="";
         $("rejectCategoryErr").classList.add("hidden");
         $("rejectModal").classList.add("open");
       }
@@ -6820,14 +6815,13 @@
         $("rejectConfirmBtn").addEventListener("click", () => {
           if (!currentProp) return;
           const reason=$("rejectCategorySelect").value;
-          const notes=$("rejectNotesInput").value.trim();
           if(!reason){$("rejectCategoryErr").classList.remove("hidden");$("rejectCategorySelect").focus();return;}
           
           const today = new Date().toISOString().slice(0, 10);
           const oldStatus = currentProp.publishStatus;
           currentProp.publishStatus = "Rejected";
           currentProp.rejectCategory = reason;
-          currentProp.rejectNotes = notes;
+          currentProp.rejectNotes = undefined;
           currentProp.dateUpdated = today;
           currentProp.changeHistory = currentProp.changeHistory || [];
           currentProp.changeHistory.unshift({
@@ -6839,12 +6833,12 @@
             oldVal: oldStatus,
             newVal: "Rejected",
           });
-          emitPropertyEvent('property_status_changed',currentProp,{oldStatus,newStatus:'Rejected',changeSource:'admin_rejection',rejectCategory:reason,rejectNotes:notes});
+          emitPropertyEvent('property_status_changed',currentProp,{oldStatus,newStatus:'Rejected',changeSource:'admin_rejection',rejectCategory:reason});
           originalProp = JSON.parse(JSON.stringify(currentProp));
           close();
           renderDetail();
           renderList();
-          if(new URLSearchParams(location.search).get("moderation")==="1"&&parent!==window)parent.postMessage({type:"moderation-action",id:currentProp.id,status:"Rejected",reason,rejectNotes:notes},"*");
+          if(new URLSearchParams(location.search).get("moderation")==="1"&&parent!==window)parent.postMessage({type:"moderation-action",id:currentProp.id,status:"Rejected",reason},"*");
           toast("Listing rejected.", "error");
         });
       })();
