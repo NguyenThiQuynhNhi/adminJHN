@@ -4564,7 +4564,6 @@
           };
           if (publish === "Rejected") {
             base.rejectCategory = "incorrect_information";
-            base.rejectNotes = "Project information requires correction before publication.";
           }
           if (group === 5) {
             const tCount = 2 + (seed % 3);
@@ -6108,6 +6107,13 @@
       // PURE DETECTORS — each returns an alert object or null.
       // ====================================================================
       // Workflow-backed Agency alerts only.
+      const rejectionReasonLabel = value => ({
+        property_already_sold:"Property already sold",
+        incorrect_information:"Incorrect information",
+        privacy_copyright_infringement:"Privacy/Copyright infringement",
+        unauthorized_listing_own_property:"Unauthorized listing of own property",
+        unauthorized_use_own_images:"Unauthorized use of own images"
+      }[value] || value || "Rejection reason unavailable");
       function detAdminRejected(p) {
         if (p.publishStatus !== "Rejected") return null;
         return {
@@ -6116,8 +6122,8 @@
           entityId: p.id,
           severity: "critical",
           title: "Rejected by Admin",
-          desc: p.rejectNotes || "This project was rejected by YUUSHI Admin.",
-          actionLabel: "View rejection details",
+          desc: "Reason: " + rejectionReasonLabel(p.rejectCategory),
+          actionLabel: "Open project",
           actionFn: () => showDetail(p.id),
         };
       }
@@ -8007,12 +8013,6 @@
             kind: "warn",
             icon: "fa-hourglass-half",
             msg: "This project is awaiting approval. Open Property Approval to approve or reject it.",
-          });
-        if (p.publishStatus === "Rejected")
-          alerts.push({
-            kind: "danger",
-            icon: "fa-circle-xmark",
-            msg: "This project was rejected.",
           });
         let alertsHtml = alerts
           .map(
