@@ -4661,117 +4661,6 @@
       })();
 
       // ========================================================================
-      // ALERTS — demo seed augmentation
-      // Adds the fields the alert detectors read (createdAt/launchDate, phases[],
-      // permits[], flagged, licenseExpiry, txData, missing-field markers) to a
-      // handful of seed projects so EACH of the 12 alert types fires on at least
-      // one project in the demo. Dates are computed relative to "now" so the
-      // alerts fire regardless of the actual run date.
-      // ========================================================================
-      (function seedAlertData() {
-        const DAY = 86400000;
-        const now = Date.now();
-        const iso = (msFromNow) =>
-          new Date(now + msFromNow).toISOString().slice(0, 10);
-        const tsMin = (msFromNow) =>
-          new Date(now + msFromNow)
-            .toISOString()
-            .slice(0, 16)
-            .replace("T", " ");
-        const byId = (id) => projects.find((p) => p.id === id);
-        // Helper: pick the Nth generated project that matches a predicate so we
-        // do not double-assign alert fixtures to the same record.
-        const used = new Set();
-        const pick = (pred) => {
-          const p = projects.find((x) => !used.has(x.id) && pred(x));
-          if (p) used.add(p.id);
-          return p;
-        };
-
-        // ---- PRJ-1042 (hardcoded, Pending Review, Group 5) ----------------
-        // #3 Approval pending over 48 hours (>48h): submitted 5 days ago.
-        // #5 Rejected by Admin (critical).
-        // #6 Price anomaly (Type A priced 40% below area average).
-        const p1042 = byId("PRJ-1042");
-        if (p1042) {
-          used.add(p1042.id);
-          p1042.submittedAt = tsMin(-5 * DAY); // pending > 48h
-          p1042.areaAvgPrice = 62000000; // area avg; Type A min 35M ⇒ -43%
-        }
-
-        // ---- PRJ-1158 (hardcoded, Rejected, Group 6) ---------------------
-        // #2 Missing required field (no postal building permit captured).
-        // #1 Stale listing (>90 days, no recent interest).
-        const p1158 = byId("PRJ-1158");
-        if (p1158) {
-          used.add(p1158.id);
-          p1158.dateUpdated = iso(-140 * DAY); // stale > 90d
-          p1158.lastInterestAt = iso(-120 * DAY); // no recent interest
-          p1158.missingRequired = ["Brochure PDF", "Land survey document"];
-        }
-
-        // #4 License expiry approaching (≤60 days) — critical.
-        const pLic = pick((x) => x.publishStatus === "Published");
-        if (pLic) pLic.licenseExpiry = iso(35 * DAY);
-
-        // #7 Sold-but-not-closed — every unit Sold Out but no closing recorded.
-        const pSNC = pick((x) => x.salesStatus === "Sold Out");
-        if (pSNC) {
-          pSNC.publishStatus = "Published";
-          pSNC.soldNotClosed = true; // marked sold, closing paperwork pending
-        }
-
-        // #8 Duplicate detected — clone-ish twin of another listing.
-        const pDup = pick((x) => x.group === 5);
-        const twin = pick((x) => x.group === 5 && pDup && x.id !== pDup.id);
-        if (pDup && twin) {
-          pDup.duplicateOf = twin.id;
-          pDup.duplicateScore = 0.93;
-        }
-
-        // #9 Phase completion overdue — a phase past planned date, still building.
-        const pPhase = pick((x) => x.group === 5);
-        if (pPhase) {
-          pPhase.phases = [
-            {
-              name: "Phase 1 — Foundation",
-              status: "Completed",
-              plannedCompletion: iso(-400 * DAY),
-            },
-            {
-              name: "Phase 2 — Superstructure",
-              status: "In construction",
-              plannedCompletion: iso(-45 * DAY), // overdue
-            },
-          ];
-        }
-
-        // #10 All units sold but project still Public (Published) — info.
-        const pAll = pick(
-          (x) => x.group === 5 && Array.isArray(x.floorPlanTypes),
-        );
-        if (pAll) {
-          pAll.publishStatus = "Published";
-          pAll.salesStatus = "Sold Out";
-          pAll.floorPlanTypes.forEach((t) => (t.saleStatus = "Sold Out"));
-        }
-
-        // #11 Sales slowing — launched >12 months ago, >70% units unsold.
-        const pSlow = pick(
-          (x) =>
-            x.group === 5 &&
-            Array.isArray(x.floorPlanTypes) &&
-            x.floorPlanTypes.length >= 2,
-        );
-        if (pSlow) {
-          pSlow.launchDate = iso(-420 * DAY); // > 12 months
-          pSlow.publishStatus = "Published";
-          pSlow.salesStatus = "On Sale";
-          pSlow.floorPlanTypes.forEach((t) => (t.saleStatus = "On Sale")); // 100% unsold
-        }
-      })();
-
-      // ========================================================================
       // STATE + HELPERS
       // ========================================================================
       let filtered = projects.slice();
@@ -6218,11 +6107,7 @@
       // ====================================================================
       // PURE DETECTORS — each returns an alert object or null.
       // ====================================================================
-      // SHARED #1 — Stale listing (>90 days, no recent interest) → warning
-      // SHARED #2 — Missing required field → warning ("Complete listing")
-      // SHARED #3 — License expiry approaching (≤60 days) → critical
-      // SHARED #4 — Approval pending over 48 hours (>48h) → critical
-      // SHARED #5 — Rejected by Admin → critical
+      // Workflow-backed Agency alerts only.
       function detAdminRejected(p) {
         if (p.publishStatus !== "Rejected") return null;
         return {
@@ -6265,13 +6150,6 @@
           actionFn: () => showDetail(p.id),
         };
       }
-      // SHARED #6 — Price anomaly (±25% vs area avg) → warning
-      // SHARED #7 — Sold-but-not-closed → warning (opens Mark-as-Sold modal)
-      // SHARED #8 — Duplicate detected → warning (side-by-side via confirm)
-      // PROJECT #9 — Phase completion overdue → warning
-      // PROJECT #10 — All units sold but project still Public → info
-      // PROJECT #11 — Sales slowing (>70% unsold after 12 months) → warning
-      // PROJECT #12 — Document expired / expiring ≤30 days → critical
       const ALERT_DETECTORS = [
         detAdminRejected,
         detAdminSuspended,
