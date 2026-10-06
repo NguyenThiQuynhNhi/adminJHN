@@ -5762,91 +5762,7 @@
         });
       })();
 
-      // ========================================================================
-      // ALERTS SUBSYSTEM — demo seed injection
-      // Tweak a handful of records so EACH of the 8 alert detectors fires on at
-      // least one listing. Added fields: inquiries30d, has3D, floorPlan,
-      // englishTranslation, flagged/flagNote, createdAt, licenseExpiry, txDate.
-      // Anchored to ALERT_NOW (the demo "today" = 2026-06-23).
-      // ========================================================================
-      const ALERT_NOW = new Date("2026-06-23T09:00:00").getTime();
-      (function injectAlertSeeds() {
-        const byId = (id) => properties.find((p) => p.id === id);
-
-        // (1) Stale listing  +  (3) License expiry  +  (8) Duplicate base.
-        const p1 = byId("PROP-58210"); // Toyosu Bayside Tower (Published)
-        if (p1) {
-          p1.createdAt = "2026-01-10"; // active > 90 days
-          p1.inquiries30d = 0; // no inquiries in last 30 days
-          p1.licenseExpiry = "2026-07-20"; // agency license within 60 days
-        }
-
-        // (5) Flagged for rectification.
-        const p5 = byId("PROP-58222");
-        if (p5) {
-          p5.flagged = true;
-          p5.flagNote =
-            "Floor area in the listing does not match the registry copy. " +
-            "Please correct the exclusive area and re-upload the survey.";
-        }
-
-        // (4) Pending approval too long ( > 48h ).
-        const p4 = byId("PROP-58244"); // already "Pending Review"
-        if (p4) {
-          p4.createdAt = "2026-06-12T08:00:00"; // pending for many days
-        }
-
-        // (2) Missing required field (3D / floor plan / English translation).
-        const p2 = byId("PROP-58102"); // Minami-Aoyama Penthouse (Published)
-        if (p2) {
-          p2.has3D = false;
-          p2.floorPlan = false;
-          p2.englishTranslation = false;
-        }
-
-        // (6) Price anomaly — push price far above the same-type/area average.
-        const p6 = byId("PROP-58231"); // Yokohama Commercial Lot
-        if (p6) {
-          p6.priceBuy = 900000000; // ≫ +25% of comparable commercial-land avg
-        }
-
-        // (8) Duplicate detected — clone PROP-58210's address/floor/area twin.
-        if (p1 && !byId("PROP-58210D")) {
-          properties.push({
-            id: "PROP-58210D",
-            group: 1,
-            agent: "Inoue Mai (Bay Realty)",
-            propType: p1.propType,
-            name: "Toyosu Bayside Tower (re-list)",
-            nameRomaji: "Toyosu Bayside Tower",
-            postCode: p1.postCode,
-            prefecture: p1.prefecture,
-            city: p1.city,
-            chome: p1.chome, // same address
-            buildingName: p1.buildingName,
-            houseNo: p1.houseNo, // same floor / unit
-            currentStatus: "Vacant",
-            buildStatus: "Secondhand",
-            moveIn: "Available Now",
-            publishStatus: "Published",
-            datePublished: "2026-05-30",
-            dateUpdated: "2026-06-05",
-            specialUpdates: [],
-            txType: "Buy",
-            priceBuy: 87500000,
-            tax: "Tax included",
-            exclusiveArea: 65.0, // within ±2㎡ of 64.5
-            areaMethod: "Wall-to-Wall",
-            layout: "2LDK",
-            saleStatus: "On Sale",
-            media: { tour3d: "", videoCount: 0, photoCount: 4 },
-            poi: { access: [], surround: [] },
-            changeHistory: [],
-            description:
-              "Possible duplicate of PROP-58210 — same building, floor and area.",
-          });
-        }
-      })();
+      const ALERT_NOW = Date.now();
 
       // ========================================================================
       // Backfill suspension reason/date/notes for legacy Suspended seed records
@@ -6038,10 +5954,7 @@
         return sum / peers.length;
       }
 
-      // ========================================================================
-      // DETECTORS — each pure: (listing) => alert object | null
-      // alert = { key,id,entityId,severity,title,desc,actionLabel,actionFn }
-      // ========================================================================
+      // Workflow-backed Agency alerts only.
       function detAdminRejectedState(p) {
         if (p.publishStatus !== "Rejected") return null;
         const labels = {
