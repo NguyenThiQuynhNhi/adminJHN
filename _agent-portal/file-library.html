@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>File Library — Agency Portal</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="agency-file-library.js"></script>
+  <style>
+    :root{--bg:#f6f3ee;--card:#fff;--line:#e6dfd4;--text:#2f2a25;--muted:#7d746b;--accent:#8b7340;--danger:#b74343}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px Arial,sans-serif}
+    main{max-width:1280px;margin:auto;padding:28px}.head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:20px}
+    h1{font-size:26px;margin:0 0 6px}.sub{color:var(--muted);margin:0}.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:9px 13px;cursor:pointer;font:inherit}
+    .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn.danger{color:var(--danger)}.btn:disabled{opacity:.45;cursor:not-allowed}
+    .stats{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px;margin-bottom:18px}.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+    .label{font-size:12px;color:var(--muted);margin-bottom:6px}.value{font-size:22px;font-weight:700}.bar{height:8px;background:#eee8df;border-radius:999px;overflow:hidden;margin:10px 0 6px}.bar>span{display:block;height:100%;background:var(--accent)}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}.search{flex:1;min-width:250px;position:relative}.search i{position:absolute;left:12px;top:11px;color:#999}.search input,.toolbar select{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:#fff}.search input{padding-left:34px}
+    table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}.wrap{overflow:auto;border-radius:12px}
+    th,td{padding:12px 14px;border-bottom:1px solid #eee8df;text-align:left;white-space:nowrap}th{font-size:11px;text-transform:uppercase;color:var(--muted);background:#fbfaf8}
+    tr:last-child td{border-bottom:0}.name{font-weight:700}.meta{font-size:12px;color:var(--muted);margin-top:3px}.icon{width:34px;height:34px;border-radius:8px;background:#f3eee7;display:inline-flex;align-items:center;justify-content:center;color:var(--accent);margin-right:10px}
+    .filecell{display:flex;align-items:center;min-width:280px}.empty{text-align:center;padding:54px 20px;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:12px}
+    .toast{position:fixed;right:22px;bottom:22px;background:#2f2a25;color:#fff;padding:10px 14px;border-radius:8px;opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none}.toast.show{opacity:1;transform:none}
+    .quota-note{font-size:12px;color:var(--muted);line-height:1.5}.actions{display:flex;gap:6px}
+    @media(max-width:800px){main{padding:18px}.stats{grid-template-columns:1fr}.head{flex-direction:column}}
+  </style>
+</head>
+<body>
+<main>
+  <div class="head">
+    <div><h1>File Library</h1><p class="sub">Agency-wide files available for reuse in Chat. One stored file can be shared in multiple conversations without creating another copy.</p></div>
+    <div><button class="btn primary" onclick="pickFiles()"><i class="fas fa-upload"></i> Upload images and files</button></div>
+  </div>
+
+  <div class="stats">
+    <div class="card">
+      <div class="label">Agency storage</div>
+      <div class="value" id="usageValue">—</div>
+      <div class="bar"><span id="usageBar" style="width:0"></span></div>
+      <div class="quota-note" id="usageNote"></div>
+    </div>
+    <div class="card"><div class="label">Current plan</div><div class="value" id="planValue">—</div><div class="quota-note">Caps follow the current subscription plan.</div></div>
+    <div class="card"><div class="label">Files in library</div><div class="value" id="countValue">0</div><div class="quota-note">Shared across the Agency.</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search"><i class="fas fa-search"></i><input id="q" placeholder="Search file name or uploader" oninput="render()" /></div>
+    <select id="type" style="width:190px" onchange="render()">
+      <option value="">All file types</option><option>Document</option><option>PDF</option><option>Spreadsheet</option><option>Image</option><option>Video</option><option>Other</option>
+    </select>
+    <select id="sort" style="width:190px" onchange="render()">
+      <option value="newest">Newest uploaded</option><option value="oldest">Oldest uploaded</option><option value="name">File name A–Z</option><option value="size">Largest file</option>
+    </select>
+  </div>
+
+  <input id="upload" type="file" hidden multiple onchange="uploadFiles(this.files)" />
+  <div id="content"></div>
+</main>
+<div id="toast" class="toast"></div>
+<script>
+  const F=YuushiAgencyFiles;
+  function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+  function toast(s){const t=document.getElementById('toast');t.textContent=s;t.classList.add('show');clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove('show'),2400)}
+  function icon(row){return row.category==='Video'?'fa-video':row.category==='Image'?'fa-image':row.category==='PDF'?'fa-file-pdf':row.category==='Spreadsheet'?'fa-file-excel':'fa-file-lines'}
+  function pickFiles(){document.getElementById('upload').click()}
+  async function uploadFiles(files){
+    if(!files?.length)return;
+    try{const added=await F.addFiles(files);toast(added.length+' file'+(added.length===1?'':'s')+' added to Agency library.');render()}
+    catch(e){toast(e.message||'Upload failed.')}finally{document.getElementById('upload').value=''}
+  }
+  async function downloadFile(id){try{await F.download(id)}catch(e){toast(e.message)}}
+  async function removeFile(id){
+    const row=F.get(id);if(!row)return;
+    if(!confirm('Delete “'+row.name+'” from the Agency File Library? Existing Chat messages will remain, but the attachment will show “no longer available”.'))return;
+    try{await F.deleteFile(id);toast('File deleted.');render()}catch(e){toast(e.message)}
+  }
+  function render(){
+    const usage=F.usage();
+    document.getElementById('usageValue').textContent=F.fmtBytes(usage.used)+' / '+F.fmtBytes(usage.limit);
+    document.getElementById('usageBar').style.width=usage.percent.toFixed(1)+'%';
+    document.getElementById('usageNote').textContent='Remaining '+F.fmtBytes(usage.remaining)+' · Daily upload '+F.fmtBytes(usage.dailyLimit)+' per user';
+    document.getElementById('planValue').textContent=usage.plan;
+    let rows=F.rows(),q=document.getElementById('q').value.trim().toLowerCase(),type=document.getElementById('type').value,sort=document.getElementById('sort').value;
+    if(q)rows=rows.filter(r=>(r.name+' '+r.uploaderName).toLowerCase().includes(q));
+    if(type)rows=rows.filter(r=>r.category===type);
+    if(sort==='oldest')rows.sort((a,b)=>String(a.uploadedAt).localeCompare(String(b.uploadedAt)));
+    if(sort==='newest')rows.sort((a,b)=>String(b.uploadedAt).localeCompare(String(a.uploadedAt)));
+    if(sort==='name')rows.sort((a,b)=>a.name.localeCompare(b.name));
+    if(sort==='size')rows.sort((a,b)=>b.size-a.size);
+    document.getElementById('countValue').textContent=F.rows().length;
+    const c=document.getElementById('content');
+    if(!rows.length){c.innerHTML='<div class="empty"><i class="fas fa-folder-open" style="font-size:28px;margin-bottom:10px"></i><div><strong>No files found.</strong></div><div style="margin-top:5px">Upload a file here or from Chat to add it to the shared Agency library.</div></div>';return}
+    c.innerHTML='<div class="wrap"><table><thead><tr><th>File</th><th>Type</th><th>Size</th><th>Uploader</th><th>Uploaded</th><th>Last shared</th><th>Shared</th><th>Actions</th></tr></thead><tbody>'+
+      rows.map(r=>'<tr><td><div class="filecell"><span class="icon"><i class="fas '+icon(r)+'"></i></span><div><div class="name">'+esc(r.name)+'</div><div class="meta">'+esc(r.id)+'</div></div></div></td><td>'+esc(r.category)+'</td><td>'+F.fmtBytes(r.size)+'</td><td>'+esc(r.uploaderName)+'</td><td>'+new Date(r.uploadedAt).toLocaleString()+'</td><td>'+(r.lastSharedAt?new Date(r.lastSharedAt).toLocaleString():'—')+'</td><td>'+Number(r.shareCount||0)+'</td><td><div class="actions"><button class="btn" onclick="downloadFile(\''+r.id+'\')"><i class="fas fa-download"></i></button><button class="btn danger" '+(F.canDelete(r)?'':'disabled title="Only the uploader or Agency Admin can delete"')+' onclick="removeFile(\''+r.id+'\')"><i class="fas fa-trash"></i></button></div></td></tr>').join('')+
+      '</tbody></table></div>';
+  }
+  addEventListener('yuushi-file-library-change',render);
+  addEventListener('storage',e=>{if(e.key===F.key)render()});
+  render();
+</script>
+</body>
+</html>
