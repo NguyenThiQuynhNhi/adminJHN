@@ -194,17 +194,17 @@
   }
 
   function bindAdCards(container=document){
-    const rendered=new WeakSet(),viewed=new WeakSet();
+    const rendered=new WeakSet(),visibleState=new WeakMap();
     const base=el=>({adId:el.dataset.adId||null,campaignId:el.dataset.campaignId||el.dataset.adId||null,campaign:el.dataset.campaignId||el.dataset.adId||null,propertyId:el.dataset.propertyId||null,agencyId:el.dataset.agencyId||null,adType:el.dataset.adType||'',placement:el.dataset.placement||'',paid:true,page:location.pathname});
     const scan=()=>container.querySelectorAll?.('[data-analytics-ad][data-ad-id], [data-analytics-ad][data-campaign-id]').forEach(el=>{if(!rendered.has(el)){rendered.add(el);emit('ad_rendered',base(el));}observer?.observe(el);});
-    const observer='IntersectionObserver'in root?new IntersectionObserver(entries=>{for(const entry of entries){if(!entry.isIntersecting||entry.intersectionRatio<0.5||viewed.has(entry.target))continue;viewed.add(entry.target);emit('ad_viewed',base(entry.target));}},{threshold:[0.5]}):null;
+    const observer='IntersectionObserver'in root?new IntersectionObserver(entries=>{for(const entry of entries){const visible=entry.isIntersecting&&entry.intersectionRatio>=0.5;const wasVisible=visibleState.get(entry.target)===true;visibleState.set(entry.target,visible);if(visible&&!wasVisible)emit('ad_viewed',base(entry.target));}},{threshold:[0,0.5]}):null;
     scan();
     const mo='MutationObserver'in root?new MutationObserver(scan):null;mo?.observe(container.documentElement||container,{childList:true,subtree:true});
     container.addEventListener?.('click',e=>{const el=e.target.closest?.('[data-analytics-ad][data-ad-id], [data-analytics-ad][data-campaign-id]');if(el)emit('ad_clicked',base(el));},true);
   }
 
   function bindPropertyCards(container=document){
-    const seenRendered=new WeakSet(),seenViewed=new WeakSet();
+    const seenRendered=new WeakSet(),visibleState=new WeakMap();
     const renderCard=card=>{
       if(seenRendered.has(card))return;seenRendered.add(card);
       emit('property_card_rendered',{
@@ -212,16 +212,21 @@
         placement:card.dataset.placement||'organic',paid:false,page:location.pathname
       });
     };
+    // Count a new exposure after the card leaves and re-enters the viewport.
+    // Do not recount while it remains continuously visible; do not apply a
+    // per-user, per-day or per-session de-duplication rule.
     const observer='IntersectionObserver'in root?new IntersectionObserver(entries=>{
       for(const entry of entries){
-        if(!entry.isIntersecting||entry.intersectionRatio<0.5||seenViewed.has(entry.target))continue;
-        seenViewed.add(entry.target);
+        const visible=entry.isIntersecting&&entry.intersectionRatio>=0.5;
+        const wasVisible=visibleState.get(entry.target)===true;
+        visibleState.set(entry.target,visible);
+        if(!visible||wasVisible)continue;
         emit('property_card_viewed',{
           propertyId:entry.target.dataset.propertyId||null,agencyId:entry.target.dataset.agencyId||null,
           placement:entry.target.dataset.placement||'organic',paid:false,page:location.pathname
         });
       }
-    },{threshold:[0.5]}):null;
+    },{threshold:[0,0.5]}):null;
     const scan=()=>container.querySelectorAll?.('.ypc-card[data-property-id]').forEach(card=>{renderCard(card);observer?.observe(card);});
     scan();
     const mo='MutationObserver'in root?new MutationObserver(scan):null;mo?.observe(container.documentElement||container,{childList:true,subtree:true});
