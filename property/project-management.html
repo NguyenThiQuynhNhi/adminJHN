@@ -4012,9 +4012,7 @@
               " development).",
           };
           if (publish === "Rejected") {
-            base.rejectCategory = "Incomplete documentation";
-            base.rejectNotes =
-              "";
+            base.rejectCategory = "incorrect_information";
           }
           if (group === 5) {
             const tCount = 2 + (seed % 3);
@@ -7107,6 +7105,13 @@
         doShowList();
       }
 
+      const rejectReasonLabel = value => ({
+        property_already_sold:"Property already sold",
+        incorrect_information:"Incorrect information",
+        privacy_copyright_infringement:"Privacy/Copyright infringement",
+        unauthorized_listing_own_property:"Unauthorized listing of own property",
+        unauthorized_use_own_images:"Unauthorized use of own images"
+      }[value] || value || "—");
       function renderDetail() {
         const p = currentProj;
         if (!p) return;
@@ -7185,7 +7190,7 @@
           alerts.push({
             kind: "danger",
             icon: "fa-circle-xmark",
-            msg: "This project was rejected.",
+            msg: "This project was rejected. Reason: " + esc(rejectReasonLabel(p.rejectCategory)),
           });
         $("dAlerts").innerHTML = alerts
           .map(
@@ -7394,35 +7399,59 @@
       }
       function rejectProject() {
         if (!currentProj) return;
-        showConfirm({
-          title: "Reject this project?",
-          body: `Reject ${currentProj.id} (${currentProj.name})? The agency will be notified and the project will not be published until re-submitted.`,
-          confirmLabel: "Reject",
-          danger: true,
-          onConfirm: () => {
-            const today = new Date().toISOString().slice(0, 10);
-            const oldStatus = currentProj.publishStatus;
-            currentProj.publishStatus = "Rejected";
-            currentProj.rejectCategory = undefined;
-            currentProj.rejectNotes = undefined;
-            currentProj.dateUpdated = today;
-            currentProj.changeHistory = currentProj.changeHistory || [];
-            currentProj.changeHistory.unshift({
-              ts: today + " 00:00:00",
-              actorId: "ADM-002",
-              actorName: "Admin Operator",
-              role: "Admin",
-              field: "publishStatus",
-              oldVal: oldStatus,
-              newVal: "Rejected",
-            });
-            originalProj = JSON.parse(JSON.stringify(currentProj));
-            renderDetail();
-            renderList();
-            if(new URLSearchParams(location.search).get("moderation")==="1"&&parent!==window)parent.postMessage({type:"moderation-action",id:currentProj.id,status:"Rejected"},"*");
-            toast("Project rejected.", "error");
-          },
-        });
+        let modal=$("projectRejectReasonModal");
+        if(!modal){
+          modal=document.createElement("div");
+          modal.className="modal-backdrop";
+          modal.id="projectRejectReasonModal";
+          modal.innerHTML=`
+            <div class="modal-box" style="width:500px">
+              <div class="modal-header">
+                <h3 class="modal-title">Reject this project?</h3>
+                <button class="btn btn-ghost btn-sm" type="button" data-close-project-reject><i class="fas fa-times"></i></button>
+              </div>
+              <div class="modal-body">
+                <div class="field-group">
+                  <label class="field-label" for="projectRejectReason">Reason <span class="req" style="color:var(--badge-red)">*</span></label>
+                  <select id="projectRejectReason">
+                    <option value="">Select a reason...</option>
+                    <option value="property_already_sold">Property already sold</option>
+                    <option value="incorrect_information">Incorrect information</option>
+                    <option value="privacy_copyright_infringement">Privacy/Copyright infringement</option>
+                    <option value="unauthorized_listing_own_property">Unauthorized listing of own property</option>
+                    <option value="unauthorized_use_own_images">Unauthorized use of own images</option>
+                  </select>
+                  <small id="projectRejectReasonErr" style="display:none;color:var(--badge-red);font-size:11px">Reason is required.</small>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn" type="button" data-close-project-reject>Cancel</button>
+                <button class="btn btn-danger" type="button" id="projectRejectConfirm">Reject</button>
+              </div>
+            </div>`;
+          document.body.appendChild(modal);
+          modal.querySelectorAll("[data-close-project-reject]").forEach(b=>b.onclick=()=>modal.classList.remove("open"));
+          modal.addEventListener("click",e=>{if(e.target===modal)modal.classList.remove("open");});
+        }
+        const select=modal.querySelector("#projectRejectReason"),err=modal.querySelector("#projectRejectReasonErr");
+        select.value="";err.style.display="none";
+        modal.querySelector("#projectRejectConfirm").onclick=()=>{
+          const reason=select.value;
+          if(!reason){err.style.display="block";select.focus();return;}
+          const today=new Date().toISOString().slice(0,10),oldStatus=currentProj.publishStatus;
+          currentProj.publishStatus="Rejected";
+          currentProj.rejectCategory=reason;
+          currentProj.rejectNotes=undefined;
+          currentProj.dateUpdated=today;
+          currentProj.changeHistory=currentProj.changeHistory||[];
+          currentProj.changeHistory.unshift({ts:today+" 00:00:00",actorId:"ADM-002",actorName:"Admin Operator",role:"Admin",field:"publishStatus",oldVal:oldStatus,newVal:"Rejected"});
+          originalProj=JSON.parse(JSON.stringify(currentProj));
+          modal.classList.remove("open");
+          renderDetail();renderList();
+          if(new URLSearchParams(location.search).get("moderation")==="1"&&parent!==window)parent.postMessage({type:"moderation-action",id:currentProj.id,status:"Rejected",reason},"*");
+          toast("Project rejected.","error");
+        };
+        modal.classList.add("open");
       }
 
       function openProjectSuspendReasonModal(onConfirm) {
