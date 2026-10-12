@@ -2106,6 +2106,10 @@
   border-bottom: 1px solid var(--border);
 }
 .staff-name {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
   font-size: 12px;
   font-weight: 700;
   color: var(--accent);
@@ -2201,7 +2205,7 @@
           <input type="text" id="searchInput" placeholder="Search messages, people" oninput="renderList()" />
         </div>
       </div>
-      <div class="sb-tabs" id="sbTabs" style="display:none">
+      <div class="sb-tabs" id="sbTabs">
         <div class="sb-tab active" data-view="inbox" onclick="switchSidebarView('inbox')">Agency Message</div>
         <div class="sb-tab" data-view="staff" onclick="switchSidebarView('staff')">Staff Messages</div>
       </div>
@@ -3232,6 +3236,14 @@ function groupClientsByAgent() {
   return groups;
 }
 
+function staffAvailabilityStatus(staffId) {
+  const statuses = {online:{label:"Online",color:"#2ecc71"},offline:{label:"Offline",color:"#b7afa2"},meeting:{label:"In a meeting",color:"#cf3434"},leave:{label:"On leave",color:"#d97706"}};
+  let values = {};
+  try { values = JSON.parse(localStorage.getItem("yuushi.staffAvailability") || "{}"); } catch (e) {}
+  const key = values[staffId] || ({a1:"online",a2:"meeting",a3:"leave"}[staffId] || "offline");
+  return statuses[key] || statuses.offline;
+}
+
 function renderStaffView() {
   const list = $("convoList");
   list.innerHTML = "";
@@ -3248,7 +3260,8 @@ function renderStaffView() {
     
     const title = document.createElement("div");
     title.className = "staff-name";
-    title.textContent = a.name;
+    const staffStatus = staffAvailabilityStatus(a.id);
+    title.innerHTML = '<span>' + escapeHtml(a.name) + '</span><span style="display:inline-flex;align-items:center;gap:5px;color:' + staffStatus.color + ';font-size:10px;text-transform:none;letter-spacing:0;font-weight:600;white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:' + staffStatus.color + ';display:inline-block"></span>' + staffStatus.label + '</span>';
     section.appendChild(title);
     
     const clientsList = document.createElement("div");
@@ -4080,6 +4093,8 @@ function renderStaffView() {
         wireEpPopovers();
 
         renderList();
+        // The staff roster is available only to Agency Admins; regular staff see their permitted inbox.
+        if (messagePermissions.isAdmin()) $("sbTabs").style.display = "flex";
         // default: open the pinned Company Inbox thread
         selectConvo(new URLSearchParams(location.search).get("conversationId")||"u0");
         if (window.innerWidth <= 760) $("sidebar").classList.add("hidden");
