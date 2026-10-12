@@ -205,12 +205,16 @@
 
   function bindPropertyCards(container=document){
     const seenRendered=new WeakSet(),visibleState=new WeakMap();
+    const placementOf=card=>card.dataset.placement||'organic';
+    const isPaidPlacement=placement=>/^(paid|ad|sponsored|featured|promoted)$/i.test(String(placement||'').trim());
+    const cardEventBase=card=>{
+      const placement=placementOf(card);
+      return {propertyId:card.dataset.propertyId||null,agencyId:card.dataset.agencyId||null,
+        placement,paid:isPaidPlacement(placement),page:location.pathname};
+    };
     const renderCard=card=>{
       if(seenRendered.has(card))return;seenRendered.add(card);
-      emit('property_card_rendered',{
-        propertyId:card.dataset.propertyId||null,agencyId:card.dataset.agencyId||null,
-        placement:card.dataset.placement||'organic',paid:false,page:location.pathname
-      });
+      emit('property_card_rendered',cardEventBase(card));
     };
     // Count a new exposure after the card leaves and re-enters the viewport.
     // Do not recount while it remains continuously visible; do not apply a
@@ -221,10 +225,7 @@
         const wasVisible=visibleState.get(entry.target)===true;
         visibleState.set(entry.target,visible);
         if(!visible||wasVisible)continue;
-        emit('property_card_viewed',{
-          propertyId:entry.target.dataset.propertyId||null,agencyId:entry.target.dataset.agencyId||null,
-          placement:entry.target.dataset.placement||'organic',paid:false,page:location.pathname
-        });
+        emit('property_card_viewed',cardEventBase(entry.target));
       }
     },{threshold:[0,0.5]}):null;
     const scan=()=>container.querySelectorAll?.('.ypc-card[data-property-id]').forEach(card=>{renderCard(card);observer?.observe(card);});
@@ -232,7 +233,7 @@
     const mo='MutationObserver'in root?new MutationObserver(scan):null;mo?.observe(container.documentElement||container,{childList:true,subtree:true});
     container.addEventListener?.('click',e=>{
       const card=e.target.closest?.('.ypc-card[data-property-id]');if(!card)return;
-      const base={propertyId:card.dataset.propertyId||null,agencyId:card.dataset.agencyId||null,placement:card.dataset.placement||'organic',paid:false,page:location.pathname};
+      const base=cardEventBase(card);
       if(e.target.closest('.ypc-heart'))emit('property_saved',base);
       else if(!e.target.closest('.ypc-nav'))emit('property_card_clicked',base);
     },true);
