@@ -7217,7 +7217,126 @@
         }, 350);
       }
 
-      function renderPagination(totalPages) {
+      // Table / Grid view toggle (mirrors property-list-oversight). Defaults to
+      // table; persisted per-session. Both views share the same filtered set,
+      // result count, and open the same Detail View.
+      let prjView = sessionStorage.getItem("prj.view") || "table";
+      function setPrjView(v) {
+        prjView = v;
+        sessionStorage.setItem("prj.view", v);
+        $("viewTableBtn").classList.toggle("on", v === "table");
+        $("viewGridBtn").classList.toggle("on", v === "grid");
+        currentPage = 1;
+        renderList();
+      }
+      function gridCardHtml(p) {
+        // Map a project record onto the shared rich property-card contract.
+        const s = projectSummary(p) || {};
+        // Type: Group 5 → its apartment type ("Apartment" etc.); Group 6 → "House".
+        const cardType = p.group === 6 ? "House" : p.propType || "Apartment";
+        // Total Units if present (project-level for G5, lot count handled via units).
+        let units = "";
+        if (p.group === 5) {
+          if (p.totalUnits) units = p.totalUnits;
+        } else if (p.totalUnitsB) {
+          units = p.totalUnitsB;
+        }
+        // Site / building area if present.
+        const area =
+          p.siteArea ||
+          p.buildingAreaProject ||
+          p.buildingArea ||
+          s.areaHi ||
+          "";
+        const location =
+          [p.prefecture, p.city].filter(Boolean).join(" · ") || "";
+        // Badge: publish status, framed as New Dev context.
+        const badge = `New Dev · ${p.publishStatus || ""}`.trim();
+        return renderPropertyCard({
+          id: p.id,
+          title: p.name || "(Unnamed)",
+          price: priceCell(p),
+          priceUnit: "",
+          location: location,
+          agent: p.agent || "—",
+          type: cardType,
+          units: units,
+          area: area,
+          badge: badge,
+          desc: p.description || "",
+          onClick: "showDetail('" + p.id + "')",
+        });
+      }
+
+      function renderList() {
+        const total = filtered.length;
+        const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+        const startIdx = (currentPage - 1) * PAGE_SIZE;
+        const endIdx = Math.min(startIdx + PAGE_SIZE, total);
+        const pageItems = filtered.slice(startIdx, endIdx);
+
+        // Result-count line: "Showing {start}–{end} of {total} projects"
+        const countLine = $("resultCountLine");
+        if (total === 0) {
+          countLine.innerHTML = "Showing <strong>0</strong> projects";
+        } else {
+          countLine.innerHTML = `Showing <strong>${startIdx + 1}–${endIdx}</strong> of <strong id="resultCount">${total}</strong> projects`;
+        }
+
+        const tableWrap = $("listTableWrap");
+        const grid = $("listGrid");
+        if (prjView === "grid") {
+          tableWrap.style.display = "none";
+          grid.style.display = "grid";
+          grid.innerHTML = pageItems.length
+            ? pageItems.map((p) => gridCardHtml(p)).join("")
+            : '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text-muted)">No projects match the filters.</div>';
+          renderPagination(totalPages);
+          return;
+        }
+        grid.style.display = "none";
+        tableWrap.style.display = "";
+        const tbody = $("listBody");
+        if (!pageItems.length) {
+          tbody.innerHTML =
+            '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted)">No projects match the filters.</td></tr>';
+          renderPagination(totalPages);
+          return;
+        }
+        tbody.innerHTML = pageItems
+          .map(
+            (p) => `
+          <tr onclick="showDetail('${p.id}')">
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:40px;height:32px;border-radius:var(--r-sm);background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">
+                  <i class="fas ${thumbIcon(p.group)}"></i>
+                </div>
+                <div>
+                  <strong>${esc(p.name)}</strong><br>
+                  <span style="font-size:11px;color:var(--text-muted)">${p.id}</span>
+                </div>
+              </div>
+            </td>
+            <td>${esc(p.propType)}</td>
+            <td>${badgeTx(p.transactionType || "Buy")}</td>
+            <td>${badgeSales(p.salesStatus)}</td>
+            <td>${priceCell(p)}</td>
+            <td style="font-size:12px;line-height:1.55">${fmtAddress(p)}</td>
+            <td>${esc(p.agent || "—")}</td>
+            <td>${badgePublish(p.publishStatus)}</td>
+            <td>${fmtDate(p.dateUpdated)}</td>
+          </tr>`,
+          )
+          .join("");
+        renderPagination(totalPages);
+      }
+
+      // Pagination control — hidden when there is only one page (≤50 results).
+      // Shared by Table and Grid views.
+            function renderPagination(totalPages) {
         const wrap = $("pagination");
         if (totalPages <= 1) {
           wrap.style.display = "none";
