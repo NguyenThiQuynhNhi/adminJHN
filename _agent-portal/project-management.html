@@ -6016,6 +6016,14 @@
         return `${lots.length} lot${lots.length !== 1 ? "s" : ""}`;
       }
       function expiryCell(p) {
+        const info = expiryInfo(p);
+        if (!info) return '<span class="muted">—</span>';
+        const cls = info.daysLeft < 0 ? "badge-closed" : info.daysLeft <= 30 ? "badge-amber" : "badge-published";
+        return '<span class="badge ' + cls + '">' + esc(info.expiryDate) + '</span>';
+      }
+
+      function renderDetail(p) {
+        const alerts = [];
         if (p.publishStatus === "Pending Review")
           alerts.push({
             kind: "warn",
@@ -6061,6 +6069,34 @@
         }
         renderDraftBanner();
       }
+
+      function showDetail(projectId) {
+        const project = projects.find(p => String(p.id) === String(projectId));
+        if (!project) {
+          toast("Project not found.", "error");
+          return;
+        }
+        currentProj = project;
+        originalProj = JSON.parse(JSON.stringify(project));
+        editMode = false;
+        activeFpIndex = 0;
+        $("listView").classList.add("hidden");
+        $("detailView").classList.remove("hidden");
+        renderDetail(currentProj);
+        window.scrollTo({ top: 0, behavior: "auto" });
+      }
+
+      function showList() {
+        editMode = false;
+        currentProj = null;
+        originalProj = null;
+        $("detailView").classList.add("hidden");
+        $("listView").classList.remove("hidden");
+        renderList();
+        window.scrollTo({ top: 0, behavior: "auto" });
+      }
+      window.showDetail = showDetail;
+      window.showList = showList;
 
       // Fields that drive conditional showIf — when changed, re-render
       const TRIGGER_FIELDS = new Set([
