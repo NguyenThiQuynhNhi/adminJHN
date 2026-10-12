@@ -1020,6 +1020,32 @@
               </select>
             </div>
             <div class="field-group">
+              <label class="field-label" for="entityTypeFilter">Listing Type</label>
+              <select id="entityTypeFilter">
+                <option value="">All types</option>
+                <option value="property">Property</option>
+                <option value="project">Project</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="agencyFilter">Agency</label>
+              <select id="agencyFilter"><option value="">All agencies</option></select>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="regionFilter">Prefecture / Region</label>
+              <select id="regionFilter">
+                <option value="">All regions</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="transactionFilter">Transaction</label>
+              <select id="transactionFilter">
+                <option value="">All transactions</option>
+                <option value="Buy">Buy</option>
+                <option value="Rent">Rent</option>
+              </select>
+            </div>
+            <div class="field-group">
               <label class="field-label" for="reasonFilter">Reason</label>
               <select id="reasonFilter">
                 <option value="">All reasons</option>
@@ -1028,9 +1054,11 @@
                 <option value="privacy_copyright_infringement">Privacy/Copyright infringement</option>
                 <option value="unauthorized_listing_own_property">Unauthorized listing of own property</option>
                 <option value="unauthorized_use_own_images">Unauthorized use of own images</option>
+                <option value="Invalid license">Invalid license</option>
+                <option value="Inappropriate content">Inappropriate content</option>
+                <option value="Policy violation">Policy violation</option>
               </select>
             </div>
-            
           </div>
           <div class="filter-actions">
             <button class="btn btn-secondary" id="clearFilterBtn" type="button" onclick="resetFilters()">
@@ -1050,9 +1078,15 @@
             <table class="data-table">
               <thead>
                 <tr>
+                  <th>ID</th>
                   <th>Property / Project</th>
                   <th>Type</th>
                   <th>Agency</th>
+                  <th>Location</th>
+                  <th>Transaction</th>
+                  <th>Price</th>
+                  <th>Updated</th>
+                  <th>Reason</th>
                   <th>Status</th>
                   
                 </tr>
@@ -1107,7 +1141,7 @@
       function persistQueue() { /* no-op: data lives in memory only for this session */ }
 
       const decisionLog = [];
-      let filters = { search: "", reason: "", status: "" };
+      let filters = { search: "", reason: "", status: "", entityType: "", agency: "", region: "", transaction: "" };
       let sortMode = "default";
       let selectedId = null;
 
@@ -1197,26 +1231,50 @@
 
       // ---------- Unified list (search / reason / status filter) ----------
       function listFiltered() {
-        const q = filters.search.toLowerCase();
-        return moderationQueue.filter((p) =>
-          p.status !== "Approved" &&
-          (!filters.status || p.status === filters.status) &&
-          (!filters.reason || p.reason === filters.reason) &&
-          (!q || p.id.toLowerCase().includes(q) || p.title.toLowerCase().includes(q) || p.agent.toLowerCase().includes(q)));
+        const q = filters.search.trim().toLowerCase();
+        return moderationQueue.filter((p) => {
+          const type = p.entityType === "project" || isProjectGroup(p.group) ? "project" : "property";
+          const region = p.prefecture || p.region || "";
+          const searchable = [p.id, p.title, p.agent, p.prefecture, p.city, p.propType, p.transactionType].filter(Boolean).join(" ").toLowerCase();
+          return p.status !== "Approved" &&
+            (!filters.status || p.status === filters.status) &&
+            (!filters.reason || (p.reason || "") === filters.reason) &&
+            (!filters.entityType || type === filters.entityType) &&
+            (!filters.agency || (p.agent || "") === filters.agency) &&
+            (!filters.region || region === filters.region) &&
+            (!filters.transaction || (p.transactionType || "") === filters.transaction) &&
+            (!q || searchable.includes(q));
+        });
+      }
+      function populateSharedFilters() {
+        const agencies = [...new Set(moderationQueue.map(p => p.agent).filter(Boolean))].sort();
+        const regions = [...new Set(moderationQueue.map(p => p.prefecture || p.region).filter(Boolean))].sort();
+        $("agencyFilter").innerHTML = '<option value="">All agencies</option>' + agencies.map(v => '<option value="' + esc(v) + '">' + esc(v) + '</option>').join("");
+        $("regionFilter").innerHTML = '<option value="">All regions</option>' + regions.map(v => '<option value="' + esc(v) + '">' + esc(v) + '</option>').join("");
       }
       function renderPending() {
         const all = listFiltered();
         const res = paginate(all, pendingPage, $("pendingCount"), $("pendingPager"), (pg) => { pendingPage = pg; renderPending(); });
         pendingPage = res.page;
         const data = res.slice;
-        $("pendingBody").innerHTML = data.map((p) => `
+        $("pendingBody").innerHTML = data.map((p) => {
+          const isProject = p.entityType === "project" || isProjectGroup(p.group);
+          const typeLabel = isProject ? "Project" : "Property";
+          const location = [p.prefecture, p.city, p.chome].filter(Boolean).join(", ") || "—";
+          return `
           <tr style="cursor:pointer" onclick="openDetail('${esc(p.id)}')">
-            <td>${esc(p.title)}<br><span style="font-size:11px;color:var(--text-muted)">${esc(p.id)}</span></td>
-            <td>${p.entityType==="project"||isProjectGroup(p.group)?"New Development Project":"Property"}</td>
-            <td>${esc(p.agent)}</td>
+            <td>${esc(p.id)}</td>
+            <td>${esc(p.title)}</td>
+            <td>${typeLabel}</td>
+            <td>${esc(p.agent || "—")}</td>
+            <td>${esc(location)}</td>
+            <td>${esc(p.transactionType || "—")}</td>
+            <td>${esc(p.price || "—")}</td>
+            <td>${esc(p.dateUpdated || "—")}</td>
+            <td>${esc(p.reason || p.decisionNote || "—")}</td>
             <td><span class="status-pill ${statusClass(p.status)}">${esc(p.status)}</span></td>
-            
-          </tr>`).join("");
+          </tr>`;
+        }).join("");
         $("pendingEmpty").style.display = all.length ? "none" : "block";
       }
 
@@ -1225,18 +1283,27 @@
         filters.search = $("searchInput").value;
         filters.reason = $("reasonFilter").value;
         filters.status = $("statusFilter").value;
+        filters.entityType = $("entityTypeFilter").value;
+        filters.agency = $("agencyFilter").value;
+        filters.region = $("regionFilter").value;
+        filters.transaction = $("transactionFilter").value;
         pendingPage = 1;
         renderPending();
       }
       // Clear the filters and re-render the list.
       function resetFilters() {
-        filters = { search: "", reason: "", status: "" };
+        filters = { search: "", reason: "", status: "", entityType: "", agency: "", region: "", transaction: "" };
         $("searchInput").value = "";
         $("reasonFilter").value = "";
         $("statusFilter").value = "";
+        $("entityTypeFilter").value = "";
+        $("agencyFilter").value = "";
+        $("regionFilter").value = "";
+        $("transactionFilter").value = "";
         pendingPage = 1;
         renderPending();
       }
+      populateSharedFilters();
       window.applyFilters = applyFilters;
       window.resetFilters = resetFilters;
 
