@@ -2106,6 +2106,10 @@
   border-bottom: 1px solid var(--border);
 }
 .staff-name {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
   font-size: 12px;
   font-weight: 700;
   color: var(--accent);
@@ -2113,6 +2117,8 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+.staff-presence{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;text-transform:none;letter-spacing:0;white-space:nowrap;color:var(--staff-presence-color,#b7afa2)}
+.staff-presence-dot{width:7px;height:7px;border-radius:50%;background:var(--staff-presence-color,#b7afa2);display:inline-block;flex:0 0 7px}
 .staff-clients {
   display: flex;
   flex-direction: column;
@@ -3232,6 +3238,22 @@ function groupClientsByAgent() {
   return groups;
 }
 
+const STAFF_AVAILABILITY = {
+  online: { label: "Online", color: "#16a34a" },
+  offline: { label: "Offline", color: "#b7afa2" },
+  meeting: { label: "In a meeting", color: "#cf3434" },
+  leave: { label: "On leave", color: "#d97706" }
+};
+function getStaffAvailability(staffId) {
+  try {
+    const saved = JSON.parse(localStorage.getItem("yuushi.staffAvailability") || "{}");
+    const value = saved[staffId] || (staffId === "a1" ? "online" : "offline");
+    return STAFF_AVAILABILITY[value] || STAFF_AVAILABILITY.offline;
+  } catch (e) {
+    return staffId === "a1" ? STAFF_AVAILABILITY.online : STAFF_AVAILABILITY.offline;
+  }
+}
+
 function renderStaffView() {
   const list = $("convoList");
   list.innerHTML = "";
@@ -3248,7 +3270,8 @@ function renderStaffView() {
     
     const title = document.createElement("div");
     title.className = "staff-name";
-    title.textContent = a.name;
+    const presence = getStaffAvailability(a.id);
+    title.innerHTML = '<span>' + escapeHtml(a.name) + '</span><span class="staff-presence" style="--staff-presence-color:' + presence.color + '"><span class="staff-presence-dot"></span>' + presence.label + '</span>';
     section.appendChild(title);
     
     const clientsList = document.createElement("div");
