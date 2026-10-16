@@ -2308,6 +2308,15 @@
         },
       ];
 
+      // Normalize legacy/demo campaigns to the supported Client Contacts audience.
+      campaigns.forEach(c => {
+        if (c.audType === "Agent" || c.audType === "All" || c.aud === "all_agents" || c.aud === "group_agent" || c.aud === "all_leads") {
+          c.audType = "End User";
+          c.aud = "all_users";
+          c.audience = "All Client Contacts";
+        }
+      });
+
       /* ---- deterministic filler so the campaigns list exceeds one page (>=60 rows) ---- */
       (function padCampaigns() {
        const audiencePool = [
@@ -2326,26 +2335,13 @@
             audType: "End User",
             aud: "all_users",
           },
-          {
-            audience: "Agency — All Agencies",
-            audType: "Agent",
-            aud: "all_agents",
-          },
-          {
-            audience: "Agency — Premium Plan",
-            audType: "Agent",
-            aud: "all_agents",
-          },
+
           {
             audience: "End User — VIP Buyers Tokyo",
             audType: "End User",
             aud: "group_user",
           },
-          {
-            audience: "Agency — High-Intent Partners Q2",
-            audType: "Agent",
-            aud: "group_agent",
-          },
+
         ];
         const titlePool = [
           "New Listing Alert",
@@ -3416,6 +3412,20 @@
         if (editingCampaign) {
           editingCampaign.name = name;
           editingCampaign.status = status;
+          editingCampaign.audType = "End User";
+          const audV = document.querySelector('input[name="aud"]:checked').value;
+          if(audV === "group_user"){
+            const picked = document.querySelector('#groupOpts input[name="pickedGroup"]:checked');
+            const g = picked ? readLeadGroups().find(x=>x.id===picked.value && x.entityType==="end_user") : null;
+            if(!g){toast("Select a Client Contact group.","error");return;}
+            editingCampaign.audience = "Client Contacts — " + g.name;
+            editingCampaign.aud = "group_user";
+          } else {
+            editingCampaign.audience = "All Client Contacts";
+            editingCampaign.aud = "all_users";
+          }
+          editingCampaign.scheduled = status === "Draft" && schedV === "now" ? "—" : sched;
+          editingCampaign.timing = schedV === "recurring" ? "recurring" : "one-time";
         } else {
           const audV = document.querySelector('input[name="aud"]:checked').value;
           let audType, audience;
