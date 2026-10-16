@@ -1417,34 +1417,8 @@
                 Select your audience
               </h3>
               <div id="bAudience">
-                <label class="radio-row"
-                  ><input
-                    type="radio"
-                    name="aud"
-                    value="all_leads"
-                    checked
-                    onchange="onAudChange()"
-                  />
-                  All (End Users + Agencies)</label
-                >
-                <label class="radio-row"
-                  ><input
-                    type="radio"
-                    name="aud"
-                    value="group_user"
-                    onchange="onAudChange()"
-                  />
-                  End User Group</label
-                >
-                <label class="radio-row"
-                  ><input
-                    type="radio"
-                    name="aud"
-                    value="group_agent"
-                    onchange="onAudChange()"
-                  />
-                  Agency Group</label
-                >
+                <label class="radio-row"><input type="radio" name="aud" value="all_users" checked onchange="onAudChange()" /> All Client Contacts</label>
+                <label class="radio-row"><input type="radio" name="aud" value="group_user" onchange="onAudChange()" /> Client Contact Group</label>
               </div>
               <div class="group-picker" id="groupPicker" style="display: none">
                 <input
@@ -1526,6 +1500,7 @@
                 style="display: none; padding: 4px 0 4px 28px"
               >
                 <div style="display: flex; gap: 12px; flex-wrap: wrap">
+                  <div class="field" style="flex: 1; min-width: 140px"><label>Start date</label><input type="date" id="bStartDate" /></div>
                   <div class="field" style="flex: 1; min-width: 140px">
                     <label>Frequency</label
                     ><select id="bFreq">
@@ -2333,6 +2308,15 @@
         },
       ];
 
+      // Normalize legacy/demo campaigns to the supported Client Contacts audience.
+      campaigns.forEach(c => {
+        if (c.audType === "Agent" || c.audType === "All" || c.aud === "all_agents" || c.aud === "group_agent" || c.aud === "all_leads") {
+          c.audType = "End User";
+          c.aud = "all_users";
+          c.audience = "All Client Contacts";
+        }
+      });
+
       /* ---- deterministic filler so the campaigns list exceeds one page (>=60 rows) ---- */
       (function padCampaigns() {
        const audiencePool = [
@@ -2351,26 +2335,13 @@
             audType: "End User",
             aud: "all_users",
           },
-          {
-            audience: "Agency — All Agencies",
-            audType: "Agent",
-            aud: "all_agents",
-          },
-          {
-            audience: "Agency — Premium Plan",
-            audType: "Agent",
-            aud: "all_agents",
-          },
+
           {
             audience: "End User — VIP Buyers Tokyo",
             audType: "End User",
             aud: "group_user",
           },
-          {
-            audience: "Agency — High-Intent Partners Q2",
-            audType: "Agent",
-            aud: "group_agent",
-          },
+
         ];
         const titlePool = [
           "New Listing Alert",
@@ -3237,7 +3208,8 @@
         renderTplCards("bTplCards", "b");
         renderGroupPicker();
         // audience radio
-        const audVal = (src && src.aud) || "all_users";
+        const rawAudVal = (src && src.aud) || "all_users";
+        const audVal = rawAudVal === "group_user" ? "group_user" : "all_users";
         const audInput = document.querySelector(
           'input[name="aud"][value="' + audVal + '"]',
         );
@@ -3247,6 +3219,9 @@
           'input[name="sched"][value="now"]',
         );
         if (nowInput) nowInput.checked = true;
+        ["bDate","bTime","bStartDate","bRecurTime","bEndDate"].forEach(id=>{const el=$(id);if(el)el.value="";});
+        const todayJst = new Date(Date.now()+9*60*60*1000).toISOString().slice(0,10);
+        ["bDate","bStartDate","bEndDate"].forEach(id=>{const el=$(id);if(el)el.min=todayJst;});
         onSchedChange();
         onAudChange();
         renderStep();
@@ -3270,11 +3245,7 @@
         });
         toast('Recreated from "' + orig + '". Adjust and launch when ready.');
       }
-      function audTypeToRadio(t) {
-        if (t === "Agent") return "all_agents";
-        if (t === "All") return "all_leads";
-        return "all_users";
-      }
+      function audTypeToRadio(t) { return "all_users"; }
       
       function closeBuilder() {
         $("camp-builder").style.display = "none";
@@ -3327,12 +3298,12 @@
 
       function onAudChange() {
         const v = document.querySelector('input[name="aud"]:checked').value;
-        $("groupPicker").style.display = (v === "group_user" || v === "group_agent") ? "block" : "none";
+        $("groupPicker").style.display = v === "group_user" ? "block" : "none";
         updateReach();
       }
       function renderGroupPicker() {
         const v = document.querySelector('input[name="aud"]:checked')?.value;
-        const wantType = v === "group_agent" ? "agent" : "end_user";
+        const wantType = "end_user";
         const q = ($("groupSearch").value || "").toLowerCase();
         $("groupOpts").innerHTML = readLeadGroups()
           .filter((g) => g.entityType === wantType && g.name.toLowerCase().includes(q))
@@ -3347,8 +3318,6 @@
         const v = document.querySelector('input[name="aud"]:checked').value;
         let n = 0;
         if (v === "all_users") n = 1240;
-        else if (v === "all_agents") n = 430;
-        else if (v === "all_leads") n = 1670;
         else {
           const picked = document.querySelector('#groupOpts input[name="pickedGroup"]:checked');
           if (picked) {
@@ -3373,11 +3342,8 @@
         const audV = document.querySelector('input[name="aud"]:checked').value;
         let audText =
           {
-            all_users: "All End Users",
-            all_agents: "All Agencies",
-            all_leads: "All (End Users + Agency)",
-            group_user: "End User Group",
-            group_agent: "Agency Group",
+            all_users: "All Client Contacts",
+            group_user: "Client Contact Group",
           }[audV] || audV;
         const reach = $("reachNote").textContent.replace(
           "Estimated recipients: ~",
@@ -3394,11 +3360,7 @@
             ($("bTime").value || "[time]") +
             " JST";
         if (schedV === "recurring")
-          sched =
-            $("bFreq").value +
-            " at " +
-            ($("bRecurTime").value || "[time]") +
-            " JST";
+          sched = ($("bStartDate").value || "[start date]") + " · " + $("bFreq").value + " at " + ($("bRecurTime").value || "[time]") + " JST until " + ($("bEndDate").value || "[end date]");
         const bodyText = (
           $("b_rteBody") ? $("b_rteBody").innerText : ""
         ).trim();
@@ -3420,8 +3382,19 @@
       }
       function launchCampaign() {
         if(!requireMessageAction())return;
-        persistCampaign("Sent");
-        toast("Message campaign launched successfully.");
+        const schedV = document.querySelector('input[name="sched"]:checked').value;
+        const nowJst = new Date(Date.now()+9*60*60*1000);
+        if(schedV === "schedule"){
+          const date = $("bDate").value, time = $("bTime").value;
+          if(!date || !time || new Date(date+"T"+time+":00+09:00") <= nowJst){toast("Choose a future date and time (JST).","error");return;}
+        }
+        if(schedV === "recurring"){
+          const start = $("bStartDate").value, time = $("bRecurTime").value, end = $("bEndDate").value;
+          if(!start || !time || !end || end < start || new Date(start+"T"+time+":00+09:00") <= nowJst){toast("Choose a future start date/time and a valid end date for the recurring campaign (JST).","error");return;}
+        }
+        const status = schedV === "now" ? "Sent" : "Scheduled";
+        persistCampaign(status);
+        toast(status === "Scheduled" ? "Campaign scheduled successfully." : "Message campaign launched successfully.");
         closeBuilder();
       }
       function persistCampaign(status) {
@@ -3432,40 +3405,44 @@
         ).value;
         const sched =
           schedV === "now"
-            ? status === "Draft"
-              ? "—"
-              : "2026-06-02 12:00"
+            ? status === "Draft" ? "—" : new Date().toISOString().slice(0,16).replace("T"," ")
             : schedV === "schedule"
-              ? ($("bDate").value + " " + $("bTime").value).trim()
-              : "Recurring";
+              ? ($("bDate").value + " " + $("bTime").value + " JST").trim()
+              : ($("bStartDate").value + " " + $("bRecurTime").value + " JST · " + $("bFreq").value + " until " + $("bEndDate").value);
         if (editingCampaign) {
           editingCampaign.name = name;
           editingCampaign.status = status;
+          editingCampaign.audType = "End User";
+          const audV = document.querySelector('input[name="aud"]:checked').value;
+          if(audV === "group_user"){
+            const picked = document.querySelector('#groupOpts input[name="pickedGroup"]:checked');
+            const g = picked ? readLeadGroups().find(x=>x.id===picked.value && x.entityType==="end_user") : null;
+            if(!g){toast("Select a Client Contact group.","error");return;}
+            editingCampaign.audience = "Client Contacts — " + g.name;
+            editingCampaign.aud = "group_user";
+          } else {
+            editingCampaign.audience = "All Client Contacts";
+            editingCampaign.aud = "all_users";
+          }
+          editingCampaign.scheduled = status === "Draft" && schedV === "now" ? "—" : sched;
+          editingCampaign.timing = schedV === "recurring" ? "recurring" : "one-time";
         } else {
           const audV = document.querySelector('input[name="aud"]:checked').value;
           let audType, audience;
-          if (audV === "all_agents") { audType = "Agent"; audience = "Agency — All Agencies"; }
-          else if (audV === "all_leads") { audType = "All"; audience = "All (End Users + Agency)"; }
-          else if (audV === "group_user" || audV === "group_agent") {
+          if (audV === "group_user") {
             const picked = document.querySelector('#groupOpts input[name="pickedGroup"]:checked');
-            const g = picked ? readLeadGroups().find((x) => x.id === picked.value) : null;
-            audType = audV === "group_agent" ? "Agent" : "End User";
-            audience = (audV === "group_agent" ? "Agency — " : "End User — ") + (g ? g.name : "Unnamed group");
-          }
-          else { audType = "End User"; audience = "End User — All Investors"; }
+            const g = picked ? readLeadGroups().find((x) => x.id === picked.value && x.entityType === "end_user") : null;
+            if(!g){toast("Select a Client Contact group.","error");return;}
+            audType = "End User"; audience = "Client Contacts — " + g.name;
+          } else { audType = "End User"; audience = "All Client Contacts"; }
           campaigns.push({
             id: "c" + Date.now(),
             name,
             audience,
             audType,
             status,
-            timing: "one-time",
-            scheduled:
-              status === "Scheduled" || schedV !== "now"
-                ? sched
-                : status === "Draft"
-                  ? "—"
-                  : sched,
+            timing: schedV === "recurring" ? "recurring" : "one-time",
+            scheduled: status === "Draft" && schedV === "now" ? "—" : sched,
             sent: 0,
             delivered: 0,
             read: 0,
@@ -3975,9 +3952,7 @@
           return;
         }
         // Persist to the SAME store Lead Management uses (yuushiLeadGroups).
-        const baseEl = document.querySelector('input[name="cgBase"]:checked');
-        const base = baseEl ? baseEl.value : "End User";
-        const entityType = base === "Agent" ? "agent" : "end_user";
+        const entityType = "end_user";
         const groups = readLeadGroups();
         groups.push({
           id: "g" + Date.now(),

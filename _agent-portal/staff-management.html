@@ -973,7 +973,7 @@
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>Staff ID</th><th>Email</th>
+                  <th>Agent ID</th><th>Email</th>
                   <th>Role</th>
                   <th>Phone</th>
                   <th>Status</th>
@@ -1029,7 +1029,7 @@
         <div class="card">
           <h3>Identity</h3>
           <div class="info-grid">
-            <div class="info-item"><div class="lbl">Staff ID</div><div class="val" id="v-staff-id"></div></div>
+            <div class="info-item"><div class="lbl">Agent ID</div><div class="val" id="v-staff-id"></div></div>
             <div class="info-item">
               <div class="lbl">Full name</div>
               <div class="val" id="v-full-name"></div>
@@ -1139,7 +1139,7 @@
           </div>
 
           <div class="field-grid">
-            <div class="field full"><label for="d-staff-id">Staff ID <span class="req">*</span></label><input id="d-staff-id" type="text" placeholder="Assign a unique Staff ID" /><small>Assigned once by the Agency Administrator. Cannot be changed after creation.</small><div class="err" id="err-d-staff-id">Enter a unique Staff ID using letters, numbers, hyphens or underscores.</div></div>
+            <div class="field full"><label for="d-staff-id">Agent ID <span class="req">*</span></label><input id="d-staff-id" type="text" placeholder="Assign a unique Agent ID" /><small>Assigned once by the Agency Administrator. Cannot be changed after creation.</small><div class="err" id="err-d-staff-id">Enter a unique Agent ID using letters, numbers, hyphens or underscores.</div></div>
             <div class="field full">
               <label>Full Name <span class="req">*</span></label>
               <input
@@ -1163,7 +1163,8 @@
             </div>
             <div class="field full">
               <label>Phone Number</label>
-              <input id="d-phone" type="tel" placeholder="+81.90.0000.0000" />
+              <div style="display:flex;gap:8px"><select id="d-phone-code" class="field-select" aria-label="Calling code" style="width:130px;flex:0 0 130px"><option value="+81" selected>Japan (+81)</option><option value="+1">United States/Canada (+1)</option><option value="+44">United Kingdom (+44)</option><option value="+61">Australia (+61)</option><option value="+84">Vietnam (+84)</option><option value="+34">Spain (+34)</option><option value="+65">Singapore (+65)</option></select><input id="d-phone" type="tel" placeholder="90.0000.0000" style="flex:1;min-width:0" /></div>
+              <div class="err" id="err-d-phone">Phone number must be unique.</div>
             </div>
             <div class="field full">
               <label>Role <span class="req">*</span></label>
@@ -1671,8 +1672,11 @@
         document.getElementById("account-edit").style.display = "";
         document.getElementById("d-name").value = s.name;
         document.getElementById("d-email").value = s.email;
-        document.getElementById("d-phone").value =
-          s.phone === "—" ? "" : s.phone;
+        const storedPhone = s.phone === "—" ? "" : (s.phone || "").trim();
+        const callingCodes = ["+81","+1","+44","+61","+84","+34","+65"];
+        const matchedCode = callingCodes.find(code => storedPhone.startsWith(code));
+        document.getElementById("d-phone-code").value = matchedCode || "+81";
+        document.getElementById("d-phone").value = matchedCode ? storedPhone.slice(matchedCode.length).replace(/^\s+/, "") : storedPhone;
         document.getElementById("d-role").value = s.role;
         document.getElementById("d-bio").value = s.bio || "";
         document.getElementById("d-hours").value = s.hours || "";
@@ -1754,6 +1758,13 @@
         const invalidId = editingId===null && (!/^[A-Za-z0-9_-]+$/.test(staffId)||issuedStaffIds.has(staffId.toLowerCase()));
         showErr('d-staff-id', invalidId);
         if(invalidId) ok=false;
+        const phoneCode = document.getElementById("d-phone-code").value || "+81";
+        const phoneInput = document.getElementById("d-phone").value.trim();
+        const normalizedPhone = phoneInput ? (phoneCode + " " + phoneInput).replace(/[\s().-]/g, "") : "";
+        const phoneDuplicate = !!normalizedPhone && staff.some(s=>s.id!==editingId && String(s.phone||"").replace(/[\s().-]/g,"")===normalizedPhone);
+        inp("d-phone").classList.toggle("invalid", phoneDuplicate);
+        showErr("d-phone", phoneDuplicate);
+        if(phoneDuplicate) ok=false;
 
         if (!ok) {
           toast("Please complete the required fields on the Identity tab.", "error");
@@ -1761,7 +1772,7 @@
           return;
         }
 
-        const phone = document.getElementById("d-phone").value.trim();
+        const phone = normalizedPhone ? (phoneCode + " " + phoneInput).trim() : "—";
         const bio = document.getElementById("d-bio").value.trim();
         const hours = document.getElementById("d-hours").value.trim();
 

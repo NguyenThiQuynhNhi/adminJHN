@@ -111,7 +111,7 @@
 
   const metricRegistry={
     property_standard_impressions:{source_ready:true,source_object:'AnalyticsEvent',required_events:['property_card_rendered'],required_fields:['propertyId','agencyId','placement'],note:'Client Property cards expose stable data-property-id and are instrumented by bindPropertyCards().'},
-    property_views:{source_ready:true,source_object:'AnalyticsEvent',required_events:['property_card_viewed'],required_fields:['propertyId','agencyId','placement'],note:'Viewport visibility is captured by IntersectionObserver at >=50% visibility.'},
+    property_views:{source_ready:true,source_object:'AnalyticsEvent',required_events:['property_card_viewed'],required_fields:['propertyId','agencyId','placement'],note:'Organic Property View is emitted when a Property Card reaches >=50% viewport visibility and when the user clicks the card to open Property Detail. Paid placements are tracked separately.'},
     property_clicks:{source_ready:true,source_object:'AnalyticsEvent',required_events:['property_card_clicked'],required_fields:['propertyId','agencyId','placement'],note:'Organic Property-card clicks are emitted separately from paid Ad clicks.'},
     property_saves:{source_ready:true,source_object:'AnalyticsEvent',required_events:['property_saved'],required_fields:['propertyId','agencyId','placement'],note:'Keep/Save is emitted from the Property-card heart action.'},
     property_inquiries:{source_ready:true,source_object:'Inquiry',required_events:['inquiry_created'],storage_key:'yuushi.agencyEnquiryAssignments'},
@@ -235,7 +235,7 @@
       const card=e.target.closest?.('.ypc-card[data-property-id]');if(!card)return;
       const base=cardEventBase(card);
       if(e.target.closest('.ypc-heart'))emit('property_saved',base);
-      else if(!e.target.closest('.ypc-nav'))emit('property_card_clicked',base);
+      else if(!e.target.closest('.ypc-nav')){emit('property_card_clicked',base);emit('property_card_viewed',base);}
     },true);
   }
 
