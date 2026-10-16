@@ -221,9 +221,6 @@
               <div class="fbtn" onclick="toggleMsel(event,'cGroupPanel')"><span class="fb-text" id="cGroupSummary">All groups</span><i class="fas fa-chevron-down chev"></i></div>
               <div class="msel-panel" id="cGroupPanel"></div>
             </div>
-            <div class="filter-field"><label>Status</label>
-              <select id="cStatus" onchange="renderContactsList()"><option value="">All</option><option>Active</option><option>Inactive</option></select>
-            </div>
             <div class="filter-field"><label>Last interaction</label>
               <select id="cDateRange" onchange="renderContactsList()">
                 <option value="">All time</option>
@@ -253,7 +250,6 @@
                 <th>First Contact</th>
                 <th>Last Interaction</th>
                 <th>Groups</th>
-                <th>Status</th>
                 <th>Actions</th>
               </tr></thead>
               <tbody id="contactsBody"></tbody>
@@ -278,7 +274,6 @@
             </div>
             <div class="dt-stats">
                 <div class="dt-stat"><i style="visibility: hidden" class="fas fa-user-tie"></i><div><div style="visibility: hidden" class="l">Owner</div><div class="v" id="cdOwner" style="visibility: hidden">Chris Sales</div></div></div>
-                <div class="dt-stat"><i class="fas fa-circle-check"></i><div><div class="l">Status</div><div class="v" id="cdStatus">Active</div></div></div>
               <div class="dt-stat"><i class="fas fa-users"></i><div><div class="l">Groups</div><div class="v" id="cdGroupCount">2</div></div></div>
               <div class="more-menu">
                 <button class="nav-icon" onclick="toggleMore(event,'cdMorePop')"><i class="fas fa-ellipsis-vertical"></i></button>
@@ -577,13 +572,11 @@
 
       function filteredContacts() {
         const q = document.getElementById("cSearch").value.trim().toLowerCase();
-        const status = document.getElementById("cStatus").value;
         const owner = document.getElementById("cOwner").value;
         const range = document.getElementById("cDateRange").value;
         return CONTACTS.filter((c) => {
           if (q && !(c.name.toLowerCase().includes(q) || (c.profile.email || "").toLowerCase().includes(q) || (c.profile.phoneNumber || "").includes(q))) return false;
           if (cGroupFilter.size && !c.groups.some((g) => cGroupFilter.has(g))) return false;
-          if (status && c.status !== status) return false;
           if (owner && c.owner !== owner) return false;
           if (range && daysSince(c.lastInteraction) > Number(range)) return false;
           return true;
@@ -608,14 +601,13 @@
             <td>${esc(c.firstContact)}</td>
             <td>${esc(c.lastInteraction)}</td>
             <td>${groupTagsHtml(c)}</td>
-            <td><span class="badge ${c.status === "Active" ? "active" : "inactive"}"><span class="dot"></span>${c.status}</span></td>
             <td onclick="event.stopPropagation()"><div class="act-icons">
               <i class="fas fa-eye" title="View" onclick="showContactDetail('${c.id}')"></i>
               <i class="fas fa-pen" title="Edit" onclick="showContactDetail('${c.id}');openEditContactModal()"></i>
               <i class="fas fa-users" title="Assign to Group" onclick="openAssignGroupModal(['${c.id}'])"></i>
               <i class="fas fa-paper-plane" title="Message"></i>
             </div></td>
-          </tr>`).join("") || `<tr><td colspan="7">${emptyBox("No contacts match these filters")}</td></tr>`;
+          </tr>`).join("") || `<tr><td colspan="6">${emptyBox("No contacts match these filters")}</td></tr>`;
         document.getElementById("cEntriesLabel").textContent = `Showing ${rows.length} of ${CONTACTS.length} contacts`;
         updateContactBulkBar();
       }
@@ -655,7 +647,6 @@
         document.getElementById("cdAvatar").textContent = c.initials;
         document.getElementById("cdName").textContent = c.name;
         document.getElementById("cdCreated").textContent = `First contact: ${c.firstContact}`;
-        document.getElementById("cdStatus").textContent = c.status;
         document.getElementById("cdOwner").textContent = c.owner;
         document.getElementById("cdGroupCount").textContent = c.groups.length;
 
