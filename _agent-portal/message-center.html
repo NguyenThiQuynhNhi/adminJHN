@@ -1417,34 +1417,8 @@
                 Select your audience
               </h3>
               <div id="bAudience">
-                <label class="radio-row"
-                  ><input
-                    type="radio"
-                    name="aud"
-                    value="all_leads"
-                    checked
-                    onchange="onAudChange()"
-                  />
-                  All (End Users + Agencies)</label
-                >
-                <label class="radio-row"
-                  ><input
-                    type="radio"
-                    name="aud"
-                    value="group_user"
-                    onchange="onAudChange()"
-                  />
-                  End User Group</label
-                >
-                <label class="radio-row"
-                  ><input
-                    type="radio"
-                    name="aud"
-                    value="group_agent"
-                    onchange="onAudChange()"
-                  />
-                  Agency Group</label
-                >
+                <label class="radio-row"><input type="radio" name="aud" value="all_users" checked onchange="onAudChange()" /> All Client Contacts</label>
+                <label class="radio-row"><input type="radio" name="aud" value="group_user" onchange="onAudChange()" /> Client Contact Group</label>
               </div>
               <div class="group-picker" id="groupPicker" style="display: none">
                 <input
@@ -3237,7 +3211,8 @@
         renderTplCards("bTplCards", "b");
         renderGroupPicker();
         // audience radio
-        const audVal = (src && src.aud) || "all_users";
+        const rawAudVal = (src && src.aud) || "all_users";
+        const audVal = rawAudVal === "group_user" ? "group_user" : "all_users";
         const audInput = document.querySelector(
           'input[name="aud"][value="' + audVal + '"]',
         );
@@ -3270,11 +3245,7 @@
         });
         toast('Recreated from "' + orig + '". Adjust and launch when ready.');
       }
-      function audTypeToRadio(t) {
-        if (t === "Agent") return "all_agents";
-        if (t === "All") return "all_leads";
-        return "all_users";
-      }
+      function audTypeToRadio(t) { return "all_users"; }
       
       function closeBuilder() {
         $("camp-builder").style.display = "none";
@@ -3327,12 +3298,12 @@
 
       function onAudChange() {
         const v = document.querySelector('input[name="aud"]:checked').value;
-        $("groupPicker").style.display = (v === "group_user" || v === "group_agent") ? "block" : "none";
+        $("groupPicker").style.display = v === "group_user" ? "block" : "none";
         updateReach();
       }
       function renderGroupPicker() {
         const v = document.querySelector('input[name="aud"]:checked')?.value;
-        const wantType = v === "group_agent" ? "agent" : "end_user";
+        const wantType = "end_user";
         const q = ($("groupSearch").value || "").toLowerCase();
         $("groupOpts").innerHTML = readLeadGroups()
           .filter((g) => g.entityType === wantType && g.name.toLowerCase().includes(q))
@@ -3347,8 +3318,6 @@
         const v = document.querySelector('input[name="aud"]:checked').value;
         let n = 0;
         if (v === "all_users") n = 1240;
-        else if (v === "all_agents") n = 430;
-        else if (v === "all_leads") n = 1670;
         else {
           const picked = document.querySelector('#groupOpts input[name="pickedGroup"]:checked');
           if (picked) {
@@ -3373,11 +3342,8 @@
         const audV = document.querySelector('input[name="aud"]:checked').value;
         let audText =
           {
-            all_users: "All End Users",
-            all_agents: "All Agencies",
-            all_leads: "All (End Users + Agency)",
-            group_user: "End User Group",
-            group_agent: "Agency Group",
+            all_users: "All Client Contacts",
+            group_user: "Client Contact Group",
           }[audV] || audV;
         const reach = $("reachNote").textContent.replace(
           "Estimated recipients: ~",
@@ -3444,15 +3410,12 @@
         } else {
           const audV = document.querySelector('input[name="aud"]:checked').value;
           let audType, audience;
-          if (audV === "all_agents") { audType = "Agent"; audience = "Agency — All Agencies"; }
-          else if (audV === "all_leads") { audType = "All"; audience = "All (End Users + Agency)"; }
-          else if (audV === "group_user" || audV === "group_agent") {
+          if (audV === "group_user") {
             const picked = document.querySelector('#groupOpts input[name="pickedGroup"]:checked');
-            const g = picked ? readLeadGroups().find((x) => x.id === picked.value) : null;
-            audType = audV === "group_agent" ? "Agent" : "End User";
-            audience = (audV === "group_agent" ? "Agency — " : "End User — ") + (g ? g.name : "Unnamed group");
-          }
-          else { audType = "End User"; audience = "End User — All Investors"; }
+            const g = picked ? readLeadGroups().find((x) => x.id === picked.value && x.entityType === "end_user") : null;
+            if(!g){toast("Select a Client Contact group.","error");return;}
+            audType = "End User"; audience = "Client Contacts — " + g.name;
+          } else { audType = "End User"; audience = "All Client Contacts"; }
           campaigns.push({
             id: "c" + Date.now(),
             name,
@@ -3975,9 +3938,7 @@
           return;
         }
         // Persist to the SAME store Lead Management uses (yuushiLeadGroups).
-        const baseEl = document.querySelector('input[name="cgBase"]:checked');
-        const base = baseEl ? baseEl.value : "End User";
-        const entityType = base === "Agent" ? "agent" : "end_user";
+        const entityType = "end_user";
         const groups = readLeadGroups();
         groups.push({
           id: "g" + Date.now(),
