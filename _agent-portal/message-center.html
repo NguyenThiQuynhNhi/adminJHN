@@ -1500,6 +1500,7 @@
                 style="display: none; padding: 4px 0 4px 28px"
               >
                 <div style="display: flex; gap: 12px; flex-wrap: wrap">
+                  <div class="field" style="flex: 1; min-width: 140px"><label>Start date</label><input type="date" id="bStartDate" /></div>
                   <div class="field" style="flex: 1; min-width: 140px">
                     <label>Frequency</label
                     ><select id="bFreq">
@@ -3222,6 +3223,9 @@
           'input[name="sched"][value="now"]',
         );
         if (nowInput) nowInput.checked = true;
+        ["bDate","bTime","bStartDate","bRecurTime","bEndDate"].forEach(id=>{const el=$(id);if(el)el.value="";});
+        const todayJst = new Date(Date.now()+9*60*60*1000).toISOString().slice(0,10);
+        ["bDate","bStartDate","bEndDate"].forEach(id=>{const el=$(id);if(el)el.min=todayJst;});
         onSchedChange();
         onAudChange();
         renderStep();
@@ -3360,11 +3364,7 @@
             ($("bTime").value || "[time]") +
             " JST";
         if (schedV === "recurring")
-          sched =
-            $("bFreq").value +
-            " at " +
-            ($("bRecurTime").value || "[time]") +
-            " JST";
+          sched = ($("bStartDate").value || "[start date]") + " · " + $("bFreq").value + " at " + ($("bRecurTime").value || "[time]") + " JST until " + ($("bEndDate").value || "[end date]");
         const bodyText = (
           $("b_rteBody") ? $("b_rteBody").innerText : ""
         ).trim();
@@ -3386,8 +3386,19 @@
       }
       function launchCampaign() {
         if(!requireMessageAction())return;
-        persistCampaign("Sent");
-        toast("Message campaign launched successfully.");
+        const schedV = document.querySelector('input[name="sched"]:checked').value;
+        const nowJst = new Date(Date.now()+9*60*60*1000);
+        if(schedV === "schedule"){
+          const date = $("bDate").value, time = $("bTime").value;
+          if(!date || !time || new Date(date+"T"+time+":00+09:00") <= nowJst){toast("Choose a future date and time (JST).","error");return;}
+        }
+        if(schedV === "recurring"){
+          const start = $("bStartDate").value, time = $("bRecurTime").value, end = $("bEndDate").value;
+          if(!start || !time || !end || end < start || new Date(start+"T"+time+":00+09:00") <= nowJst){toast("Choose a future start date/time and a valid end date for the recurring campaign (JST).","error");return;}
+        }
+        const status = schedV === "now" ? "Sent" : "Scheduled";
+        persistCampaign(status);
+        toast(status === "Scheduled" ? "Campaign scheduled successfully." : "Message campaign launched successfully.");
         closeBuilder();
       }
       function persistCampaign(status) {
@@ -3398,12 +3409,10 @@
         ).value;
         const sched =
           schedV === "now"
-            ? status === "Draft"
-              ? "—"
-              : "2026-06-02 12:00"
+            ? status === "Draft" ? "—" : new Date().toISOString().slice(0,16).replace("T"," ")
             : schedV === "schedule"
-              ? ($("bDate").value + " " + $("bTime").value).trim()
-              : "Recurring";
+              ? ($("bDate").value + " " + $("bTime").value + " JST").trim()
+              : ($("bStartDate").value + " " + $("bRecurTime").value + " JST · " + $("bFreq").value + " until " + $("bEndDate").value);
         if (editingCampaign) {
           editingCampaign.name = name;
           editingCampaign.status = status;
@@ -3422,13 +3431,8 @@
             audience,
             audType,
             status,
-            timing: "one-time",
-            scheduled:
-              status === "Scheduled" || schedV !== "now"
-                ? sched
-                : status === "Draft"
-                  ? "—"
-                  : sched,
+            timing: schedV === "recurring" ? "recurring" : "one-time",
+            scheduled: status === "Draft" && schedV === "now" ? "—" : sched,
             sent: 0,
             delivered: 0,
             read: 0,
