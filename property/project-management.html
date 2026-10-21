@@ -2273,6 +2273,9 @@
           </button>
         </div>
         <div class="modal-body">
+          <div class="kv-grid" style="margin-bottom:16px">
+            <label class="kv-full"><span class="kv-label">Agency <span class="req">*</span></span><select id="createAgencySelect" class="edit-input" required></select></label>
+          </div>
           <div class="group-picker">
             <button class="group-card" type="button" onclick="createInGroup(5)">
               <div class="group-card-head">
@@ -2841,6 +2844,7 @@
               t: "text",
               req: true,
             },
+            { k: "agencyName", l: "Agency", t: "text", readonly: true },
             {
               k: "nameRomaji",
               l: "Property Name — Romaji",
@@ -4489,6 +4493,7 @@
       }
 
       function renderViewField(f, val, prop) {
+        if (f.k === "agencyName") return esc(val || prop.agent || "—");
         if (f.t === "auto") return f.display || "—";
         if (f.t === "yen") return fmtYen(val);
         if (f.t === "num") return fmtNum(val);
@@ -7550,21 +7555,50 @@
       // ========================================================================
       // Create modal
       // ========================================================================
+      function activeAgenciesForCreate() {
+        try {
+          const rows = JSON.parse(localStorage.getItem("yuushi.admin.agencyDirectory") || "[]");
+          return (Array.isArray(rows) ? rows : []).filter(a => String(a.status || "").toLowerCase() === "active");
+        } catch { return []; }
+      }
+      function selectedAgencyForCreate() {
+        const id = $("createAgencySelect")?.value || "";
+        return activeAgenciesForCreate().find(a => String(a.id || a.agencyId || "") === id) || null;
+      }
+      function agencyAdminForCreate(agency) {
+        return agency?.adminStaffName || agency?.adminName || agency?.agencyAdminName || agency?.primaryContactName || agency?.contactName || "Agency Admin";
+      }
       function openCreateModal() {
+        const select = $("createAgencySelect");
+        const agencies = activeAgenciesForCreate();
+        select.innerHTML = '<option value=""></option>' + agencies.map(a => {
+          const id = a.id || a.agencyId || "";
+          const name = a.company || a.name || a.agencyName || id;
+          return '<option value="' + escAttr(id) + '">' + esc(name) + '</option>';
+        }).join("");
+        select.value = "";
         $("createModal").classList.add("open");
       }
       function closeCreateModal() {
         $("createModal").classList.remove("open");
       }
       function createInGroup(g) {
+        const agency = selectedAgencyForCreate();
+        if (!agency) { toast("Agency is required.", "error"); return; }
         closeCreateModal();
         const today = new Date().toISOString().slice(0, 10);
         const completion = new Date();
         completion.setMonth(completion.getMonth() + 12);
+        const agencyId = agency.id || agency.agencyId;
+        const agencyName = agency.company || agency.name || agency.agencyName || agencyId;
         const newP = {
           id: "PRJ-" + Math.floor(Math.random() * 90000 + 10000),
           group: g,
-          agent: "(unassigned)",
+          agencyId,
+          agencyName,
+          agent: agencyName,
+          responsibleStaff: agencyAdminForCreate(agency),
+          createdBy: "Admin",
           propType: GROUP_META[g].propTypes[0],
           name: "New " + GROUP_META[g].label + " project",
           nameJp: "",
@@ -7574,8 +7608,8 @@
           postCode: "",
           transactionType: "Buy",
           salesStatus: "On Sale",
-          publishStatus: "Pending Review",
-          datePublished: "",
+          publishStatus: "Published",
+          datePublished: today,
           dateUpdated: today,
           completionDate: completion.toISOString().slice(0, 10),
           allPricesTBA: false,
