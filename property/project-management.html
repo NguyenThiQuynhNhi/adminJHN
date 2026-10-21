@@ -7308,6 +7308,7 @@
       }
       function finalizeSave() {
         currentProj.dateUpdated = new Date().toISOString().slice(0, 10);
+        if (currentProj.adminCreated) persistAdminCreatedProjects();
         originalProj = JSON.parse(JSON.stringify(currentProj));
         editMode = false;
         renderDetail();
@@ -7553,8 +7554,10 @@
           confirmLabel: "Delete",
           danger: true,
           onConfirm: () => {
+            const removed = currentProj;
             const idx = projects.findIndex((p) => p.id === currentProj.id);
             if (idx >= 0) projects.splice(idx, 1);
+            if (removed.adminCreated) removePersistedAdminCreatedProject(removed.id);
             filtered = filtered.filter((p) => p.id !== currentProj.id);
             doShowList();
             renderList();
@@ -7566,6 +7569,20 @@
       // ========================================================================
       // Create modal
       // ========================================================================
+      function persistAdminCreatedProjects() {
+        try {
+          const rows = JSON.parse(localStorage.getItem("yuushi.admin.createdProjects") || "[]");
+          const byId = new Map((Array.isArray(rows) ? rows : []).map(p => [p.id, p]));
+          projects.filter(p => p.adminCreated).forEach(p => byId.set(p.id, p));
+          localStorage.setItem("yuushi.admin.createdProjects", JSON.stringify([...byId.values()]));
+        } catch {}
+      }
+      function removePersistedAdminCreatedProject(id) {
+        try {
+          const rows = JSON.parse(localStorage.getItem("yuushi.admin.createdProjects") || "[]");
+          localStorage.setItem("yuushi.admin.createdProjects", JSON.stringify((Array.isArray(rows) ? rows : []).filter(p => p.id !== id)));
+        } catch {}
+      }
       function activeAgenciesForCreate() {
         try {
           const rows = JSON.parse(localStorage.getItem("yuushi.admin.agencyDirectory") || "[]");
@@ -7620,6 +7637,7 @@
           agent: agencyName,
           responsibleStaff: agencyAdminForCreate(agency),
           createdBy: "Admin",
+          adminCreated: true,
           propType: GROUP_META[g].propTypes[0],
           name: "New " + GROUP_META[g].label + " project",
           nameJp: "",
@@ -7643,6 +7661,7 @@
         if (g === 5) newP.floorPlanTypes = [];
         if (g === 6) newP.lots = [];
         projects.unshift(newP);
+        persistAdminCreatedProjects();
         showDetail(newP.id);
         editMode = true;
         renderDetail();
