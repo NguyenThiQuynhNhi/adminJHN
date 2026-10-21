@@ -5572,6 +5572,20 @@
       // listings above. The curated rejected / suspended / pending examples and
       // the New-Dev cards are kept intact; these are appended after them.
       // ========================================================================
+      (function loadAdminCreatedProperties() {
+        try {
+          const rows = JSON.parse(localStorage.getItem("yuushi.admin.createdProperties") || "[]");
+          const account = JSON.parse(localStorage.getItem("yuushi.agency.primaryAccount") || "null") || {};
+          const staff = JSON.parse(localStorage.getItem("yuushi.agencySignedInStaff") || "null") || {};
+          const agencyId = String(account.id || account.agencyId || staff.agencyId || "AG-00000001");
+          (Array.isArray(rows) ? rows : []).filter(p => String(p.agencyId || "") === agencyId).forEach(row => {
+            const index = properties.findIndex(p => p.id === row.id);
+            if (index >= 0) properties[index] = { ...properties[index], ...row };
+            else properties.unshift({ ...row, adminCreated: true });
+          });
+        } catch {}
+      })();
+
       (function seedFiller() {
         const PREFS = OPT.prefectures; // 10 prefectures
         const TYPE_BY_GROUP = {
@@ -8731,9 +8745,29 @@
           },
         });
       }
+      function agencyVerificationUnverified(p) {
+        try {
+          const rows = JSON.parse(localStorage.getItem("yuushi.admin.agencyDirectory") || "[]");
+          const agency = (Array.isArray(rows) ? rows : []).find(a => String(a.id || a.agencyId || "") === String(p.agencyId || ""));
+          const status = String(agency?.verificationStatus || agency?.verificationStatusLabel || agency?.licenseVerificationStatus || "").trim().toLowerCase();
+          return agency?.isVerified === false || agency?.verified === false || status === "unverified" || status === "not verified" || status === "unverified agency";
+        } catch { return false; }
+      }
+      function persistAdminCreatedProperty(p) {
+        if (!p?.adminCreated) return;
+        try {
+          const rows = JSON.parse(localStorage.getItem("yuushi.admin.createdProperties") || "[]");
+          const all = Array.isArray(rows) ? rows : [];
+          const index = all.findIndex(row => row.id === p.id);
+          if (index >= 0) all[index] = { ...all[index], ...p }; else all.push(p);
+          localStorage.setItem("yuushi.admin.createdProperties", JSON.stringify(all));
+        } catch {}
+      }
       function commitSave() {
         const before=originalProp?JSON.parse(JSON.stringify(originalProp)):null;
         currentProp.dateUpdated = new Date().toISOString().slice(0, 10);
+        if (currentProp.adminCreated && agencyVerificationUnverified(currentProp)) currentProp.publishStatus = "Pending Review";
+        persistAdminCreatedProperty(currentProp);
         if (currentProp._clonedFrom) delete currentProp._clonedFrom; // Group G
         if(before&&Number(before.priceBuy)!==Number(currentProp.priceBuy)) emitPropertyEvent('property_price_changed',currentProp,{oldPrice:Number(before.priceBuy)||null,newPrice:Number(currentProp.priceBuy)||null,changeSource:'detail_edit'});
         if(before&&before.publishStatus!==currentProp.publishStatus) emitPropertyEvent(currentProp.publishStatus==='Published'?'property_published':'property_suspended',currentProp,{oldStatus:before.publishStatus,newStatus:currentProp.publishStatus,changeSource:'detail_edit'});
@@ -8942,6 +8976,7 @@
             const removed={...currentProp};
             const idx = properties.findIndex((p) => p.id === currentProp.id);
             if (idx >= 0) properties.splice(idx, 1);
+            if (currentProp.adminCreated) { try { const rows = JSON.parse(localStorage.getItem("yuushi.admin.createdProperties") || "[]"); localStorage.setItem("yuushi.admin.createdProperties", JSON.stringify((Array.isArray(rows) ? rows : []).filter(p => p.id !== currentProp.id))); } catch {} }
             filtered = filtered.filter((p) => p.id !== currentProp.id);
             analyticsApi()?.emit('property_removed',{propertyId:removed.id,agencyId:analyticsAgencyId(removed),removedAt:new Date().toISOString(),changeSource:'manual_delete'});
             syncAnalyticsPropertySnapshots();
