@@ -6717,6 +6717,7 @@
       function commitSave() {
         const before=originalProp?JSON.parse(JSON.stringify(originalProp)):null;
         currentProp.dateUpdated = new Date().toISOString().slice(0, 10);
+        if (currentProp.adminCreated) persistAdminCreatedProperties();
         if(before&&Number(before.priceBuy)!==Number(currentProp.priceBuy)) emitPropertyEvent('property_price_changed',currentProp,{oldPrice:Number(before.priceBuy)||null,newPrice:Number(currentProp.priceBuy)||null,changeSource:'admin_detail_edit'});
         if(before&&before.publishStatus!==currentProp.publishStatus) emitPropertyEvent(currentProp.publishStatus==='Published'?'property_published':'property_status_changed',currentProp,{oldStatus:before.publishStatus,newStatus:currentProp.publishStatus,changeSource:'admin_detail_edit'});
         syncAnalyticsPropertySnapshots();
@@ -6920,6 +6921,7 @@
             const removed={...currentProp};
             const idx = properties.findIndex((p) => p.id === currentProp.id);
             if (idx >= 0) properties.splice(idx, 1);
+            if (removed.adminCreated) removePersistedAdminCreatedProperty(removed.id);
             filtered = filtered.filter((p) => p.id !== currentProp.id);
             analyticsApi()?.emit('property_removed',{propertyId:removed.id,agencyId:analyticsAgencyId(removed),removedAt:new Date().toISOString(),changeSource:'admin_manual_delete'});
             syncAnalyticsPropertySnapshots();
@@ -6956,6 +6958,20 @@
         } catch {}
         return agency?.adminStaffName || agency?.adminName || agency?.agencyAdminName || agency?.primaryContactName || agency?.contactName || "Agency Admin";
       }
+      function persistAdminCreatedProperties() {
+        try {
+          const rows = JSON.parse(localStorage.getItem("yuushi.admin.createdProperties") || "[]");
+          const byId = new Map((Array.isArray(rows) ? rows : []).map(p => [p.id, p]));
+          properties.filter(p => p.adminCreated).forEach(p => byId.set(p.id, p));
+          localStorage.setItem("yuushi.admin.createdProperties", JSON.stringify([...byId.values()]));
+        } catch {}
+      }
+      function removePersistedAdminCreatedProperty(id) {
+        try {
+          const rows = JSON.parse(localStorage.getItem("yuushi.admin.createdProperties") || "[]");
+          localStorage.setItem("yuushi.admin.createdProperties", JSON.stringify((Array.isArray(rows) ? rows : []).filter(p => p.id !== id)));
+        } catch {}
+      }
       function openCreateModal() {
         const select = $("createAgencySelect");
         const agencies = activeAgenciesForCreate();
@@ -6985,6 +7001,7 @@
           agent: agencyName,
           responsibleStaff: agencyAdminForCreate(agency),
           createdBy: "Admin",
+          adminCreated: true,
           propType: GROUP_META[g].propTypes[0],
           name: "New " + GROUP_META[g].label + " listing",
           prefecture: "Tokyo",
@@ -7002,6 +7019,7 @@
           changeHistory: [],
         };
         properties.unshift(newP);
+        persistAdminCreatedProperties();
         showDetail(newP.id);
         editMode = true;
         renderDetail();
