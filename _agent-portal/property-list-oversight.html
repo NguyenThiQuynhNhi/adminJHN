@@ -8750,7 +8750,13 @@
           const rows = JSON.parse(localStorage.getItem("yuushi.admin.agencyDirectory") || "[]");
           const agency = (Array.isArray(rows) ? rows : []).find(a => String(a.id || a.agencyId || "") === String(p.agencyId || ""));
           const status = String(agency?.verificationStatus || agency?.verificationStatusLabel || agency?.licenseVerificationStatus || "").trim().toLowerCase();
-          return agency?.isVerified === false || agency?.verified === false || status === "unverified" || status === "not verified" || status === "unverified agency";
+          if (agency?.isVerified === false || agency?.verified === false || status === "unverified" || status === "not verified" || status === "unverified agency") return true;
+          const verification = JSON.parse(localStorage.getItem("yuushi.agencyVerificationState") || "null") || {};
+          if (String(verification.agencyId || "") === String(p.agencyId || "")) {
+            const verificationStatus = String(verification.status || "").trim().toLowerCase();
+            return !["verified", "approved", "passed"].includes(verificationStatus);
+          }
+          return false;
         } catch { return false; }
       }
       function persistAdminCreatedProperty(p) {
