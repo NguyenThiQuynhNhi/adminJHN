@@ -7566,6 +7566,16 @@
         return activeAgenciesForCreate().find(a => String(a.id || a.agencyId || "") === id) || null;
       }
       function agencyAdminForCreate(agency) {
+        const agencyId = String(agency?.id || agency?.agencyId || "");
+        try {
+          const staff = JSON.parse(localStorage.getItem("yuushi.agencyStaffDirectory") || "[]");
+          const admin = (Array.isArray(staff) ? staff : []).find(s =>
+            String(s.agencyId || agencyId) === agencyId &&
+            String(s.role || "").toLowerCase() === "agency admin" &&
+            String(s.status || "active").toLowerCase() === "active"
+          );
+          if (admin) return admin.name || admin.fullName || admin.staffId || admin.id;
+        } catch {}
         return agency?.adminStaffName || agency?.adminName || agency?.agencyAdminName || agency?.primaryContactName || agency?.contactName || "Agency Admin";
       }
       function openCreateModal() {
