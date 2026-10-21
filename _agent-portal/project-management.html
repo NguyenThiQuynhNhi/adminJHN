@@ -4455,6 +4455,20 @@
       // Filler projects are a realistic mix of Group 5 / Group 6, all four
       // publish statuses, and On Sale / Sold Out. Built once at load.
       // ----------------------------------------------------------------------
+      (function loadAdminCreatedProjects() {
+        try {
+          const rows = JSON.parse(localStorage.getItem("yuushi.admin.createdProjects") || "[]");
+          const account = JSON.parse(localStorage.getItem("yuushi.agency.primaryAccount") || "null") || {};
+          const staff = JSON.parse(localStorage.getItem("yuushi.agencySignedInStaff") || "null") || {};
+          const agencyId = String(account.id || account.agencyId || staff.agencyId || "AG-00000001");
+          (Array.isArray(rows) ? rows : []).filter(p => String(p.agencyId || "") === agencyId).forEach(row => {
+            const index = projects.findIndex(p => p.id === row.id);
+            if (index >= 0) projects[index] = { ...projects[index], ...row };
+            else projects.unshift({ ...row, adminCreated: true });
+          });
+        } catch {}
+      })();
+
       (function padSeed() {
         // Migration: collapse any legacy Sale Status into the 2-option set.
         projects.forEach((p) => {
@@ -6186,8 +6200,28 @@
           },
         });
       }
+      function agencyVerificationUnverified(p) {
+        try {
+          const rows = JSON.parse(localStorage.getItem("yuushi.admin.agencyDirectory") || "[]");
+          const agency = (Array.isArray(rows) ? rows : []).find(a => String(a.id || a.agencyId || "") === String(p.agencyId || ""));
+          const status = String(agency?.verificationStatus || agency?.verificationStatusLabel || agency?.licenseVerificationStatus || "").trim().toLowerCase();
+          return agency?.isVerified === false || agency?.verified === false || status === "unverified" || status === "not verified" || status === "unverified agency";
+        } catch { return false; }
+      }
+      function persistAdminCreatedProject(p) {
+        if (!p?.adminCreated) return;
+        try {
+          const rows = JSON.parse(localStorage.getItem("yuushi.admin.createdProjects") || "[]");
+          const all = Array.isArray(rows) ? rows : [];
+          const index = all.findIndex(row => row.id === p.id);
+          if (index >= 0) all[index] = { ...all[index], ...p }; else all.push(p);
+          localStorage.setItem("yuushi.admin.createdProjects", JSON.stringify(all));
+        } catch {}
+      }
       function finalizeSave() {
         currentProj.dateUpdated = new Date().toISOString().slice(0, 10);
+        if (currentProj.adminCreated && agencyVerificationUnverified(currentProj)) currentProj.publishStatus = "Pending Review";
+        persistAdminCreatedProject(currentProj);
         originalProj = JSON.parse(JSON.stringify(currentProj));
         editMode = false;
         // GROUP E — published successfully; clear any stored draft.
@@ -6801,6 +6835,7 @@
           onConfirm: () => {
             const idx = projects.findIndex((p) => p.id === currentProj.id);
             if (idx >= 0) projects.splice(idx, 1);
+            if (currentProj.adminCreated) { try { const rows = JSON.parse(localStorage.getItem("yuushi.admin.createdProjects") || "[]"); localStorage.setItem("yuushi.admin.createdProjects", JSON.stringify((Array.isArray(rows) ? rows : []).filter(p => p.id !== currentProj.id))); } catch {} }
             filtered = filtered.filter((p) => p.id !== currentProj.id);
             doShowList();
             renderList();
