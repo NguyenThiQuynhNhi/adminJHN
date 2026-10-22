@@ -6328,14 +6328,13 @@
         const prop=_suspTxProp, reason=_suspTxReason, date=document.getElementById("suspTxDate").value, notes=document.getElementById("suspTxNotes").value.trim();
         if (['sold','sold-others'].includes(reason)) {
           _saleEndingReason=reason;
-          closeSuspensionTransactionModal();
           openSoldModal(payload=>{
             const agencyDeal=['Yuushi Client Transaction','External Client Transaction'].includes(payload.transactionSource);
             Object.assign(prop,payload,{publishStatus:'Suspended',saleStatus:'Sold Out',suspensionReason:reason,suspensionDate:payload.soldDate,suspensionNotes:notes,dateUpdated:new Date().toISOString().slice(0,10)});
             persistSale(prop);
             const open=new Set(['New','Assigned','Contact','Viewing','Proposal','Negotiation','Asleep']),rows=YuushiWorkflow.read(YuushiWorkflow.keys.leadRecords),winner=Number(String(payload.leadId||'').replace(/\D/g,''));
             rows.forEach(l=>{if(l.propertyId===prop.id&&open.has(l.status)&&l.id!==winner){l.status='Closed Lost';l.autoClosedBySale=agencyDeal;l.soldByStaffId=agencyDeal?payload.saleActor.staffId:null;l.soldByStaffName=agencyDeal?payload.saleActor.name:null;l.soldByRole=agencyDeal?payload.saleActor.role:null;}});
-            YuushiWorkflow.write(YuushiWorkflow.keys.leadRecords,rows);pushHistory(prop,'publishStatus','Published','Suspended · '+reason);emitPropertyEvent('property_suspended',prop,{oldStatus:'Published',newStatus:'Suspended',reasonCode:reason,suspensionDate:prop.suspensionDate,changeSource:'listing_end'});originalProp=JSON.parse(JSON.stringify(prop));renderDetail();renderList();toast('Sale information recorded. This listing cannot be re-activated.');_saleEndingReason=null;
+            YuushiWorkflow.write(YuushiWorkflow.keys.leadRecords,rows);pushHistory(prop,'publishStatus','Published','Suspended · '+reason);emitPropertyEvent('property_suspended',prop,{oldStatus:'Published',newStatus:'Suspended',reasonCode:reason,suspensionDate:prop.suspensionDate,changeSource:'listing_end'});originalProp=JSON.parse(JSON.stringify(prop));closeSuspensionTransactionModal();renderDetail();renderList();toast('Sale information recorded. This listing cannot be re-activated.');_saleEndingReason=null;
           });
           return;
         }
@@ -6408,12 +6407,29 @@
       // Closes via: X icon, Cancel, backdrop click, or ESC (any dismissal cancels).
       // ------------------------------------------------------------------------
       let _soldCb = null;
+      function mountInlineSoldFields() {
+        const sourceBody = $("soldModal").querySelector(".confirm-body");
+        const parentBody = $("suspTxModal").querySelector(".confirm-body");
+        let inline = $("suspInlineSaleFields");
+        if (!inline) {
+          inline = document.createElement("div");
+          inline.id = "suspInlineSaleFields";
+          inline.style.display = "none";
+          inline.style.marginTop = "14px";
+          inline.style.paddingTop = "14px";
+          inline.style.borderTop = "1px solid var(--border-color)";
+          parentBody.appendChild(inline);
+          [...sourceBody.querySelectorAll(".field-group")].forEach(el => inline.appendChild(el));
+        }
+        return inline;
+      }
       function closeSoldModal() {
-        $("soldModal").classList.remove("open");
+        const inline = $("suspInlineSaleFields");
+        if (inline) inline.style.display = "none";
         _soldCb = null;
-        _saleEndingReason = null;
       }
       function openSoldModal(onConfirm) {
+        mountInlineSoldFields();
         _soldCb = typeof onConfirm === "function" ? onConfirm : null;
         $("soldPrice").value = "";
         $("soldPublishPrice").checked = false;
@@ -6427,7 +6443,11 @@
         $("soldSource").value=allowed[0];
         $("soldClient").value="";
         updateSoldSourceFields();
-        $("soldModal").classList.add("open");
+        $("soldSource").closest(".field-group").style.display=_saleEndingReason==="sold-others"?"none":"";
+        $("soldClientWrap").style.display=_saleEndingReason==="sold-others"?"none":$("soldClientWrap").style.display;
+        $("soldPublishPrice").closest(".field-group").style.display=_saleEndingReason==="sold-others"?"none":$("soldPublishPrice").closest(".field-group").style.display;
+        $("soldPrice").closest(".field-group").style.display="";
+        $("suspInlineSaleFields").style.display="block";
         setTimeout(() => $("soldPrice").focus(), 30);
       }
       function updateSoldSourceFields(){const source=$("soldSource").value,isYuushi=source==="Yuushi Client Transaction",priceKnown=source!=="Sold by Other — Price Unknown",agencyDeal=["Yuushi Client Transaction","External Client Transaction"].includes(source),actor=YuushiWorkflow.currentAgencyActor({staffId:'STF-0001',name:'Taro Tanaka',role:'Agency Admin'});$("soldClientWrap").style.display=isYuushi?"":"none";$("soldPrice").closest('.field-group').style.display=priceKnown?"":"none";$("soldPublishPrice").closest('.field-group').style.display=priceKnown?"":"none";$("soldActorLabel").textContent=agencyDeal?'Sold By':'Recorded By';$("soldActorValue").textContent=actor.name;$("soldActorRole").textContent=actor.role;}
@@ -6435,12 +6455,14 @@
         const modal = $("soldModal");
         $("soldSource").addEventListener("change",updateSoldSourceFields);
         $("soldConfirm").addEventListener("click", () => {
+          const soldOthers=_saleEndingReason==="sold-others";
           const source=$("soldSource").value;
           const priceRaw = $("soldPrice").value.trim();
           const dateRaw = $("soldDate").value;
+          const effectiveSource=soldOthers?(priceRaw?"Sold Price Known — Information Only":"Sold by Other — Price Unknown"):source;
           let ok = true;
-          // Final Sale Price required
-          if (source!=="Sold by Other — Price Unknown"&&(!Number.isFinite(Number(priceRaw)) || Number(priceRaw)<=0)) {
+          // Final Sale Price is required for Sold and optional for Sold by Others.
+          if ((!soldOthers || priceRaw!=="") && (!Number.isFinite(Number(priceRaw)) || Number(priceRaw)<=0)) {
             $("soldPriceErr").textContent =
               "Please enter a positive final sale price.";
             $("soldPriceErr").classList.remove("hidden");
@@ -6450,7 +6472,7 @@
             $("soldPriceErr").classList.add("hidden");
             $("soldPrice").classList.remove("invalid");
           }
-          if(source==="Yuushi Client Transaction"&&!$("soldClient").value){$("soldClientErr").classList.remove("hidden");ok=false;}else $("soldClientErr").classList.add("hidden");
+          if(!soldOthers && source==="Yuushi Client Transaction"&&!$("soldClient").value){$("soldClientErr").classList.remove("hidden");ok=false;}else $("soldClientErr").classList.add("hidden");
           // Sold Date required
           if (!dateRaw || dateRaw>new Date().toISOString().slice(0,10) || (currentProp?.datePublished && dateRaw<currentProp.datePublished)) {
             $("soldDateErr").textContent = "Select a sold date between publication and today.";
@@ -6467,20 +6489,20 @@
           const payload = {
             finalSalePrice: priceRaw?Number(priceRaw):null,
             soldDate: dateRaw,
-            publishPrice,
-            transactionSource:source,
-            leadId:source==="Yuushi Client Transaction"?$("soldClient").value:null,
-            clientId:source==="Yuushi Client Transaction"?'CLIENT-100014':null,
-            clientName:source==="Yuushi Client Transaction"?'Aiko Mori':null,
+            publishPrice: !soldOthers && publishPrice,
+            transactionSource:effectiveSource,
+            leadId:!soldOthers && source==="Yuushi Client Transaction"?$("soldClient").value:null,
+            clientId:!soldOthers && source==="Yuushi Client Transaction"?'CLIENT-100014':null,
+            clientName:!soldOthers && source==="Yuushi Client Transaction"?'Aiko Mori':null,
             saleActor:YuushiWorkflow.currentAgencyActor({staffId:'STF-0001',name:'Taro Tanaka',role:'Agency Admin'}),
           };
           closeSoldModal();
           if (cb) cb(payload);
         });
-        $("soldCancel").addEventListener("click", closeSoldModal);
-        $("soldClose").addEventListener("click", closeSoldModal);
+        $("soldCancel").addEventListener("click", () => { closeSoldModal(); closeSuspensionTransactionModal(); });
+        $("soldClose").addEventListener("click", () => { closeSoldModal(); closeSuspensionTransactionModal(); });
         modal.addEventListener("click", (e) => {
-          if (e.target === modal) closeSoldModal();
+          if (e.target === modal) { closeSoldModal(); closeSuspensionTransactionModal(); }
         });
         document.addEventListener("keydown", (e) => {
           if (e.key === "Escape" && modal.classList.contains("open"))
