@@ -748,17 +748,18 @@
         gap: 10px;
       }
 
-      .weekly-hours{border:1px solid var(--border);border-radius:8px;overflow:hidden}
-      .weekly-hours-head,.weekly-hours-row{display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr;gap:10px;align-items:center;padding:9px 12px}
+      .weekly-hours{display:block!important;grid-template-columns:none!important;border:1px solid var(--border);border-radius:8px;overflow:hidden;width:100%;background:#fff}
+      .weekly-hours-head,.weekly-hours-row{display:grid;grid-template-columns:minmax(100px,1.1fr) minmax(100px,1fr) minmax(90px,1fr) minmax(90px,1fr);gap:10px;align-items:center;padding:8px 12px}
       .weekly-hours-head{background:#f7f3eb;color:var(--muted);font-size:11px;font-weight:700}
-      .weekly-hours-row{border-top:1px solid var(--border);font-size:12.5px}
+      .weekly-hours-row{border-top:1px solid var(--border);font-size:12.5px;min-height:42px}
       .weekly-hours-row input[type="checkbox"],.holiday-options input[type="checkbox"]{accent-color:var(--accent)}
       .weekly-hours-row select{width:100%;min-width:0;padding:7px;border:1px solid var(--border);border-radius:6px;background:#fff;font:inherit}
       .weekly-hours-row select:disabled{background:#f5f5f5;color:#888}
+      .weekly-hours-row label{display:flex;align-items:center;gap:6px;white-space:nowrap}
       .holiday-options{display:flex;flex-wrap:wrap;gap:10px 18px;padding:10px 12px;border:1px solid var(--border);border-radius:8px}
       .holiday-options label{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:400;margin:0}
       .holiday-options input:disabled{opacity:.8}
-      @media(max-width:640px){.weekly-hours-head,.weekly-hours-row{grid-template-columns:1fr 1fr;}.weekly-hours-head span:nth-child(3),.weekly-hours-head span:nth-child(4){display:none}}
+      @media(max-width:640px){.weekly-hours-head,.weekly-hours-row{grid-template-columns:minmax(75px,1fr) minmax(85px,1fr) minmax(75px,1fr) minmax(75px,1fr);gap:5px;padding:7px;font-size:11px}}
       /* TAB PANELS */
       .panel {
         display: none;
@@ -982,7 +983,7 @@ Family-run agency serving Tokyo's Shibuya and Setagaya wards since 1998. Special
               <label><input type="checkbox" class="ed holiday-day" value="Friday" disabled> Friday</label>
               <label><input type="checkbox" class="ed holiday-day" value="Saturday" checked disabled> Saturday</label>
               <label><input type="checkbox" class="ed holiday-day" value="Sunday" checked disabled> Sunday</label>
-              <label><input type="checkbox" class="ed holiday-national" value="National Holidays" checked disabled> National Holidays</label>
+              
             </div>
           </div>
             <div class="field">
@@ -1567,33 +1568,10 @@ Family-run agency serving Tokyo's Shibuya and Setagaya wards since 1998. Special
 
         <!-- 4.2 BIO & WORKING HOURS -->
         <div class="card" id="sec-bio">
-          <div class="card-head">
-            <div class="card-title">
-              <span class="card-num">4.2</span>Bio & working hours
-            </div>
-          </div>
-         <div class="field-grid one">
-            <div class="field">
-              <label>Bio / Description </label>
-              <textarea maxlength="2000" rows="4" disabled>
-Licensed real estate agent with 12 years of experience in central Tokyo. Bilingual support in Japanese and English. Specialises in pre-owned apartments and family relocations.</textarea
-              >
-              <div class="char-count">
-                <span id="bio-count">198</span> / 2,000
-              </div>
-            </div>
-            <div class="field">
-              <label>Working Hours</label>
-              <div class="weekly-hours" id="profile-weekly-hours">
-                <div class="weekly-hours-row"><strong>Monday</strong><span>10:00–19:00</span></div>
-                <div class="weekly-hours-row"><strong>Tuesday</strong><span>10:00–19:00</span></div>
-                <div class="weekly-hours-row"><strong>Wednesday</strong><span>10:00–19:00</span></div>
-                <div class="weekly-hours-row"><strong>Thursday</strong><span>10:00–19:00</span></div>
-                <div class="weekly-hours-row"><strong>Friday</strong><span>10:00–19:00</span></div>
-                <div class="weekly-hours-row"><strong>Saturday</strong><span>Day off</span></div>
-                <div class="weekly-hours-row"><strong>Sunday</strong><span>Day off</span></div>
-              </div>
-            </div>
+          <div class="card-head"><div class="card-title"><span class="card-num">4.2</span>Bio & working hours</div></div>
+          <div class="field-grid one">
+            <div class="field"><label>Bio / Description</label><textarea id="my-profile-bio" maxlength="2000" rows="4" disabled>Licensed real estate agent with 12 years of experience in central Tokyo. Bilingual support in Japanese and English. Specialises in pre-owned apartments and family relocations.</textarea><div class="char-count"><span id="bio-count">175</span> / 2,000</div></div>
+            <div class="field"><label>Working Hours</label><div class="weekly-hours weekly-hours-profile" id="profile-weekly-hours"><div class="weekly-hours-head"><span>Day</span><span>Working day</span><span>Start time</span><span>End time</span></div><div class="weekly-hours-days" id="staff-profile-hours-days"></div></div></div>
           </div>
         </div>
 
@@ -1954,9 +1932,29 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
           };
         });
         localStorage.setItem("yuushi.agency.businessHours.v1", JSON.stringify(data));
-        const holidays = Array.from(document.querySelectorAll(".holiday-day:checked,.holiday-national:checked")).map(el => el.value);
+        const holidays = Array.from(document.querySelectorAll(".holiday-day:checked")).map(el => el.value);
         localStorage.setItem("yuushi.agency.regularHolidays.v1", JSON.stringify(holidays));
       }
+
+      const staffWeekdays=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+      const staffTimes=Array.from({length:48},(_,i)=>String(Math.floor(i/2)).padStart(2,"0")+":"+(i%2?"30":"00"));
+      function renderStaffProfileHours(){
+        const host=document.getElementById("staff-profile-hours-days");if(!host||host.dataset.rendered)return;
+        let saved={};try{saved=JSON.parse(localStorage.getItem("yuushi.staff.profileWorkingHours.v1")||"{}")}catch(_){}
+        host.innerHTML=staffWeekdays.map((day,i)=>{const v=saved[day]||{working:i<5,start:"09:00",end:"18:00"};const opts=x=>staffTimes.map(t=>`<option value="${t}" ${t===x?"selected":""}>${t}</option>`).join("");return `<div class="weekly-hours-row" data-staff-day="${day}"><span>${day}</span><label><input class="ed staff-profile-working" type="checkbox" data-day="${day}" ${v.working?"checked":""} disabled> Working</label><select class="ed staff-profile-start" disabled aria-label="${day} start time">${opts(v.start||"09:00")}</select><select class="ed staff-profile-end" disabled aria-label="${day} end time">${opts(v.end||"18:00")}</select></div>`}).join("");
+        host.dataset.rendered="true";
+        host.querySelectorAll(".staff-profile-working").forEach(cb=>cb.addEventListener("change",()=>{dirty=true;updateStaffProfileHoursState()}));
+        host.querySelectorAll(".staff-profile-start,.staff-profile-end").forEach(el=>el.addEventListener("change",()=>dirty=true));
+        updateStaffProfileHoursState();
+      }
+      function updateStaffProfileHoursState(){document.querySelectorAll("#staff-profile-hours-days .weekly-hours-row").forEach(row=>{const on=row.querySelector(".staff-profile-working").checked;row.querySelector(".staff-profile-working").disabled=!editing;row.querySelector(".staff-profile-start").disabled=!editing||!on;row.querySelector(".staff-profile-end").disabled=!editing||!on})}
+      function validateStaffProfileHours(){
+        const rows=[...document.querySelectorAll("#staff-profile-hours-days .weekly-hours-row")];
+        for(const row of rows){if(!row.querySelector(".staff-profile-working").checked)continue;const a=row.querySelector(".staff-profile-start").value,b=row.querySelector(".staff-profile-end").value;if(!a||!b||a>=b){toast("End time must be later than start time for "+row.dataset.staffDay+".","error");return false}}
+        if(!rows.some(row=>row.querySelector(".staff-profile-working").checked)){toast("Select at least one working day.","error");return false}return true
+      }
+      function saveStaffProfileHours(){const o={};document.querySelectorAll("#staff-profile-hours-days .weekly-hours-row").forEach(row=>o[row.dataset.staffDay]={working:row.querySelector(".staff-profile-working").checked,start:row.querySelector(".staff-profile-start").value,end:row.querySelector(".staff-profile-end").value});localStorage.setItem("yuushi.staff.profileWorkingHours.v1",JSON.stringify(o))}
+      renderStaffProfileHours();
 
       // Edit mode
       renderAgencyBusinessHours();
@@ -1969,6 +1967,7 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
         });
         document.querySelectorAll(".ed").forEach((el) => (el.disabled = false));
         updateAgencyTimeControlState();
+        updateStaffProfileHoursState();
         document
           .querySelectorAll(".chips")
           .forEach((el) => el.classList.remove("disabled"));
@@ -2017,7 +2016,13 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
       }
 
       function saveProfile() {
-        // Validate the weekly Agency business-hours schedule before saving.
+        if (document.getElementById("panel-me").classList.contains("active")) {
+          const bio=document.getElementById("my-profile-bio");
+          if(!validateStaffProfileHours())return;
+          saveStaffProfileHours();
+          if(bio)document.getElementById("bio-count").textContent=String(bio.value.length);
+          exitEdit();toast("My Profile updated successfully.");return;
+        }
         if (!validateAgencyBusinessHours()) return;
         // Basic validation: required asterisks must have values
         let firstInvalid = null;
