@@ -707,9 +707,55 @@
     }
   })();
 
+  const ROLE_STORAGE_KEY = 'yuushi.admin.rolePermissions.v1';
+  let deletedRoleIds = [];
+  function persistRoleState() {
+    try {
+      localStorage.setItem(ROLE_STORAGE_KEY, JSON.stringify({
+        deletedRoleIds,
+        roles: ROLE_LIST.map(r => ({
+          id: r.id,
+          name: r.name,
+          description: r.description,
+          permissions: (ROLES[r.id] && ROLES[r.id].permissions) || [],
+          system: !!(ROLES[r.id] && ROLES[r.id].system),
+        })),
+      }));
+    } catch (e) { /* storage can be unavailable in preview */ }
+  }
+  function restoreRoleState() {
+    let saved;
+    try { saved = JSON.parse(localStorage.getItem(ROLE_STORAGE_KEY) || 'null'); } catch (e) { saved = null; }
+    if (!saved || typeof saved !== 'object') return;
+    deletedRoleIds = Array.isArray(saved.deletedRoleIds) ? saved.deletedRoleIds : [];
+    deletedRoleIds.forEach(id => {
+      const idx = ROLE_LIST.findIndex(r => r.id === id);
+      if (idx >= 0) ROLE_LIST.splice(idx, 1);
+      if (id !== 'platform-admin') delete ROLES[id];
+    });
+    (Array.isArray(saved.roles) ? saved.roles : []).forEach(savedRole => {
+      if (!savedRole || !savedRole.id || deletedRoleIds.includes(savedRole.id)) return;
+      const existing = ROLE_LIST.find(r => r.id === savedRole.id);
+      if (existing) {
+        existing.name = savedRole.name;
+        existing.description = savedRole.description;
+      } else {
+        ROLE_LIST.push({ id: savedRole.id, name: savedRole.name, description: savedRole.description });
+      }
+      ROLES[savedRole.id] = Object.assign({}, ROLES[savedRole.id] || {}, {
+        name: savedRole.name,
+        description: savedRole.description,
+        permissions: Array.isArray(savedRole.permissions) ? savedRole.permissions : [],
+        system: !!savedRole.system,
+        assignedStaffIds: [],
+      });
+    });
+  }
+  restoreRoleState();
   // No staff assignment data is supplied on this page; retain explicit IDs when available.
-  Object.values(ROLES).forEach(role => { role.assignedStaffIds = []; });
+  Object.values(ROLES).forEach(role => { if (!Array.isArray(role.assignedStaffIds)) role.assignedStaffIds = []; });
   let deletingRoleId = null;
+  let editingRoleId = null;
   function askDeleteRole(id) {
     const role = ROLES[id];
     if (!role || role.system) return;
@@ -736,6 +782,8 @@
     if (role.assignedStaffIds.length) replacement.assignedStaffIds.push(...role.assignedStaffIds);
     ROLE_LIST.splice(ROLE_LIST.findIndex(r => r.id === deletingRoleId), 1);
     delete ROLES[deletingRoleId];
+    if (!deletedRoleIds.includes(deletingRoleId)) deletedRoleIds.push(deletingRoleId);
+    persistRoleState();
     document.getElementById('deleteRoleModal').close();
     renderRoles(true);
   }
@@ -844,6 +892,7 @@
 
   /* ── Open: ADD mode ── */
   function openDrawer() {
+    editingRoleId = null;
     document.getElementById('drawerTitle').textContent   = 'New Role';
     document.getElementById('drawerSubtitle').textContent = 'Add a new Role';
     document.getElementById('roleName').value  = '';
@@ -861,6 +910,7 @@
     const role = ROLES[roleId];
     if (!role) return;
 
+    editingRoleId = roleId;
     document.getElementById('drawerTitle').textContent    = role.name;
     document.getElementById('drawerSubtitle').textContent = 'Edit role';
     document.getElementById('roleName').value  = role.name;
@@ -878,12 +928,37 @@
     document.body.style.overflow = '';
   }
 
+  function saveRole() {
+    const name = document.getElementById('roleName').value.trim();
+    const description = document.getElementById('roleDesc').value.trim();
+    const permissions = [...document.querySelectorAll('[data-perm-id]:checked')].map(cb => cb.dataset.permId);
+    if (!name) { document.getElementById('roleName').focus(); return; }
+    const duplicate = ROLE_LIST.some(r => r.id !== editingRoleId && r.name.trim().toLowerCase() === name.toLowerCase());
+    if (duplicate) { alert('A role with this name already exists.'); return; }
+    if (editingRoleId) {
+      const role = ROLES[editingRoleId];
+      const row = ROLE_LIST.find(r => r.id === editingRoleId);
+      if (!role || !row || role.system) return;
+      role.name = row.name = name;
+      role.description = row.description = description;
+      role.permissions = permissions;
+    } else {
+      const id = 'custom-' + Date.now().toString(36);
+      ROLE_LIST.push({ id, name, description });
+      ROLES[id] = { name, description, permissions, assignedStaffIds: [], system: false };
+    }
+    persistRoleState();
+    closeDrawer();
+    renderRoles(true);
+  }
+
   /* ── Save button reactivity (Add mode) ── */
   function checkSave() {
     const val = document.getElementById('roleName').value.trim();
     document.getElementById('saveBtn').classList.toggle('active', val.length > 0);
   }
 
+  document.getElementById('saveBtn').addEventListener('click', saveRole);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
 
   /* Initial render of the roles list (page 1). */
