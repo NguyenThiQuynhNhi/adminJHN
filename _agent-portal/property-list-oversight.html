@@ -6602,6 +6602,7 @@
 
       function renderEditField(f, val, prop) {
         const dk = `data-field="${f.k}"`;
+        if (f.k === "agencyName") return `<input class="edit-input" type="text" value="${escAttr(val ?? prop.agent ?? "")}" ${dk} readonly aria-readonly="true">`;
         if (f.t === "select") {
           const opts = resolveOpts(f, prop);
           const items = ['<option value=""></option>']
@@ -8451,8 +8452,10 @@
       ]);
 
       function collectInputsToState() {
+        const agencyOwner = { agencyId: currentProp.agencyId, agencyName: currentProp.agencyName };
         document.querySelectorAll("[data-field]").forEach((el) => {
           const f = el.dataset.field;
+          if (f === "agencyId" || f === "agencyName") return;
           const t = el.dataset.type;
           if (t === "bool") currentProp[f] = el.checked;
           else if (t === "num") {
@@ -8470,6 +8473,8 @@
             currentProp.media[f.split(".")[1]] = el.value;
           } else currentProp[f] = el.value;
         });
+        if (agencyOwner.agencyId !== undefined) currentProp.agencyId = agencyOwner.agencyId;
+        if (agencyOwner.agencyName !== undefined) currentProp.agencyName = agencyOwner.agencyName;
         YuushiMunicipality.reconcile(currentProp);
       }
 
