@@ -1615,7 +1615,7 @@
         setVal("v-phone", s.phone && s.phone !== "—" ? s.phone : "");
         document.getElementById("v-role").textContent = s.role;
         setVal("v-bio", s.bio);
-        setVal("v-hours", s.hours);
+        setVal("v-hours", formatWorkingHours(s.hours));
         document.getElementById("v-last").textContent = s.last || "—";
         document.getElementById("v-2fa").textContent = s.twofa
           ? "Enabled"
@@ -1632,6 +1632,31 @@
           : "";
         showView("view-detail");
       }
+      function formatWorkingHours(value) {
+        if (!value) return "";
+        try {
+          const schedule = typeof value === "string" ? JSON.parse(value) : value;
+          if (!Array.isArray(schedule)) return String(value);
+          return schedule.map(item => item.day + ": " + (item.enabled ? item.start + "–" + item.end : "Day off")).join(" · ");
+        } catch (_) { return String(value); }
+      }
+
+      function loadWorkingHours(value) {
+        const editor = document.getElementById("d-weekly-hours");
+        if (!editor) return;
+        let schedule = [];
+        try { schedule = typeof value === "string" ? JSON.parse(value || "[]") : (value || []); } catch (_) {}
+        if (!Array.isArray(schedule)) schedule = [];
+        editor.querySelectorAll(".day-row").forEach(row => {
+          const saved = schedule.find(item => item.day === row.dataset.day);
+          const enabled = saved ? !!saved.enabled : ["Monday","Tuesday","Wednesday","Thursday","Friday"].includes(row.dataset.day);
+          row.querySelector(".day-enabled").checked = enabled;
+          row.querySelector(".day-start").value = saved && saved.start || "09:00";
+          row.querySelector(".day-end").value = saved && saved.end || "18:00";
+        });
+        editor.querySelectorAll("input").forEach(input => input.dispatchEvent(new Event("change", {bubbles:true})));
+      }
+
       function setVal(elId, value) {
         const el = document.getElementById(elId);
         if (value) {
@@ -1687,7 +1712,7 @@
         document.getElementById("d-phone").value = matchedCode ? storedPhone.slice(matchedCode.length).replace(/^\s+/, "") : storedPhone;
         document.getElementById("d-role").value = s.role;
         document.getElementById("d-bio").value = s.bio || "";
-        document.getElementById("d-hours").value = s.hours || "";
+        loadWorkingHours(s.hours || "");
         document.getElementById("d-2fa-edit").checked = !!s.twofa;
         document.getElementById("d-photo").style.backgroundImage = "";
         document.getElementById("d-photo").textContent = s.initials;
