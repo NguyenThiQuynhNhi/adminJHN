@@ -1203,11 +1203,11 @@
         els.maxSavedProperties.value = String(state.maxSavedProperties);
         els.maxSavedSearches.value = String(state.maxSavedSearches);
         ROLES.forEach((r) => {
-          const p = state.passwordPolicy[r];
+          const p = state.passwordPolicy[r] || cloneDefaults().passwordPolicy[r];
           const m = matrix[r];
-          m.minCharsInput.value = String(p.minChars);
+          if (m.minCharsInput) m.minCharsInput.value = String(p.minChars);
           COMPLEXITY_KEYS.forEach((k) => {
-            m.complexityInputs[k].checked = !!(p.complexity && p.complexity[k]);
+            if (m.complexityInputs[k]) m.complexityInputs[k].checked = !!(p.complexity && p.complexity[k]);
           });
           if (m.passwordHistoryInput) m.passwordHistoryInput.value = String(p.passwordHistory ?? 0);
           if (r !== "admin" && m.sessionMonthsInput) m.sessionMonthsInput.value = String(p.sessionMonths ?? 6);
@@ -1221,17 +1221,18 @@
         const passwordPolicy = {};
         ROLES.forEach((r) => {
           const m = matrix[r];
+          const defaults = cloneDefaults().passwordPolicy[r];
           const complexity = {};
           COMPLEXITY_KEYS.forEach((k) => {
-            complexity[k] = m.complexityInputs[k].checked;
+            complexity[k] = m.complexityInputs[k] ? !!m.complexityInputs[k].checked : !!defaults.complexity[k];
           });
           passwordPolicy[r] = {
-            minChars: Number(m.minCharsInput.value),
-            complexity: complexity,
-            sessionMonths: r === "admin" ? null : Number(m.sessionMonthsInput.value),
-            ...(r === "admin" ? { inactivityMinutes: Number(m.inactivityMinutesInput.value) } : {}),
-            passwordHistory: Number(m.passwordHistoryInput.value),
-            twoFaMandatory: m.twoFaInput.value === "on",
+            minChars: m.minCharsInput ? Number(m.minCharsInput.value) : defaults.minChars,
+            complexity,
+            sessionMonths: r === "admin" ? null : (m.sessionMonthsInput ? Number(m.sessionMonthsInput.value) : defaults.sessionMonths),
+            ...(r === "admin" ? { inactivityMinutes: m.inactivityMinutesInput ? Number(m.inactivityMinutesInput.value) : defaults.inactivityMinutes } : {}),
+            passwordHistory: m.passwordHistoryInput ? Number(m.passwordHistoryInput.value) : defaults.passwordHistory,
+            twoFaMandatory: m.twoFaInput ? m.twoFaInput.value === "on" : defaults.twoFaMandatory,
           };
         });
         return {
@@ -1240,7 +1241,7 @@
           timezone: els.timezoneSelect.value,
           maxSavedProperties: Number(els.maxSavedProperties.value),
           maxSavedSearches: Number(els.maxSavedSearches.value),
-          passwordPolicy: passwordPolicy,
+          passwordPolicy,
         };
       }
 
@@ -1257,11 +1258,11 @@
         ROLES.forEach((r) => {
           const m = matrix[r];
           // Min. Characters -> plain number
-          m.minCharsView.textContent = m.minCharsInput.value || "";
+          if (m.minCharsView) m.minCharsView.textContent = m.minCharsInput ? (m.minCharsInput.value || "") : "";
 
           // Complexity -> dot-separated chip list of checked items, or muted "— None required"
           const checked = COMPLEXITY_KEYS.filter(
-            (k) => m.complexityInputs[k].checked,
+            (k) => m.complexityInputs[k] && m.complexityInputs[k].checked,
           ).map((k) => COMPLEXITY_LABELS[k]);
           if (checked.length) {
             m.complexityView.textContent = checked.join(" · ");
@@ -1270,10 +1271,10 @@
             m.complexityView.textContent = "— None required";
             m.complexityView.className = "cell-view complexity-none";
           }
-          if (m.passwordHistoryView) m.passwordHistoryView.textContent = m.passwordHistoryInput.value || "0";
-          if (r !== "admin" && m.sessionMonthsView) m.sessionMonthsView.textContent = (m.sessionMonthsInput.value || "0") + " months";
-          if (r === "admin" && m.inactivityMinutesView) m.inactivityMinutesView.textContent = (m.inactivityMinutesInput.value || "0") + " minutes inactivity";
-          if (m.twoFaView) setBadge(m.twoFaView, m.twoFaInput.value === "on", "ON · Email OTP", "OFF");
+          if (m.passwordHistoryView) m.passwordHistoryView.textContent = m.passwordHistoryInput ? (m.passwordHistoryInput.value || "0") : "0";
+          if (r !== "admin" && m.sessionMonthsView) m.sessionMonthsView.textContent = (m.sessionMonthsInput ? (m.sessionMonthsInput.value || "0") : "0") + " months";
+          if (r === "admin" && m.inactivityMinutesView) m.inactivityMinutesView.textContent = (m.inactivityMinutesInput ? (m.inactivityMinutesInput.value || "0") : "0") + " minutes inactivity";
+          if (m.twoFaView) setBadge(m.twoFaView, !!m.twoFaInput && m.twoFaInput.value === "on", "ON · Email OTP", "OFF");
         });
       }
 
@@ -1340,6 +1341,7 @@
           const m = matrix[r];
           const role = ROLE_LABELS[r];
           // Min. Characters: integer 4-64
+          if (!m.minCharsInput) continue;
           const mc = String(m.minCharsInput.value).trim();
           const mcN = Number(mc);
           if (mc === "" || !Number.isInteger(mcN) || mcN < 4 || mcN > 64) {
@@ -1353,13 +1355,15 @@
         }
         ROLES.forEach((r) => {
           const m = matrix[r];
-          const history = Number(m.passwordHistoryInput.value);
-          if (!Number.isInteger(history) || history < 0 || history > 20) { markCellError(m.passwordHistoryInput); ok = false; }
-          if (r !== "admin") {
+          if (m.passwordHistoryInput) {
+            const history = Number(m.passwordHistoryInput.value);
+            if (!Number.isInteger(history) || history < 0 || history > 20) { markCellError(m.passwordHistoryInput); ok = false; }
+          }
+          if (r !== "admin" && m.sessionMonthsInput) {
             const months = Number(m.sessionMonthsInput.value);
             if (!Number.isInteger(months) || months < 1 || months > 60) { markCellError(m.sessionMonthsInput); ok = false; }
           }
-          if (r === "admin") {
+          if (r === "admin" && m.inactivityMinutesInput) {
             const minutes = Number(m.inactivityMinutesInput.value);
             if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) { markCellError(m.inactivityMinutesInput); ok = false; }
           }
@@ -1381,9 +1385,9 @@
         // Matrix inputs + view/edit toggling
         ROLES.forEach((r) => {
           const m = matrix[r];
-          m.minCharsInput.disabled = !on;
+          if (m.minCharsInput) m.minCharsInput.disabled = !on;
           COMPLEXITY_KEYS.forEach((k) => {
-            m.complexityInputs[k].disabled = !on;
+            if (m.complexityInputs[k]) m.complexityInputs[k].disabled = !on;
           });
           if (m.passwordHistoryInput) m.passwordHistoryInput.disabled = !on;
           if (m.sessionMonthsInput) m.sessionMonthsInput.disabled = !on;
@@ -1480,9 +1484,9 @@
         ROLES.forEach((r) => {
           const m = matrix[r];
           const live = () => refreshMatrixViews();
-          m.minCharsInput.addEventListener("input", live);
+          if (m.minCharsInput) m.minCharsInput.addEventListener("input", live);
           COMPLEXITY_KEYS.forEach((k) => {
-            m.complexityInputs[k].addEventListener("change", live);
+            if (m.complexityInputs[k]) m.complexityInputs[k].addEventListener("change", live);
           });
           [m.passwordHistoryInput,m.sessionMonthsInput,m.inactivityMinutesInput,m.twoFaInput].filter(Boolean).forEach(el=>{
             el.addEventListener("input", live);
