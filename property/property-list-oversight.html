@@ -5163,7 +5163,15 @@
           inline.style.paddingTop = "14px";
           inline.style.borderTop = "1px solid var(--border-color)";
           parentBody.appendChild(inline);
+          const notes = $("suspNotes").closest(".field-group");
+          if (notes && notes.parentNode === parentBody) {
+            const placeholder = document.createComment("notes-original-position");
+            notes.parentNode.insertBefore(placeholder, notes);
+            inline._notesPlaceholder = placeholder;
+            inline._notesField = notes;
+          }
           [...sourceBody.querySelectorAll(".field-group")].forEach(el => inline.appendChild(el));
+          if (inline._notesField) inline.appendChild(inline._notesField);
           const sourceFooter = $("soldModal").querySelector(".confirm-footer");
           if (sourceFooter) inline.appendChild(sourceFooter);
         }
@@ -5171,7 +5179,12 @@
       }
       function closeSoldModal() {
         const inline = $("suspInlineSaleFields");
-        if (inline) inline.style.display = "none";
+        if (inline) {
+          inline.style.display = "none";
+          if (inline._notesField && inline._notesPlaceholder && inline._notesPlaceholder.parentNode) {
+            inline._notesPlaceholder.parentNode.insertBefore(inline._notesField, inline._notesPlaceholder);
+          }
+        }
         const parentFooter = $("suspModal").querySelector(".confirm-box > .confirm-footer");
         if (parentFooter) parentFooter.style.display = "";
         _soldCb = null;
@@ -6834,7 +6847,12 @@
             $("suspPriceWrap").classList.add("hidden");
             $("suspPublicWrap").classList.add("hidden");
             const inline=$("suspInlineSaleFields");
-            if(inline) inline.style.display="none";
+            if(inline) {
+              inline.style.display="none";
+              if (!needsSaleDetails && inline._notesField && inline._notesPlaceholder && inline._notesPlaceholder.parentNode) {
+                inline._notesPlaceholder.parentNode.insertBefore(inline._notesField, inline._notesPlaceholder);
+              }
+            }
             const footer=$("suspModal").querySelector(".confirm-box > .confirm-footer");
             if(footer) footer.style.display="";
             $("suspDate").closest(".field-group").style.display=needsSaleDetails?"none":"";
