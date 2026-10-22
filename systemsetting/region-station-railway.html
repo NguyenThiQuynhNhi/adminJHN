@@ -572,6 +572,7 @@
         <div class="level-head">
           <span class="level-title" id="levelTitle">Prefecture</span>
           <span class="level-context" id="levelContext"></span>
+          <button class="btn btn-primary btn-sm" id="addRowBtn" type="button" onclick="openAddRow()">Add</button>
         </div>
         <div class="parent-bar" id="parentBar" style="display: none">
           <span class="pb-group" id="pbPrefWrap">
@@ -1079,6 +1080,70 @@
 
       function findRow(level, id) {
         return (data[level] || []).find((x) => x.id === id);
+      }
+
+      // ---------- add row ----------
+      function openAddRow() {
+        if (syncing || editId) {
+          toast("Save or cancel the current edit before adding a record.", "err");
+          return;
+        }
+        const parent = currentLevel === "city" ? selPrefecture :
+          currentLevel === "ward" ? selCity :
+          currentLevel === "station" ? selLine : "";
+        if (["city", "ward", "station"].includes(currentLevel) && !parent) {
+          toast("Select a parent record before adding this entry.", "err");
+          return;
+        }
+        openModal({
+          title: "Add " + LEVELS.find(l => l.key === currentLevel).label,
+          message: "",
+          confirmLabel: "Add",
+          onConfirm: () => {
+            const jp = ($("addNameJp").value || "").trim();
+            const en = ($("addNameEn").value || "").trim();
+            const company = currentLevel === "railway" ? ($("addCompany").value || "").trim() : "";
+            if (!jp || !en) {
+              toast("Both Name (JP) and Name (EN) are required.", "err");
+              openAddRowWithValues(jp, en, company);
+              return;
+            }
+            const duplicate = (data[currentLevel] || []).some(r =>
+              (r.nameJp || "").trim().toLowerCase() === jp.toLowerCase() ||
+              (r.nameEn || "").trim().toLowerCase() === en.toLowerCase()
+            );
+            if (duplicate) {
+              toast("A record with the same Japanese or English name already exists in this level.", "err");
+              openAddRowWithValues(jp, en, company);
+              return;
+            }
+            const row = {
+              id: currentLevel + "-manual-" + Date.now(),
+              nameJp: jp, nameEn: en, company, parent,
+              is_google_source: false, is_manually_edited: true,
+              sync_mode: "locked", gOrigJp: jp, gOrigEn: en, _v: 1
+            };
+            data[currentLevel] = data[currentLevel] || [];
+            data[currentLevel].push(row);
+            persist();
+            renderNav();
+            renderTable();
+            toast("Record added and saved as Manually Locked.");
+          }
+        });
+        $("modalMsg").innerHTML = `
+          <div style="display:grid;gap:10px">
+            <label>Name (JP)<input id="addNameJp" class="cell-input" maxlength="255" autocomplete="off"></label>
+            <label>Name (EN)<input id="addNameEn" class="cell-input" maxlength="255" autocomplete="off"></label>
+            ${currentLevel === "railway" ? '<label>Company<input id="addCompany" class="cell-input" maxlength="255" autocomplete="off"></label>' : ""}
+          </div>`;
+        $("addNameJp").focus();
+      }
+      function openAddRowWithValues(jp, en, company) {
+        openAddRow();
+        $("addNameJp").value = jp;
+        $("addNameEn").value = en;
+        if ($("addCompany")) $("addCompany").value = company || "";
       }
 
       // ---------- inline edit ----------
