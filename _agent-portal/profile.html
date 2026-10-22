@@ -748,6 +748,17 @@
         gap: 10px;
       }
 
+      .weekly-hours{border:1px solid var(--border);border-radius:8px;overflow:hidden}
+      .weekly-hours-head,.weekly-hours-row{display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr;gap:10px;align-items:center;padding:9px 12px}
+      .weekly-hours-head{background:#f7f3eb;color:var(--muted);font-size:11px;font-weight:700}
+      .weekly-hours-row{border-top:1px solid var(--border);font-size:12.5px}
+      .weekly-hours-row input[type="checkbox"],.holiday-options input[type="checkbox"]{accent-color:var(--accent)}
+      .weekly-hours-row select{width:100%;min-width:0;padding:7px;border:1px solid var(--border);border-radius:6px;background:#fff;font:inherit}
+      .weekly-hours-row select:disabled{background:#f5f5f5;color:#888}
+      .holiday-options{display:flex;flex-wrap:wrap;gap:10px 18px;padding:10px 12px;border:1px solid var(--border);border-radius:8px}
+      .holiday-options label{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:400;margin:0}
+      .holiday-options input:disabled{opacity:.8}
+      @media(max-width:640px){.weekly-hours-head,.weekly-hours-row{grid-template-columns:1fr 1fr;}.weekly-hours-head span:nth-child(3),.weekly-hours-head span:nth-child(4){display:none}}
       /* TAB PANELS */
       .panel {
         display: none;
@@ -954,19 +965,26 @@ Family-run agency serving Tokyo's Shibuya and Setagaya wards since 1998. Special
             </div>
           </div>
           
-          <div class="field-grid">
-            <div class="field">
-              <label>Business Hours <span class="req">*</span> </label>
-              <input type="text" value="Mon–Fri 9:00–18:00" disabled />
+          <div class="field full">
+            <label>Business Hours <span class="req">*</span></label>
+            <div class="weekly-hours" id="agency-business-hours">
+              <div class="weekly-hours-head"><span>Day</span><span>Working day</span><span>Start time</span><span>End time</span></div>
+              <div class="weekly-hours-days" id="agency-business-hours-days"></div>
             </div>
-            <div class="field">
-              <label>Regular Holidays </label>
-              <input
-                type="text"
-                placeholder="Sat, Sun, National Holidays"
-                disabled
-              />
+          </div>
+          <div class="field full">
+            <label>Regular Holidays</label>
+            <div class="holiday-options" id="agency-regular-holidays">
+              <label><input type="checkbox" class="ed holiday-day" value="Monday" disabled> Monday</label>
+              <label><input type="checkbox" class="ed holiday-day" value="Tuesday" disabled> Tuesday</label>
+              <label><input type="checkbox" class="ed holiday-day" value="Wednesday" disabled> Wednesday</label>
+              <label><input type="checkbox" class="ed holiday-day" value="Thursday" disabled> Thursday</label>
+              <label><input type="checkbox" class="ed holiday-day" value="Friday" disabled> Friday</label>
+              <label><input type="checkbox" class="ed holiday-day" value="Saturday" checked disabled> Saturday</label>
+              <label><input type="checkbox" class="ed holiday-day" value="Sunday" checked disabled> Sunday</label>
+              <label><input type="checkbox" class="ed holiday-national" value="National Holidays" checked disabled> National Holidays</label>
             </div>
+          </div>
             <div class="field">
               <label>Average Response Time (minutes)</label>
               <input type="number" min="0" value="30" disabled />
@@ -1857,7 +1875,91 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
         }),
       );
 
+      // Agency Business Hours: independent working-day and time selection for each weekday.
+      const agencyWeekdays = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+      const agencyTimeOptions = Array.from({length: 48}, (_, i) => {
+        const minutes = i * 30;
+        return String(Math.floor(minutes / 60)).padStart(2, "0") + ":" + String(minutes % 60).padStart(2, "0");
+      });
+      const defaultAgencyHours = Object.fromEntries(agencyWeekdays.map((day, i) => [day, {
+        working: i < 5, start: "09:00", end: "18:00"
+      }]));
+      function renderAgencyBusinessHours() {
+        const host = document.getElementById("agency-business-hours-days");
+        if (!host || host.dataset.rendered === "true") return;
+        host.innerHTML = agencyWeekdays.map(day => {
+          const d = defaultAgencyHours[day];
+          const options = selected => agencyTimeOptions.map(t => `<option value="${t}" ${t === selected ? "selected" : ""}>${t}</option>`).join("");
+          return `<div class="weekly-hours-row" data-day="${day}">
+            <span>${day}</span>
+            <label><input type="checkbox" class="ed agency-working-day" data-day="${day}" ${d.working ? "checked" : ""} disabled> Working</label>
+            <select class="ed agency-start-time" data-day="${day}" disabled aria-label="${day} start time">${options(d.start)}</select>
+            <select class="ed agency-end-time" data-day="${day}" disabled aria-label="${day} end time">${options(d.end)}</select>
+          </div>`;
+        }).join("");
+        host.dataset.rendered = "true";
+        host.querySelectorAll(".agency-working-day").forEach(el => el.addEventListener("change", () => {
+          const day = el.dataset.day;
+          host.querySelectorAll(`[data-day="${day}"].agency-start-time,[data-day="${day}"].agency-end-time`).forEach(sel => sel.disabled = !el.checked || !editing);
+          dirty = true;
+        }));
+        host.querySelectorAll(".agency-start-time,.agency-end-time").forEach(el => el.addEventListener("change", () => { dirty = true; }));
+        const saved = localStorage.getItem("yuushi.agency.businessHours.v1");
+        if (saved) {
+          try {
+            const data = JSON.parse(saved);
+            agencyWeekdays.forEach(day => {
+              const row = host.querySelector(`.weekly-hours-row[data-day="${day}"]`);
+              const item = data[day];
+              if (!row || !item) return;
+              row.querySelector(".agency-working-day").checked = !!item.working;
+              row.querySelector(".agency-start-time").value = item.start || "09:00";
+              row.querySelector(".agency-end-time").value = item.end || "18:00";
+            });
+            const holidays = JSON.parse(localStorage.getItem("yuushi.agency.regularHolidays.v1") || '["Saturday","Sunday","National Holidays"]');
+            document.querySelectorAll(".holiday-day,.holiday-national").forEach(cb => cb.checked = holidays.includes(cb.value));
+          } catch (_) {}
+        }
+        updateAgencyTimeControlState();
+      }
+      function updateAgencyTimeControlState() {
+        document.querySelectorAll(".weekly-hours-row").forEach(row => {
+          const dayInput = row.querySelector(".agency-working-day");
+          const disabled = !editing || !dayInput.checked;
+          row.querySelectorAll(".agency-start-time,.agency-end-time").forEach(sel => sel.disabled = disabled);
+        });
+      }
+      function validateAgencyBusinessHours() {
+        for (const row of document.querySelectorAll(".weekly-hours-row")) {
+          const enabled = row.querySelector(".agency-working-day").checked;
+          if (!enabled) continue;
+          const start = row.querySelector(".agency-start-time").value;
+          const end = row.querySelector(".agency-end-time").value;
+          if (!start || !end || start >= end) {
+            toast(`End time must be later than start time for ${row.dataset.day}.`, "error");
+            row.scrollIntoView({behavior:"smooth",block:"center"});
+            return false;
+          }
+        }
+        return Array.from(document.querySelectorAll(".agency-working-day")).some(el => el.checked) ||
+          (toast("Select at least one working day.", "error"), false);
+      }
+      function persistAgencyBusinessHours() {
+        const data = {};
+        document.querySelectorAll(".weekly-hours-row").forEach(row => {
+          data[row.dataset.day] = {
+            working: row.querySelector(".agency-working-day").checked,
+            start: row.querySelector(".agency-start-time").value,
+            end: row.querySelector(".agency-end-time").value
+          };
+        });
+        localStorage.setItem("yuushi.agency.businessHours.v1", JSON.stringify(data));
+        const holidays = Array.from(document.querySelectorAll(".holiday-day:checked,.holiday-national:checked")).map(el => el.value);
+        localStorage.setItem("yuushi.agency.regularHolidays.v1", JSON.stringify(holidays));
+      }
+
       // Edit mode
+      renderAgencyBusinessHours();
       function enterEdit() {
         editing = true;
         document.querySelectorAll("main input,main textarea,main select").forEach((el) => {
@@ -1866,6 +1968,7 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
           el.disabled = false;
         });
         document.querySelectorAll(".ed").forEach((el) => (el.disabled = false));
+        updateAgencyTimeControlState();
         document
           .querySelectorAll(".chips")
           .forEach((el) => el.classList.remove("disabled"));
@@ -1892,6 +1995,7 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
           el.disabled = true;
         });
         document.querySelectorAll(".ed").forEach((el) => (el.disabled = true));
+        updateAgencyTimeControlState();
         document
           .querySelectorAll(".chips")
           .forEach((el) => el.classList.add("disabled"));
@@ -1913,6 +2017,8 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
       }
 
       function saveProfile() {
+        // Validate the weekly Agency business-hours schedule before saving.
+        if (!validateAgencyBusinessHours()) return;
         // Basic validation: required asterisks must have values
         let firstInvalid = null;
         document.querySelectorAll("label .req").forEach((r) => {
@@ -1933,6 +2039,7 @@ Licensed real estate agent with 12 years of experience in central Tokyo. Bilingu
           firstInvalid.focus();
           return;
         }
+        persistAgencyBusinessHours();
         exitEdit();
         updateProfileStatus();
         toast("Profile updated successfully.");
