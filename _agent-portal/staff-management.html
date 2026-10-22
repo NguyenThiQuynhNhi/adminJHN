@@ -1807,6 +1807,26 @@
 
         const phone = normalizedPhone ? (phoneCode + " " + phoneInput).trim() : "—";
         const bio = document.getElementById("d-bio").value.trim();
+        syncStaffWeeklyHours();
+        if (!document.getElementById("d-inherit-hours").checked) {
+          const invalidDay = Array.from(document.querySelectorAll("#d-weekly-hours .day-row")).find(row => {
+            if (!row.querySelector(".day-enabled").checked) return false;
+            const start = row.querySelector(".day-start").value;
+            const end = row.querySelector(".day-end").value;
+            return !start || !end || start >= end;
+          });
+          if (invalidDay) {
+            toast("End time must be later than start time for " + invalidDay.dataset.day + ".", "error");
+            switchFTab("fp-bio");
+            invalidDay.scrollIntoView({behavior:"smooth",block:"center"});
+            return;
+          }
+          if (!Array.from(document.querySelectorAll("#d-weekly-hours .day-enabled")).some(el => el.checked)) {
+            toast("Select at least one working day.", "error");
+            switchFTab("fp-bio");
+            return;
+          }
+        }
         const hours = document.getElementById("d-hours").value.trim();
 
         if (editingId === null) {
@@ -1950,8 +1970,29 @@
 (function(){
  const editor=document.getElementById('d-weekly-hours');
  const output=document.getElementById('d-hours');
+ const inherit=document.getElementById('d-inherit-hours');
  if(!editor||!output)return;
- function syncWeeklyHours(){
+ const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+ function readAgencyHours(){
+   try {
+     const raw=localStorage.getItem('yuushi.agency.businessHours.v1');
+     if(!raw)return null;
+     const parsed=JSON.parse(raw);
+     return parsed && typeof parsed==='object' ? parsed : null;
+   } catch (_) { return null; }
+ }
+ function applyAgencyDefault(){
+   const agency=readAgencyHours();
+   if(!agency)return;
+   editor.querySelectorAll('.day-row').forEach(row=>{
+     const item=agency[row.dataset.day];
+     if(!item)return;
+     row.querySelector('.day-enabled').checked=!!item.working;
+     row.querySelector('.day-start').value=item.start||'09:00';
+     row.querySelector('.day-end').value=item.end||'18:00';
+   });
+ }
+ function syncStaffWeeklyHours(){
    const schedule=[];
    editor.querySelectorAll('.day-row').forEach(row=>{
      const enabled=row.querySelector('.day-enabled').checked;
@@ -1963,7 +2004,45 @@
    });
    output.value=JSON.stringify(schedule);
  }
+ function syncWeeklyHours(){
+   const usingAgency=!!(inherit&&inherit.checked);
+   editor.querySelectorAll('.day-row').forEach(row=>{
+     row.querySelector('.day-enabled').disabled=usingAgency;
+     const enabled=row.querySelector('.day-enabled').checked;
+     row.querySelector('.day-start').disabled=usingAgency||!enabled;
+     row.querySelector('.day-end').disabled=usingAgency||!enabled;
+   });
+   if(usingAgency) applyAgencyDefault();
+   const schedule=[];
+   editor.querySelectorAll('.day-row').forEach(row=>{
+     const enabled=row.querySelector('.day-enabled').checked;
+     schedule.push({day:row.dataset.day,enabled,start:enabled?row.querySelector('.day-start').value:'',end:enabled?row.querySelector('.day-end').value:''});
+   });
+   output.value=JSON.stringify({useAgencyDefault:usingAgency,schedule});
+ }
  editor.querySelectorAll('input').forEach(input=>input.addEventListener('change',syncWeeklyHours));
+ if(inherit) inherit.addEventListener('change',syncWeeklyHours);
+ window.syncStaffWeeklyHours=syncStaffWeeklyHours;
+ window.syncWeeklyHours=syncWeeklyHours;
+ const originalLoad=window.loadWorkingHours;
+ if(typeof originalLoad==='function'){
+   window.loadWorkingHours=function(value){
+     originalLoad(value);
+     let parsed=null;
+     try{parsed=typeof value==='string'?JSON.parse(value):value;}catch(_){}
+     if(parsed&&!Array.isArray(parsed)&&Array.isArray(parsed.schedule)){
+       if(inherit)inherit.checked=!!parsed.useAgencyDefault;
+       editor.querySelectorAll('.day-row').forEach(row=>{
+         const item=parsed.schedule.find(x=>x.day===row.dataset.day);
+         if(!item)return;
+         row.querySelector('.day-enabled').checked=!!item.enabled;
+         row.querySelector('.day-start').value=item.start||'09:00';
+         row.querySelector('.day-end').value=item.end||'18:00';
+       });
+     }
+     syncWeeklyHours();
+   };
+ }
  syncWeeklyHours();
 })();
 </script>
