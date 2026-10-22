@@ -495,6 +495,14 @@
         gap: 8px;
       }
 
+      .weekly-hours { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px 14px; }
+      .weekly-hours-row { display:flex; justify-content:space-between; gap:12px; padding:7px 9px; border:1px solid var(--border); border-radius:6px; font-size:12px; }
+      .weekly-hours-row strong { font-weight:600; }
+      .weekly-hours-editor { display:grid; gap:8px; }
+      .weekly-hours-editor .day-row { display:grid; grid-template-columns: minmax(100px,1fr) 70px minmax(110px,1fr) minmax(110px,1fr); align-items:center; gap:8px; }
+      .weekly-hours-editor input[type="time"] { min-width:0; width:100%; }
+      .weekly-hours-editor .day-row.is-off .time-control { opacity:.45; }
+      @media(max-width:700px){ .weekly-hours {grid-template-columns:1fr;} .weekly-hours-editor .day-row {grid-template-columns:1fr 60px 1fr 1fr;} }
       .card {
         background: #fff;
         border: 1px solid var(--border);
@@ -1193,12 +1201,12 @@
             ></textarea>
           </div>
           <div class="field full">
-            <label>Working Hours</label>
-            <input
-              id="d-hours"
-              type="text"
-              placeholder="e.g., Mon–Fri 10:00–19:00"
-            />
+            <label>Working Hours — weekly schedule</label>
+            <input id="d-hours" type="hidden" value="" />
+            <div class="weekly-hours-editor" id="d-weekly-hours">
+              <div class="day-row" data-day="Monday" ><strong>Monday</strong><label style="display:flex;align-items:center;gap:5px;margin:0"><input type="checkbox" class="day-enabled" checked/> Work</label><input class="time-control day-start" type="time" value="10:00"  aria-label="Monday start time"/><input class="time-control day-end" type="time" value="19:00"  aria-label="Monday end time"/></div><div class="day-row" data-day="Tuesday" ><strong>Tuesday</strong><label style="display:flex;align-items:center;gap:5px;margin:0"><input type="checkbox" class="day-enabled" checked/> Work</label><input class="time-control day-start" type="time" value="10:00"  aria-label="Tuesday start time"/><input class="time-control day-end" type="time" value="19:00"  aria-label="Tuesday end time"/></div><div class="day-row" data-day="Wednesday" ><strong>Wednesday</strong><label style="display:flex;align-items:center;gap:5px;margin:0"><input type="checkbox" class="day-enabled" checked/> Work</label><input class="time-control day-start" type="time" value="10:00"  aria-label="Wednesday start time"/><input class="time-control day-end" type="time" value="19:00"  aria-label="Wednesday end time"/></div><div class="day-row" data-day="Thursday" ><strong>Thursday</strong><label style="display:flex;align-items:center;gap:5px;margin:0"><input type="checkbox" class="day-enabled" checked/> Work</label><input class="time-control day-start" type="time" value="10:00"  aria-label="Thursday start time"/><input class="time-control day-end" type="time" value="19:00"  aria-label="Thursday end time"/></div><div class="day-row" data-day="Friday" ><strong>Friday</strong><label style="display:flex;align-items:center;gap:5px;margin:0"><input type="checkbox" class="day-enabled" checked/> Work</label><input class="time-control day-start" type="time" value="10:00"  aria-label="Friday start time"/><input class="time-control day-end" type="time" value="19:00"  aria-label="Friday end time"/></div><div class="day-row" data-day="Saturday" class="day-row is-off"><strong>Saturday</strong><label style="display:flex;align-items:center;gap:5px;margin:0"><input type="checkbox" class="day-enabled" /> Work</label><input class="time-control day-start" type="time" value="09:00" disabled aria-label="Saturday start time"/><input class="time-control day-end" type="time" value="18:00" disabled aria-label="Saturday end time"/></div><div class="day-row" data-day="Sunday" class="day-row is-off"><strong>Sunday</strong><label style="display:flex;align-items:center;gap:5px;margin:0"><input type="checkbox" class="day-enabled" /> Work</label><input class="time-control day-start" type="time" value="09:00" disabled aria-label="Sunday start time"/><input class="time-control day-end" type="time" value="18:00" disabled aria-label="Sunday end time"/></div>
+            </div>
+            <div class="hint">Set each day independently. Unchecked days are days off; working days require a start and end time.</div>
           </div>
           <div class="field full" style="margin-top: 6px">
             <div class="toggle-row" style="margin-bottom: 0">
@@ -1913,5 +1921,26 @@
       }
     </script>
     <script src="agency-dashboard-source.js" data-source="staff"></script>
-  </body>
+  <script>
+(function(){
+ const editor=document.getElementById('d-weekly-hours');
+ const output=document.getElementById('d-hours');
+ if(!editor||!output)return;
+ function syncWeeklyHours(){
+   const schedule=[];
+   editor.querySelectorAll('.day-row').forEach(row=>{
+     const enabled=row.querySelector('.day-enabled').checked;
+     const start=row.querySelector('.day-start');
+     const end=row.querySelector('.day-end');
+     start.disabled=end.disabled=!enabled;
+     row.classList.toggle('is-off',!enabled);
+     schedule.push({day:row.dataset.day,enabled,start:enabled?start.value:'',end:enabled?end.value:''});
+   });
+   output.value=JSON.stringify(schedule);
+ }
+ editor.querySelectorAll('input').forEach(input=>input.addEventListener('change',syncWeeklyHours));
+ syncWeeklyHours();
+})();
+</script>
+</body>
 </html>
