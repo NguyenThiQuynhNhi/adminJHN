@@ -6352,7 +6352,7 @@
           _saleEndingReason=reason;
           openSoldModal(payload=>{
             const agencyDeal=['Yuushi Client Transaction','External Client Transaction'].includes(payload.transactionSource);
-            Object.assign(prop,payload,{publishStatus:'Suspended',saleStatus:'Sold Out',suspensionReason:reason,suspensionDate:payload.soldDate||null,suspensionNotes:notes,dateUpdated:new Date().toISOString().slice(0,10)});
+            Object.assign(prop,payload,{publishStatus:'Suspended',saleStatus:'Sold Out',suspensionReason:reason,suspensionDate:payload.soldDate||null,suspensionNotes:notes,suspensionTxPrice:payload.finalSalePrice??null,suspensionPublicPrice:!!payload.publishPrice,dateUpdated:new Date().toISOString().slice(0,10)});
             const saleTransaction=persistSale(prop);
             if(saleTransaction){YuushiWorkflow.updateTransaction(saleTransaction.transactionId,reason==='sold-others'?'Listing recorded as Sold by Others':'Listing recorded as Sold',{reason:reason==='sold-others'?'Sold by Others':'Sold',listingEndReason:reason==='sold-others'?'Sold by Others':'Sold',finalSalePrice:payload.finalSalePrice??null,soldDate:payload.soldDate||''},payload.saleActor?.name||'Agency Staff');}
             const open=new Set(['New','Assigned','Contact','Viewing','Proposal','Negotiation','Asleep']),rows=YuushiWorkflow.read(YuushiWorkflow.keys.leadRecords),winner=Number(String(payload.leadId||'').replace(/\D/g,''));
@@ -6496,7 +6496,7 @@
         $("soldPrice").closest(".field-group").style.display="";
         $("soldPriceRequired").style.display=_saleEndingReason==='sold-others'?"none":"";
         $("soldDateRequired").style.display=_saleEndingReason==='sold-others'?"none":"";
-        setSoldActorVisibility(_saleEndingReason!=="sold-others");
+        setSoldActorVisibility(false);
         $("suspInlineSaleFields").style.display="block";
         const parentFooter = $("suspTxModal").querySelector(".confirm-box > .confirm-footer");
         if (parentFooter) parentFooter.style.display = "none";
@@ -8424,10 +8424,10 @@
             icon: "fa-clock",
             msg: "This listing is awaiting admin approval. The platform admin will approve or reject it.",
           });
-        // Sold record card: Sold by Others is shown only when a sale price is known.
-        // Agency users cannot control end-user price visibility from this listing detail.
+        // Keep the sold record card for Sold by Others only. For the Sold suspension
+        // reason, the suspension card is the single source of sale/suspension details.
         let soldCardHtml = '';
-        if (p.saleStatus === "Sold Out") {
+        if (p.saleStatus === "Sold Out" && !(p.publishStatus === "Suspended" && p.suspensionReason === "sold")) {
           const soldByOthers = p.suspensionReason === "sold-others";
           const hasSalePrice = p.finalSalePrice !== null && p.finalSalePrice !== undefined && p.finalSalePrice !== "" && Number.isFinite(Number(p.finalSalePrice)) && Number(p.finalSalePrice) > 0;
           if (!soldByOthers || hasSalePrice) {
@@ -8467,9 +8467,13 @@
           };
           const priceLine =
             p.suspensionReason === "sold"
-              ? `<div style="margin-top:6px;font-size:13px;color:var(--status-warning-text)">
-                   Transaction price: <strong>${fmtYen(p.suspensionTxPrice)}</strong>
-                   ${p.suspensionPublicPrice ? '<span class="badge badge-published" style="margin-left:6px">Public</span>' : '<span class="badge badge-gray" style="margin-left:6px">Hidden</span>'}
+              ? `<div style="margin-top:6px;font-size:13px;color:var(--status-warning-text);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                   <span>Transaction price: <strong>${fmtYen(p.suspensionTxPrice ?? p.finalSalePrice)}</strong></span>
+                   <span id="suspPriceVisibilityStatus" class="badge ${(p.suspensionPublicPrice ?? p.publishPrice) ? "badge-published" : "badge-gray"}">${(p.suspensionPublicPrice ?? p.publishPrice) ? "Public" : "Hidden"}</span>
+                   <label style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;color:var(--text-main);font-size:12px">
+                     <input type="checkbox" ${(p.suspensionPublicPrice ?? p.publishPrice) ? "checked" : ""} onchange="toggleSuspendedSalePrice(this.checked)" style="width:16px;height:16px;min-height:0;accent-color:var(--color-primary)">
+                     Show final sale price to end user
+                   </label>
                  </div>`
               : "";
           suspCardHtml = `
@@ -9010,6 +9014,25 @@
           return;
         }
         commitSave();
+      }
+
+      function toggleSuspendedSalePrice(visible) {
+        if (!currentProp || currentProp.suspensionReason !== "sold") return;
+        currentProp.suspensionPublicPrice = !!visible;
+        currentProp.publishPrice = !!visible;
+        if (originalProp) {
+          originalProp.suspensionPublicPrice = !!visible;
+          originalProp.publishPrice = !!visible;
+        }
+        savePropertySaleState(currentProp);
+        const tx = YuushiWorkflow.read(YuushiWorkflow.keys.transactions).find(t =>
+          t.transactionId === currentProp.verificationTransactionId ||
+          t.propertyId === currentProp.id
+        );
+        if (tx) YuushiWorkflow.updateTransaction(tx.transactionId, "Suspended sale price visibility updated", { publishPrice: !!visible }, currentProp.agent);
+        renderDetail();
+        renderList();
+        toast(visible ? "Final sale price is now public." : "Final sale price is now hidden.");
       }
 
       function toggleSoldPricePublish(cb) {
@@ -10485,7 +10508,7 @@
 
 <script>
 YuushiWorkflow.initUI();
-function savePropertySaleState(p){const states=YuushiWorkflow.read('yuushi.agency.propertySaleState',{});states[p.id]=Object.fromEntries(['saleStatus','publishStatus','finalSalePrice','soldDate','publishPrice','verificationTransactionId'].map(k=>[k,p[k]??null]));YuushiWorkflow.write('yuushi.agency.propertySaleState',states);}
+function savePropertySaleState(p){const states=YuushiWorkflow.read('yuushi.agency.propertySaleState',{});states[p.id]=Object.fromEntries(['saleStatus','publishStatus','finalSalePrice','soldDate','publishPrice','verificationTransactionId','suspensionReason','suspensionDate','suspensionNotes','suspensionTxPrice','suspensionPublicPrice'].map(k=>[k,p[k]??null]));YuushiWorkflow.write('yuushi.agency.propertySaleState',states);}
 function persistSale(p,ref){const t=YuushiWorkflow.recordSale(p,p.finalSalePrice,p.soldDate,p.publishPrice,ref);p.verificationTransactionId=t.transactionId;savePropertySaleState(p);return t;}
 
 const savedSaleStates=YuushiWorkflow.read('yuushi.agency.propertySaleState',{}),verificationRows=YuushiWorkflow.read(YuushiWorkflow.keys.transactions);
