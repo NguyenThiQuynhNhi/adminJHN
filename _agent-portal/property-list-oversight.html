@@ -3042,11 +3042,11 @@
         </div>
         <div class="confirm-body">
           <div class="field-group" style="margin-bottom:12px"><label class="field-label" for="soldSource">Sold / Transaction Source <span class="required">*</span></label><select id="soldSource"><option>Yuushi Client Transaction</option><option>External Client Transaction</option><option>Sold Price Known — Information Only</option><option>Sold by Other — Price Unknown</option></select></div>
-          <div class="field-group" style="margin-bottom:12px"><div class="field-label" id="soldActorLabel">Sold By</div><div id="soldActorValue" style="font-weight:600"></div><small id="soldActorRole" style="color:var(--text-secondary)"></small></div>
+          <div class="field-group" id="soldActorWrap" style="margin-bottom:12px"><div class="field-label" id="soldActorLabel">Sold By</div><div id="soldActorValue" style="font-weight:600"></div><small id="soldActorRole" style="color:var(--text-secondary)"></small></div>
           <div class="field-group" id="soldClientWrap" style="margin-bottom:12px"><label class="field-label" for="soldClient">Related Yuushi Client / Lead <span class="required">*</span></label><select id="soldClient"><option value="">Select existing Lead...</option><option value="14">LEAD-100014 · Aiko Mori</option></select><div id="soldClientErr" class="hidden" style="color:var(--status-danger-text);font-size:11.5px;margin-top:4px">Select an existing Yuushi Lead.</div></div>
           <div class="field-group" style="margin-bottom: 12px">
             <label class="field-label" for="soldPrice"
-              >Final Sale Price (¥) <span class="required">*</span></label
+              >Final Sale Price (¥) <span class="required" id="soldPriceRequired">*</span></label
             >
             <input
               id="soldPrice"
@@ -3066,7 +3066,7 @@
           </div>
           <div class="field-group" style="margin-bottom: 12px">
             <label class="field-label" for="soldDate"
-              >Sold Date <span class="required">*</span></label
+              >Sold Date <span class="required" id="soldDateRequired">*</span></label
             >
             <input id="soldDate" type="date" />
             <div
@@ -6352,8 +6352,9 @@
           _saleEndingReason=reason;
           openSoldModal(payload=>{
             const agencyDeal=['Yuushi Client Transaction','External Client Transaction'].includes(payload.transactionSource);
-            Object.assign(prop,payload,{publishStatus:'Suspended',saleStatus:'Sold Out',suspensionReason:reason,suspensionDate:payload.soldDate,suspensionNotes:notes,dateUpdated:new Date().toISOString().slice(0,10)});
-            persistSale(prop);
+            Object.assign(prop,payload,{publishStatus:'Suspended',saleStatus:'Sold Out',suspensionReason:reason,suspensionDate:payload.soldDate||null,suspensionNotes:notes,dateUpdated:new Date().toISOString().slice(0,10)});
+            const saleTransaction=persistSale(prop);
+            if(saleTransaction){YuushiWorkflow.updateTransaction(saleTransaction.transactionId,reason==='sold-others'?'Listing recorded as Sold by Others':'Listing recorded as Sold',{reason:reason==='sold-others'?'Sold by Others':'Sold',listingEndReason:reason==='sold-others'?'Sold by Others':'Sold',finalSalePrice:payload.finalSalePrice??null,soldDate:payload.soldDate||''},payload.saleActor?.name||'Agency Staff');}
             const open=new Set(['New','Assigned','Contact','Viewing','Proposal','Negotiation','Asleep']),rows=YuushiWorkflow.read(YuushiWorkflow.keys.leadRecords),winner=Number(String(payload.leadId||'').replace(/\D/g,''));
             rows.forEach(l=>{if(l.propertyId===prop.id&&open.has(l.status)&&l.id!==winner){l.status='Closed Lost';l.autoClosedBySale=agencyDeal;l.soldByStaffId=agencyDeal?payload.saleActor.staffId:null;l.soldByStaffName=agencyDeal?payload.saleActor.name:null;l.soldByRole=agencyDeal?payload.saleActor.role:null;}});
             YuushiWorkflow.write(YuushiWorkflow.keys.leadRecords,rows);pushHistory(prop,'publishStatus','Published','Suspended · '+reason);emitPropertyEvent('property_suspended',prop,{oldStatus:'Published',newStatus:'Suspended',reasonCode:reason,suspensionDate:prop.suspensionDate,changeSource:'listing_end'});originalProp=JSON.parse(JSON.stringify(prop));closeSuspensionTransactionModal();renderDetail();renderList();toast('Sale information recorded. This listing cannot be re-activated.');_saleEndingReason=null;
@@ -6479,7 +6480,7 @@
         $("suspTxDate").closest(".field-group").style.display="none";
         $("suspTxPriceWrap").style.display="none";
         $("suspTxVisWrap").style.display="none";
-        $("soldDate").value = new Date().toISOString().slice(0, 10); // default today
+        $("soldDate").value = _saleEndingReason==='sold-others' ? "" : new Date().toISOString().slice(0, 10); // Sold by Others does not require a date
         $("soldPriceErr").classList.add("hidden");
         $("soldDateErr").classList.add("hidden");
         $("soldPrice").classList.remove("invalid");
@@ -6493,12 +6494,15 @@
         $("soldClientWrap").style.display=_saleEndingReason==="sold-others"?"none":$("soldClientWrap").style.display;
         $("soldPublishPrice").closest(".field-group").style.display=_saleEndingReason==="sold-others"?"none":$("soldPublishPrice").closest(".field-group").style.display;
         $("soldPrice").closest(".field-group").style.display="";
+        $("soldPriceRequired").style.display=_saleEndingReason==='sold-others'?"none":"";
+        $("soldDateRequired").style.display=_saleEndingReason==='sold-others'?"none":"";
+        $("soldActorWrap").style.display=_saleEndingReason==='sold-others'?"none":"";
         $("suspInlineSaleFields").style.display="block";
         const parentFooter = $("suspTxModal").querySelector(".confirm-box > .confirm-footer");
         if (parentFooter) parentFooter.style.display = "none";
         setTimeout(() => $("soldPrice").focus(), 30);
       }
-      function updateSoldSourceFields(){const source=$("soldSource").value,isYuushi=source==="Yuushi Client Transaction",priceKnown=source!=="Sold by Other — Price Unknown",agencyDeal=["Yuushi Client Transaction","External Client Transaction"].includes(source),actor=YuushiWorkflow.currentAgencyActor({staffId:'STF-0001',name:'Taro Tanaka',role:'Agency Admin'});$("soldClientWrap").style.display=isYuushi?"":"none";$("soldPrice").closest('.field-group').style.display=priceKnown?"":"none";$("soldPublishPrice").closest('.field-group').style.display=priceKnown?"":"none";$("soldActorLabel").textContent=agencyDeal?'Sold By':'Recorded By';$("soldActorValue").textContent=actor.name;$("soldActorRole").textContent=actor.role;}
+      function updateSoldSourceFields(){const source=$("soldSource").value,isYuushi=source==="Yuushi Client Transaction",priceKnown=source!=="Sold by Other — Price Unknown",agencyDeal=["Yuushi Client Transaction","External Client Transaction"].includes(source),soldOthers=_saleEndingReason==="sold-others",actor=YuushiWorkflow.currentAgencyActor({staffId:'STF-0001',name:'Taro Tanaka',role:'Agency Admin'});$("soldClientWrap").style.display=isYuushi?"":"none";$("soldPrice").closest('.field-group').style.display=priceKnown?"":"none";$("soldPublishPrice").closest('.field-group').style.display=priceKnown?"":"none";$("soldActorWrap").style.display=soldOthers?"none":"";$("soldActorLabel").textContent=agencyDeal?'Sold By':'Recorded By';$("soldActorValue").textContent=actor.name;$("soldActorRole").textContent=actor.role;}
       (function wireSold() {
         const modal = $("soldModal");
         $("soldSource").addEventListener("change",updateSoldSourceFields);
@@ -6521,8 +6525,8 @@
             $("soldPrice").classList.remove("invalid");
           }
           if(!soldOthers && source==="Yuushi Client Transaction"&&!$("soldClient").value){$("soldClientErr").classList.remove("hidden");ok=false;}else $("soldClientErr").classList.add("hidden");
-          // Sold Date required
-          if (!dateRaw || dateRaw>new Date().toISOString().slice(0,10) || (currentProp?.datePublished && dateRaw<currentProp.datePublished)) {
+          // Sold Date is required for Sold and optional for Sold by Others.
+          if ((!soldOthers && !dateRaw) || (dateRaw && (dateRaw>new Date().toISOString().slice(0,10) || (currentProp?.datePublished && dateRaw<currentProp.datePublished)))) {
             $("soldDateErr").textContent = "Select a sold date between publication and today.";
             $("soldDateErr").classList.remove("hidden");
             $("soldDate").classList.add("invalid");
@@ -6536,7 +6540,7 @@
           const publishPrice = $("soldPublishPrice").checked;
           const payload = {
             finalSalePrice: priceRaw?Number(priceRaw):null,
-            soldDate: dateRaw,
+            soldDate: dateRaw || null,
             publishPrice: !soldOthers && publishPrice,
             transactionSource:effectiveSource,
             leadId:!soldOthers && source==="Yuushi Client Transaction"?$("soldClient").value:null,
