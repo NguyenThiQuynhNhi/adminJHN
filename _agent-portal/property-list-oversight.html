@@ -2854,19 +2854,17 @@
               <div class="group-card-head">
                 <i class="fas fa-home"></i>
                 <strong>Group 1 — Single Unit Property</strong>
-                <span class="badge badge-published">Buy / Rent / Both</span>
+                <span class="badge badge-onsale">Buy only</span>
               </div>
               <div class="group-card-types">
                 <span class="type-tag">Apartment</span>
                 <span class="type-tag">Tower Mansion</span>
-                <span class="type-tag">House</span>
                 <span class="type-tag">Retail Unit</span>
                 <span class="type-tag">Office Unit</span>
                 <span class="type-tag">Factory &amp; Warehouse Unit</span>
                 <span class="type-tag"
                   >Resort Apartment &amp; Condo Hotel Unit</span
                 >
-                <span class="type-tag">Car Park</span>
               </div>
             </button>
 
@@ -2874,7 +2872,7 @@
               <div class="group-card-head">
                 <i class="fas fa-building"></i>
                 <strong>Group 2 — Whole Building</strong>
-                <span class="badge badge-published">Buy / Rent / Both</span>
+                <span class="badge badge-onsale">Buy only</span>
               </div>
               <div class="group-card-types">
                 <span class="type-tag">House</span>
@@ -6325,7 +6323,7 @@
         document.querySelectorAll(".susp-reason-card").forEach(c=>c.classList.remove("selected"));
         el.classList.add("selected");
         document.getElementById("suspTxReasonErr").classList.add("hidden");
-        const isSaleReason = ["sold", "sold-others"].includes(reason);
+        const isSaleReason = reason === "sold";
         document.getElementById("suspTxPriceWrap").style.display="none";
         document.getElementById("suspTxVisWrap").style.display="none";
         document.getElementById("suspTxDate").closest(".field-group").style.display=isSaleReason?"none":"";
@@ -6348,7 +6346,7 @@
       function confirmSuspensionTransaction() {
         if (!_suspTxReason) { document.getElementById("suspTxReasonErr").classList.remove("hidden"); return; }
         const prop=_suspTxProp, reason=_suspTxReason, date=document.getElementById("suspTxDate").value, notes=document.getElementById("suspTxNotes").value.trim();
-        if (['sold','sold-others'].includes(reason)) {
+        if (reason === 'sold') {
           _saleEndingReason=reason;
           openSoldModal(payload=>{
             const agencyDeal=['Yuushi Client Transaction','External Client Transaction'].includes(payload.transactionSource);
@@ -6360,10 +6358,12 @@
           });
           return;
         }
-        const payload={propertyId:prop.id,propertyName:prop.name,reason,suspensionDate:date,notes,ref:'TXN-'+Date.now().toString().slice(-6),createdAt:new Date().toISOString()};
         Object.assign(prop,{publishStatus:'Suspended',suspensionReason:reason,suspensionDate:date,suspensionNotes:notes,dateUpdated:new Date().toISOString().slice(0,10)});
-        try{const existing=JSON.parse(localStorage.getItem('yuushi.suspensionTx')||'[]');existing.unshift(payload);localStorage.setItem('yuushi.suspensionTx',JSON.stringify(existing));}catch(e){}
-        pushHistory(prop,'publishStatus','Published','Suspended');emitPropertyEvent('property_suspended',prop,{oldStatus:'Published',newStatus:'Suspended',reasonCode:reason,suspensionDate:date,changeSource:'listing_end'});originalProp=JSON.parse(JSON.stringify(prop));closeSuspensionTransactionModal();renderDetail();renderList();toast('Listing suspended. Sale Status remains On Sale.');
+        if (reason !== 'sold-others') {
+          const payload={propertyId:prop.id,propertyName:prop.name,reason,suspensionDate:date,notes,ref:'TXN-'+Date.now().toString().slice(-6),createdAt:new Date().toISOString()};
+          try{const existing=JSON.parse(localStorage.getItem('yuushi.suspensionTx')||'[]');existing.unshift(payload);localStorage.setItem('yuushi.suspensionTx',JSON.stringify(existing));}catch(e){}
+        }
+        pushHistory(prop,'publishStatus','Published','Suspended');emitPropertyEvent('property_suspended',prop,{oldStatus:'Published',newStatus:'Suspended',reasonCode:reason,suspensionDate:date,changeSource:'listing_end'});originalProp=JSON.parse(JSON.stringify(prop));closeSuspensionTransactionModal();renderDetail();renderList();toast(reason === 'sold-others' ? 'Listing suspended. This listing cannot be re-activated.' : 'Listing suspended. Sale Status remains On Sale.');
       }
 
       (function wireSuspTxModal() {
