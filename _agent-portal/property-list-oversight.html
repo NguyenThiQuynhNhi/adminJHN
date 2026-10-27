@@ -6502,7 +6502,8 @@
         if (parentFooter) parentFooter.style.display = "none";
         setTimeout(() => $("soldPrice").focus(), 30);
       }
-      function setSoldActorVisibility(visible){const wrap=$("soldActorWrap");if(!wrap)return;if(visible){wrap.hidden=false;wrap.style.removeProperty("display");wrap.style.removeProperty("display");}else{wrap.hidden=true;wrap.style.setProperty("display","none","important");}}\n      function updateSoldSourceFields(){const source=$("soldSource").value,isYuushi=source==="Yuushi Client Transaction",priceKnown=source!=="Sold by Other — Price Unknown",agencyDeal=["Yuushi Client Transaction","External Client Transaction"].includes(source),soldOthers=_saleEndingReason==="sold-others",actor=YuushiWorkflow.currentAgencyActor({staffId:'STF-0001',name:'Taro Tanaka',role:'Agency Admin'});$("soldClientWrap").style.display=isYuushi?"":"none";$("soldPrice").closest('.field-group').style.display=priceKnown?"":"none";$("soldPublishPrice").closest('.field-group').style.display=priceKnown?"":"none";setSoldActorVisibility(!soldOthers);$("soldActorLabel").textContent=agencyDeal?'Sold By':'Recorded By';$("soldActorValue").textContent=actor.name;$("soldActorRole").textContent=actor.role;}
+      function setSoldActorVisibility(visible){const wrap=$("soldActorWrap");if(!wrap)return;if(visible){wrap.hidden=false;wrap.style.removeProperty("display");wrap.style.removeProperty("display");}else{wrap.hidden=true;wrap.style.setProperty("display","none","important");}}
+      function updateSoldSourceFields(){const source=$("soldSource").value,isYuushi=source==="Yuushi Client Transaction",priceKnown=source!=="Sold by Other — Price Unknown",agencyDeal=["Yuushi Client Transaction","External Client Transaction"].includes(source),soldOthers=_saleEndingReason==="sold-others",actor=YuushiWorkflow.currentAgencyActor({staffId:'STF-0001',name:'Taro Tanaka',role:'Agency Admin'});$("soldClientWrap").style.display=isYuushi?"":"none";$("soldPrice").closest('.field-group').style.display=priceKnown?"":"none";$("soldPublishPrice").closest('.field-group').style.display=priceKnown?"":"none";setSoldActorVisibility(!soldOthers);$("soldActorLabel").textContent=agencyDeal?'Sold By':'Recorded By';$("soldActorValue").textContent=actor.name;$("soldActorRole").textContent=actor.role;}
       (function wireSold() {
         const modal = $("soldModal");
         $("soldSource").addEventListener("change",updateSoldSourceFields);
@@ -8423,29 +8424,29 @@
             icon: "fa-clock",
             msg: "This listing is awaiting admin approval. The platform admin will approve or reject it.",
           });
-        // Prominent Sold-Out record card (shown ABOVE the section cards).
+        // Sold record card: Sold by Others is shown only when a sale price is known.
+        // Agency users cannot control end-user price visibility from this listing detail.
         let soldCardHtml = '';
         if (p.saleStatus === "Sold Out") {
-          const saleLine = p.transactionSource==='Sold by Other — Price Unknown'?`Sold on ${fmtDate(p.soldDate)} · Price unavailable`:`Sold at ${fmtYen(p.finalSalePrice)} on ${fmtDate(p.soldDate)}`;
-          soldCardHtml = `
-            <section class="card" style="grid-column:1/-1;background:var(--status-danger-bg);border:1px solid var(--status-danger-text)">
-              <div class="card-title" style="border-bottom-color:var(--status-danger-text);color:var(--status-danger-text)">
-                <i class="fas fa-circle-check"></i> Sold — sale record
-              </div>
-              <div style="font-size:15px;font-weight:700;color:var(--status-danger-text)">
-                ${saleLine}
-              </div>
-              <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:10px 12px">
-                <div>
-                  <div style="font-size:12.5px;font-weight:700;color:var(--text-main)"><i class="fas fa-eye" style="margin-right:6px"></i>Show final sale price to end user</div>
+          const soldByOthers = p.suspensionReason === "sold-others";
+          const hasSalePrice = p.finalSalePrice !== null && p.finalSalePrice !== undefined && p.finalSalePrice !== "" && Number.isFinite(Number(p.finalSalePrice)) && Number(p.finalSalePrice) > 0;
+          if (!soldByOthers || hasSalePrice) {
+            const datePart = p.soldDate ? ` on ${fmtDate(p.soldDate)}` : "";
+            const saleLine = soldByOthers
+              ? `Sold by Other — ${fmtYen(p.finalSalePrice)}${datePart}`
+              : p.transactionSource === 'Sold by Other — Price Unknown'
+                ? `Sold on ${fmtDate(p.soldDate)} · Price unavailable`
+                : `Sold at ${fmtYen(p.finalSalePrice)}${datePart}`;
+            soldCardHtml = `
+              <section class="card" style="grid-column:1/-1;background:var(--status-danger-bg);border:1px solid var(--status-danger-text)">
+                <div class="card-title" style="border-bottom-color:var(--status-danger-text);color:var(--status-danger-text)">
+                  <i class="fas fa-circle-check"></i> ${soldByOthers ? "Sold by Other — sale record" : "Sold — sale record"}
                 </div>
-                <label style="position:relative;width:40px;height:22px;cursor:pointer;flex-shrink:0">
-                  <input type="checkbox" id="soldPublishToggle" ${p.publishPrice ? "checked" : ""} onchange="toggleSoldPricePublish(this)" style="opacity:0;width:0;height:0;position:absolute">
-                  <span style="position:absolute;inset:0;background:${p.publishPrice ? "var(--color-primary)" : "var(--border-default)"};border-radius:11px;transition:.2s"></span>
-                  <span style="position:absolute;width:18px;height:18px;left:${p.publishPrice ? "20px" : "2px"};top:2px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span>
-                </label>
-              </div>
-            </section>`;
+                <div style="font-size:15px;font-weight:700;color:var(--status-danger-text)">
+                  ${saleLine}
+                </div>
+              </section>`;
+          }
         }
 
         // Per-listing ALERTS subsystem rows (detectors), shown with the same
