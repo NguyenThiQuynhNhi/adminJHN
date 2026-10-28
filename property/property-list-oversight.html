@@ -6688,6 +6688,7 @@
       function enterEditMode() {
         editMode = true;
         renderDetail();
+        syncConstructionFieldControls();
       }
       function cancelEdit() {
         openConfirm({
@@ -6794,8 +6795,66 @@
         renderList();
         toast("Changes saved.");
       }
+      function constructionTodayJST() {
+        const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+        const value = key => parts.find(part => part.type === key)?.value || "";
+        return `${value("year")}-${value("month")}-${value("day")}`;
+      }
+      function syncConstructionFieldControls() {
+        const statusInput = document.querySelector('[data-field="buildStatus"]');
+        const dateInput = document.querySelector('[data-field="constructionDate"]');
+        if (!statusInput || !dateInput) return;
+        const sync = () => {
+          const underConstruction = statusInput.value === "Under Construction";
+          dateInput.disabled = underConstruction;
+          if (underConstruction) dateInput.value = "";
+          dateInput.required = !!statusInput.value && !underConstruction;
+          if (underConstruction) {
+            currentProp.constructionDate = "";
+          }
+        };
+        statusInput.addEventListener("change", sync);
+        sync();
+      }
+      function validateConstructionFields() {
+        const status = currentProp?.buildStatus || "";
+        const date = currentProp?.constructionDate || "";
+        const input = document.querySelector('[data-field="constructionDate"]');
+        const statusInput = document.querySelector('[data-field="buildStatus"]');
+        let error = "";
+        if (status === "Under Construction") {
+          if (date) error = "Construction Date must be empty when Build Status is Under Construction.";
+        } else if (status) {
+          if (!date) error = "This field is required.";
+          else if (date > constructionTodayJST()) error = "Construction Date cannot be in the future.";
+          else {
+            const [year, month, day] = constructionTodayJST().split("-").map(Number);
+            const anniversary = new Date(Date.UTC(year, month - 1, day));
+            anniversary.setUTCFullYear(anniversary.getUTCFullYear() - 1);
+            const cutoff = `${anniversary.getUTCFullYear()}-${String(anniversary.getUTCMonth()+1).padStart(2,"0")}-${String(anniversary.getUTCDate()).padStart(2,"0")}`;
+            if (status === "Newly-Built" && date <= cutoff) error = "Newly-Built requires a Construction Date within the last year. Select 'Newly Built not yet occupied' or correct the date.";
+            else if (status === "Newly Built not yet occupied" && date > cutoff) error = "Newly Built not yet occupied requires a Construction Date of 1 year or more ago. Select 'Newly-Built' or correct the date.";
+          }
+        }
+        if (input) {
+          let message = input.parentElement?.querySelector(".construction-date-error");
+          if (!message && input.parentElement) {
+            message = document.createElement("div");
+            message.className = "construction-date-error";
+            message.style.cssText = "color:#b42318;font-size:12px;margin-top:4px;";
+            message.setAttribute("role", "alert");
+            input.insertAdjacentElement("afterend", message);
+          }
+          if (message) { message.textContent = error; message.hidden = !error; }
+          input.classList.toggle("field-error", !!error);
+          if (error) input.focus();
+        }
+        return !error;
+      }
+
       function saveChanges() {
         collectInputsToState();
+        if (!validateConstructionFields()) return;
         if (
           currentProp.saleStatus === "Sold Out" &&
           (currentProp.publishStatus === "Pending Review" ||
