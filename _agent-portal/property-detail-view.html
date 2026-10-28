@@ -884,7 +884,6 @@
           privateArea: 55.2,
           floor: 8,
           floorsTotal: 15,
-          yearBuilt: 2015,
           direction: "South-East",
           landRight: "ownership",
           isTenanted: false,
@@ -944,7 +943,6 @@
           walkingTime: 10,
           totalUnits: 18,
           floorsTotal: 5,
-          yearBuilt: 2008,
           structure: "RC",
           landArea: 210.4,
           buildingArea: 480.2,
@@ -1033,7 +1031,6 @@
           privateArea: 25.8,
           floor: 6,
           floorsTotal: 12,
-          yearBuilt: 2010,
           direction: "South",
           interiorFeatures: ["Air conditioning", "Closet"],
           kitchenFeatures: ["IH cooker", "Compact kitchen"],
@@ -1516,8 +1513,7 @@
         if (p.floor != null) addField(grid, "Floor", String(p.floor));
         if (p.floorsTotal != null)
           addField(grid, "Floors (building)", String(p.floorsTotal));
-        if (p.yearBuilt != null)
-          addField(grid, "Year built", String(p.yearBuilt));
+        if (p.constructionDate) addField(grid, "Construction Date", p.constructionDate);
         if (p.direction != null) addField(grid, "Direction", p.direction);
         return grid;
       }
@@ -2111,11 +2107,20 @@
         const buildStatusOptions = ["Newly-Built", "Newly Built not yet occupied", "Secondhand", "Under Construction"];
         fBuildStatus.innerHTML = `<label>Build Status</label><select name="buildStatus"><option value="">Select build status</option>${buildStatusOptions.map(status => `<option value="${status}" ${status === (p.buildStatus || "") ? "selected" : ""}>${status}</option>`).join("")}</select>`;
         grid.appendChild(fBuildStatus);
-        const fYearBuilt = document.createElement("div");
-        fYearBuilt.className = "field-item";
-        const currentYear = new Date().getFullYear();
-        fYearBuilt.innerHTML = `<label>Year Built</label><input type="number" name="yearBuilt" min="1800" max="${currentYear}" step="1" inputmode="numeric" placeholder="e.g. 2015" value="${p.yearBuilt ?? ""}" />`;
-        grid.appendChild(fYearBuilt);
+        const fConstructionDate = document.createElement("div");
+        fConstructionDate.className = "field-item";
+        fConstructionDate.innerHTML = `<label>Construction Date (Completion Date)</label><input type="date" name="constructionDate" value="${p.constructionDate || ""}" />`;
+        grid.appendChild(fConstructionDate);
+        const syncConstructionDate = () => {
+          const status = grid.querySelector('[name="buildStatus"]');
+          const date = grid.querySelector('[name="constructionDate"]');
+          const underConstruction = status && status.value === "Under Construction";
+          date.disabled = !!underConstruction;
+          date.required = !underConstruction && !!status.value;
+          if (underConstruction) date.value = "";
+        };
+        grid.querySelector('[name="buildStatus"]').addEventListener("change", syncConstructionDate);
+        syncConstructionDate();
         basic.appendChild(grid);
         form.appendChild(basic);
 
