@@ -2118,6 +2118,9 @@
           date.disabled = !!underConstruction;
           date.required = !underConstruction && !!status.value;
           if (underConstruction) date.value = "";
+          const error = date.closest(".field-item")?.querySelector(".construction-date-error");
+          if (error) { error.textContent = ""; error.hidden = true; }
+          date.classList.remove("field-error");
         };
         grid.querySelector('[name="buildStatus"]').addEventListener("change", syncConstructionDate);
         syncConstructionDate();
@@ -2296,9 +2299,53 @@
         renderProperty(p);
       }
 
+      function constructionTodayJST() {
+        const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+        const value = key => parts.find(part => part.type === key)?.value || "";
+        return `${value("year")}-${value("month")}-${value("day")}`;
+      }
+      function constructionDateError(form) {
+        const statusInput = form.querySelector('[name="buildStatus"]');
+        const dateInput = form.querySelector('[name="constructionDate"]');
+        if (!statusInput || !dateInput) return null;
+        const status = statusInput.value, date = dateInput.value;
+        if (status === "Under Construction") return date ? "Construction Date must be empty when Build Status is Under Construction." : null;
+        if (!status) return null;
+        if (!date) return "This field is required.";
+        const today = constructionTodayJST();
+        if (date > today) return "Construction Date cannot be in the future.";
+        const [year, month, day] = today.split("-").map(Number);
+        const anniversary = new Date(Date.UTC(year, month - 1, day));
+        anniversary.setUTCFullYear(anniversary.getUTCFullYear() - 1);
+        const cutoff = `${anniversary.getUTCFullYear()}-${String(anniversary.getUTCMonth()+1).padStart(2,"0")}-${String(anniversary.getUTCDate()).padStart(2,"0")}`;
+        if (status === "Newly-Built" && date <= cutoff) return "Newly-Built requires a Construction Date within the last year. Select 'Newly Built not yet occupied' or correct the date.";
+        if (status === "Newly Built not yet occupied" && date > cutoff) return "Newly Built not yet occupied requires a Construction Date of 1 year or more ago. Select 'Newly-Built' or correct the date.";
+        return null;
+      }
+      function validateBuildStatus(form) {
+        const dateInput = form.querySelector('[name="constructionDate"]');
+        if (!dateInput) return true;
+        const error = constructionDateError(form);
+        const wrapper = dateInput.closest(".field-item") || dateInput.parentElement;
+        let message = wrapper.querySelector(".construction-date-error");
+        if (!message) {
+          message = document.createElement("div");
+          message.className = "construction-date-error";
+          message.style.cssText = "color:#b42318;font-size:12px;margin-top:4px;";
+          message.setAttribute("role", "alert");
+          dateInput.insertAdjacentElement("afterend", message);
+        }
+        message.textContent = error || "";
+        message.hidden = !error;
+        dateInput.classList.toggle("field-error", !!error);
+        if (error) dateInput.focus();
+        return !error;
+      }
+
       function saveDraft(id) {
         const form = document.getElementById("propertyEditForm");
         if (!form) return;
+        if (!validateBuildStatus(form)) return;
         const fd = new FormData(form);
         const obj = {};
         fd.forEach((v, k) => {
@@ -2316,6 +2363,7 @@
         const form = document.getElementById("propertyEditForm");
         if (!form) return;
         // run comprehensive validation (includes Group 5 type checks)
+        if (!validateBuildStatus(form)) return;
         if (!validateAllRequired()) { UX.err && UX.err('Please fix validation errors before publishing'); return; }
         // Build a short publish summary for agent confirmation
         const key = currentPropertyKey;
