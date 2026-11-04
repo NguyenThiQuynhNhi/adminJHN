@@ -6017,23 +6017,26 @@
               `<div class="alert ${a.kind}"><i class="fas ${a.icon}"></i> <div>${a.msg}</div></div>`,
           )
           .join("");
-        // Detector-based alerts for THIS project, with their action buttons.
-        computeAlerts(p).forEach((a) => {
-          alertsHtml += `<div class="alert ${alertSevClass(a.severity)}">
-            <i class="fas ${alertSevIcon(a.severity)}"></i>
-            <div style="flex:1">
-              <strong>${esc(a.title)}</strong> — ${esc(a.desc)}
-              <div style="margin-top:6px">
-                <button class="btn btn-sm" type="button" onclick="runAlertAction('${a.key}')">${esc(a.actionLabel)}</button>
-                ${
-                  a.severity === "critical"
-                    ? ""
-                    : `<button class="btn btn-sm btn-ghost" type="button" onclick="dismissAlert('${a.key}')">Dismiss</button>`
-                }
+        // Detector-based alerts are rendered when the detector module is available.
+        // Keep the project detail view functional when that optional module is absent.
+        if (typeof computeAlerts === "function") {
+          computeAlerts(p).forEach((a) => {
+            alertsHtml += `<div class="alert ${alertSevClass(a.severity)}">
+              <i class="fas ${alertSevIcon(a.severity)}"></i>
+              <div style="flex:1">
+                <strong>${esc(a.title)}</strong> — ${esc(a.desc)}
+                <div style="margin-top:6px">
+                  <button class="btn btn-sm" type="button" onclick="runAlertAction('${a.key}')">${esc(a.actionLabel)}</button>
+                  ${
+                    a.severity === "critical"
+                      ? ""
+                      : `<button class="btn btn-sm btn-ghost" type="button" onclick="dismissAlert('${a.key}')">Dismiss</button>`
+                  }
+                </div>
               </div>
-            </div>
-          </div>`;
-        });
+            </div>`;
+          });
+        }
         $("dAlerts").innerHTML = alertsHtml;
 
         const secs = GROUP_SECS[p.group] || [];
