@@ -284,7 +284,7 @@
                 <div class="sec-head"><div>
                     <div class="sec-title">Contact Info</div>
                 </div>
-                  <button class="btn btn-sm" onclick="openEditContactModal()"><i class="fas fa-pen"></i> Edit</button>
+                  <div id="cdEditActions"><button class="btn btn-sm" onclick="startContactEdit()"><i class="fas fa-pen"></i> Edit</button></div>
                 </div>
                 <div class="kv-grid" style="margin-top:14px" id="cdContactInfo"></div>
               </div>
@@ -355,52 +355,6 @@
         <div class="modal-actions">
           <button class="btn" onclick="closeModal('assignModal')">Cancel</button>
           <button class="btn btn-primary" onclick="saveAssignModal()"><i class="fas fa-check"></i> Save</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Edit Contact Info - FULL EDIT -->
-    <div class="modal-overlay" id="editContactModal" onclick="if(event.target===this)closeModal('editContactModal')">
-      <div class="modal-box">
-        <h3>Edit Contact</h3>
-        <div class="modal-sub">All fields are editable. Use "Restore Original" to revert to system source data.</div>
-        
-        <div style="display:flex;gap:8px;margin-bottom:16px">
-          <button class="btn btn-sm" onclick="restoreOriginalData()" style="background:var(--accent-tint);color:var(--accent-dark)"><i class="fas fa-undo"></i> Restore Original</button>
-        </div>
-
-        <div class="fld"><label>Contact Name</label><input type="text" id="ecName" /></div>
-        <div class="fld"><label>First Contact Date</label><input type="text" id="ecFirstContact" /></div>
-        <div class="fld"><label>Phone</label><input type="text" id="ecPhone" /></div>
-        <div class="fld"><label>Email</label><input type="text" id="ecEmail" /></div>
-        <div class="fld"><label>Secondary Phone</label><input type="text" id="ecSecondaryPhone" /></div>
-        <div class="fld"><label>Notes</label><textarea id="ecNotes"></textarea></div>
-
-        <div class="fld"><label>Full Name</label><input type="text" id="ecFullName" /></div>
-        <div class="fld"><label>Country Code</label><input type="text" id="ecCountryCode" /></div>
-        <div class="fld"><label>Phone Number</label><input type="text" id="ecPhoneNumber" /></div>
-        <div class="fld"><label>Current Address</label><input type="text" id="ecCurrentAddress" /></div>
-        <div class="fld"><label>Nationality</label><input type="text" id="ecNationality" /></div>
-        <div class="fld"><label>Title</label><input type="text" id="ecGender" /></div>
-        <div class="fld"><label>Age</label><input type="text" id="ecAge" /></div>
-
-        <div class="fld"><label>Owned property in Japan?</label><input type="text" id="ecOwnedPropertyJP" /></div>
-        <div class="fld"><label>Property location</label><input type="text" id="ecPropertyLocation" /></div>
-        <div class="fld"><label>Resident Country</label><input type="text" id="ecResidentCountry" /></div>
-        <div class="fld"><label>Buyer Status (comma separated)</label><input type="text" id="ecBuyerStatus" /></div>
-
-        <div class="fld"><label>Desired City</label><input type="text" id="ecDesiredCity" /></div>
-        <div class="fld"><label>Desired Area</label><input type="text" id="ecDesiredArea" /></div>
-        <div class="fld"><label>Budget Min</label><input type="text" id="ecBudgetMin" /></div>
-        <div class="fld"><label>Budget Max</label><input type="text" id="ecBudgetMax" /></div>
-        <div class="fld"><label>Target Yield</label><input type="text" id="ecTargetYield" /></div>
-        <div class="fld"><label>Bedrooms</label><input type="text" id="ecBedrooms" /></div>
-        <div class="fld"><label>Purpose</label><input type="text" id="ecPurpose" /></div>
-        <div class="fld"><label>Property Status</label><input type="text" id="ecPropertyStatus" /></div>
-
-        <div class="modal-actions">
-          <button class="btn" onclick="closeModal('editContactModal')">Cancel</button>
-          <button class="btn btn-primary" onclick="saveEditContactModal()"><i class="fas fa-check"></i> Save Changes</button>
         </div>
       </div>
     </div>
@@ -588,17 +542,14 @@
       function renderContactsList() {
         const rows = filteredContacts();
         document.getElementById("contactsBody").innerHTML = rows.map((c) => `
-          <tr>
-            
-            <td><div class="name-cell" onclick="showContactDetail('${c.id}')"><span class="ini-avatar">${c.initials}</span> ${esc(c.name)}</div></td>
+          <tr class="contact-row" onclick="showContactDetail('${c.id}')" style="cursor:pointer">
+            <td><div class="name-cell"><span class="ini-avatar">${c.initials}</span> ${esc(c.name)}</div></td>
             <td>${esc(c.firstContact)}</td>
             <td>${esc(c.lastInteraction)}</td>
             <td>${groupTagsHtml(c)}</td>
             <td onclick="event.stopPropagation()"><div class="act-icons">
-              <i class="fas fa-eye" title="View" onclick="showContactDetail('${c.id}')"></i>
-              <i class="fas fa-pen" title="Edit" onclick="showContactDetail('${c.id}');openEditContactModal()"></i>
               <i class="fas fa-users" title="Assign to Group" onclick="openAssignGroupModal(['${c.id}'])"></i>
-              <i class="fas fa-paper-plane" title="Message"></i>
+              <i class="fa-solid fa-comment-dots" title="Message" onclick="openContactChat('${c.id}')"></i>
             </div></td>
           </tr>`).join("") || `<tr><td colspan="5">${emptyBox("No contacts match these filters")}</td></tr>`;
         document.getElementById("cEntriesLabel").textContent = `Showing ${rows.length} of ${CONTACTS.length} contacts`;
@@ -634,67 +585,88 @@
       }
       window.showContactsList = showContactsList;
 
+      let editingContact = false;
+      let contactEditSnapshot = null;
+      function contactDetailField(label, value, path, type) {
+        const arr = Array.isArray(value), shown = arr ? value.join(", ") : (value == null ? "" : String(value));
+        if (!editingContact) return kv(label, arr ? tagList(value) : esc(shown));
+        const p = esc(path);
+        return type === "textarea"
+          ? \`<div><div class="kv-l">${esc(label)}</div><div class="kv-v"><textarea data-contact-field="${p}" rows="2" style="width:100%;box-sizing:border-box">${esc(shown)}</textarea></div></div>\`
+          : \`<div><div class="kv-l">${esc(label)}</div><div class="kv-v"><input data-contact-field="${p}" value="${esc(shown)}" style="width:100%;min-width:0;box-sizing:border-box" /></div></div>\`;
+      }
+      function startContactEdit() {
+        contactEditSnapshot = JSON.parse(JSON.stringify(contactById(currentContactId)));
+        editingContact = true; showContactDetail(currentContactId);
+      }
+      window.startContactEdit = startContactEdit;
+      function cancelContactEdit() {
+        const c = contactById(currentContactId);
+        if (contactEditSnapshot) { Object.keys(c).forEach(k => delete c[k]); Object.assign(c, JSON.parse(JSON.stringify(contactEditSnapshot))); }
+        editingContact = false; contactEditSnapshot = null; showContactDetail(currentContactId);
+      }
+      window.cancelContactEdit = cancelContactEdit;
+      function saveContactInlineEdit() {
+        const c = contactById(currentContactId);
+        document.querySelectorAll("[data-contact-field]").forEach(input => {
+          const path = input.dataset.contactField, parts = path.split(".");
+          let obj = c; for (let i=0;i<parts.length-1;i++) obj = obj[parts[i]];
+          const key = parts[parts.length-1];
+          obj[key] = (path === "additional.buyerStatus" || path === "investment.propertyType")
+            ? input.value.split(",").map(v=>v.trim()).filter(Boolean) : input.value.trim();
+        });
+        editingContact = false; contactEditSnapshot = null;
+        showContactDetail(currentContactId); renderContactsList(); toast("Contact updated successfully","success");
+      }
+      window.saveContactInlineEdit = saveContactInlineEdit;
+
       function showContactDetail(id) {
         currentContactId = id;
-        const c = contactById(id);
+        const c = contactById(id); if (!c) return;
         document.getElementById("screenContactsList").classList.add("hidden");
         document.getElementById("screenContactDetail").classList.remove("hidden");
-        document.getElementById("cdAvatar").textContent = c.initials;
-        document.getElementById("cdName").textContent = c.name;
-        document.getElementById("cdCreated").textContent = `First contact: ${c.firstContact}`;
+        document.getElementById("cdAvatar").textContent = c.initials || (c.name||"?").split(/\\s+/).map(x=>x[0]).join("").slice(0,2).toUpperCase();
+        document.getElementById("cdName").innerHTML = editingContact ? \`<input data-contact-field="name" value="${esc(c.name)}" style="font-size:inherit;font-weight:inherit;width:100%;max-width:320px" />\` : esc(c.name);
+        document.getElementById("cdCreated").innerHTML = editingContact ? \`First contact: <input data-contact-field="firstContact" value="${esc(c.firstContact)}" style="width:190px" />\` : \`First contact: ${esc(c.firstContact)}\`;
         document.getElementById("cdOwner").textContent = c.owner;
         document.getElementById("cdGroupCount").textContent = c.groups.length;
-
+        document.getElementById("cdEditActions").innerHTML = editingContact
+          ? \`<button class="btn btn-sm" onclick="cancelContactEdit()">Cancel</button> <button class="btn btn-sm btn-primary" onclick="saveContactInlineEdit()"><i class="fas fa-check"></i> Save Changes</button>\`
+          : \`<button class="btn btn-sm" onclick="startContactEdit()"><i class="fas fa-pen"></i> Edit</button>\`;
+        const p=c.profile,a=c.additional,v=c.investment;
         document.getElementById("cdContactInfo").innerHTML = [
-          kv("Contact Name", esc(c.name)),
-          kv("Phone", esc(c.profile.countryCode + " " + c.profile.phoneNumber)),
-          kv("Email", esc(c.profile.email), { cls: "link" }),
-          kv("Secondary Phone", esc(c.secondaryPhone)),
-          kv("Notes", esc(c.notes)),
+          contactDetailField("Contact Name",c.name,"name"),
+          contactDetailField("Phone Country Code",p.countryCode,"profile.countryCode"),
+          contactDetailField("Phone Number",p.phoneNumber,"profile.phoneNumber"),
+          contactDetailField("Email",p.email,"profile.email"),
+          contactDetailField("Secondary Phone",c.secondaryPhone,"secondaryPhone"),
+          contactDetailField("Notes",c.notes,"notes","textarea")
         ].join("");
-
-        const p = c.profile;
         document.getElementById("cdProfile").innerHTML = [
-          kv("Full Name", esc(p.fullName)), kv("Email Address", esc(p.email), { cls: "link" }),
-          kv("Country Code", esc(p.countryCode)), kv("Phone Number", esc(p.phoneNumber)),
-          kv("Current Address", esc(p.currentAddress)), kv("Nationality", esc(p.nationality)), kv("Gender", esc(p.gender)),
-          kv("Age", esc(p.age)), 
+          contactDetailField("Full Name",p.fullName,"profile.fullName"),contactDetailField("Email Address",p.email,"profile.email"),
+          contactDetailField("Country Code",p.countryCode,"profile.countryCode"),contactDetailField("Phone Number",p.phoneNumber,"profile.phoneNumber"),
+          contactDetailField("Current Address",p.currentAddress,"profile.currentAddress"),contactDetailField("Nationality",p.nationality,"profile.nationality"),
+          contactDetailField("Title",p.gender,"profile.gender"),contactDetailField("Age",p.age,"profile.age")
         ].join("");
-
-        const a = c.additional;
         document.getElementById("cdAdditional").innerHTML = [
-          kv("Owned property in Japan?", esc(a.ownedPropertyJP)),
-          kv("Property location", esc(a.propertyLocation)),
-          kv("Resident Country", esc(a.residentCountry)),
-          kv("Buyer Status", tagList(a.buyerStatus)),
+          contactDetailField("Owned property in Japan?",a.ownedPropertyJP,"additional.ownedPropertyJP"),
+          contactDetailField("Property location",a.propertyLocation,"additional.propertyLocation"),
+          contactDetailField("Resident Country",a.residentCountry,"additional.residentCountry"),
+          contactDetailField("Buyer Status (comma separated)",a.buyerStatus,"additional.buyerStatus")
         ].join("");
-
-        const inv = c.investment;
         document.getElementById("cdInvestment").innerHTML = [
-          kv("Property Type", tagList(inv.propertyType)), kv("Desired City", esc(inv.desiredCity)), kv("Desired Area", esc(inv.desiredArea)),
-          kv("Budget (Min)", esc(inv.budgetMin)), kv("Budget (Max)", esc(inv.budgetMax)), kv("Target Yield", esc(inv.targetYield)),
-          kv("Number of Bedrooms", esc(inv.bedrooms)), kv("Purpose of Purchase", esc(inv.purpose)), kv("Property Status", esc(inv.propertyStatus)),
+          contactDetailField("Property Type (comma separated)",v.propertyType,"investment.propertyType"),
+          contactDetailField("Desired City",v.desiredCity,"investment.desiredCity"),contactDetailField("Desired Area",v.desiredArea,"investment.desiredArea"),
+          contactDetailField("Budget (Min)",v.budgetMin,"investment.budgetMin"),contactDetailField("Budget (Max)",v.budgetMax,"investment.budgetMax"),
+          contactDetailField("Target Yield",v.targetYield,"investment.targetYield"),contactDetailField("Number of Bedrooms",v.bedrooms,"investment.bedrooms"),
+          contactDetailField("Purpose of Purchase",v.purpose,"investment.purpose"),contactDetailField("Property Status",v.propertyStatus,"investment.propertyStatus")
         ].join("");
-
-        document.getElementById("cdGroups").innerHTML = c.groups.length
-          ? c.groups.map((gid) => { const g = groupById(gid); return `<span class="tag"><span class="cdot" style="background:${g.color}"></span>${esc(g.name)}</span>`; }).join("")
-          : `<span style="color:var(--text-dim);font-size:12.5px">Not in any group yet.</span>`;
-
-        document.getElementById("cdLeads").innerHTML = c.leads.length
-          ? `<table class="data"><thead><tr><th>Property</th><th>Status</th><th>Enquiry Date</th><th>Budget</th></tr></thead><tbody>${c.leads.map((l) => `<tr><td><strong>${esc(l.property)}</strong></td><td>${esc(l.status)}</td><td>${esc(l.date)}</td><td>${esc(l.budget)}</td></tr>`).join("")}</tbody></table>`
-          : emptyBox("No leads yet", "This contact messaged once but hasn't generated a lead.");
-
-        document.getElementById("cdOffers").innerHTML = c.offers.length
-          ? `<table class="data"><thead><tr><th>Property</th><th>Offer Price</th><th>Date</th><th>Status</th></tr></thead><tbody>${c.offers.map((o) => `<tr><td>${esc(o.property)}</td><td>${esc(o.price)}</td><td>${esc(o.date)}</td><td>${esc(o.status)}</td></tr>`).join("")}</tbody></table>`
-          : emptyBox("No offers yet");
-
-        document.getElementById("cdActivity").innerHTML = c.activity.length
-          ? c.activity.map((a2) => `<div class="activity"><div class="a-title">${esc(a2.title)}</div><div class="a-line">${esc(a2.line)}</div><div class="a-time">${esc(a2.time)}</div></div>`).join("")
-          : `<div style="color:var(--text-dim);font-size:12.5px">No activity recorded yet.</div>`;
-
-        document.getElementById("cdComments").innerHTML = c.comments.map((cm) => `<div class="comment"><div class="c-body">${esc(cm.body)}</div><div class="c-attr"><span class="who">${esc(cm.who)}</span> &nbsp; <span class="when">${esc(cm.when)}</span></div></div>`).join("");
-
-        window.scrollTo(0, 0);
+        document.getElementById("cdGroups").innerHTML = c.groups.length ? c.groups.map(gid=>{const g=groupById(gid);return g?\`<span class="tag"><span class="cdot" style="background:${g.color}"></span>${esc(g.name)}</span>\`:"";}).join("") : \`<span style="color:var(--text-dim);font-size:12.5px">Not in any group yet.</span>\`;
+        document.getElementById("cdLeads").innerHTML = c.leads.length ? \`<table class="data"><thead><tr><th>Property</th><th>Status</th><th>Enquiry Date</th><th>Budget</th></tr></thead><tbody>${c.leads.map(l=>\`<tr><td><strong>${esc(l.property)}</strong></td><td>${esc(l.status)}</td><td>${esc(l.date)}</td><td>${esc(l.budget)}</td></tr>\`).join("")}</tbody></table>\` : emptyBox("No leads yet","This contact messaged once but hasn't generated a lead.");
+        document.getElementById("cdOffers").innerHTML = c.offers.length ? \`<table class="data"><thead><tr><th>Property</th><th>Offer Price</th><th>Date</th><th>Status</th></tr></thead><tbody>${c.offers.map(o=>\`<tr><td>${esc(o.property)}</td><td>${esc(o.price)}</td><td>${esc(o.date)}</td><td>${esc(o.status)}</td></tr>\`).join("")}</tbody></table>\` : emptyBox("No offers yet");
+        document.getElementById("cdActivity").innerHTML = c.activity.length ? c.activity.map(x=>\`<div class="activity"><div class="a-title">${esc(x.title)}</div><div class="a-line">${esc(x.line)}</div><div class="a-time">${esc(x.time)}</div></div>\`).join("") : \`<div style="color:var(--text-dim);font-size:12.5px">No activity recorded yet.</div>\`;
+        document.getElementById("cdComments").innerHTML = c.comments.map(x=>\`<div class="comment"><div class="c-body">${esc(x.body)}</div><div class="c-attr"><span class="who">${esc(x.who)}</span> &nbsp; <span class="when">${esc(x.when)}</span></div></div>\`).join("");
+        window.scrollTo(0,0);
       }
       window.showContactDetail = showContactDetail;
 
@@ -708,100 +680,6 @@
         }
       }
       window.cdCommentKey = cdCommentKey;
-
-      /* ---- Full Edit Contact Modal ---- */
-      function openEditContactModal() {
-        const c = contactById(currentContactId);
-        document.getElementById("ecName").value = c.name || "";
-        document.getElementById("ecFirstContact").value = c.firstContact || "";
-        document.getElementById("ecPhone").value = (c.profile.countryCode || "") + " " + (c.profile.phoneNumber || "");
-        document.getElementById("ecEmail").value = c.profile.email || "";
-        document.getElementById("ecSecondaryPhone").value = c.secondaryPhone || "";
-        document.getElementById("ecNotes").value = c.notes || "";
-
-        document.getElementById("ecFullName").value = c.profile.fullName || "";
-        document.getElementById("ecCountryCode").value = c.profile.countryCode || "";
-        document.getElementById("ecPhoneNumber").value = c.profile.phoneNumber || "";
-        document.getElementById("ecCurrentAddress").value = c.profile.currentAddress || "";
-        document.getElementById("ecNationality").value = c.profile.nationality || "";
-        document.getElementById("ecGender").value = c.profile.gender || "";
-        document.getElementById("ecAge").value = c.profile.age || "";
-
-        document.getElementById("ecOwnedPropertyJP").value = c.additional.ownedPropertyJP || "";
-        document.getElementById("ecPropertyLocation").value = c.additional.propertyLocation || "";
-        document.getElementById("ecResidentCountry").value = c.additional.residentCountry || "";
-        document.getElementById("ecBuyerStatus").value = (c.additional.buyerStatus || []).join(", ");
-
-        document.getElementById("ecDesiredCity").value = c.investment.desiredCity || "";
-        document.getElementById("ecDesiredArea").value = c.investment.desiredArea || "";
-        document.getElementById("ecBudgetMin").value = c.investment.budgetMin || "";
-        document.getElementById("ecBudgetMax").value = c.investment.budgetMax || "";
-        document.getElementById("ecTargetYield").value = c.investment.targetYield || "";
-        document.getElementById("ecBedrooms").value = c.investment.bedrooms || "";
-        document.getElementById("ecPurpose").value = c.investment.purpose || "";
-        document.getElementById("ecPropertyStatus").value = c.investment.propertyStatus || "";
-
-        openModal("editContactModal");
-      }
-      window.openEditContactModal = openEditContactModal;
-
-      function saveEditContactModal() {
-        const c = contactById(currentContactId);
-        
-        c.name = document.getElementById("ecName").value.trim();
-        c.firstContact = document.getElementById("ecFirstContact").value.trim();
-        c.secondaryPhone = document.getElementById("ecSecondaryPhone").value.trim();
-        c.notes = document.getElementById("ecNotes").value.trim();
-
-        c.profile.fullName = document.getElementById("ecFullName").value.trim();
-        c.profile.email = document.getElementById("ecEmail").value.trim();
-        const phoneParts = (document.getElementById("ecPhone").value || "").split(" ");
-        c.profile.countryCode = phoneParts[0] || "";
-        c.profile.phoneNumber = phoneParts.slice(1).join(" ") || document.getElementById("ecPhoneNumber").value.trim();
-        c.profile.currentAddress = document.getElementById("ecCurrentAddress").value.trim();
-        c.profile.nationality = document.getElementById("ecNationality").value.trim();
-        c.profile.gender = document.getElementById("ecGender").value.trim();
-        c.profile.age = document.getElementById("ecAge").value.trim();
-
-        c.additional.ownedPropertyJP = document.getElementById("ecOwnedPropertyJP").value.trim();
-        c.additional.propertyLocation = document.getElementById("ecPropertyLocation").value.trim();
-        c.additional.residentCountry = document.getElementById("ecResidentCountry").value.trim();
-        c.additional.buyerStatus = document.getElementById("ecBuyerStatus").value.split(",").map(s => s.trim()).filter(Boolean);
-
-        c.investment.desiredCity = document.getElementById("ecDesiredCity").value.trim();
-        c.investment.desiredArea = document.getElementById("ecDesiredArea").value.trim();
-        c.investment.budgetMin = document.getElementById("ecBudgetMin").value.trim();
-        c.investment.budgetMax = document.getElementById("ecBudgetMax").value.trim();
-        c.investment.targetYield = document.getElementById("ecTargetYield").value.trim();
-        c.investment.bedrooms = document.getElementById("ecBedrooms").value.trim();
-        c.investment.purpose = document.getElementById("ecPurpose").value.trim();
-        c.investment.propertyStatus = document.getElementById("ecPropertyStatus").value.trim();
-
-        closeModal("editContactModal");
-        showContactDetail(currentContactId);
-        toast("Contact updated successfully", "success");
-      }
-      window.saveEditContactModal = saveEditContactModal;
-
-      function restoreOriginalData() {
-        if (!confirm("Restore all fields to original system data? Current edits will be lost.")) return;
-        const c = contactById(currentContactId);
-        if (c.original) {
-          c.name = c.original.name;
-          c.firstContact = c.original.firstContact;
-          c.secondaryPhone = c.original.secondaryPhone;
-          c.notes = c.original.notes;
-
-          Object.assign(c.profile, c.original.profile);
-          Object.assign(c.additional, c.original.additional);
-          Object.assign(c.investment, c.original.investment);
-
-          closeModal("editContactModal");
-          showContactDetail(currentContactId);
-          toast("Restored to original system data", "success");
-        }
-      }
-      window.restoreOriginalData = restoreOriginalData;
 
       /* ============================================================
          ASSIGN TO GROUP(S) MODAL
