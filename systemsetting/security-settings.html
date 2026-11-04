@@ -883,8 +883,8 @@
               </tr>
               <tr><th scope="row">Session Timeout</th>
                 <td><div class="cell-view" id="view-inactivityMinutes-admin"></div><div class="cell-edit session-edit" id="cell-inactivityMinutes-admin"><input id="inactivityMinutes-admin" class="edit-input" type="number" min="1" max="1440" step="1"><span class="unit-label">minutes</span><div class="inline-error">Enter a valid value.</div></div></td>
-                <td><span class="muted">N/A<br><small>Keep Login Session applies.</small></span></td>
-                <td><span class="muted">N/A<br><small>Keep Login Session applies.</small></span></td>
+                <td><div class="cell-view" id="view-inactivityMinutes-agent"></div><div class="cell-edit session-edit" id="cell-inactivityMinutes-agent"><input id="inactivityMinutes-agent" class="edit-input" type="number" min="1" max="1440" step="1"><span class="unit-label">minutes</span><div class="inline-error">Enter a valid value.</div></div></td>
+                <td><div class="cell-view" id="view-inactivityMinutes-customer"></div><div class="cell-edit session-edit" id="cell-inactivityMinutes-customer"><input id="inactivityMinutes-customer" class="edit-input" type="number" min="1" max="1440" step="1"><span class="unit-label">minutes</span><div class="inline-error">Enter a valid value.</div></div></td>
               </tr>
               <tr><th scope="row">2FA</th><td><div class="cell-view" id="view-twoFa-admin"></div><div class="cell-edit" id="cell-twoFa-admin"><select id="twoFa-admin" class="edit-input"><option value="on">ON</option><option value="off">OFF</option></select></div></td><td><div class="cell-view" id="view-twoFa-agent"></div><div class="cell-edit" id="cell-twoFa-agent"><select id="twoFa-agent" class="edit-input"><option value="on">ON</option><option value="off">OFF</option></select></div></td><td><div class="cell-view" id="view-twoFa-customer"></div><div class="cell-edit" id="cell-twoFa-customer"><select id="twoFa-customer" class="edit-input"><option value="on">ON</option><option value="off">OFF</option></select></div></td></tr>
               <tr><th scope="row">Active Session</th><td colspan="3">Only one active session per account. Successful login on a new device invalidates the previous session. A suspicious materially different device/IP/country login may raise a Multi-Device Login signal; this does not permit concurrent sessions.</td></tr>
@@ -990,6 +990,7 @@
             minChars: 8,
             complexity: allComplexity(),
             sessionMonths: 6,
+            inactivityMinutes: 60,
             passwordHistory: 3,
             twoFaMandatory: true,
           },
@@ -997,6 +998,7 @@
             minChars: 8,
             complexity: allComplexity(),
             sessionMonths: 6,
+            inactivityMinutes: 60,
             passwordHistory: 1,
             twoFaMandatory: false,
           },
@@ -1100,7 +1102,7 @@
           out.complexity = normalizeComplexity(raw.complexity);
         if (raw.passwordHistory != null) out.passwordHistory = Number(raw.passwordHistory);
         if (role !== "admin" && raw.sessionMonths != null) out.sessionMonths = Number(raw.sessionMonths);
-        if (role === "admin" && raw.inactivityMinutes != null) out.inactivityMinutes = Number(raw.inactivityMinutes);
+        if (raw.inactivityMinutes != null) out.inactivityMinutes = Number(raw.inactivityMinutes);
         if (raw.twoFaMandatory != null) out.twoFaMandatory = !!raw.twoFaMandatory;
         return out;
       }
@@ -1211,7 +1213,7 @@
           });
           if (m.passwordHistoryInput) m.passwordHistoryInput.value = String(p.passwordHistory ?? 0);
           if (r !== "admin" && m.sessionMonthsInput) m.sessionMonthsInput.value = String(p.sessionMonths ?? 6);
-          if (r === "admin" && m.inactivityMinutesInput) m.inactivityMinutesInput.value = String(p.inactivityMinutes ?? 30);
+          if (m.inactivityMinutesInput) m.inactivityMinutesInput.value = String(p.inactivityMinutes ?? (r === "admin" ? 30 : 60));
           if (m.twoFaInput) m.twoFaInput.value = p.twoFaMandatory ? "on" : "off";
         });
         refreshMatrixViews();
@@ -1230,7 +1232,7 @@
             minChars: m.minCharsInput ? Number(m.minCharsInput.value) : defaults.minChars,
             complexity,
             sessionMonths: r === "admin" ? null : (m.sessionMonthsInput ? Number(m.sessionMonthsInput.value) : defaults.sessionMonths),
-            ...(r === "admin" ? { inactivityMinutes: m.inactivityMinutesInput ? Number(m.inactivityMinutesInput.value) : defaults.inactivityMinutes } : {}),
+            inactivityMinutes: m.inactivityMinutesInput ? Number(m.inactivityMinutesInput.value) : defaults.inactivityMinutes,
             passwordHistory: m.passwordHistoryInput ? Number(m.passwordHistoryInput.value) : defaults.passwordHistory,
             twoFaMandatory: m.twoFaInput ? m.twoFaInput.value === "on" : defaults.twoFaMandatory,
           };
@@ -1273,7 +1275,7 @@
           }
           if (m.passwordHistoryView) m.passwordHistoryView.textContent = m.passwordHistoryInput ? (m.passwordHistoryInput.value || "0") : "0";
           if (r !== "admin" && m.sessionMonthsView) m.sessionMonthsView.textContent = (m.sessionMonthsInput ? (m.sessionMonthsInput.value || "0") : "0") + " months";
-          if (r === "admin" && m.inactivityMinutesView) m.inactivityMinutesView.textContent = (m.inactivityMinutesInput ? (m.inactivityMinutesInput.value || "0") : "0") + " minutes inactivity";
+          if (m.inactivityMinutesView) m.inactivityMinutesView.textContent = (m.inactivityMinutesInput ? (m.inactivityMinutesInput.value || "0") : "0") + " mins inactivity";
           if (m.twoFaView) setBadge(m.twoFaView, !!m.twoFaInput && m.twoFaInput.value === "on", "ON · Email OTP", "OFF");
         });
       }
@@ -1363,7 +1365,7 @@
             const months = Number(m.sessionMonthsInput.value);
             if (!Number.isInteger(months) || months < 1 || months > 60) { markCellError(m.sessionMonthsInput); ok = false; }
           }
-          if (r === "admin" && m.inactivityMinutesInput) {
+          if (m.inactivityMinutesInput) {
             const minutes = Number(m.inactivityMinutesInput.value);
             if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) { markCellError(m.inactivityMinutesInput); ok = false; }
           }
