@@ -69,13 +69,7 @@
       .pg-right { display: flex; align-items: center; gap: 4px; }
       .pg-btn { min-width: 28px; height: 28px; border-radius: 50%; border: 0; background: 0; cursor: pointer; font-size: 13px; color: var(--text-main); display: inline-flex; align-items: center; justify-content: center; font-family: inherit; }
       .pg-btn:hover { background: var(--bg-alt); }
-      .pg-btn.active { background: var(--accent); color: #fff; }
-      /* ===== Bulk bar ===== */
-      .bulk-bar { display: none; align-items: center; gap: 12px; background: var(--accent-tint); border: 1px solid var(--accent-soft); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 12.5px; color: var(--accent-dark); }
-      .bulk-bar.show { display: flex; }
-      .bulk-bar .cnt { font-weight: 700; }
-      .bulk-bar .spacer { flex: 1; }
-      /* ===== Detail screen ===== */
+      .pg-btn.active { background: var(--accent); color: #fff; }      /* ===== Detail screen ===== */
       .dt-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
       .back-arrow { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: #fff; cursor: pointer; color: var(--text-main); font-size: 15px; flex-shrink: 0; }
       .back-arrow:hover { background: var(--bg-alt); }
@@ -481,25 +475,11 @@
               <i class="fas fa-eye" title="View" onclick="showContactDetail('${c.id}')"></i>
               <i class="fas fa-link-slash" title="Remove from group" onclick="removeFromGroup('${c.id}')"></i>
             </div></td>
-          </tr>`).join("") || `<tr><td colspan="6">${emptyBox("No members yet", "Add existing contacts to this group.")}</td></tr>`;
-        updateMemberBulkBar();
-      }
+          </tr>`).join("") || `<tr><td colspan="6">${emptyBox("No members yet", "Add existing contacts to this group.")}</td></tr>`;      }
       function tagList(arr) {
         if (!arr || !arr.length) return "—";
         return `<div class="tag-wrap">${arr.map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</div>`;
       }
-      function toggleAllMembers(cb) { document.querySelectorAll(".member-check").forEach((c) => c.checked = cb.checked); updateMemberBulkBar(); }
-      window.toggleAllMembers = toggleAllMembers;
-      function getSelectedMembers() { return Array.from(document.querySelectorAll(".member-check:checked")).map((c) => c.dataset.id); }
-      window.getSelectedMembers = getSelectedMembers;
-      function updateMemberBulkBar() {
-        // Bulk-action UI is intentionally removed; do not interrupt member rendering.
-        const bar = document.getElementById("gBulkBar");
-        const count = document.getElementById("gBulkCount");
-        if (bar) bar.classList.toggle("show", getSelectedMembers().length > 0);
-        if (count) count.textContent = getSelectedMembers().length;
-      }
-      window.updateMemberBulkBar = updateMemberBulkBar;
       function removeFromGroup(cid) {
         const c = contactById(cid);
         c.groups = c.groups.filter((g) => g !== currentGroupId);
@@ -507,13 +487,6 @@
         toast(`${c.name} removed from group — contact was kept`, "success");
       }
       window.removeFromGroup = removeFromGroup;
-      function removeSelectedFromGroup() {
-        const ids = getSelectedMembers();
-        ids.forEach((cid) => { contactById(cid).groups = contactById(cid).groups.filter((g) => g !== currentGroupId); });
-        renderMembers(); document.getElementById("gdMemberCount").textContent = memberCount(currentGroupId);
-        toast(`${ids.length} contact(s) removed from group — not deleted`, "success");
-      }
-      window.removeSelectedFromGroup = removeSelectedFromGroup;
       /* ---- Add existing Contact to group ---- */
       function openAddContactModal() {
         addContactSelected = new Set();
@@ -558,7 +531,7 @@
       renderGroupsList();
     </script>
     <script src="agency-dashboard-source.js" data-source="groups"></script>
-  <script>window.mockExportContext=()=>getSelectedMembers().length+' selected contact(s).';</script>
+  
 <script src="../mock-export.js"></script>
 </body>
 </html>
