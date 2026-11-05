@@ -833,6 +833,22 @@
       }
       window.setIntent = setIntent;
 
+      function formatLeadAddress(lead) {
+        if (lead.address) return lead.address;
+        if (!lead.propertyId || lead.intent === "project") return "—";
+        try {
+          const properties = JSON.parse(localStorage.getItem("yuushi.ploPropertyPicker") || "[]");
+          const property = properties.find(p => String(p.id) === String(lead.propertyId));
+          if (!property) return "—";
+          const line1 = property.postCode ? "〒" + property.postCode : "";
+          const line2 = [property.prefecture, property.city].filter(Boolean).join(", ")
+            + (property.chome ? " " + property.chome : "")
+            + (property.houseNo ? "-" + property.houseNo : "");
+          const line3 = [property.buildingName, property.unitNo].filter(Boolean).join(" ");
+          return [line1, line2, line3].filter(Boolean).join(", ") || "—";
+        } catch (e) { return "—"; }
+      }
+
       function renderList() {
         // 1. Filter by Intent (To Buy / To Rent / New Development)
         let rows = LEADS.filter(l => !intent || l.intent === intent);
@@ -897,7 +913,7 @@
               <td>${l.enquiry}</td>
               <td>${l.follow}</td>
               <td><span class="mc-pill ${l.status === 'Sold' ? 'mc-ok' : 'mc-miss'}" style="background:var(--grey-pill);color:var(--text-main)">${l.status}</span>${l.autoClosedBySale?`<br><small>Sold by ${W.esc(l.soldByStaffName)}</small>`:""}</td>
-              <td>${W.esc(l.address||"—")}</td><td>${W.esc(l.assigneeName)}<br><small>${W.esc(l.assigneeType==='Agent Individual'?'Agency Staff':l.assigneeType)}</small></td><td onclick="event.stopPropagation()">${ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name].assign&&!['Sold','Closed Lost'].includes(l.status)?`<button class="btn btn-icon" title="Assign / Reassign" aria-label="Assign / Reassign" onclick="assignEnquiry('${l.id}')"><i class="fas fa-user-pen"></i></button>`:"—"}</td>
+              <td>${W.esc(formatLeadAddress(l))}</td><td>${W.esc(l.assigneeId ? (l.assigneeName || "—") : "Unassigned")}</td><td onclick="event.stopPropagation()">${ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name].assign&&!['Sold','Closed Lost'].includes(l.status)?`<button class="btn btn-icon" title="Assign / Reassign" aria-label="Assign / Reassign" onclick="assignEnquiry('${l.id}')"><i class="fas fa-user-pen"></i></button>`:"—"}</td>
             </tr>`).join("");
         }
 
