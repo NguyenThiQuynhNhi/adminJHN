@@ -789,52 +789,6 @@
       .chist-revert {
         margin-top: 6px;
       }
-      /* G: clone picker rows */
-      .clone-search {
-        margin-bottom: 12px;
-      }
-      .clone-list {
-        max-height: 360px;
-        overflow: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-      }
-      .clone-row {
-        text-align: left;
-        background: var(--bg-card);
-        border: 1px solid var(--border-subtle);
-        border-radius: var(--r-md);
-        padding: 10px 12px;
-        cursor: pointer;
-        font-family: inherit;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        transition:
-          border-color 0.15s,
-          background 0.15s;
-      }
-      .clone-row:hover {
-        background: var(--bg-card-warm);
-        border-color: var(--accent);
-      }
-      .clone-row .cr-name {
-        font-weight: 600;
-        font-size: 13px;
-        color: var(--text-main);
-      }
-      .clone-row .cr-meta {
-        font-size: 11px;
-        color: var(--text-muted);
-      }
-      .clone-empty {
-        text-align: center;
-        color: var(--text-muted);
-        font-size: 12px;
-        padding: 20px;
-      }
-
       /* ===== ALERTS subsystem ===== */
       /* Banner stack (top of list view) */
       .alert-banner-stack {
@@ -2128,9 +2082,6 @@
           <button class="btn" type="button" onclick="exportCsv()">
             <i class="fas fa-file-export"></i> Export
           </button>
-          <button class="btn" type="button" onclick="openCloneModal()">
-            <i class="fas fa-clone"></i> New project (clone)
-          </button>
           <button
             class="btn btn-primary"
             type="button"
@@ -2622,7 +2573,6 @@
         </div>
       </div>
 
-      <div id="dCloneBanner"></div>
       <div id="dDraftBanner"></div>
       <div id="dAlerts"></div>
       <div class="section-grid" id="dSections"></div>
@@ -2687,37 +2637,6 @@
       </div>
     </div>
 
-    <!-- Clone picker modal (EDIT REFINEMENTS group G) -->
-    <div class="modal-backdrop" id="cloneModal">
-      <div class="modal-box">
-        <div class="modal-header">
-          <h3 class="modal-title">Clone from existing project</h3>
-          <button
-            class="btn btn-ghost btn-sm"
-            type="button"
-            onclick="closeCloneModal()"
-          >
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="field-group clone-search">
-            <input
-              id="cloneSearch"
-              type="text"
-              placeholder="Search by ID, name or address…"
-              oninput="renderCloneList()"
-            />
-          </div>
-          <div class="clone-list" id="cloneList"></div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn" type="button" onclick="closeCloneModal()">
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
 
     <!-- Floor plan type — upgrade modal (paid) -->
     <div class="modal-backdrop" id="upgradeModal">
@@ -4838,12 +4757,10 @@
       });
 
       // Bulk-edit modals: backdrop click + ESC close (group A).
-      // Clone picker (group G) shares the same close behaviour.
       [
         ["bulkPriceModal", closeBulkPrice],
         ["bulkStatusModal", closeBulkStatus],
         ["bulkAgentModal", closeBulkAgent],
-        ["cloneModal", closeCloneModal],
       ].forEach(([id, close]) => {
         $(id).addEventListener("click", (e) => {
           if (e.target === $(id)) close();
@@ -8289,115 +8206,6 @@
         showDetail(newP.id);
         editMode = true;
         renderDetail();
-      }
-
-      // ====================================================================
-      // GROUP G — SMART DEFAULTS: CLONE FROM EXISTING
-      // ====================================================================
-      function openCloneModal() {
-        $("cloneSearch").value = "";
-        renderCloneList();
-        $("cloneModal").classList.add("open");
-      }
-      function closeCloneModal() {
-        $("cloneModal").classList.remove("open");
-      }
-      function renderCloneList() {
-        const q = ($("cloneSearch").value || "").trim().toLowerCase();
-        const list = projects.filter((p) => {
-          if (!q) return true;
-          const hay = [
-            p.id,
-            p.name,
-            p.nameJp,
-            p.nameRomaji,
-            p.prefecture,
-            p.city,
-            p.chome,
-            p.buildingName,
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase();
-          return hay.includes(q);
-        });
-        const box = $("cloneList");
-        if (!list.length) {
-          box.innerHTML =
-            '<div class="clone-empty">No projects match your search.</div>';
-          return;
-        }
-        box.innerHTML = list
-          .slice(0, 50)
-          .map((p) => {
-            const addr =
-              [p.prefecture, p.city, p.chome].filter(Boolean).join(" · ") ||
-              "—";
-            return `<button class="clone-row" type="button" onclick="cloneFromProject('${escAttr(p.id)}')">
-              <span class="cr-name">${esc(p.name || "(Unnamed)")}</span>
-              <span class="cr-meta">${esc(p.id)} · ${GROUP_META[p.group].label} · ${esc(addr)}</span>
-            </button>`;
-          })
-          .join("");
-      }
-      function cloneFromProject(sourceId) {
-        const src = projects.find((p) => p.id === sourceId);
-        if (!src) return;
-        closeCloneModal();
-        const today = new Date().toISOString().slice(0, 10);
-        // Deep copy then strip the fields that must be re-entered per spec:
-        // address, price(s), photos, and listing date.
-        const clone = JSON.parse(JSON.stringify(src));
-        clone.id = "PRJ-" + Math.floor(Math.random() * 90000 + 10000);
-        clone.name = (src.name || "Project") + " (copy)";
-        clone.publishStatus = "Pending Review";
-        clone.dateUpdated = today;
-        clone.changeHistory = [
-          {
-            ts: nowStamp(),
-            actorId: "ADM-TARO",
-            actorName: "Taro Tanaka",
-            role: "Admin",
-            field: "Project",
-            oldVal: "—",
-            newVal: `Cloned from ${src.id} (Pending Review)`,
-          },
-        ];
-        // --- Address fields cleared ---
-        clone.postCode = "";
-        clone.prefecture = "";
-        clone.city = "";
-        clone.municipalityCode = "";
-        clone.chome = "";
-        clone.buildingName = "";
-        clone.unitNo = "";
-        // --- Listing / publish dates cleared ---
-        clone.datePublished = "";
-        // --- Photos cleared ---
-        if (clone.media) {
-          clone.media.photoCount = 0;
-          clone.media.videoCount = 0;
-        }
-        // --- Prices cleared (group 5 floor-plan types / group 6 lots) ---
-        (clone.floorPlanTypes || []).forEach((t) => {
-          t.priceMin = "";
-          t.priceMax = "";
-          if (t.media) t.media.photoCount = 0;
-        });
-        (clone.lots || []).forEach((t) => {
-          t.price = "";
-          if (t.media) t.media.photoCount = 0;
-        });
-        clone._clonedFrom = src.id;
-        projects.unshift(clone);
-        showDetail(clone.id);
-        editMode = true;
-        renderDetail();
-        // Top banner stays until saved; rendered after showDetail cleared it.
-        $("dCloneBanner").innerHTML = `<div class="alert info">
-          <i class="fas fa-clone"></i>
-          <div>Cloned from <strong>${esc(src.id)}</strong> — review and update fields (address, price, photos and listing date were left empty).</div>
-        </div>`;
       }
 
       function exportCsv() { const button=document.querySelector('[onclick*="exportCsv"],#btnExportCsv,#exportBtn'); if(button&&!button.disabled)MockExport.open(button); }
