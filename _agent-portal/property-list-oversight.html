@@ -1036,53 +1036,7 @@
       .draft-banner .spacer {
         flex: 1;
       }
-      .clone-banner {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        background: var(--status-warning-bg);
-        border: 1px solid var(--status-warning-text);
-        color: var(--status-warning-text);
-        border-radius: var(--r-md);
-        padding: 10px 14px;
-        font-size: 12.5px;
-        font-weight: 600;
-        margin-bottom: 12px;
-      }
-      /* Clone picker rows (Group G) */
-      .clone-pick-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        padding: 9px 11px;
-        border: 1px solid var(--border-subtle);
-        border-radius: var(--r-sm);
-        margin-bottom: 6px;
-        cursor: pointer;
-        background: var(--bg-card);
-      }
-      .clone-pick-row:hover {
-        border-color: var(--accent);
-        background: var(--bg-card-warm);
-      }
-      .clone-pick-row .cp-main {
-        min-width: 0;
-      }
-      .clone-pick-row .cp-id {
-        font-weight: 700;
-        color: var(--accent);
-        font-size: 12px;
-      }
-      .clone-pick-row .cp-name {
-        font-size: 13px;
-        color: var(--text-main);
-      }
-      .clone-pick-row .cp-addr {
-        font-size: 11.5px;
-        color: var(--text-muted);
-      }
-      /* Revert button in change-history rows (Group D) */
+
       .chist-revert {
         margin-top: 6px;
       }
@@ -2137,9 +2091,7 @@
           >
             <i class="fas fa-plus"></i> New property
           </button>
-          <button class="btn" type="button" onclick="openCloneModal()">
-            <i class="fas fa-clone"></i> New property (clone from existing)
-          </button>
+
         </div>
       </div>
 
@@ -2670,7 +2622,6 @@
         </div>
       </div>
 
-      <div id="cloneBanner"></div>
       <div id="draftBanner"></div>
       <div id="dAlerts"></div>
       <div class="section-grid" id="dSections"></div>
@@ -2803,42 +2754,7 @@
       </div>
     </div>
 
-    <!-- Clone picker modal (Group G) -->
-    <div class="modal-backdrop" id="cloneModal">
-      <div class="modal-box" style="width: 560px">
-        <div class="modal-header">
-          <h3 class="modal-title">Clone from existing listing</h3>
-          <button
-            class="btn btn-ghost btn-sm"
-            type="button"
-            onclick="closeCloneModal()"
-          >
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <input
-            class="edit-input"
-            type="text"
-            id="cloneSearch"
-            placeholder="Search by ID, name, or address…"
-            style="margin-bottom: 10px"
-            oninput="renderCloneResults(this.value)"
-          />
-          <div
-            id="cloneResults"
-            style="max-height: 360px; overflow: auto"
-          ></div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn" type="button" onclick="closeCloneModal()">
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
 
-    <!-- Reusable styled confirm modal -->
     <div class="modal-backdrop" id="confirmModal">
       <div
         class="confirm-box"
@@ -7940,9 +7856,6 @@
           .map((k) => renderSection(k, p))
           .join("");
 
-        // Group G — clone banner (shown for unsaved cloned listings).
-        renderCloneBanner();
-
         // Reactive trigger listeners (Edit mode only)
         if (editMode) {
           attachTriggerListeners();
@@ -8293,7 +8206,6 @@
         currentProp.dateUpdated = new Date().toISOString().slice(0, 10);
         if (currentProp.adminCreated && agencyVerificationUnverified(currentProp)) currentProp.publishStatus = "Pending Review";
         persistAdminCreatedProperty(currentProp);
-        if (currentProp._clonedFrom) delete currentProp._clonedFrom; // Group G
         if(before&&Number(before.priceBuy)!==Number(currentProp.priceBuy)) emitPropertyEvent('property_price_changed',currentProp,{oldPrice:Number(before.priceBuy)||null,newPrice:Number(currentProp.priceBuy)||null,changeSource:'detail_edit'});
         if(before&&before.publishStatus!==currentProp.publishStatus) emitPropertyEvent(currentProp.publishStatus==='Published'?'property_published':'property_suspended',currentProp,{oldStatus:before.publishStatus,newStatus:currentProp.publishStatus,changeSource:'detail_edit'});
         syncAnalyticsPropertySnapshots();
@@ -8568,121 +8480,7 @@
         renderDetail();
       }
 
-      // ========================================================================
-      // GROUP G — SMART DEFAULTS: CLONE FROM EXISTING
-      // Picker modal with live filter; clone copies all source values EXCEPT
-      // address, price, photos, and listing date; saving creates a fresh listing.
-      // ========================================================================
-      // Fields intentionally NOT carried over from the source clone.
-      const CLONE_CLEAR_FIELDS = [
-        "prefecture",
-        "city",
-        "municipalityCode",
-        "chome",
-        "postCode",
-        "buildingName",
-        "houseNo",
-        "priceBuy",
-        "rentMonthly",
-        "datePublished",
-      ];
-      let _lastCloneSource = "";
-      function openCloneModal() {
-        $("cloneSearch").value = "";
-        renderCloneResults("");
-        $("cloneModal").classList.add("open");
-        setTimeout(() => $("cloneSearch").focus(), 30);
-      }
-      function closeCloneModal() {
-        $("cloneModal").classList.remove("open");
-      }
-      function renderCloneResults(q) {
-        const term = (q || "").toLowerCase().trim();
-        const matches = properties
-          .filter((p) => {
-            if (!term) return true;
-            const hay = [
-              p.id,
-              p.name,
-              p.prefecture,
-              p.city,
-              p.chome,
-              p.postCode,
-            ]
-              .filter(Boolean)
-              .join(" ")
-              .toLowerCase();
-            return hay.includes(term);
-          })
-          .slice(0, 40);
-        const box = $("cloneResults");
-        if (!matches.length) {
-          box.innerHTML =
-            '<div style="padding:14px;color:var(--text-muted);font-size:13px">No matching listings.</div>';
-          return;
-        }
-        box.innerHTML = matches
-          .map((p) => {
-            const addr =
-              [p.prefecture, p.city, p.chome].filter(Boolean).join(" · ") ||
-              "—";
-            return `
-            <div class="clone-pick-row" onclick="cloneFromListing('${escAttr(p.id)}')">
-              <div class="cp-main">
-                <div class="cp-id">${esc(p.id)}</div>
-                <div class="cp-name">${esc(p.name || "(Unnamed)")}</div>
-                <div class="cp-addr">${esc(addr)}</div>
-              </div>
-              <span class="btn btn-sm"><i class="fas fa-clone"></i> Clone</span>
-            </div>`;
-          })
-          .join("");
-      }
-      function cloneFromListing(srcId) {
-        const src = properties.find((p) => p.id === srcId);
-        if (!src) return;
-        closeCloneModal();
-        const today = new Date().toISOString().slice(0, 10);
-        // Deep copy then strip the excluded fields + identity/history/media.
-        const clone = JSON.parse(JSON.stringify(src));
-        clone.id = YuushiWorkflow.next(properties, "PROP-");
-        CLONE_CLEAR_FIELDS.forEach((k) => {
-          clone[k] = "";
-        });
-        // Photos / media reset.
-        clone.media = { tour3d: "", videoCount: 0, photoCount: 0 };
-        // Fresh listing state.
-        clone.publishStatus = "Pending Review";
-        clone.saleStatus = "On Sale";
-        clone.dateUpdated = today;
-        clone.finalSalePrice = undefined;
-        clone.soldDate = undefined;
-        clone.publishPrice = undefined;
-        clone.changeHistory = [];
-        clone._clonedFrom = src.id;
-        properties.unshift(clone);
-        showDetail(clone.id);
-        editMode = true;
-        _lastCloneSource = src.id;
-        renderDetail();
-        renderCloneBanner();
-      }
-      // Banner shown atop a freshly-cloned, unsaved listing.
-      function renderCloneBanner() {
-        const banner = $("cloneBanner");
-        if (!banner) return;
-        if (currentProp && currentProp._clonedFrom) {
-          banner.innerHTML = `
-            <div class="clone-banner">
-              <i class="fas fa-clone"></i>
-              <span>Cloned from ${esc(currentProp._clonedFrom)} — review and update fields (address, price, photos, and listing date were cleared).</span>
-            </div>`;
-        } else {
-          banner.innerHTML = "";
-        }
-      }
-
-      function exportCsv() { const button=document.querySelector('[onclick*="exportCsv"],#btnExportCsv,#exportBtn'); if(button&&!button.disabled)MockExport.open(button); }
+ { const button=document.querySelector('[onclick*="exportCsv"],#btnExportCsv,#exportBtn'); if(button&&!button.disabled)MockExport.open(button); }
 
       // Navigate to Project Management module (Groups 5/6).
       // Works when loaded inside the admin shell iframe (index.html).
