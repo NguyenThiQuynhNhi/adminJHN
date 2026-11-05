@@ -67,6 +67,16 @@
       .filter-field.has-icon input { padding-left: 34px; }
       .filter-field .fi-left { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; }
       .filter-field .fi-right { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; font-size: 11px; }
+      .pop-tabs{display:flex;gap:4px;background:var(--bg-alt);border:1px solid var(--border-soft);border-radius:8px;padding:3px;margin-bottom:10px}
+      .pop-tab{flex:1;border:0;background:transparent;padding:6px 8px;font-size:12px;font-weight:600;color:var(--text-muted);border-radius:6px;cursor:pointer;font-family:inherit}
+      .pop-tab.on{background:var(--accent);color:#fff}.pop-tabpane{display:none}.pop-tabpane.on{display:block}
+      .pop-tree-node{margin-bottom:2px}.pop-tree-children{padding-left:22px;display:none}.pop-tree-node.open>.pop-tree-children{display:block}
+      .pop-tree-toggle{cursor:pointer;color:var(--text-muted);font-size:10px;width:14px;display:inline-flex;justify-content:center;flex-shrink:0;transition:transform .15s}
+      .pop-tree-node.open>.pop-row>.pop-tree-toggle{transform:rotate(90deg)}
+      .pop-row{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:3px 0;cursor:pointer}
+      .pop-row input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+      .pop-search{width:100%;height:34px;border:1px solid var(--border);border-radius:6px;padding:0 10px;margin-bottom:8px;font:inherit;outline:none}
+      .pop-foot{display:flex;justify-content:flex-end;border-top:1px solid var(--border-soft);margin-top:10px;padding-top:10px}
       /* ===== Price popover (giữ style filter-field hiện có) ===== */
       .pop-wrap { position: relative; }
       .pop-btn { height: 38px; border-radius: 8px; border: 1px solid var(--border); padding: 0 14px; font-size: 13px; background: #fff; color: var(--text-main); display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-family: inherit; }
@@ -275,7 +285,7 @@
               <button id="pillRent" onclick="setIntent('rent')">To Rent</button>
               <button id="pillProject" onclick="setIntent('project')">New Development</button>
             </div>
-            <div class="filter-field has-icon"><i class="fas fa-globe fi-left"></i><input placeholder="Location" /></div>
+            <div class="pop-wrap" data-pop="lead-region"><button class="pop-btn" type="button" onclick="toggleLeadRegionPop(event)"><i class="fas fa-location-dot"></i> Region / Station <span class="cnt hidden" id="leadRegionCnt">0</span><i class="fas fa-chevron-down"></i></button><div class="pop-panel" id="leadRegionPanel" style="min-width:320px"><div class="pop-tabs"><button class="pop-tab on" type="button" data-lead-rtab="reg">Region</button><button class="pop-tab" type="button" data-lead-rtab="rail">Railway / Station</button></div><div class="pop-tabpane on" data-lead-rpane="reg"><input class="pop-search" type="text" placeholder="Search prefecture / city…" id="leadRegionSearch"><div id="leadRegionTree"></div></div><div class="pop-tabpane" data-lead-rpane="rail"><input class="pop-search" type="text" placeholder="Search line / station…" id="leadRailwaySearch"><div id="leadRailwayTree"></div></div><div class="pop-foot"><button class="btn btn-sm" type="button" onclick="applyLeadRegion()">Apply</button></div></div></div>
             <div class="filter-field">
               <select>
                 <option value="">Status</option>
@@ -745,6 +755,20 @@
         return project.group === 5 ? target.priceMin : target.price;
       }
 
+      const LEAD_PREFECTURES=["Tokyo","Osaka","Kanagawa","Kyoto","Hokkaido","Fukuoka","Saitama","Chiba","Aichi","Hyogo"];
+      const LEAD_RAILWAY={Tokyo:{"JR Yamanote Line":["Shibuya","Shinjuku","Tokyo","Ueno","Ebisu"],"Ginza Line":["Omotesando","Shibuya","Asakusa","Ginza"],"Hanzomon Line":["Aoyama-Itchome","Shibuya","Otemachi"]},Osaka:{"Midosuji Line":["Umeda","Namba","Shinsaibashi","Tennoji"],"JR Osaka Loop Line":["Osaka","Tennoji","Kyobashi"]},Kanagawa:{"JR Tokaido Line":["Yokohama","Kawasaki","Ofuna"],"Tokyu Toyoko Line":["Yokohama","Hiyoshi","Musashi-Kosugi"]},Hokkaido:{"Sapporo Namboku Line":["Sapporo","Odori","Susukino","Nakajima-Koen"],"Sapporo Tozai Line":["Odori","Maruyama-Koen","Shin-Sapporo"]},Fukuoka:{"Fukuoka Kuko Line":["Hakata","Tenjin","Fukuoka Airport"],"Fukuoka Hakozaki Line":["Nakasu-Kawabata","Kaizuka"]},Aichi:{"Nagoya Higashiyama Line":["Nagoya","Sakae","Hoshigaoka"],"JR Chuo Line":["Nagoya","Chikusa","Ozone"]}};
+      const LEAD_REGION_FILTER={prefectures:[],cities:[],stations:[]};
+      function buildLeadRegionTrees(){
+        document.getElementById("leadRegionTree").innerHTML=LEAD_PREFECTURES.map(pref=>{const cities=YuushiMunicipality.namesByPrefecture[pref]||[];return '<div class="pop-tree-node" data-lead-pref-node="'+W.esc(pref)+'"><label class="pop-row"><i class="fas fa-caret-right pop-tree-toggle" data-lead-tree-toggle></i><input type="checkbox" data-lead-pref value="'+W.esc(pref)+'"><span>'+W.esc(pref)+'</span></label><div class="pop-tree-children">'+cities.map(city=>'<label class="pop-row"><input type="checkbox" data-lead-city value="'+W.esc(YuushiMunicipality.filterValue(pref,city))+'" data-pref="'+W.esc(pref)+'"><span>'+W.esc(city)+'</span></label>').join("")+'</div></div>';}).join("");
+        document.getElementById("leadRailwayTree").innerHTML=Object.entries(LEAD_RAILWAY).map(entry=>{const pref=entry[0],lines=entry[1];return '<div class="pop-tree-node"><label class="pop-row"><i class="fas fa-caret-right pop-tree-toggle" data-lead-tree-toggle></i><span>'+W.esc(pref)+'</span></label><div class="pop-tree-children">'+Object.entries(lines).map(lineEntry=>{const line=lineEntry[0],stations=lineEntry[1];return '<div class="pop-tree-node"><label class="pop-row"><i class="fas fa-caret-right pop-tree-toggle" data-lead-tree-toggle></i><span>'+W.esc(line)+'</span></label><div class="pop-tree-children">'+stations.map(st=>'<label class="pop-row"><input type="checkbox" data-lead-station value="'+W.esc(pref+"|"+line+"|"+st)+'"><span>'+W.esc(st)+'</span></label>').join("")+'</div></div>';}).join("")+'</div></div>';}).join("");
+      }
+      function syncLeadRegionUI(){document.querySelectorAll("[data-lead-pref]").forEach(el=>el.checked=LEAD_REGION_FILTER.prefectures.includes(el.value));document.querySelectorAll("[data-lead-city]").forEach(el=>el.checked=LEAD_REGION_FILTER.cities.includes(el.value));document.querySelectorAll("[data-lead-station]").forEach(el=>el.checked=LEAD_REGION_FILTER.stations.includes(el.value));const n=LEAD_REGION_FILTER.prefectures.length+LEAD_REGION_FILTER.cities.length+LEAD_REGION_FILTER.stations.length;const badge=document.getElementById("leadRegionCnt");badge.textContent=n;badge.classList.toggle("hidden",!n);document.querySelector('[data-pop="lead-region"] .pop-btn').classList.toggle("active",!!n);}
+      function toggleLeadRegionPop(e){e.stopPropagation();const panel=document.getElementById("leadRegionPanel"),wasOpen=panel.classList.contains("open");document.querySelectorAll(".pop-panel.open").forEach(el=>el.classList.remove("open"));if(!wasOpen){syncLeadRegionUI();panel.classList.add("open");}}
+      function applyLeadRegion(){LEAD_REGION_FILTER.prefectures=Array.from(document.querySelectorAll("[data-lead-pref]:checked"),el=>el.value);LEAD_REGION_FILTER.cities=Array.from(document.querySelectorAll("[data-lead-city]:checked"),el=>el.value);LEAD_REGION_FILTER.stations=Array.from(document.querySelectorAll("[data-lead-station]:checked"),el=>el.value);syncLeadRegionUI();document.getElementById("leadRegionPanel").classList.remove("open");page=1;renderList();}
+      document.addEventListener("click",e=>{const tab=e.target.closest("[data-lead-rtab]");if(tab){const key=tab.dataset.leadRtab;document.querySelectorAll("[data-lead-rtab]").forEach(x=>x.classList.toggle("on",x===tab));document.querySelectorAll("[data-lead-rpane]").forEach(x=>x.classList.toggle("on",x.dataset.leadRpane===key));}const toggle=e.target.closest("[data-lead-tree-toggle]");if(toggle){e.preventDefault();e.stopPropagation();toggle.closest(".pop-tree-node").classList.toggle("open");}if(!e.target.closest('[data-pop="lead-region"]'))document.getElementById("leadRegionPanel")?.classList.remove("open");});
+      document.getElementById("leadRegionSearch").addEventListener("input",e=>{const q=e.target.value.trim().toLowerCase();document.querySelectorAll("#leadRegionTree .pop-tree-node").forEach(node=>{node.style.display=node.textContent.toLowerCase().includes(q)?"":"none";if(q)node.classList.add("open");});});
+      document.getElementById("leadRailwaySearch").addEventListener("input",e=>{const q=e.target.value.trim().toLowerCase();document.querySelectorAll("#leadRailwayTree .pop-tree-node").forEach(node=>{node.style.display=node.textContent.toLowerCase().includes(q)?"":"none";if(q)node.classList.add("open");});});
+      buildLeadRegionTrees();
       // ===== LEADS =====
       // intent: "buy" | "rent" | "project"
       const LEADS = [
@@ -814,6 +838,8 @@
         const permissions=ENQUIRY_PERMISSIONS[ENQUIRY_ROLE.name];
         if(permissions.scope==='own')rows=rows.filter(l=>l.assigneeId===ENQUIRY_ROLE.staffId||(l.assigneeType==='Agency Team'&&l.assigneeId===ENQUIRY_ROLE.teamId));
         rows=rows.filter(l=>(!document.getElementById('enquiryType').value||l.assigneeType===document.getElementById('enquiryType').value)&&(!document.getElementById('enquiryPerson').value||l.assigneeId===document.getElementById('enquiryPerson').value));
+        const regionActive=LEAD_REGION_FILTER.prefectures.length||LEAD_REGION_FILTER.cities.length||LEAD_REGION_FILTER.stations.length;
+        if(regionActive)rows=rows.filter(l=>{const project=l.projectId?PROJECTS.find(p=>String(p.id)===String(l.projectId)):null;const loc=project||l;const regionHit=LEAD_REGION_FILTER.prefectures.includes(loc.prefecture)||LEAD_REGION_FILTER.cities.includes(loc.prefecture&&loc.city?YuushiMunicipality.filterValue(loc.prefecture,loc.city):'');const stationHit=LEAD_REGION_FILTER.stations.some(v=>{const a=v.split('|'),pref=a[0],station=a[2],value=String(loc.station||'').toLowerCase();return (!loc.prefecture||loc.prefecture===pref)&&value.includes(station.toLowerCase());});return regionHit||stationHit;});
 
         // 2. Filter by Price range popover
         const pMin = parseFloat(document.getElementById("fPriceMin")?.value) || null;
