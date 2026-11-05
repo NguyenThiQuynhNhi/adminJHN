@@ -2220,24 +2220,7 @@
                 </button>
               </div>
             </div>
-          </div>
-
-          <!-- Sale Status popover -->
-          <div class="pop-wrap" data-pop="sale">
-            <button class="pop-btn" type="button" data-pop-toggle>
-              <i class="fas fa-tag"></i> Sale Status
-              <span class="cnt hidden" data-cnt="sale">0</span>
-              <i class="fas fa-chevron-down"></i>
-            </button>
-            <div class="pop-panel" data-pop-panel>
-              <div class="pop-checks" id="saleChecks"></div>
-              <div class="pop-foot">
-                <button class="btn btn-sm" type="button" data-pop-done>
-                  Apply
-                </button>
-              </div>
-            </div>
-          </div>
+          </div></div>
 
           <!-- Sort popover -->
           <div class="pop-wrap" data-pop="sort">
@@ -2523,9 +2506,7 @@
           <h2 class="detail-name" id="dName">—</h2>
           <div class="detail-meta">
             <span class="detail-id-pill" id="dId">PRJ-—</span>
-            <span id="dMetaAddress">—</span>
-            <span>·</span><span id="dMetaSales">—</span> <span>·</span
-            ><span id="dMetaPublish">—</span> <span>·</span
+            <span id="dMetaAddress">—</span><span id="dMetaPublish">—</span> <span>·</span
             ><span id="dMetaTx">—</span> <span>·</span
             >
           </div>
@@ -2850,7 +2831,7 @@
           "Resort Apartment & Condo Hotel Unit",
         ],
         propType6: ["House", "Resort House & Villa & Ski Chalet"],
-        salesStatus: ["On Sale", "Sold Out"],
+
         transactionType: ["Buy", "Rent"],
         moveIn: ["Available Now", "Specified Due Date", "Consultation"],
         publish: ["Pending Review", "Published", "Rejected", "Suspended"],
@@ -3127,14 +3108,6 @@
               t: "select",
               opts: OPT.transactionType,
               req: true,
-            },
-            {
-              k: "salesStatus",
-              l: "Sales Status",
-              t: "select",
-              opts: OPT.salesStatus,
-              req: true,
-              readonly: true,
             },
             {
               k: "buildingPermit",
@@ -3539,7 +3512,7 @@
           buildingName: "Shinonome Sky Residence",
           unitNo: "",
           transactionType: "Buy",
-          salesStatus: "On Sale",
+
           buildingPermit: "確認番号2024-東京-001234",
           moveIn: "Specified Due Date",
           publishStatus: "Pending Review",
@@ -4152,9 +4125,7 @@
         projects.forEach((p) => {
           if (!p.createdBy) p.createdBy = p.agent;
           if(p.group===5)(p.floorPlanTypes||[]).forEach(t=>{t.totalUnits=Math.max(1,Number(t.totalUnits||10));t.soldUnits=Math.min(t.totalUnits,Number(t.soldUnits??(t.saleStatus==='Sold Out'?t.totalUnits:0)));t.availableUnits=t.totalUnits-t.soldUnits;t.saleStatus=t.availableUnits===0?'Sold Out':'On Sale';});
-          if (p.salesStatus !== "On Sale" && p.salesStatus !== "Sold Out") {
-            p.salesStatus = "On Sale";
-          }
+
         });
         const partial=projects.find(p=>p.group===5)?.floorPlanTypes?.find(t=>t.saleStatus==='On Sale');if(partial&&partial.soldUnits===0){partial.totalUnits=10;partial.soldUnits=2;partial.availableUnits=8;}
 
@@ -4228,7 +4199,7 @@
             // Transaction Type mix: ~90% Buy, ~10% Rent.
             // seed%10===3 → Rent, else Buy.
             transactionType: seed % 10 === 3 ? "Rent" : "Buy",
-            salesStatus: soldOut ? "Sold Out" : "On Sale",
+
             buildingPermit: "確認番号2025-" + idNum,
             moveIn: "Specified Due Date",
             publishStatus: publish,
@@ -4315,7 +4286,7 @@
             const fields = [
               "Created (Pending Review)",
               "publishStatus",
-              "salesStatus",
+
               "completionDate",
               "dateUpdated",
             ];
@@ -4406,13 +4377,7 @@
         };
         return `<span class="badge ${m[s] || "badge-gray"}">${esc(s || "—")}</span>`;
       }
-      function badgeSales(s) {
-        const m = {
-          "On Sale": "badge-onsale",
-          "Sold Out": "badge-soldout",
-        };
-        return `<span class="badge ${m[s] || "badge-gray"}">${esc(s || "—")}</span>`;
-      }
+
       // Transaction badge — reads the project Transaction Type.
       // Buy → success, Rent → warning.
       function badgeTx(s) {
@@ -4670,7 +4635,7 @@
         city: "Buyers filter by city/ward — required for location search.",
         transactionType:
           "Determines whether the listing appears under Buy results.",
-        salesStatus: "Controls public availability and sold-out display.",
+
         buildingPermit:
           "Legally required disclosure before a listing can be approved.",
         completionDate: "Buyers filter projects by handover timing.",
@@ -5689,7 +5654,7 @@
         $("dName").textContent = p.name || p.nameRomaji || p.nameJp || "(Unnamed)";
         $("dId").textContent = p.id || "PRJ—";
         $("dMetaAddress").textContent = [p.prefecture, p.city, p.chome].filter(Boolean).join(", ") || "—";
-        $("dMetaSales").textContent = p.salesStatus || "—";
+
         $("dMetaPublish").textContent = p.publishStatus || "—";
         $("dMetaTx").textContent = p.transactionType || "—";
 
@@ -5699,7 +5664,7 @@
           suspendBtn.className = "btn btn-danger";
           suspendBtn.innerHTML = '<i class="fas fa-ban"></i> Suspend';
           suspendBtn.classList.remove("hidden");
-        } else if (p.publishStatus === "Suspended" && p.salesStatus !== "Sold Out") {
+        } else if (p.publishStatus === "Suspended") {
           suspendBtn.className = "btn btn-success";
           suspendBtn.innerHTML = '<i class="fas fa-rotate-right"></i> Re-activate';
           suspendBtn.classList.remove("hidden");
@@ -5945,7 +5910,6 @@
         return out;
       }
 
-      function deriveProjectSalesStatus(project){const items=project.group===5?(project.floorPlanTypes||[]):(project.lots||[]);project.salesStatus=items.length&&items.every(x=>x.saleStatus==='Sold Out')?'Sold Out':'On Sale';if(project.salesStatus==='Sold Out')project.publishStatus='Suspended';}
       function recordInventorySale(kind,idx){
         const item=kind==='type'?currentProj.floorPlanTypes[idx]:currentProj.lots[idx];if(!item||item.saleStatus==='Sold Out')return;
         openSoldModal({unitName:item.name,onConfirm:payload=>{
@@ -6430,7 +6394,7 @@
         collectInputsToState();
 
         const queue = pendingSoldUnits();
-        processSoldQueue(queue, () => { deriveProjectSalesStatus(currentProj); finalizeSave(); });
+        processSoldQueue(queue, finalizeSave);
       }
 
       function openProjectSuspendReasonModal(onConfirm) {
@@ -6476,7 +6440,7 @@
       }
       function toggleSuspend() {
         if (!currentProj) return;
-        if(currentProj.publishStatus==='Suspended'&&currentProj.salesStatus==='Sold Out'){toast('Sold-out projects cannot be re-activated.','error');return;}
+
         const suspending = currentProj.publishStatus === "Published";
         if(suspending){
           openProjectSuspendReasonModal((reason)=>{
@@ -6732,8 +6696,7 @@
             } else if (kind === "status") {
               const before = p.publishStatus;
               p.publishStatus = statusChoiceToPublish(raw);
-              if (raw === "Public" && p.salesStatus !== "Sold Out")
-                p.salesStatus = "On Sale";
+
               pushHistory(p, "publishStatus", before, p.publishStatus);
             } else if (kind === "agent") {
               const before = p.agent;
@@ -6856,7 +6819,7 @@
             </td>
             <td>${esc(p.propType)}</td>
             <td>${badgeTx(p.transactionType || "Buy")}</td>
-            <td>${badgeSales(p.salesStatus)}</td>
+
             <td>${priceCell(p)}</td>
             <td style="font-size:12px;line-height:1.55">${fmtAddress(p)}</td>
             <td>${esc(p.agent || "—")}</td>
@@ -7113,8 +7076,7 @@
         }
         if (F.statuses.length && !F.statuses.includes(p.publishStatus))
           return false;
-        if (F.sales.length && !F.sales.includes(p.salesStatus || "On Sale"))
-          return false;
+
         if (F.keepMin != null || F.keepMax != null || F.clickMin != null || F.clickMax != null) {
           const eventPerf=projectPerformanceFromEvents(p.id);
           if (!eventPerf.organicReady) return false;
@@ -7230,7 +7192,7 @@
         FILT.priceMin = null;
         FILT.priceMax = null;
         FILT.statuses = [];
-        FILT.sales = [];
+
         FILT.yieldMin = null;
         FILT.landMin = null;
         FILT.landMax = null;
@@ -7286,14 +7248,7 @@
           )
           .join("");
       }
-      function buildSaleChecks() {
-        $("saleChecks").innerHTML = OPT.salesStatus
-          .map(
-            (s) =>
-              `<label class="pop-row"><input type="checkbox" data-sale value="${escAttr(s)}"><span>${esc(s)}</span></label>`,
-          )
-          .join("");
-      }
+
       function buildPresets() {
         $("sizePresets").innerHTML = SIZE_PRESETS.map(
           ([a, b]) =>
@@ -7380,9 +7335,7 @@
         document.querySelectorAll("[data-status]").forEach((el) => {
           el.checked = FILT.statuses.includes(el.value);
         });
-        document.querySelectorAll("[data-sale]").forEach((el) => {
-          el.checked = FILT.sales.includes(el.value);
-        });
+
         document.querySelectorAll("[data-region-pref]").forEach((el) => {
           el.checked = FILT.region.prefectures.includes(el.value);
         });
@@ -7420,11 +7373,7 @@
           document.querySelectorAll("[data-status]:checked"),
         ).map((el) => el.value);
       }
-      function commitSale() {
-        FILT.sales = Array.from(
-          document.querySelectorAll("[data-sale]:checked"),
-        ).map((el) => el.value);
-      }
+
       function commitRegion() {
         FILT.region.prefectures = Array.from(
           document.querySelectorAll("[data-region-pref]:checked"),
@@ -7479,7 +7428,7 @@
         set("click", FILT.clickMin != null || FILT.clickMax != null ? 1 : 0);
         set("price", FILT.priceMin != null || FILT.priceMax != null ? 1 : 0);
         set("status", FILT.statuses.length);
-        set("sale", FILT.sales.length);
+
       }
 
       function renderChips() {
@@ -7528,8 +7477,7 @@
             FILT.statuses.join(", "),
             () => (FILT.statuses = []),
           );
-        if (FILT.sales.length)
-          add("Sale Status", FILT.sales.join(", "), () => (FILT.sales = []));
+
         if (FILT.yieldMin != null)
           add("Yield", FILT.yieldMin + "%+", () => (FILT.yieldMin = null));
         if (FILT.landMin != null || FILT.landMax != null)
