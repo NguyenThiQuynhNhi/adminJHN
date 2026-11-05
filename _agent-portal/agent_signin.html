@@ -90,7 +90,7 @@
       <div class="field">
         <label for="email">Enter email / ID <span class="req">*</span></label>
         <input id="email" type="text" placeholder="Enter email / ID" autocomplete="username" required>
-        <div id="err-email" class="err">Please enter a valid email address.</div>
+        <div id="err-email" class="err">Enter a valid email address or ID.</div>
       </div>
 
       <div class="field">
@@ -166,16 +166,17 @@ function showErr(id,show){
   document.getElementById(id).classList.toggle('invalid',show);
 }
 function isValidEmail(s){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)}
+function isValidEmailOrId(s){return !!s && (isValidEmail(s) || /^[A-Za-z0-9_-]+$/.test(s))}
 
 function submitCreds(){
   const email=document.getElementById('email').value.trim();
   const pw=document.getElementById('password').value;
   let ok=true;
-  if(!isValidEmail(email)){showErr('email',true);ok=false;}else{showErr('email',false);}
+  if(!isValidEmailOrId(email)){showErr('email',true);ok=false;}else{showErr('email',false);}
   if(!pw){showErr('password',true);ok=false;}else{showErr('password',false);}
   if(!ok)return;
   // Mask email & advance to 2FA
-  const mask=email.replace(/^(.).+@/,'$1***@');
+  const mask=isValidEmail(email)?email.replace(/^(.).+@/,'$1***@'):'your registered email';
   document.getElementById('email-mask').textContent=mask;
   showStep('step-2fa');
   setTimeout(()=>document.querySelector('.otp').focus(),200);
