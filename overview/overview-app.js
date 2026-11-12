@@ -239,7 +239,18 @@
       result.sampleData=true;
       return result;
     }
-    if(type==='anonymized'){return M.result([],[],'table','Requires anonymized aggregated market data for the selected period.');}
+    if(type==='anonymized'){
+      const sampleRows=[
+        {label:'Tokyo · Apartment',listings:482,averagePrice:72800000,deals:46},
+        {label:'Osaka · Apartment',listings:316,averagePrice:51200000,deals:31},
+        {label:'Kanagawa · House',listings:204,averagePrice:63800000,deals:19},
+        {label:'Kyoto · Apartment',listings:146,averagePrice:48900000,deals:12}
+      ];
+      const result=M.result(sampleRows,['listings','averagePrice','deals'],'bar',
+        'SAMPLE DATA FOR PROTOTYPE REVIEW · Phase 2. Aggregated market data only; personal information is excluded. Production export requires anonymization before external distribution.');
+      result.sampleData=true;
+      return result;
+    }
     if(type==='revenue'){
       const payments=(D.succeededPayments||[]).filter(t=>{const date=String(t.date||t.occurredAt||'').slice(0,10);return date&&M.inPeriod(date,filters.start,filters.end);});
       if(!payments.length){
@@ -386,7 +397,7 @@
     if(button.dataset.export)exportResult(button.dataset.export);
     if(button.dataset.alert)showAlert(button.dataset.alert);
     if(button.dataset.sort){const table=button.closest('table'),body=table.tBodies[0],column=Number(button.dataset.sortColumn),direction=button.dataset.direction==='desc'?'asc':'desc';button.dataset.direction=direction;[...body.rows].sort((a,b)=>{const av=a.cells[column].dataset.value,bv=b.cells[column].dataset.value;if(av==='')return bv===''?0:1;if(bv==='')return -1;return (Number(av)-Number(bv))*(direction==='asc'?1:-1);}).forEach(row=>body.appendChild(row));}
-    if(button.dataset.previewReport){const r=results.get('report-'+button.dataset.previewReport);const chart=['market','revenue','users','operations'].includes(button.dataset.previewReport)?'<div class="chart-wrap">'+V.render(r)+'</div>':'';const sample=r?.sampleData?'<div class="notice">SAMPLE DATA · Illustrative values for prototype review only</div>':'';openDialog(reportTypes[button.dataset.previewReport],sample+chart+V.table(r));}
+    if(button.dataset.previewReport){const r=results.get('report-'+button.dataset.previewReport);const chart=['market','revenue','users','operations','anonymized'].includes(button.dataset.previewReport)?'<div class="chart-wrap">'+V.render(r)+'</div>':'';const sample=r?.sampleData?'<div class="notice">SAMPLE DATA · Illustrative values for prototype review only</div>':'';openDialog(reportTypes[button.dataset.previewReport],sample+chart+V.table(r));}
     
     if(button.dataset.deleteTarget!==undefined){targets.splice(Number(button.dataset.deleteTarget),1);storage.set('targets',targets);renderTargets();document.getElementById('overviewDialog').close();openTargetSettings();}
     if(button.dataset.deleteSchedule!==undefined){schedules.splice(Number(button.dataset.deleteSchedule),1);storage.set('reportSchedules',schedules);renderScheduleList();}
