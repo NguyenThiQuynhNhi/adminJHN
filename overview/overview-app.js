@@ -242,7 +242,19 @@
     if(type==='anonymized'){return M.result([],[],'table','Requires anonymized aggregated market data for the selected period.');}
     if(type==='revenue'){
       const payments=(D.succeededPayments||[]).filter(t=>{const date=String(t.date||t.occurredAt||'').slice(0,10);return date&&M.inPeriod(date,filters.start,filters.end);});
-      if(!payments.length)return M.result([],['revenue'],'table','Requires a persisted payment ledger. No completed payment records exist in the current prototype store; dashboard facts are not used as a revenue substitute.');
+      if(!payments.length){
+        const sampleRows=[
+          {label:'Jun 2026',subscription:820000,addons:92000,sponsored:145000,banner:210000,featured:118000,appraisal:68000,options:54000},
+          {label:'Jul 2026',subscription:860000,addons:105000,sponsored:158000,banner:225000,featured:124000,appraisal:72000,options:59000},
+          {label:'Aug 2026',subscription:890000,addons:111000,sponsored:162000,banner:238000,featured:139000,appraisal:76000,options:63000},
+          {label:'Sep 2026',subscription:930000,addons:126000,sponsored:174000,banner:249000,featured:146000,appraisal:81000,options:67000},
+          {label:'Oct 2026',subscription:970000,addons:132000,sponsored:188000,banner:267000,featured:158000,appraisal:85000,options:72000}
+        ];
+        const sampleResult=M.result(sampleRows,['subscription','addons','sponsored','banner','featured','appraisal','options'],'stacked',
+          'SAMPLE DATA FOR PROTOTYPE REVIEW. Production revenue must be aggregated from completed Stripe payments by category and compared month over month.');
+        sampleResult.sampleData=true;
+        return sampleResult;
+      }
       const category=t=>t.category||t.engine||t.productType||'Other';
       const amount=t=>Number(t.amount)||0;
       const output=M.groupBy(payments,t=>String(t.date||t.occurredAt).slice(0,7)+' · '+category(t),items=>({revenue:items.reduce((n,t)=>n+amount(t),0),payments:items.length}));
@@ -342,7 +354,7 @@
     if(button.dataset.export)exportResult(button.dataset.export);
     if(button.dataset.alert)showAlert(button.dataset.alert);
     if(button.dataset.sort){const table=button.closest('table'),body=table.tBodies[0],column=Number(button.dataset.sortColumn),direction=button.dataset.direction==='desc'?'asc':'desc';button.dataset.direction=direction;[...body.rows].sort((a,b)=>{const av=a.cells[column].dataset.value,bv=b.cells[column].dataset.value;if(av==='')return bv===''?0:1;if(bv==='')return -1;return (Number(av)-Number(bv))*(direction==='asc'?1:-1);}).forEach(row=>body.appendChild(row));}
-    if(button.dataset.previewReport){const r=results.get('report-'+button.dataset.previewReport);openDialog(reportTypes[button.dataset.previewReport],(button.dataset.previewReport==='market'?'<div class="notice">SAMPLE DATA · Illustrative values for prototype review only</div><div class="chart-wrap">'+V.render(r)+'</div>':'')+V.table(r));}
+    if(button.dataset.previewReport){const r=results.get('report-'+button.dataset.previewReport);const chart=['market','revenue'].includes(button.dataset.previewReport)?'<div class="chart-wrap">'+V.render(r)+'</div>':'';const sample=r?.sampleData?'<div class="notice">SAMPLE DATA · Illustrative values for prototype review only</div>':'';openDialog(reportTypes[button.dataset.previewReport],sample+chart+V.table(r));}
     
     if(button.dataset.deleteTarget!==undefined){targets.splice(Number(button.dataset.deleteTarget),1);storage.set('targets',targets);renderTargets();document.getElementById('overviewDialog').close();openTargetSettings();}
     if(button.dataset.deleteSchedule!==undefined){schedules.splice(Number(button.dataset.deleteSchedule),1);storage.set('reportSchedules',schedules);renderScheduleList();}
