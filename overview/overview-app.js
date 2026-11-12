@@ -315,7 +315,7 @@
           {label:'Oct 2026 · Agency',total:934,registrations:37,dormant:97,withdrawals:6,netGrowth:31}
         ];
         const sampleResult=M.result(sampleRows,['total','registrations','dormant','withdrawals','netGrowth'],'line',
-          'SAMPLE DATA FOR PROTOTYPE REVIEW. Net Growth = New Registrations − Withdrawals. Production values are calculated from account registration, status-change and session records.');
+          'Net Growth = New Registrations − Withdrawals. Production values are calculated from account registration, status-change and session records.');
         sampleResult.columns=sampleResult.columns.map(c=>c.key==='dormant'?{...c,label:'Dormant Users'}:c);
         sampleResult.sampleData=true;
         return sampleResult;
@@ -354,7 +354,7 @@
         {label:'Payment Errors',count:4},{label:'Pending Agency Reviews',count:7},
         {label:'Forgot Password Requests',count:2}
       ];
-      const sampleResult=M.result(sampleRows,['count'],'bar','SAMPLE DATA FOR PROTOTYPE REVIEW. Production report displays current operational queue counts.');
+      const sampleResult=M.result(sampleRows,['count'],'bar','Production report displays current operational queue counts.');
       sampleResult.sampleData=true;
       return sampleResult;
     }
@@ -385,7 +385,7 @@
       {label:'Kyoto · Apartment',values:[52,18,760,390]}
     ];
     const sampleRows=segments.map(segment=>Object.fromEntries([['label',segment.label],...measures.map((metric,index)=>[metric,segment.values[index%segment.values.length]])]));
-    const result=M.result(sampleRows,measures,'bar','SAMPLE DATA FOR PROTOTYPE REVIEW. No matching source facts exist for the selected filters; illustrative values are shown so the report layout can be reviewed.');
+    const result=M.result(sampleRows,measures,'bar','No matching source facts exist for the selected filters; illustrative values are shown so the report layout can be reviewed.');
     result.sampleData=true;
     return {data:result,axes,measures,sampleData:true};
   }
@@ -404,7 +404,7 @@
       <fieldset class="field-group"><legend>Metrics · select one or more</legend><div class="filter-grid">${Object.entries(builderMeasures).map(([key,label])=>`<label class="check-field"><input type="checkbox" name="builderMeasures" value="${key}"> ${esc(label)}</label>`).join('')}</div></fieldset>
       <div><label class="field">Shortcut name<input id="shortcutName" placeholder="e.g. Monthly Tokyo property report"></label><div class="actions" style="margin-top:12px"><button class="btn primary" id="buildReport">Preview report</button><button class="btn" id="saveShortcut">Save shortcut</button></div><p class="muted">Combine multiple dimensions and metrics. The current common date range and period unit are applied to the preview and CSV export.</p></div></div><div id="customReportOutput"></div><div class="actions" id="shortcuts">${savedReports.map((r,i)=>`<button class="btn" data-shortcut="${i}">${esc(r.name)}</button><button class="btn" data-delete-shortcut="${i}" aria-label="Delete ${esc(r.name)}">×</button>`).join('')}</div></div><div class="section-heading"><h2>Scheduled report delivery</h2></div><div class="card"><p class="notice">Choose the report, delivery frequency, time and recipients.</p><form id="scheduleForm"><div class="filter-primary">${select('scheduleType','Report',Object.entries(reportTypes).filter(([key])=>key!=='scheduled'))}${select('scheduleFrequency','Frequency',['Daily','Weekly','Monthly'])}${input('scheduleTime','Delivery time (JST)','time')}<label class="field">Recipient emails<input type="email" id="scheduleRecipients" multiple required placeholder="team@example.com, manager@example.com"></label></div><button class="btn primary">Save schedule</button></form><div id="scheduleList"></div></div><div class="section-heading"><h2>Monthly market snapshot</h2></div><div class="notice">The previous completed month is generated automatically when this page opens. <button class="btn" id="monthlySnapshot">Download latest completed month</button></div>`;
     document.querySelector('input[name="builderAxes"]').checked=true;document.querySelector('input[name="builderMeasures"]').checked=true;document.getElementById('scheduleTime').value='09:00';
-    document.getElementById('buildReport').onclick=()=>{const r=customReport();if(r){results.set('custom',r.data);document.getElementById('customReportOutput').innerHTML=+'<div class="section-heading"><h3>Report preview</h3><span class="muted">'+r.axes.length+' dimensions · '+r.measures.length+' metrics · '+r.data.rows.length+' rows · '+filters.start+' – '+filters.end+'</span></div><div class="chart-wrap">'+V.render(r.data)+'</div>'+V.table(r.data)+'<div class="actions"><button class="btn primary" data-export="custom">Export CSV</button></div>';}};
+    document.getElementById('buildReport').onclick=()=>{const r=customReport();if(r){results.set('custom',r.data);document.getElementById('customReportOutput').innerHTML='<div class="section-heading"><h3>Report preview</h3><span class="muted">'+r.axes.length+' dimensions · '+r.measures.length+' metrics · '+r.data.rows.length+' rows · '+filters.start+' – '+filters.end+'</span></div><div class="chart-wrap">'+V.render(r.data)+'</div>'+V.table(r.data)+'<div class="actions"><button class="btn primary" data-export="custom">Export CSV</button></div>';}};
     document.getElementById('saveShortcut').onclick=()=>{const r=customReport(),name=document.getElementById('shortcutName').value.trim();if(!r||!name){toast('Name the shortcut before saving.');return;}savedReports.push({name,axes:r.axes,measures:r.measures,filters:{...filters}});storage.set('reportShortcuts',savedReports);renderReports();toast('Report shortcut saved.');};
     document.getElementById('scheduleForm').onsubmit=e=>{e.preventDefault();schedules.push({id:Date.now(),report:document.getElementById('scheduleType').value,frequency:document.getElementById('scheduleFrequency').value,filters:{...filters},time:document.getElementById('scheduleTime').value,recipients:document.getElementById('scheduleRecipients').value.split(',').map(s=>s.trim()).filter(Boolean)});storage.set('reportSchedules',schedules);renderScheduleList();toast('Schedule saved.');};renderScheduleList();
     const old={...filters},end=U.addDays(M.monthStart(D.today),-1);filters={...defaults,start:M.monthStart(end),end,unit:'Monthly'};const snapshot=reportData('market');filters=old;storage.set('latestMonthlyMarketSnapshot',{month:end.slice(0,7),generatedAt:new Date().toISOString(),...snapshot});document.getElementById('monthlySnapshot').onclick=()=>downloadCSV('monthly-market-'+end.slice(0,7)+'.csv',[{key:'label',label:'Period / Segment'},...snapshot.columns],snapshot.rows);
