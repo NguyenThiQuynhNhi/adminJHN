@@ -329,18 +329,18 @@
     const pendingAds=(D.campaigns||[]).filter(r=>['pending review','pending','awaiting approval'].includes(String(r.status||'').trim().toLowerCase())).length;
     const operationalRows=[
       {label:'Unresponded Messages',count:M.unrespondedMessages()},
-      {label:'Property Complaints (Unprocessed)',count:unresolvedReports},
+      {label:'Property Reports (Unprocessed)',count:unresolvedReports},
       {label:'Pending Ad Approvals',count:pendingAds},
       {label:'Fraud Detections',count:M.fraudCount(D.fraudFlags,enabledFraud)},
       {label:'Payment Errors',count:M.sum(M.paymentBreakdown(D.paymentErrors),'count')},
-      {label:'Pending Agent Reviews',count:M.pendingAgencies()},
+      {label:'Pending Agency Reviews',count:M.pendingAgencies()},
       {label:'Forgot Password Requests',count:(D.forgotPasswordRequests||[]).filter(r=>!['completed','resolved','closed'].includes(String(r.status||'').toLowerCase())).length}
     ];
     if(operationalRows.every(row=>row.count===0)){
       const sampleRows=[
-        {label:'Unresponded Messages',count:12},{label:'Property Complaints (Unprocessed)',count:8},
+        {label:'Unresponded Messages',count:12},{label:'Property Reports (Unprocessed)',count:8},
         {label:'Pending Ad Approvals',count:5},{label:'Fraud Detections',count:3},
-        {label:'Payment Errors',count:4},{label:'Pending Agent Reviews',count:7},
+        {label:'Payment Errors',count:4},{label:'Pending Agency Reviews',count:7},
         {label:'Forgot Password Requests',count:2}
       ];
       const sampleResult=M.result(sampleRows,['count'],'bar','SAMPLE DATA FOR PROTOTYPE REVIEW. Production report displays current operational queue counts.');
