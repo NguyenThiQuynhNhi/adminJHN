@@ -146,6 +146,9 @@
     if(!members||!nonMembers||members.unavailable||nonMembers.unavailable||!Array.isArray(members.rows)||!Array.isArray(nonMembers.rows)){
       return {kind:'table',columns:[],rows:[],unavailable:true,note:'Member / non-member comparison is unavailable for this metric.'};
     }
+    if(JSON.stringify({columns:members.columns,rows:members.rows})===JSON.stringify({columns:nonMembers.columns,rows:nonMembers.rows})){
+      return {kind:'table',columns:[],rows:[],unavailable:true,note:'The available source does not provide a distinct Members / Non-Members breakdown for this metric.'};
+    }
     const sourceColumns=[...new Map([...members.columns,...nonMembers.columns].map(c=>[c.key,c])).values()];
     const memberRows=new Map(members.rows.map((row,index)=>[String(row.label??index),row]));
     const nonMemberRows=new Map(nonMembers.rows.map((row,index)=>[String(row.label??index),row]));
