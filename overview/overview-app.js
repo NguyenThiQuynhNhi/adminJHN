@@ -327,14 +327,27 @@
     }
     const unresolvedReports=(D.reports||[]).filter(r=>['awaiting_agency_response','pending_admin_review'].includes(String(r.status||'').trim().toLowerCase().replace(/\s+/g,'_'))).length;
     const pendingAds=(D.campaigns||[]).filter(r=>['pending review','pending','awaiting approval'].includes(String(r.status||'').trim().toLowerCase())).length;
-    return M.result([
+    const operationalRows=[
       {label:'Unresponded Messages',count:M.unrespondedMessages()},
-      {label:'Property Reports (Unprocessed)',count:unresolvedReports},
+      {label:'Property Complaints (Unprocessed)',count:unresolvedReports},
       {label:'Pending Ad Approvals',count:pendingAds},
       {label:'Fraud Detections',count:M.fraudCount(D.fraudFlags,enabledFraud)},
       {label:'Payment Errors',count:M.sum(M.paymentBreakdown(D.paymentErrors),'count')},
-      {label:'Pending Agency Reviews',count:M.pendingAgencies()}
-    ],['count'],'table','Current operational queue snapshot. No literal/demo queue counts are used.');
+      {label:'Pending Agent Reviews',count:M.pendingAgencies()},
+      {label:'Forgot Password Requests',count:(D.forgotPasswordRequests||[]).filter(r=>!['completed','resolved','closed'].includes(String(r.status||'').toLowerCase())).length}
+    ];
+    if(operationalRows.every(row=>row.count===0)){
+      const sampleRows=[
+        {label:'Unresponded Messages',count:12},{label:'Property Complaints (Unprocessed)',count:8},
+        {label:'Pending Ad Approvals',count:5},{label:'Fraud Detections',count:3},
+        {label:'Payment Errors',count:4},{label:'Pending Agent Reviews',count:7},
+        {label:'Forgot Password Requests',count:2}
+      ];
+      const sampleResult=M.result(sampleRows,['count'],'bar','SAMPLE DATA FOR PROTOTYPE REVIEW. Production report displays current operational queue counts.');
+      sampleResult.sampleData=true;
+      return sampleResult;
+    }
+    return M.result(operationalRows,['count'],'bar','Current operational queue snapshot.');
   }
   const builderAxes={month:'Month',date:'Date',prefecture:'Prefecture',city:'City / Ward',transaction:'Transaction type',group:'Property group',subtype:'Property sub-type',station:'Station',line:'Railway line',structure:'Building structure',floorPlan:'Floor plan',member:'Registered Members / Guests',country:'Country',section:'Content section',adType:'Ad type',placement:'Ad placement'};
   const builderMeasures={inquiries:'Property Inquiries',deals:'Agency-recorded Deals',sessions:'Client Sessions',searches:'Search Submissions'};
@@ -373,7 +386,7 @@
     if(button.dataset.export)exportResult(button.dataset.export);
     if(button.dataset.alert)showAlert(button.dataset.alert);
     if(button.dataset.sort){const table=button.closest('table'),body=table.tBodies[0],column=Number(button.dataset.sortColumn),direction=button.dataset.direction==='desc'?'asc':'desc';button.dataset.direction=direction;[...body.rows].sort((a,b)=>{const av=a.cells[column].dataset.value,bv=b.cells[column].dataset.value;if(av==='')return bv===''?0:1;if(bv==='')return -1;return (Number(av)-Number(bv))*(direction==='asc'?1:-1);}).forEach(row=>body.appendChild(row));}
-    if(button.dataset.previewReport){const r=results.get('report-'+button.dataset.previewReport);const chart=['market','revenue','users'].includes(button.dataset.previewReport)?'<div class="chart-wrap">'+V.render(r)+'</div>':'';const sample=r?.sampleData?'<div class="notice">SAMPLE DATA · Illustrative values for prototype review only</div>':'';openDialog(reportTypes[button.dataset.previewReport],sample+chart+V.table(r));}
+    if(button.dataset.previewReport){const r=results.get('report-'+button.dataset.previewReport);const chart=['market','revenue','users','operations'].includes(button.dataset.previewReport)?'<div class="chart-wrap">'+V.render(r)+'</div>':'';const sample=r?.sampleData?'<div class="notice">SAMPLE DATA · Illustrative values for prototype review only</div>':'';openDialog(reportTypes[button.dataset.previewReport],sample+chart+V.table(r));}
     
     if(button.dataset.deleteTarget!==undefined){targets.splice(Number(button.dataset.deleteTarget),1);storage.set('targets',targets);renderTargets();document.getElementById('overviewDialog').close();openTargetSettings();}
     if(button.dataset.deleteSchedule!==undefined){schedules.splice(Number(button.dataset.deleteSchedule),1);storage.set('reportSchedules',schedules);renderScheduleList();}
