@@ -290,21 +290,40 @@
     }
     if(type==='users'){
       const allAccounts=D.accounts||[],withdrawEvents=(D.analyticsEvents||[]).filter(e=>e.type==='account_status_changed'&&e.newStatus==='Withdrawn');
+      if(!allAccounts.length){
+        const sampleRows=[
+          {label:'Jun 2026 · Client',total:3520,registrations:164,dormant:302,withdrawals:18,netGrowth:146},
+          {label:'Jun 2026 · Agency',total:760,registrations:31,dormant:84,withdrawals:4,netGrowth:27},
+          {label:'Jul 2026 · Client',total:3675,registrations:178,dormant:316,withdrawals:20,netGrowth:158},
+          {label:'Jul 2026 · Agency',total:800,registrations:35,dormant:86,withdrawals:5,netGrowth:30},
+          {label:'Aug 2026 · Client',total:3842,registrations:181,dormant:328,withdrawals:22,netGrowth:159},
+          {label:'Aug 2026 · Agency',total:846,registrations:33,dormant:89,withdrawals:5,netGrowth:28},
+          {label:'Sep 2026 · Client',total:4010,registrations:202,dormant:337,withdrawals:19,netGrowth:183},
+          {label:'Sep 2026 · Agency',total:892,registrations:36,dormant:94,withdrawals:5,netGrowth:31},
+          {label:'Oct 2026 · Client',total:4202,registrations:214,dormant:351,withdrawals:23,netGrowth:191},
+          {label:'Oct 2026 · Agency',total:934,registrations:37,dormant:97,withdrawals:6,netGrowth:31}
+        ];
+        const sampleResult=M.result(sampleRows,['total','registrations','dormant','withdrawals','netGrowth'],'line',
+          'SAMPLE DATA FOR PROTOTYPE REVIEW. Net Growth = New Registrations − Withdrawals. Production values are calculated from account registration, status-change and session records.');
+        sampleResult.columns=sampleResult.columns.map(c=>c.key==='dormant'?{...c,label:'Dormant Users'}:c);
+        sampleResult.sampleData=true;
+        return sampleResult;
+      }
       return M.result(M.buckets(filters.start,filters.end,filters.unit).flatMap(b=>['Client','Agency'].map(accountType=>{
         const pool=allAccounts.filter(a=>a.type===accountType);
         const withdrawals=new Set(withdrawEvents.filter(e=>e.accountType===accountType&&M.inPeriod((e.withdrawnAt||e.occurredAt||'').slice(0,10),b.start,b.end)).map(e=>e.eventId||[e.accountId,e.occurredAt].join('|'))).size;
         const newUsers=pool.filter(a=>a.registeredAt&&M.inPeriod(String(a.registeredAt).slice(0,10),b.start,b.end)).length;
         const activeAtEnd=pool.filter(a=>a.registeredAt&&String(a.registeredAt).slice(0,10)<=b.end&&(!a.withdrawnAt||String(a.withdrawnAt).slice(0,10)>b.end)).length;
         const sessionEvents=(D.analyticsEvents||[]).filter(e=>e.type==='session_started'&&e.accountType===accountType&&e.accountId);
-        const inactive=pool.filter(a=>{
+        const dormant=pool.filter(a=>{
           if(!a.registeredAt||(a.withdrawnAt&&String(a.withdrawnAt).slice(0,10)<=b.end))return false;
           const accountId=a.id||a.customerId||a.agencyId;
           const last=sessionEvents.filter(e=>String(e.accountId)===String(accountId)&&String(e.occurredAt).slice(0,10)<=b.end).sort((x,y)=>String(y.occurredAt).localeCompare(String(x.occurredAt)))[0];
           const baseline=last?String(last.occurredAt).slice(0,10):String(a.registeredAt).slice(0,10);
           return (Date.parse(b.end)-Date.parse(baseline))/86400000>=30;
         }).length;
-        return {label:b.label+' · '+accountType,total:activeAtEnd,registrations:newUsers,inactive,withdrawals,netGrowth:newUsers-withdrawals};
-      })),['total','registrations','inactive','withdrawals','netGrowth'],'table','Withdrawals use account_status_changed events. "Inactive" is an analytics segment (30+ days without a recorded session), not Withdrawn/Dormant status.');
+        return {label:b.label+' · '+accountType,total:activeAtEnd,registrations:newUsers,dormant,withdrawals,netGrowth:newUsers-withdrawals};
+      })),['total','registrations','dormant','withdrawals','netGrowth'],'line','Period aggregates by Client and Agency. Net Growth = New Registrations − Withdrawals.');
     }
     const unresolvedReports=(D.reports||[]).filter(r=>['awaiting_agency_response','pending_admin_review'].includes(String(r.status||'').trim().toLowerCase().replace(/\s+/g,'_'))).length;
     const pendingAds=(D.campaigns||[]).filter(r=>['pending review','pending','awaiting approval'].includes(String(r.status||'').trim().toLowerCase())).length;
@@ -354,7 +373,7 @@
     if(button.dataset.export)exportResult(button.dataset.export);
     if(button.dataset.alert)showAlert(button.dataset.alert);
     if(button.dataset.sort){const table=button.closest('table'),body=table.tBodies[0],column=Number(button.dataset.sortColumn),direction=button.dataset.direction==='desc'?'asc':'desc';button.dataset.direction=direction;[...body.rows].sort((a,b)=>{const av=a.cells[column].dataset.value,bv=b.cells[column].dataset.value;if(av==='')return bv===''?0:1;if(bv==='')return -1;return (Number(av)-Number(bv))*(direction==='asc'?1:-1);}).forEach(row=>body.appendChild(row));}
-    if(button.dataset.previewReport){const r=results.get('report-'+button.dataset.previewReport);const chart=['market','revenue'].includes(button.dataset.previewReport)?'<div class="chart-wrap">'+V.render(r)+'</div>':'';const sample=r?.sampleData?'<div class="notice">SAMPLE DATA · Illustrative values for prototype review only</div>':'';openDialog(reportTypes[button.dataset.previewReport],sample+chart+V.table(r));}
+    if(button.dataset.previewReport){const r=results.get('report-'+button.dataset.previewReport);const chart=['market','revenue','users'].includes(button.dataset.previewReport)?'<div class="chart-wrap">'+V.render(r)+'</div>':'';const sample=r?.sampleData?'<div class="notice">SAMPLE DATA · Illustrative values for prototype review only</div>':'';openDialog(reportTypes[button.dataset.previewReport],sample+chart+V.table(r));}
     
     if(button.dataset.deleteTarget!==undefined){targets.splice(Number(button.dataset.deleteTarget),1);storage.set('targets',targets);renderTargets();document.getElementById('overviewDialog').close();openTargetSettings();}
     if(button.dataset.deleteSchedule!==undefined){schedules.splice(Number(button.dataset.deleteSchedule),1);storage.set('reportSchedules',schedules);renderScheduleList();}
