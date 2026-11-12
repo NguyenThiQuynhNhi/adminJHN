@@ -343,7 +343,7 @@
           {label:'Oct 2026 · End User',total:4202,registrations:214,dormant:351,withdrawals:23,netGrowth:191},
           {label:'Oct 2026 · Agency',total:934,registrations:37,dormant:97,withdrawals:6,netGrowth:31}
         ];
-        const sampleResult=M.result(sampleRows,['total','registrations','dormant','withdrawals','netGrowth'],'line',
+        const visibleSampleRows=selectedAccountType?sampleRows.filter(row=>row.label.endsWith(selectedAccountType==='Client'?'End User':'Agency')):sampleRows;const sampleResult=M.result(visibleSampleRows,['total','registrations','dormant','withdrawals','netGrowth'],'line',
           'Net Growth = New Registrations − Withdrawals. Production values are calculated from account registration, status-change and session records.');
         sampleResult.columns=sampleResult.columns.map(c=>c.key==='dormant'?{...c,label:'Dormant Users'}:c);
         sampleResult.sampleData=true;
@@ -351,10 +351,10 @@
       }
       return M.result(M.buckets(filters.start,filters.end,filters.unit).flatMap(b=>(selectedAccountType?[[selectedAccountType,selectedAccountType==='Client'?'End User':'Agency']]:[['Client','End User'],['Agency','Agency']]).map(([accountType,displayType])=>{
         const pool=allAccounts.filter(a=>a.type===accountType);
-        const withdrawals=new Set(withdrawEvents.filter(e=>e.accountType===accountType&&M.inPeriod((e.withdrawnAt||e.occurredAt||'').slice(0,10),b.start,b.end)).map(e=>e.eventId||[e.accountId,e.occurredAt].join('|'))).size;
+        const eventAccountType=accountType==='Client'?'Customer':accountType;const withdrawals=new Set(withdrawEvents.filter(e=>e.accountType===eventAccountType&&M.inPeriod((e.withdrawnAt||e.occurredAt||'').slice(0,10),b.start,b.end)).map(e=>e.eventId||[e.accountId,e.occurredAt].join('|'))).size;
         const newUsers=pool.filter(a=>a.registeredAt&&M.inPeriod(String(a.registeredAt).slice(0,10),b.start,b.end)).length;
         const activeAtEnd=pool.filter(a=>a.registeredAt&&String(a.registeredAt).slice(0,10)<=b.end&&(!a.withdrawnAt||String(a.withdrawnAt).slice(0,10)>b.end)).length;
-        const sessionEvents=(D.analyticsEvents||[]).filter(e=>e.type==='session_started'&&e.accountType===accountType&&e.accountId);
+        const sessionEvents=(D.analyticsEvents||[]).filter(e=>e.type==='session_started'&&e.accountType===eventAccountType&&e.accountId);
         const dormant=pool.filter(a=>{
           if(!a.registeredAt||(a.withdrawnAt&&String(a.withdrawnAt).slice(0,10)<=b.end))return false;
           const accountId=a.id||a.customerId||a.agencyId;
