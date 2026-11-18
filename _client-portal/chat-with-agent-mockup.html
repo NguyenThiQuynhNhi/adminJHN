@@ -18,7 +18,8 @@
 @media(max-width:600px){.app{grid-template-columns:1fr}.sidebar{display:none}.main{height:100dvh}.chat-header{padding:0 12px}.header-person{gap:9px}.header-person .avatar{width:43px;height:43px}.header-name{font-size:14px}.header-status{font-size:11px}.header-actions{gap:10px}.header-action:nth-child(3){display:none}.messages{gap:15px}.message-row{max-width:96%}.message-meta strong{font-size:13px}.message-meta{font-size:10px}.composer{gap:8px}.composer-icon svg{width:23px;height:23px}.composer input{font-size:16px}.send-btn{font-size:0;gap:0;width:45px;justify-content:center;padding:0}.send-btn svg{width:21px}.info-panel{width:min(340px,92vw)}}
 \n.entity-filter{display:flex;gap:6px;padding:8px 24px;border-bottom:1px solid #eee}.entity-filter[hidden]{display:none}.entity-filter-btn{flex:1;border:0;border-radius:6px;padding:8px;background:#f7f6f4;color:#888;font-size:12px;font-weight:600}.entity-filter-btn.active{background:var(--gold);color:#fff}.preview-plan{display:flex;align-items:center;justify-content:space-between;padding:9px 18px;border-top:1px solid #eee;color:#999;font-size:10px}.preview-plan button{border:1px solid #d8d0c1;background:#f7f3eb;color:var(--gold-dark);border-radius:12px;padding:4px 9px;font-size:10px;font-weight:700}.admin-chat{cursor:pointer}.admin-chat.active{background:#eeebea}.row-unblock{border:1px solid #e5dfd4;background:#fff;color:var(--gold-dark);border-radius:6px;padding:6px 7px;font-size:10px;font-weight:600;white-space:nowrap}.row-unblock:disabled{opacity:.45;cursor:not-allowed}.company-avatar{width:59px;height:59px;border-radius:12px;background:#f3eee5;display:grid;place-items:center;color:var(--gold-dark);flex-shrink:0}.entity-kind{display:inline-block;font-size:9px;font-weight:700;color:#9b8357;background:#f5f0e7;padding:2px 5px;border-radius:4px;margin-right:4px}.company-sub{display:block;font-size:10px;color:#aaa;margin-top:4px}.more-actions-wrap{position:relative}.more-actions-menu{display:none;position:absolute;right:0;top:36px;width:205px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px;box-shadow:0 8px 24px rgba(0,0,0,.14);z-index:15}.more-actions-menu.open{display:block}.more-actions-menu button{width:100%;padding:10px;border:0;background:#fff;text-align:left;border-radius:5px;color:#555;font-size:12px}.more-actions-menu button:hover{background:#f7f4ef}.blocked-composer{margin:0;padding:16px 24px;border-top:1px solid #ddd;background:#faf9f7;display:flex;align-items:center;justify-content:space-between;gap:15px}.blocked-composer[hidden]{display:none}.blocked-copy strong{display:block;font-size:13px;color:#555}.blocked-copy span{display:block;font-size:11px;color:#999;margin-top:5px}.blocked-composer button{border:0;border-radius:7px;background:var(--gold);color:white;padding:9px 13px;font-size:12px;font-weight:600;white-space:nowrap}.composer.is-disabled{display:none}.info-head .entity-logo{width:59px;height:59px;border-radius:12px;background:#f3eee5;display:grid;place-items:center;color:var(--gold-dark)}
 .company-message-logo{display:grid;place-items:center;border-radius:12px;background:#f3eee5;color:var(--gold-dark);flex-shrink:0}
-.company-message-logo svg{display:block}\n</style>
+.company-message-logo svg{display:block}\n.status-pill{display:inline-block;margin-left:5px;padding:2px 6px;border-radius:9px;font-size:9px;font-weight:700;vertical-align:1px}.disabled-pill{background:#f7eee6;color:#b47742}.blocked-pill{background:#f8eaea;color:#c45d5d}
+</style>
 </head>
 <body>
 <div class="app">
@@ -163,6 +164,7 @@ const isDirectBlocked=id=>blockedAgents.has(id);
 const isAgencyBlocked=id=>blockedAgencies.has(id);
 const isEffectivelyBlockedAgent=id=>isDirectBlocked(id)||isAgencyBlocked(agentById(id)?.agencyId);
 const isCurrentBlocked=()=>active.type==='agent'?isEffectivelyBlockedAgent(active.id):active.type==='agency'?isAgencyBlocked(active.id):false;
+const isCurrentDisabled=()=>active.type==='agent'&&currentAgent().status==='disabled';
 const toast=message=>{ $('toast').textContent=message;$('toast').classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').classList.remove('show'),2200)};
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function entityForRow(type,id){return type==='agent'?agentById(id):agencyById(id)}
@@ -180,7 +182,8 @@ function renderList(){
  const selected=active.type===x.type&&active.id===x.id;
  const avatar=x.type==='agency'?'<div class="company-avatar"><svg width="29" height="29" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h2m4 0h2M8 12h2m4 0h2M8 16h8"/></svg></div>':'<div class="avatar-wrap"><img class="avatar" src="'+x.avatar+'" alt=""><span class="presence" style="'+(x.online?'':'display:none')+'"></span></div>';
  const kind=x.type==='agency'?'Company':'Agent';
- const sub=x.type==='agent'?'<span class="company-sub">'+escapeHtml(x.company)+'</span>':'';
+ const status=x.type==='agent'&&x.status==='disabled'?'<span class="status-pill disabled-pill">Disabled</span>':(x.type==='agent'&&isDirectBlocked(x.id)?'<span class="status-pill blocked-pill">Blocked</span>':'');
+ const sub=x.type==='agent'?'<span class="company-sub">'+escapeHtml(x.company)+' '+status+'</span>':(x.type==='agency'&&isAgencyBlocked(x.id)?'<span class="company-sub"><span class="status-pill blocked-pill">Blocked</span></span>':'');
  const unblockButton=listMode==='blocked'?'<button class="row-unblock" data-unblock="'+x.type+':'+x.id+'" '+(!customerPlus?'disabled title="Unblocking is only available with Customer Plus."':'')+'>Unblock</button>':'';
  return '<div class="conversation '+(selected?'active':'')+'" data-type="'+x.type+'" data-id="'+x.id+'">'+avatar+'<div class="conversation-main"><div class="conversation-top"><span class="conversation-name">'+escapeHtml(x.name)+'</span><span class="conversation-time">'+x.time+'</span></div><div class="conversation-top"><div class="conversation-preview"><span class="entity-kind">'+kind+'</span>'+escapeHtml(x.preview)+'</div></div>'+sub+'</div>'+unblockButton+'</div>';
  }).join(''):'<div class="property-empty">No chats found.</div>';
@@ -208,7 +211,7 @@ function renderHeader(){
  else {avatar.style.display='none';panelAvatar.style.display='none'}
  $('headerName').textContent=x?x.name:'Admin Yuushi';
  $('panelAgentName').textContent=x?(isAgent?x.company:x.name):'YUUSHI Admin';
- $('headerStatus').innerHTML=x?(isAgent?(x.online?'<span class="online">Online</span>':'Offline')+' &nbsp;|&nbsp; '+escapeHtml(x.company):'Company conversation'):'Platform Support';
+ $('headerStatus').innerHTML=x?(isAgent?(x.status==='disabled'?'<span style="color:#b47742;font-weight:600">Disabled</span>':(x.online?'<span class="online">Online</span>':'Offline'))+' &nbsp;|&nbsp; '+escapeHtml(x.company):'Company conversation'):'Platform Support';
  $('headerPresence').style.display=isAgent&&x.online?'block':'none';
  const save=$('saveEntityBtn');save.style.display=x?'flex':'none';
  if(x){save.querySelector('span').textContent=isSaved()?(isAgent?'Saved Agent':'Saved Agency'):(isAgent?'Save Agent':'Save Agency');save.classList.toggle('selected',isSaved())}
@@ -256,10 +259,15 @@ function renderProperty(){
  document.querySelectorAll('[data-type]').forEach(b=>b.classList.toggle('active',b.dataset.type===propertyType));
 }
 function renderBlockedComposer(){
- const blocked=isCurrentBlocked();
+ const disabledAgent=isCurrentDisabled();
+ const blocked=isCurrentBlocked()||disabledAgent;
  $('blockedComposer').hidden=!blocked;$('messageForm').classList.toggle('is-disabled',blocked);
  if(!blocked){$('messageInput').disabled=false;return}
  const agency=active.type==='agent'?currentAgent().company:currentAgency().name;
+ if(disabledAgent){
+  $('blockedComposer').innerHTML='<div class="blocked-copy"><strong>'+escapeHtml(currentAgent().name)+' is no longer available</strong><span>This conversation is read-only. Contact '+escapeHtml(agency)+' to be connected with another agent.</span></div>';
+  return;
+ }
  const direct=active.type==='agent'&&isDirectBlocked(active.id);
  const title=active.type==='agency'||(!direct&&isAgencyBlocked(activeAgencyId()))?'You blocked '+agency:'You blocked '+currentAgent().name;
  const target=active.type==='agency'||(!direct&&isAgencyBlocked(activeAgencyId()))?'agency':'agent';
@@ -318,7 +326,7 @@ $('closePanel').addEventListener('click',()=>{panelOpen=false;$('infoPanel').cla
 document.querySelectorAll('[data-info-tab]').forEach(b=>b.addEventListener('click',()=>{infoTab=b.dataset.infoTab;renderShared()}));
 document.querySelectorAll('[data-type]').forEach(b=>b.addEventListener('click',()=>{propertyType=b.dataset.type;propertyIndex=0;renderProperty()}));
 $('viewAllProperties').addEventListener('click',()=>toast('Opening all agency properties (preview).'));
-$('messageForm').addEventListener('submit',e=>{e.preventDefault();if(isCurrentBlocked())return;const text=$('messageInput').value.trim();if(!text)return;const list=messagesByKey[key()]||(messagesByKey[key()]=[]);list.push({id:nextId++,from:'me',text,time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})});const x=active.type==='agent'?currentAgent():currentAgency();x.preview=text;x.time='Now';$('messageInput').value='';renderMessages();renderList()});
+$('messageForm').addEventListener('submit',e=>{e.preventDefault();if(isCurrentBlocked()||isCurrentDisabled())return;const text=$('messageInput').value.trim();if(!text)return;const list=messagesByKey[key()]||(messagesByKey[key()]=[]);list.push({id:nextId++,from:'me',text,time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})});const x=active.type==='agent'?currentAgent():currentAgency();x.preview=text;x.time='Now';$('messageInput').value='';renderMessages();renderList()});
 $('emojiToggle').addEventListener('click',()=>$('emojiPicker').classList.toggle('open'));
 $('emojiPicker').addEventListener('click',e=>{if(e.target.tagName==='BUTTON'){$('messageInput').value+=$('messageInput').value?' '+e.target.textContent:e.target.textContent;$('messageInput').focus()}});
 $('attachToggle').addEventListener('click',()=>$('attachMenu').classList.toggle('open'));
