@@ -199,7 +199,8 @@ function renderList(){
  rows=rows.filter(x=>!q||[x.name,x.preview,x.company||''].join(' ').toLowerCase().includes(q));
  $('conversationList').innerHTML=rows.length?rows.map(x=>{
  const selected=active.type===x.type&&active.id===x.id;
- const avatar=x.type==='agency'?'<div class="company-avatar"><svg width="29" height="29" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h2m4 0h2M8 12h2m4 0h2M8 16h8"/></svg></div>':'<div class="avatar-wrap"><img class="avatar" src="'+x.avatar+'" alt=""><span class="presence" style="'+(x.online?'':'display:none')+'"></span></div>';
+ const logoUrl='https://ui-avatars.com/api/?name='+encodeURIComponent(x.name)+'&background=B69A68&color=ffffff&size=128&bold=true&rounded=false';
+ const avatar=x.type==='agency'?'<div class="avatar-wrap"><img class="avatar agency-logo" src="'+logoUrl+'" alt="'+escapeHtml(x.name)+' logo"></div>':'<div class="avatar-wrap"><img class="avatar" src="'+x.avatar+'" alt=""><span class="presence" style="'+(x.online?'':'display:none')+'"></span></div>';
  const kind=x.type==='agency'?'Company':'Agent';
  const status=x.type==='agent'&&x.status==='disabled'?'<span class="status-pill disabled-pill">Disabled</span>':(x.type==='agent'&&isDirectBlocked(x.id)?'<span class="status-pill blocked-pill">Blocked</span>':'');
  const sub=x.type==='agent'?'<span class="company-sub">'+escapeHtml(x.company)+' '+status+'</span>':(x.type==='agency'&&isAgencyBlocked(x.id)?'<span class="company-sub"><span class="status-pill blocked-pill">Blocked</span></span>':'');
@@ -228,9 +229,15 @@ function renderThreadChips(){
 function renderHeader(){
  const isAgent=active.type==='agent',isAgency=active.type==='agency',x=isAgent?currentAgent():isAgency?currentAgency():null;
  const avatar=$('headerAvatar'),panelAvatar=$('panelAvatar');
- if(x&&isAgent){avatar.style.display='block';panelAvatar.style.display='block';avatar.src=x.avatar;panelAvatar.src=x.avatar;avatar.className='avatar';panelAvatar.className='avatar'}
- else if(x&&isAgency){const logo='https://ui-avatars.com/api/?name='+encodeURIComponent(x.name)+'&background=B69A68&color=ffffff&size=128&bold=true&rounded=false';avatar.style.display='block';panelAvatar.style.display='block';avatar.src=logo;panelAvatar.src=logo;avatar.className='avatar agency-logo';panelAvatar.className='avatar agency-logo'}
- else {avatar.style.display='none';panelAvatar.style.display='none'}
+ const agencyRecord=isAgent?agencyById(x.agencyId):x;
+ const agencyLogo=agencyRecord?'https://ui-avatars.com/api/?name='+encodeURIComponent(agencyRecord.name)+'&background=B69A68&color=ffffff&size=128&bold=true&rounded=false':'';
+ if(x&&isAgent){
+  avatar.style.display='block';avatar.src=x.avatar;avatar.className='avatar';
+  panelAvatar.style.display='block';panelAvatar.src=agencyLogo;panelAvatar.className='avatar agency-logo';
+ }else if(x&&isAgency){
+  avatar.style.display='block';avatar.src=agencyLogo;avatar.className='avatar agency-logo';
+  panelAvatar.style.display='block';panelAvatar.src=agencyLogo;panelAvatar.className='avatar agency-logo';
+ }else {avatar.style.display='none';panelAvatar.style.display='none'}
  $('headerName').textContent=x?x.name:'Admin Yuushi';
  $('panelAgentName').textContent=x?(isAgent?x.company:x.name):'YUUSHI Admin';
  $('headerStatus').innerHTML=x?(isAgent?(x.status==='disabled'?'<span style="color:#b47742;font-weight:600">Disabled</span>':(x.online?'<span class="online">Online</span>':'Offline'))+' &nbsp;|&nbsp; '+escapeHtml(x.company):'Company conversation'):'Platform Support';
